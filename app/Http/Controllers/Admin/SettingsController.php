@@ -55,16 +55,33 @@ class SettingsController extends Controller
 
     private function updateAgencySettings(Request $request, GeneralSettings $settings)
     {
-        $validated = $request->validate([
+        $rules = [
             'agency_name' => 'required|string|max:255',
             'agency_nit' => 'nullable|string|max:50',
             'agency_address' => 'nullable|string|max:500',
             'agency_phone' => 'nullable|string|max:50',
             'agency_email' => 'nullable|email|max:255',
             'agency_website' => 'nullable|url|max:255',
-            'agency_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'remove_logo' => 'nullable|boolean',
-        ]);
+        ];
+
+        // Validación del logo sin depender de php_fileinfo
+        if ($request->hasFile('agency_logo')) {
+            $rules['agency_logo'] = [
+                'file',
+                'max:2048', // 2MB
+                function ($attribute, $value, $fail) {
+                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
+                    $extension = strtolower($value->getClientOriginalExtension());
+                    
+                    if (!in_array($extension, $allowedExtensions)) {
+                        $fail('El archivo debe ser una imagen válida (JPG, PNG, GIF, SVG, WEBP).');
+                    }
+                },
+            ];
+        }
+
+        $validated = $request->validate($rules);
 
         $settings->agency_name = $validated['agency_name'];
         $settings->agency_nit = $validated['agency_nit'] ?? '';
