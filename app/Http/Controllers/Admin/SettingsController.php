@@ -105,16 +105,25 @@ class SettingsController extends Controller
                 Storage::disk('public')->delete($settings->agency_logo);
             }
             
-            // Guardar nuevo logo sin usar MIME type (evita php_fileinfo)
+            // Guardar nuevo logo usando funciones PHP nativas (evita php_fileinfo y finfo)
             $file = $request->file('agency_logo');
             $extension = $file->getClientOriginalExtension();
             $filename = 'logo_' . time() . '_' . uniqid() . '.' . $extension;
-            $path = 'logos/' . $filename;
             
-            // Usar put() con el contenido del archivo directamente (evita detección de MIME)
-            $fileContent = file_get_contents($file->getRealPath());
-            Storage::disk('public')->put($path, $fileContent);
-            $settings->agency_logo = $path;
+            // Crear directorio si no existe
+            $logoDir = storage_path('app/public/logos');
+            if (!is_dir($logoDir)) {
+                mkdir($logoDir, 0755, true);
+            }
+            
+            // Ruta completa del archivo destino
+            $destinationPath = $logoDir . '/' . $filename;
+            
+            // Mover archivo usando move_uploaded_file (no requiere php_fileinfo)
+            move_uploaded_file($file->getRealPath(), $destinationPath);
+            
+            // Guardar ruta relativa en settings
+            $settings->agency_logo = 'logos/' . $filename;
         }
         // Si no se envía nada, mantener el logo actual
         
