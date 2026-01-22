@@ -1018,15 +1018,15 @@ window.showEmailDetails = function(logId) {
         });
 };
 
-window.closeEmailDetails = function() {
-    const modal = document.getElementById('email-detail-modal');
-    if (modal) {
-        modal.remove();
-    }
-};
-
-// Función para eliminar un correo del historial
-window.deleteEmailLog = function(logId) {
+    window.closeEmailDetails = function() {
+        const modal = document.getElementById('email-detail-modal');
+        if (modal) {
+            modal.remove();
+        }
+    };
+    
+    // Función para eliminar un correo del historial
+    window.deleteEmailLog = function(logId) {
     if (!confirm('¿Estás seguro de que deseas eliminar este correo del historial?')) {
         return;
     }
@@ -1067,11 +1067,11 @@ window.deleteEmailLog = function(logId) {
         })
         .catch(error => {
             console.error('Error al eliminar correo:', error);
-            alert('Error al eliminar el correo. Por favor, intenta de nuevo.');
-        });
-};
-
-})(); // Fin de la función auto-ejecutada
+                alert('Error al eliminar el correo. Por favor, intenta de nuevo.');
+            });
+    };
+    
+})(); // Fin de la función auto-ejecutada - las funciones ya están disponibles globalmente
 
 function showTab(tabName) {
     // Ocultar todos los paneles
