@@ -1349,13 +1349,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 }
 
-window.closeEmailDetails = function() {
-    const modal = document.getElementById('email-detail-modal');
-    if (modal) {
-        modal.remove();
-    }
-};
-
 // Función para mostrar/ocultar campos según el proveedor seleccionado
 function toggleProviderFields() {
     const provider = document.getElementById('mail_provider').value;
