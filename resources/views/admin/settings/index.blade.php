@@ -1079,62 +1079,6 @@ window.deleteEmailLog = function(logId) {
         });
 };
 
-// Función para cerrar el modal
-window.closeEmailDetails = function() {
-    const modal = document.getElementById('email-detail-modal');
-    if (modal) {
-        modal.remove();
-    }
-};
-
-// Función para eliminar un correo del historial
-window.deleteEmailLog = function(logId) {
-    if (!confirm('¿Estás seguro de que deseas eliminar este correo del historial?')) {
-        return;
-    }
-    
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    
-    fetch(`/admin/settings/email-logs/${logId}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrfToken
-        },
-        credentials: 'same-origin'
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Eliminar la fila de la tabla con animación
-                const row = document.querySelector(`tr[data-log-id="${logId}"]`);
-                if (row) {
-                    row.style.transition = 'opacity 0.3s';
-                    row.style.opacity = '0';
-                    setTimeout(() => {
-                        row.remove();
-                        // Si no quedan más correos, recargar la página
-                        const remainingRows = document.querySelectorAll('tbody tr[data-log-id]');
-                        if (remainingRows.length === 0) {
-                            window.location.reload();
-                        }
-                    }, 300);
-                } else {
-                    // Si no encontramos la fila, recargar la página
-                    window.location.reload();
-                }
-            } else {
-                alert('Error al eliminar el correo: ' + (data.message || 'Error desconocido'));
-            }
-        })
-        .catch(error => {
-            console.error('Error al eliminar correo:', error);
-            alert('Error al eliminar el correo. Por favor, intenta de nuevo.');
-        });
-};
-
 function showTab(tabName) {
     // Ocultar todos los paneles
     document.querySelectorAll('.tab-panel').forEach(panel => {
