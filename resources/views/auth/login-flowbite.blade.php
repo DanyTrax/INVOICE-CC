@@ -41,15 +41,12 @@
                 @endphp
                 
                 @if($hasLogo)
-                    {{-- Mostrar logo si existe --}}
+                    {{-- Solo mostrar logo si existe --}}
                     <div class="flex justify-center mb-4">
                         <img src="{{ asset($logoPath) }}" 
                              alt="{{ $agencyName ?? 'Logo' }}" 
                              class="h-16 w-auto object-contain">
                     </div>
-                    @if($hasName)
-                        <h2 class="text-xl font-semibold text-gray-900 mt-2">{{ $agencyName }}</h2>
-                    @endif
                 @elseif($hasName)
                     {{-- Solo mostrar nombre de agencia si no hay logo --}}
                     <h1 class="text-3xl font-bold text-gray-900">
