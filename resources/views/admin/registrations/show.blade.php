@@ -53,15 +53,15 @@
                         <dd class="mt-1">
                             @php
                                 $statusColors = [
-                                    'en_tramite' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800'],
-                                    'aprobado' => ['bg' => 'bg-green-100', 'text' => 'text-green-800'],
-                                    'rechazado' => ['bg' => 'bg-red-100', 'text' => 'text-red-800'],
-                                    'pendiente' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800'],
+                                    'tramite' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'En Trámite'],
+                                    'vigente' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'Vigente'],
+                                    'requerimiento' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'Requerimiento'],
+                                    'vencido' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'Vencido'],
                                 ];
-                                $colors = $statusColors[$registration->status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800'];
+                                $statusInfo = $statusColors[$registration->status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => ucfirst($registration->status)];
                             @endphp
-                            <span class="px-2 py-1 text-xs font-medium {{ $colors['bg'] }} {{ $colors['text'] }} rounded-full">
-                                {{ ucfirst(str_replace('_', ' ', $registration->status)) }}
+                            <span class="px-2 py-1 text-xs font-medium {{ $statusInfo['bg'] }} {{ $statusInfo['text'] }} rounded-full">
+                                {{ $statusInfo['label'] }}
                             </span>
                         </dd>
                     </div>

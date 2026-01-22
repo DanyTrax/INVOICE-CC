@@ -123,7 +123,7 @@ class RegistrationController extends Controller
             'assigned_specialist_id' => 'nullable|exists:users,id',
             'product_name' => 'required|string|max:255',
             'registration_number' => 'nullable|string|max:100',
-            'status' => 'required|string|max:50',
+            'status' => 'required|in:vigente,tramite,requerimiento,vencido',
             'transaction_type' => 'nullable|string|max:100',
             'quotation_number' => 'nullable|string|max:100',
             'client_request_date' => 'nullable|date',
