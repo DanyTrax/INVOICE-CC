@@ -20,33 +20,29 @@
     
     @stack('styles')
 </head>
-<body class="h-full" x-data="{ sidebarOpen: true }" x-init="
-    // Inicializar según tamaño de pantalla
-    if (window.innerWidth >= 1024) {
-        sidebarOpen = true;
-    } else {
-        sidebarOpen = false;
+<body class="h-full" x-data="{ 
+    sidebarOpen: window.innerWidth >= 1024,
+    init() {
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024 && !this.sidebarOpen) {
+                this.sidebarOpen = true;
+            }
+        });
     }
-    // Ajustar al cambiar tamaño
-    window.addEventListener('resize', () => {
-        if (window.innerWidth >= 1024) {
-            sidebarOpen = true;
-        }
-    });
-">
+}">
     <div class="flex h-screen bg-gray-50">
         <!-- Overlay para móvil -->
-        <div x-show="sidebarOpen && window.innerWidth < 1024" 
-             @click="sidebarOpen = false"
-             x-transition:enter="transition-opacity ease-linear duration-300"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition-opacity ease-linear duration-300"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             class="fixed inset-0 bg-gray-600 bg-opacity-75 z-30 lg:hidden"
-             style="display: none;">
-        </div>
+        <template x-if="sidebarOpen && window.innerWidth < 1024">
+            <div @click="sidebarOpen = false"
+                 x-transition:enter="transition-opacity ease-linear duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition-opacity ease-linear duration-300"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 bg-gray-600 bg-opacity-75 z-30 lg:hidden">
+            </div>
+        </template>
 
         <!-- Sidebar -->
         <aside id="sidebar" 
@@ -141,38 +137,46 @@
                     </div>
                     
                     <!-- Usuario (derecha) -->
-                    <div class="relative" x-data="{ userMenuOpen: false }">
+                    <div class="relative" x-data="{ userMenuOpen: false }" @click.outside="userMenuOpen = false">
                         <button @click="userMenuOpen = !userMenuOpen" 
                                 type="button" 
-                                class="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
-                            <div class="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white font-semibold text-xs">
+                                class="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none transition-colors">
+                            <div class="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white font-semibold text-xs shadow-sm">
                                 {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
                             </div>
-                            <span class="hidden md:inline">{{ Auth::user()->name }}</span>
-                            <i class="fas fa-chevron-down w-3 h-3 text-gray-400"></i>
+                            <div class="hidden md:block text-left">
+                                <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
+                                <div class="text-xs text-gray-500">{{ Auth::user()->email }}</div>
+                            </div>
+                            <i class="fas fa-chevron-down w-3 h-3 text-gray-400 transition-transform" 
+                               :class="{ 'rotate-180': userMenuOpen }"></i>
                         </button>
                         
                         <!-- Dropdown Menu -->
                         <div x-show="userMenuOpen" 
-                             @click.away="userMenuOpen = false"
                              x-transition:enter="transition ease-out duration-100"
                              x-transition:enter-start="transform opacity-0 scale-95"
                              x-transition:enter-end="transform opacity-100 scale-100"
                              x-transition:leave="transition ease-in duration-75"
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200"
+                             class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200"
                              style="display: none;">
-                            <div class="px-4 py-2 border-b border-gray-200">
+                            <div class="px-4 py-3 border-b border-gray-200">
                                 <p class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</p>
-                                <p class="text-xs text-gray-500">{{ Auth::user()->email }}</p>
+                                <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
                             </div>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                    <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
-                                </button>
-                            </form>
+                            <div class="py-1">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-user mr-2"></i> Mi Perfil
+                                </a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                        <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
