@@ -1,4 +1,8 @@
-@props(['events' => [], 'showNavigation' => true])
+@php
+    $calendarId = 'calendar-' . uniqid();
+    $prevBtnId = 'prev-month-' . uniqid();
+    $nextBtnId = 'next-month-' . uniqid();
+@endphp
 
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-4">
@@ -8,10 +12,10 @@
         </h3>
         @if($showNavigation)
             <div class="flex items-center space-x-2">
-                <button id="prev-month" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                <button id="{{ $prevBtnId }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                     <i class="fas fa-chevron-left mr-1"></i> Mes Anterior
                 </button>
-                <button id="next-month" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                <button id="{{ $nextBtnId }}" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                     Mes Siguiente <i class="fas fa-chevron-right ml-1"></i>
                 </button>
             </div>
@@ -29,18 +33,19 @@
         </span>
     </div>
     
-    <div id="calendar-{{ uniqid() }}" class="w-full"></div>
+    <div id="{{ $calendarId }}" class="w-full" style="min-height: 400px;"></div>
 </div>
 
 @push('styles')
 <style>
-    #calendar-{{ uniqid() }} {
+    #{{ $calendarId }} {
         max-width: 100%;
     }
     .fc-event {
         cursor: pointer;
         border-radius: 0.375rem;
         padding: 0.125rem 0.25rem;
+        font-size: 0.75rem;
     }
     .fc-day-sat, .fc-day-sun {
         background-color: #fef2f2;
@@ -48,83 +53,128 @@
     .fc-button {
         background-color: #0f766e !important;
         border-color: #0f766e !important;
+        color: white !important;
     }
     .fc-button:hover {
         background-color: #0d9488 !important;
         border-color: #0d9488 !important;
+    }
+    .fc-today-button {
+        background-color: #64748b !important;
+        border-color: #64748b !important;
     }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var calendarId = 'calendar-{{ uniqid() }}';
-    var calendarEl = document.getElementById(calendarId);
-    if (!calendarEl) return;
-    
+(function() {
+    var calendarId = '{{ $calendarId }}';
+    var prevBtnId = '{{ $prevBtnId }}';
+    var nextBtnId = '{{ $nextBtnId }}';
     var events = @json($events);
+    var calendar = null;
     
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'es',
-        firstDay: 1,
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: ''
-        },
-        buttonText: {
-            today: 'Hoy',
-            month: 'Mes'
-        },
-        events: events,
-        eventClick: function(info) {
-            var type = info.event.extendedProps.type === 'expiration' ? 'Vencimiento' : 'Límite de Respuesta';
-            var message = '<strong>' + type + '</strong><br>' +
-                         'Producto: ' + info.event.title + '<br>' +
-                         'Cliente: ' + (info.event.extendedProps.company || 'N/A') + '<br>' +
-                         'Fecha: ' + info.event.start.toLocaleDateString('es-ES');
-            
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Detalles del Evento',
-                    html: message,
-                    icon: 'info',
-                    confirmButtonText: 'Ver Expediente',
-                    showCancelButton: true,
-                    cancelButtonText: 'Cerrar',
-                    confirmButtonColor: '#0f766e'
-                }).then((result) => {
-                    if (result.isConfirmed && info.event.extendedProps.registration_id) {
-                        window.location.href = '/admin/registrations/' + info.event.extendedProps.registration_id + '/edit';
+    function initCalendar() {
+        // Esperar a que FullCalendar esté cargado
+        if (typeof FullCalendar === 'undefined') {
+            setTimeout(initCalendar, 100);
+            return;
+        }
+        
+        var calendarEl = document.getElementById(calendarId);
+        if (!calendarEl) {
+            setTimeout(initCalendar, 100);
+            return;
+        }
+        
+        // Si ya está inicializado, no hacer nada
+        if (calendarEl.dataset.initialized === 'true') {
+            return;
+        }
+        
+        calendarEl.dataset.initialized = 'true';
+        
+        try {
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                firstDay: 1,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: ''
+                },
+                buttonText: {
+                    today: 'Hoy',
+                    month: 'Mes',
+                    week: 'Semana',
+                    day: 'Día'
+                },
+                events: events,
+                eventClick: function(info) {
+                    var type = info.event.extendedProps.type === 'expiration' ? 'Vencimiento' : 'Límite de Respuesta';
+                    var message = '<strong>' + type + '</strong><br>' +
+                                 'Producto: ' + info.event.title + '<br>' +
+                                 'Cliente: ' + (info.event.extendedProps.company || 'N/A') + '<br>' +
+                                 'Fecha: ' + info.event.start.toLocaleDateString('es-ES');
+                    
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Detalles del Evento',
+                            html: message,
+                            icon: 'info',
+                            confirmButtonText: 'Ver Expediente',
+                            showCancelButton: true,
+                            cancelButtonText: 'Cerrar',
+                            confirmButtonColor: '#0f766e'
+                        }).then((result) => {
+                            if (result.isConfirmed && info.event.extendedProps.registration_id) {
+                                window.location.href = '/admin/registrations/' + info.event.extendedProps.registration_id + '/edit';
+                            }
+                        });
+                    } else {
+                        alert(message);
                     }
+                },
+                dayCellClassNames: function(date) {
+                    var day = date.getDay();
+                    return (day === 0 || day === 6) ? ['weekend-day'] : [];
+                }
+            });
+            
+            calendar.render();
+            console.log('✅ Calendario inicializado:', calendarId, 'Eventos:', events.length);
+            
+            // Navegación de meses
+            var prevBtn = document.getElementById(prevBtnId);
+            var nextBtn = document.getElementById(nextBtnId);
+            
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function() {
+                    if (calendar) calendar.prev();
                 });
             }
-        },
-        dayCellClassNames: function(date) {
-            var day = date.getDay();
-            return (day === 0 || day === 6) ? ['weekend-day'] : [];
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function() {
+                    if (calendar) calendar.next();
+                });
+            }
+        } catch (error) {
+            console.error('❌ Error al inicializar calendario:', error);
+            calendarEl.innerHTML = '<div class="p-4 text-red-600">Error al cargar el calendario. Por favor, recarga la página.</div>';
         }
-    });
-    
-    calendar.render();
-    
-    // Navegación de meses
-    var prevBtn = document.getElementById('prev-month');
-    var nextBtn = document.getElementById('next-month');
-    
-    if (prevBtn) {
-        prevBtn.addEventListener('click', function() {
-            calendar.prev();
-        });
     }
     
-    if (nextBtn) {
-        nextBtn.addEventListener('click', function() {
-            calendar.next();
+    // Inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initCalendar, 500);
         });
+    } else {
+        setTimeout(initCalendar, 500);
     }
-});
+})();
 </script>
 @endpush
