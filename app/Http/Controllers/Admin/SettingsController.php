@@ -16,9 +16,21 @@ class SettingsController extends Controller
     public function index()
     {
         $emailTemplates = EmailTemplate::all();
-        $emailLogs = EmailLog::orderBy('created_at', 'desc')
-            ->with('user')
-            ->paginate(20);
+        
+        // Verificar si la tabla email_logs existe antes de consultarla
+        try {
+            $emailLogs = EmailLog::orderBy('created_at', 'desc')
+                ->with('user')
+                ->paginate(20);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Si la tabla no existe, crear una colección vacía
+            $emailLogs = new \Illuminate\Pagination\LengthAwarePaginator(
+                collect([]),
+                0,
+                20,
+                1
+            );
+        }
         
         // Asegurar que los settings existan en la BD
         $this->ensureSettingsInDatabase();
