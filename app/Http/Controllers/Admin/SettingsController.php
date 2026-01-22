@@ -434,7 +434,7 @@ class SettingsController extends Controller
         // Validar que Client ID y Client Secret estén configurados
         if (empty($settings->zoho_client_id) || empty($settings->zoho_client_secret)) {
             return redirect()
-                ->route('admin.settings.index')
+                ->route('admin.settings.section', 'mail')
                 ->with('error', 'Por favor, configura primero el Client ID y Client Secret de Zoho antes de autorizar.');
         }
 
@@ -541,15 +541,13 @@ class SettingsController extends Controller
             } else {
                 $errorMessage = $response->json()['error_description'] ?? $response->body();
                 return redirect()
-                    ->route('admin.settings.index')
-                    ->with('error', 'Error al obtener Refresh Token: ' . $errorMessage)
-                    ->with('tab', 'mail');
+                    ->route('admin.settings.section', 'mail')
+                    ->with('error', 'Error al obtener Refresh Token: ' . $errorMessage);
             }
         } catch (\Exception $e) {
             return redirect()
-                ->route('admin.settings.index')
-                ->with('error', 'Error al procesar la autorización: ' . $e->getMessage())
-                ->with('tab', 'mail');
+                ->route('admin.settings.section', 'mail')
+                ->with('error', 'Error al procesar la autorización: ' . $e->getMessage());
         }
     }
 
