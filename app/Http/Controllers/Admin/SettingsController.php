@@ -98,25 +98,25 @@ class SettingsController extends Controller
             }
         }
 
-        // Actualizar solo los campos que vienen en el request, mantener los demás
-        if (isset($validated['agency_name'])) {
-            $settings->agency_name = $validated['agency_name'];
-        }
-        if (isset($validated['agency_nit'])) {
-            $settings->agency_nit = $validated['agency_nit'] ?? '';
-        }
-        if (isset($validated['agency_address'])) {
-            $settings->agency_address = $validated['agency_address'] ?? '';
-        }
-        if (isset($validated['agency_phone'])) {
-            $settings->agency_phone = $validated['agency_phone'] ?? '';
-        }
-        if (isset($validated['agency_email'])) {
-            $settings->agency_email = $validated['agency_email'] ?? '';
-        }
-        if (isset($validated['agency_website'])) {
-            $settings->agency_website = $validated['agency_website'] ?? '';
-        }
+        // Actualizar campos del request, mantener valores existentes para los demás
+        $settings->agency_name = $validated['agency_name'] ?? $settings->agency_name ?? 'RAMS';
+        $settings->agency_nit = $validated['agency_nit'] ?? $settings->agency_nit ?? '';
+        $settings->agency_address = $validated['agency_address'] ?? $settings->agency_address ?? '';
+        $settings->agency_phone = $validated['agency_phone'] ?? $settings->agency_phone ?? '';
+        $settings->agency_email = $validated['agency_email'] ?? $settings->agency_email ?? '';
+        $settings->agency_website = $validated['agency_website'] ?? $settings->agency_website ?? '';
+        
+        // Asegurar que todas las demás propiedades estén establecidas (mantener valores existentes)
+        $settings->agency_logo = $settings->agency_logo ?? '';
+        $settings->drive_service_account_json = $settings->drive_service_account_json ?? '';
+        $settings->mail_mailer = $settings->mail_mailer ?? 'smtp';
+        $settings->mail_host = $settings->mail_host ?? 'smtp.gmail.com';
+        $settings->mail_port = $settings->mail_port ?? 587;
+        $settings->mail_username = $settings->mail_username ?? '';
+        $settings->mail_password = $settings->mail_password ?? '';
+        $settings->mail_encryption = $settings->mail_encryption ?? 'tls';
+        $settings->mail_from_address = $settings->mail_from_address ?? 'noreply@rams.com';
+        $settings->mail_from_name = $settings->mail_from_name ?? 'RAMS Sistema';
         
         // Manejar logo
         if ($request->has('remove_logo') && $request->remove_logo) {
@@ -169,10 +169,25 @@ class SettingsController extends Controller
             'drive_service_account_json' => 'nullable|string',
         ]);
 
-        // Actualizar solo el campo que viene en el request
-        if (isset($validated['drive_service_account_json'])) {
-            $settings->drive_service_account_json = $validated['drive_service_account_json'] ?? '';
-        }
+        // Actualizar campo, mantener valores existentes para los demás
+        $settings->drive_service_account_json = $validated['drive_service_account_json'] ?? $settings->drive_service_account_json ?? '';
+        
+        // Asegurar que todas las demás propiedades estén establecidas
+        $settings->agency_name = $settings->agency_name ?? 'RAMS';
+        $settings->agency_nit = $settings->agency_nit ?? '';
+        $settings->agency_address = $settings->agency_address ?? '';
+        $settings->agency_phone = $settings->agency_phone ?? '';
+        $settings->agency_email = $settings->agency_email ?? '';
+        $settings->agency_website = $settings->agency_website ?? '';
+        $settings->agency_logo = $settings->agency_logo ?? '';
+        $settings->mail_mailer = $settings->mail_mailer ?? 'smtp';
+        $settings->mail_host = $settings->mail_host ?? 'smtp.gmail.com';
+        $settings->mail_port = $settings->mail_port ?? 587;
+        $settings->mail_username = $settings->mail_username ?? '';
+        $settings->mail_password = $settings->mail_password ?? '';
+        $settings->mail_encryption = $settings->mail_encryption ?? 'tls';
+        $settings->mail_from_address = $settings->mail_from_address ?? 'noreply@rams.com';
+        $settings->mail_from_name = $settings->mail_from_name ?? 'RAMS Sistema';
         
         $settings->save();
     }
@@ -192,31 +207,25 @@ class SettingsController extends Controller
 
         $validated = $request->validate($rules);
 
-        // Actualizar solo los campos que vienen en el request
-        if (isset($validated['mail_mailer'])) {
-            $settings->mail_mailer = $validated['mail_mailer'];
-        }
-        if (isset($validated['mail_host'])) {
-            $settings->mail_host = $validated['mail_host'];
-        }
-        if (isset($validated['mail_port'])) {
-            $settings->mail_port = $validated['mail_port'];
-        }
-        if (isset($validated['mail_username'])) {
-            $settings->mail_username = $validated['mail_username'] ?? '';
-        }
-        if (isset($validated['mail_password'])) {
-            $settings->mail_password = $validated['mail_password'] ?? '';
-        }
-        if (isset($validated['mail_encryption'])) {
-            $settings->mail_encryption = $validated['mail_encryption'] ?? '';
-        }
-        if (isset($validated['mail_from_address'])) {
-            $settings->mail_from_address = $validated['mail_from_address'];
-        }
-        if (isset($validated['mail_from_name'])) {
-            $settings->mail_from_name = $validated['mail_from_name'];
-        }
+        // Actualizar campos del request, mantener valores existentes para los demás
+        $settings->mail_mailer = $validated['mail_mailer'] ?? $settings->mail_mailer ?? 'smtp';
+        $settings->mail_host = $validated['mail_host'] ?? $settings->mail_host ?? 'smtp.gmail.com';
+        $settings->mail_port = $validated['mail_port'] ?? $settings->mail_port ?? 587;
+        $settings->mail_username = $validated['mail_username'] ?? $settings->mail_username ?? '';
+        $settings->mail_password = $validated['mail_password'] ?? $settings->mail_password ?? '';
+        $settings->mail_encryption = $validated['mail_encryption'] ?? $settings->mail_encryption ?? 'tls';
+        $settings->mail_from_address = $validated['mail_from_address'] ?? $settings->mail_from_address ?? 'noreply@rams.com';
+        $settings->mail_from_name = $validated['mail_from_name'] ?? $settings->mail_from_name ?? 'RAMS Sistema';
+        
+        // Asegurar que todas las demás propiedades estén establecidas
+        $settings->agency_name = $settings->agency_name ?? 'RAMS';
+        $settings->agency_nit = $settings->agency_nit ?? '';
+        $settings->agency_address = $settings->agency_address ?? '';
+        $settings->agency_phone = $settings->agency_phone ?? '';
+        $settings->agency_email = $settings->agency_email ?? '';
+        $settings->agency_website = $settings->agency_website ?? '';
+        $settings->agency_logo = $settings->agency_logo ?? '';
+        $settings->drive_service_account_json = $settings->drive_service_account_json ?? '';
         
         $settings->save();
     }
