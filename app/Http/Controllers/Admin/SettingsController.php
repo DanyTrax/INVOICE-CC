@@ -173,40 +173,104 @@ class SettingsController extends Controller
      */
     private function ensureAllPropertiesSet(GeneralSettings $settings)
     {
-        // Usar reflection para verificar y establecer todas las propiedades
-        $reflection = new \ReflectionClass($settings);
-        $defaults = [
-            'agency_name' => 'RAMS',
-            'agency_nit' => '',
-            'agency_address' => '',
-            'agency_phone' => '',
-            'agency_email' => '',
-            'agency_website' => '',
-            'agency_logo' => '',
-            'drive_service_account_json' => '',
-            'mail_mailer' => 'smtp',
-            'mail_host' => 'smtp.gmail.com',
-            'mail_port' => 587,
-            'mail_username' => '',
-            'mail_password' => '',
-            'mail_encryption' => 'tls',
-            'mail_from_address' => 'noreply@rams.com',
-            'mail_from_name' => 'RAMS Sistema',
-        ];
+        // Establecer todas las propiedades explícitamente con valores por defecto si no existen
+        // Esto es necesario porque Spatie Settings requiere todas las propiedades al guardar
         
-        foreach ($defaults as $property => $defaultValue) {
-            if (!$reflection->hasProperty($property)) {
-                continue;
-            }
-            
-            $prop = $reflection->getProperty($property);
-            $prop->setAccessible(true);
-            
-            // Si la propiedad no está establecida o es null, establecer valor por defecto
-            $currentValue = $prop->getValue($settings);
-            if ($currentValue === null || (!is_string($currentValue) && !is_int($currentValue))) {
-                $prop->setValue($settings, $defaultValue);
-            }
+        try {
+            // Intentar obtener valores actuales, si falla usar defaults
+            $settings->agency_name = $settings->agency_name ?? 'RAMS';
+        } catch (\Exception $e) {
+            $settings->agency_name = 'RAMS';
+        }
+        
+        try {
+            $settings->agency_nit = $settings->agency_nit ?? '';
+        } catch (\Exception $e) {
+            $settings->agency_nit = '';
+        }
+        
+        try {
+            $settings->agency_address = $settings->agency_address ?? '';
+        } catch (\Exception $e) {
+            $settings->agency_address = '';
+        }
+        
+        try {
+            $settings->agency_phone = $settings->agency_phone ?? '';
+        } catch (\Exception $e) {
+            $settings->agency_phone = '';
+        }
+        
+        try {
+            $settings->agency_email = $settings->agency_email ?? '';
+        } catch (\Exception $e) {
+            $settings->agency_email = '';
+        }
+        
+        try {
+            $settings->agency_website = $settings->agency_website ?? '';
+        } catch (\Exception $e) {
+            $settings->agency_website = '';
+        }
+        
+        try {
+            $settings->agency_logo = $settings->agency_logo ?? '';
+        } catch (\Exception $e) {
+            $settings->agency_logo = '';
+        }
+        
+        try {
+            $settings->drive_service_account_json = $settings->drive_service_account_json ?? '';
+        } catch (\Exception $e) {
+            $settings->drive_service_account_json = '';
+        }
+        
+        try {
+            $settings->mail_mailer = $settings->mail_mailer ?? 'smtp';
+        } catch (\Exception $e) {
+            $settings->mail_mailer = 'smtp';
+        }
+        
+        try {
+            $settings->mail_host = $settings->mail_host ?? 'smtp.gmail.com';
+        } catch (\Exception $e) {
+            $settings->mail_host = 'smtp.gmail.com';
+        }
+        
+        try {
+            $settings->mail_port = $settings->mail_port ?? 587;
+        } catch (\Exception $e) {
+            $settings->mail_port = 587;
+        }
+        
+        try {
+            $settings->mail_username = $settings->mail_username ?? '';
+        } catch (\Exception $e) {
+            $settings->mail_username = '';
+        }
+        
+        try {
+            $settings->mail_password = $settings->mail_password ?? '';
+        } catch (\Exception $e) {
+            $settings->mail_password = '';
+        }
+        
+        try {
+            $settings->mail_encryption = $settings->mail_encryption ?? 'tls';
+        } catch (\Exception $e) {
+            $settings->mail_encryption = 'tls';
+        }
+        
+        try {
+            $settings->mail_from_address = $settings->mail_from_address ?? 'noreply@rams.com';
+        } catch (\Exception $e) {
+            $settings->mail_from_address = 'noreply@rams.com';
+        }
+        
+        try {
+            $settings->mail_from_name = $settings->mail_from_name ?? 'RAMS Sistema';
+        } catch (\Exception $e) {
+            $settings->mail_from_name = 'RAMS Sistema';
         }
     }
 
