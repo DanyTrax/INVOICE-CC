@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAMS - Sistema Integral Final (v6)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0f766e', // Teal corporativo
+                        dark: '#111827',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .section-title { @apply text-xs font-bold text-primary uppercase tracking-wider border-b border-gray-200 pb-1 mb-3 mt-4; }
+        .input-group { @apply mb-3; }
+        .input-label { @apply block text-xs font-medium text-gray-700 mb-1; }
+        .input-field { @apply w-full border-gray-300 rounded-md shadow-sm text-sm focus:border-primary focus:ring focus:ring-primary/20; }
+        .input-readonly { @apply bg-gray-50 text-gray-500 cursor-not-allowed border-gray-200; }
+        .badge { @apply px-2 py-0.5 rounded text-[10px] font-bold uppercase; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-900" 
+      x-data="{ 
+          currentTab: 'dashboard', 
+          sidebarOpen: true,
+          settingsTab: 'mail', 
+          userMenuOpen: false, 
+          activeFilter: null
+      }">
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <aside class="bg-dark text-white flex flex-col transition-all duration-300 z-20 shadow-xl"
+               :class="sidebarOpen ? 'w-64' : 'w-20'">
+            
+            <div class="h-16 flex items-center px-4 bg-gray-900 border-b border-gray-800 gap-3 overflow-hidden">
+                <div class="min-w-[32px] h-8 bg-primary rounded flex items-center justify-center font-bold">R</div>
+                <span x-show="sidebarOpen" class="font-bold text-sm tracking-wide whitespace-nowrap">REGULATORY APP</span>
+            </div>
+
+            <nav class="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
+                <p x-show="sidebarOpen" class="px-3 text-[10px] font-bold text-gray-500 uppercase mt-2 mb-1">Principal</p>
+                
+                <a @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'bg-primary' : 'hover:bg-gray-800'" class="flex items-center px-3 py-2 rounded-md cursor-pointer transition-colors group">
+                    <i class="fas fa-home w-6 text-center text-gray-400 group-hover:text-white"></i>
+                    <span x-show="sidebarOpen" class="ml-3 text-sm">Inicio</span>
+                </a>
+
+                <p x-show="sidebarOpen" class="px-3 text-[10px] font-bold text-gray-500 uppercase mt-4 mb-1">Operación</p>
+
+                <a @click="currentTab = 'clients'" :class="currentTab === 'clients' ? 'bg-primary' : 'hover:bg-gray-800'" class="flex items-center px-3 py-2 rounded-md cursor-pointer transition-colors group">
+                    <i class="fas fa-building w-6 text-center text-gray-400 group-hover:text-white"></i>
+                    <span x-show="sidebarOpen" class="ml-3 text-sm">Directorio Clientes</span>
+                </a>
+
+                <a @click="currentTab = 'registros_list'; activeFilter = null" :class="currentTab.includes('registros') ? 'bg-primary' : 'hover:bg-gray-800'" class="flex items-center px-3 py-2 rounded-md cursor-pointer transition-colors group">
+                    <i class="fas fa-file-medical w-6 text-center text-gray-400 group-hover:text-white"></i>
+                    <span x-show="sidebarOpen" class="ml-3 text-sm">Registros (Expedientes)</span>
+                </a>
+
+                <p x-show="sidebarOpen" class="px-3 text-[10px] font-bold text-gray-500 uppercase mt-4 mb-1">Sistema</p>
+
+                <a @click="currentTab = 'agents'" :class="currentTab === 'agents' ? 'bg-primary' : 'hover:bg-gray-800'" class="flex items-center px-3 py-2 rounded-md cursor-pointer transition-colors group">
+                    <i class="fas fa-users w-6 text-center text-gray-400 group-hover:text-white"></i>
+                    <span x-show="sidebarOpen" class="ml-3 text-sm">Agentes / Usuarios</span>
+                </a>
+
+                <a @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'bg-primary' : 'hover:bg-gray-800'" class="flex items-center px-3 py-2 rounded-md cursor-pointer transition-colors group">
+                    <i class="fas fa-sliders-h w-6 text-center text-gray-400 group-hover:text-white"></i>
+                    <span x-show="sidebarOpen" class="ml-3 text-sm">Configuración</span>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm z-30">
+                <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500"><i class="fas fa-bars"></i></button>
+                
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg transition-colors focus:outline-none">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-gray-800">Admin User</p>
+                            <p class="text-[10px] text-gray-500">Super Administrador</p>
+                        </div>
+                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f766e&color=fff" class="w-9 h-9 rounded-full border border-gray-200">
+                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                    </button>
+                    
+                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1" x-cloak>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fas fa-user-circle mr-2 text-gray-400"></i> Editar Perfil</a>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50"><i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión</a>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-auto bg-gray-50 p-6">
+
+                <div x-show="currentTab === 'dashboard'" class="space-y-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Resumen General</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <div class="text-xs text-gray-500 font-bold uppercase">Expedientes Activos</div>
+                            <div class="text-2xl font-bold text-gray-800 mt-1">1,240</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg border-l-4 border-red-500 shadow-sm">
+                            <div class="text-xs text-red-600 font-bold uppercase">Vencen este mes</div>
+                            <div class="text-2xl font-bold text-red-600 mt-1">8</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <div class="text-xs text-gray-500 font-bold uppercase">En Trámite INVIMA</div>
+                            <div class="text-2xl font-bold text-blue-600 mt-1">45</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                            <div class="text-xs text-gray-500 font-bold uppercase">Clientes Totales</div>
+                            <div class="text-2xl font-bold text-gray-800 mt-1">22</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-gray-700">Calendario de Vencimientos</h3>
+                            <div class="flex gap-2">
+                                <button class="px-2 py-1 text-xs border rounded hover:bg-gray-50">Mes Anterior</button>
+                                <button class="px-2 py-1 text-xs border rounded hover:bg-gray-50">Mes Siguiente</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-7 gap-px bg-gray-200 rounded overflow-hidden border border-gray-200">
+                            <div class="bg-gray-50 p-2 text-center text-xs font-bold">Lun</div>
+                            <div class="bg-gray-50 p-2 text-center text-xs font-bold">Mar</div>
+                            <div class="bg-gray-50 p-2 text-center text-xs font-bold">Mie</div>
+                            <div class="bg-gray-50 p-2 text-center text-xs font-bold">Jue</div>
+                            <div class="bg-gray-50 p-2 text-center text-xs font-bold">Vie</div>
+                            <div class="bg-gray-50 p-2 text-center text-xs font-bold text-red-500">Sab</div>
+                            <div class="bg-gray-50 p-2 text-center text-xs font-bold text-red-500">Dom</div>
+                            
+                            <template x-for="i in 30">
+                                <div class="bg-white h-24 p-1 hover:bg-gray-50 relative group">
+                                    <span class="text-xs text-gray-400" x-text="i"></span>
+                                    <div x-show="i === 12 || i === 25" class="mt-1 bg-red-100 border border-red-200 text-red-700 text-[10px] px-1 rounded truncate cursor-pointer">
+                                        Vence: Reg-001
+                                    </div>
+                                    <div x-show="i === 15" class="mt-1 bg-blue-100 border border-blue-200 text-blue-700 text-[10px] px-1 rounded truncate cursor-pointer">
+                                        Radicar: Pharma
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    </div>
+
+                <div x-show="currentTab === 'clients'" class="space-y-6" x-cloak>
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-gray-800">Directorio de Clientes</h2>
+                        <button class="bg-primary text-white px-4 py-2 rounded text-sm shadow hover:bg-teal-700">+ Nuevo Cliente</button>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 border-b text-xs uppercase text-gray-500">
+                                <tr>
+                                    <th class="p-4">Empresa</th>
+                                    <th class="p-4">Contacto</th>
+                                    <th class="p-4">Registros</th>
+                                    <th class="p-4 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4">
+                                        <div class="font-bold">Farmacéutica Andina</div>
+                                        <div class="text-xs text-gray-500">NIT: 800.123.123</div>
+                                    </td>
+                                    <td class="p-4">Ana María (ana@andina.com)</td>
+                                    <td class="p-4"><span class="bg-gray-100 px-2 py-1 rounded text-xs font-bold">12 Exp.</span></td>
+                                    <td class="p-4 text-center flex justify-center items-center gap-2">
+                                        <button @click="currentTab = 'registros_list'; activeFilter = 'Farmacéutica Andina'" 
+                                                title="Ver Expedientes"
+                                                class="text-primary hover:bg-primary/10 p-2 rounded transition-colors">
+                                            <i class="fas fa-folder-open"></i>
+                                        </button>
+                                        <div x-data="{ open: false }" class="relative">
+                                            <button @click="open = !open" class="text-gray-400 hover:text-gray-600 p-2"><i class="fas fa-ellipsis-v"></i></button>
+                                            <div x-show="open" @click.away="open = false" class="absolute right-0 z-10 w-32 bg-white rounded shadow-lg border border-gray-100 py-1 text-left">
+                                                <a href="#" class="block px-4 py-2 text-xs hover:bg-gray-50 text-gray-700">Editar Datos</a>
+                                                <a href="#" class="block px-4 py-2 text-xs hover:bg-red-50 text-red-600">Borrar</a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div x-show="currentTab === 'agents'" class="space-y-6" x-cloak>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Equipo de Trabajo</h2>
+                            <p class="text-sm text-gray-500">Gestión de Especialistas y Permisos.</p>
+                        </div>
+                        <button class="bg-primary text-white px-4 py-2 rounded text-sm shadow hover:bg-teal-700">+ Nuevo Agente</button>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 border-b text-xs uppercase text-gray-500">
+                                <tr>
+                                    <th class="p-4">Agente</th>
+                                    <th class="p-4">Rol</th>
+                                    <th class="p-4">Carga Laboral</th>
+                                    <th class="p-4">Estado</th>
+                                    <th class="p-4 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-4 flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">CR</div>
+                                        <div>
+                                            <div class="font-bold">Carlos Ruiz</div>
+                                            <div class="text-xs text-gray-500">carlos@agencia.com</div>
+                                        </div>
+                                    </td>
+                                    <td class="p-4"><span class="badge bg-purple-100 text-purple-700">Especialista Senior</span></td>
+                                    <td class="p-4"><span class="text-xs font-bold text-gray-600">15 Expedientes</span></td>
+                                    <td class="p-4"><span class="badge bg-green-100 text-green-700">Activo</span></td>
+                                    <td class="p-4 text-right">
+                                        <button class="text-gray-400 hover:text-primary"><i class="fas fa-pen"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div x-show="currentTab === 'registros_list'" class="space-y-6" x-cloak>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Lista de Registros Sanitarios</h2>
+                            <p class="text-sm text-gray-500">Gestión global de expedientes.</p>
+                        </div>
+                        <button @click="currentTab = 'registros_edit'" class="bg-primary text-white px-4 py-2 rounded text-sm shadow hover:bg-teal-700">+ Crear Registro</button>
+                    </div>
+
+                    <div x-show="activeFilter" class="bg-blue-50 border border-blue-200 p-3 rounded flex justify-between items-center">
+                        <span class="text-sm text-blue-800 font-bold"><i class="fas fa-filter mr-2"></i> Filtrando por cliente: <span x-text="activeFilter"></span></span>
+                        <button @click="activeFilter = null" class="text-xs text-blue-600 underline">Quitar Filtro</button>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                        <div class="p-3 border-b border-gray-100 bg-gray-50 flex gap-3">
+                            <input type="text" placeholder="Buscar por nombre, código..." class="text-xs border-gray-300 rounded px-2 py-1 w-64">
+                            <select class="text-xs border-gray-300 rounded px-2 py-1"><option>Estado: Todos</option><option>Por Vencer</option></select>
+                        </div>
+
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 border-b text-xs uppercase text-gray-500 font-semibold">
+                                <tr>
+                                    <th class="p-4 w-1/4">Registro / Expediente</th>
+                                    <th class="p-4">Especialista</th>
+                                    <th class="p-4">Empresa</th>
+                                    <th class="p-4">Estado</th>
+                                    <th class="p-4 text-center">Drive</th>
+                                    <th class="p-4 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr class="hover:bg-gray-50 group transition-colors">
+                                    <td class="p-4">
+                                        <div class="font-bold text-gray-800 text-base">Acetaminofén 500mg</div>
+                                        <div class="text-xs text-gray-500 font-mono">INVIMA-2025-ABC</div>
+                                        <div class="hidden group-hover:block mt-1">
+                                            <input type="text" placeholder="Edición rápida nombre..." class="text-[10px] border-gray-300 p-0.5 w-full rounded bg-white">
+                                        </div>
+                                    </td>
+                                    <td class="p-4">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-bold">CR</div>
+                                            <span class="text-xs">Carlos Ruiz</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4 text-xs font-medium text-gray-600">Farmacéutica Andina</td>
+                                    <td class="p-4">
+                                        <span class="badge bg-yellow-100 text-yellow-800 border border-yellow-200">En Trámite</span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <a href="#" class="text-gray-400 hover:text-green-600 transition-colors" title="Abrir carpeta en Drive">
+                                            <i class="fab fa-google-drive text-lg"></i>
+                                        </a>
+                                    </td>
+                                    <td class="p-4 text-right">
+                                        <div class="flex justify-end gap-2">
+                                            <button @click="currentTab = 'registros_edit'" title="Ver/Editar Completo" class="text-blue-600 bg-blue-50 p-1.5 rounded hover:bg-blue-100"><i class="fas fa-eye"></i></button>
+                                            <button title="Edición Rápida" class="text-amber-600 bg-amber-50 p-1.5 rounded hover:bg-amber-100"><i class="fas fa-pen"></i></button>
+                                            <button title="Borrar" class="text-red-600 bg-red-50 p-1.5 rounded hover:bg-red-100"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 group">
+                                    <td class="p-4">
+                                        <div class="font-bold text-gray-800 text-base">Crema Humectante X</div>
+                                        <div class="text-xs text-gray-500 font-mono">NSOC-12345-CO</div>
+                                    </td>
+                                    <td class="p-4">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-[10px] font-bold">AG</div>
+                                            <span class="text-xs">Ana Gómez</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4 text-xs font-medium text-gray-600">Cosméticos Bella</td>
+                                    <td class="p-4">
+                                        <span class="badge bg-green-100 text-green-800 border border-green-200">Vigente</span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <a href="#" class="text-green-600 hover:text-green-800" title="Abrir carpeta en Drive">
+                                            <i class="fab fa-google-drive text-lg"></i>
+                                        </a>
+                                    </td>
+                                    <td class="p-4 text-right">
+                                        <div class="flex justify-end gap-2">
+                                            <button @click="currentTab = 'registros_edit'" class="text-blue-600 bg-blue-50 p-1.5 rounded hover:bg-blue-100"><i class="fas fa-eye"></i></button>
+                                            <button class="text-amber-600 bg-amber-50 p-1.5 rounded hover:bg-amber-100"><i class="fas fa-pen"></i></button>
+                                            <button class="text-red-600 bg-red-50 p-1.5 rounded hover:bg-red-100"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div x-show="currentTab === 'registros_edit'" class="space-y-6" x-cloak>
+                    <div class="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <button @click="currentTab = 'registros_list'" class="text-gray-500 hover:text-primary"><i class="fas fa-arrow-left text-lg"></i></button>
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-lg">Expediente: INVIMA-2025-ABC</h3>
+                                <p class="text-xs text-gray-500">Editando información y documentos.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="bg-white border border-gray-300 px-3 py-1.5 rounded text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
+                            <button class="bg-primary text-white px-4 py-1.5 rounded text-sm hover:bg-teal-700">Guardar Todo</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow border border-gray-200 p-6 grid grid-cols-12 gap-6">
+                        <div class="col-span-12 section-title">1. Información del Cliente (Automático)</div>
+                        <div class="col-span-4 input-group">
+                            <label class="input-label">Cliente Seleccionado</label>
+                            <select class="input-field bg-white font-bold"><option>Farmacéutica Andina</option></select>
+                        </div>
+                        <div class="col-span-2 input-group">
+                            <label class="input-label">NIT</label>
+                            <input type="text" value="800.123.123" class="input-field input-readonly" disabled>
+                        </div>
+                        <div class="col-span-3 input-group">
+                            <label class="input-label">Dirección</label>
+                            <input type="text" value="Av El Dorado # 20-20" class="input-field input-readonly" disabled>
+                        </div>
+                        <div class="col-span-3 input-group">
+                            <label class="input-label">Persona Contacto</label>
+                            <input type="text" value="Ana María" class="input-field input-readonly" disabled>
+                        </div>
+
+                        <div class="col-span-12 section-title">2. Datos del Trámite y Producto</div>
+                        <div class="col-span-4 input-group">
+                            <label class="input-label">Nombre del Producto</label>
+                            <input type="text" class="input-field font-bold" value="Acetaminofén 500mg">
+                        </div>
+                        <div class="col-span-4 input-group">
+                            <label class="input-label">Especialista Asignado (Agente)</label>
+                            <select class="input-field"><option>Carlos Ruiz</option></select>
+                        </div>
+                        <div class="col-span-4 input-group">
+                            <label class="input-label">Status</label>
+                            <select class="input-field bg-yellow-50 border-yellow-300 text-yellow-800"><option>En Trámite</option></select>
+                        </div>
+                        <div class="col-span-4 input-group">
+                            <label class="input-label">Tipo de Trámite</label>
+                            <select class="input-field"><option>Renovación</option></select>
+                        </div>
+                         <div class="col-span-4 input-group">
+                            <label class="input-label">No. Cotización / Factura</label>
+                            <input type="text" class="input-field">
+                        </div>
+
+                        <div class="col-span-12 section-title">3. Cronograma y Radicados</div>
+                        <div class="col-span-3 input-group">
+                            <label class="input-label">Fecha Solicitud Cliente</label>
+                            <input type="date" class="input-field">
+                        </div>
+                        <div class="col-span-3 input-group">
+                            <label class="input-label">Fecha Radicación</label>
+                            <input type="date" class="input-field">
+                        </div>
+                        <div class="col-span-3 input-group">
+                            <label class="input-label">Radicado No.</label>
+                            <input type="text" class="input-field">
+                        </div>
+                        <div class="col-span-3 input-group">
+                            <label class="input-label">Llave / Código</label>
+                            <input type="text" class="input-field">
+                        </div>
+                        <div class="col-span-12 section-title">4. Documentos en Drive</div>
+                        <div class="col-span-12 border-2 border-dashed border-gray-300 rounded p-4 text-center text-gray-500">
+                             <i class="fas fa-cloud-upload-alt text-2xl mb-2"></i>
+                             <p class="text-xs">Zona de Carga (Sube directo a <code>/Cliente/Expediente/</code>)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="currentTab === 'settings'" class="max-w-5xl mx-auto space-y-6" x-cloak>
+                    <h2 class="text-2xl font-bold text-gray-800">Configuración del Sistema</h2>
+
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8">
+                            <button @click="settingsTab = 'general'" :class="settingsTab === 'general' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                                <i class="fas fa-building mr-2"></i> Datos Empresa
+                            </button>
+                            <button @click="settingsTab = 'drive'" :class="settingsTab === 'drive' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                                <i class="fab fa-google-drive mr-2"></i> Conexión Drive
+                            </button>
+                            <button @click="settingsTab = 'mail'" :class="settingsTab === 'mail' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                                <i class="fas fa-envelope mr-2"></i> Correo & SMTP
+                            </button>
+                        </nav>
+                    </div>
+
+                    <div x-show="settingsTab === 'general'" class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                        <h3 class="font-bold text-gray-800 mb-4">Marca Blanca / Identidad</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="input-group">
+                                <label class="input-label">Nombre de la Agencia</label>
+                                <input type="text" class="input-field" value="Soluciones Regulatorias SAS">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">NIT / ID Fiscal</label>
+                                <input type="text" class="input-field" value="900.000.000-1">
+                            </div>
+                            <div class="input-group col-span-2">
+                                <label class="input-label">Logo Corporativo</label>
+                                <div class="flex gap-4 items-center">
+                                    <div class="w-16 h-16 bg-gray-100 border rounded flex items-center justify-center text-xs text-gray-400">IMG</div>
+                                    <button class="px-3 py-1 bg-white border rounded text-xs hover:bg-gray-50">Subir Nuevo</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-show="settingsTab === 'drive'" class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="bg-green-100 p-2 rounded text-green-600"><i class="fab fa-google-drive"></i></div>
+                            <h3 class="font-bold text-gray-800">API de Google Drive</h3>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Google Service Account (JSON)</label>
+                            <textarea class="input-field font-mono text-xs h-32" placeholder="{...}"></textarea>
+                        </div>
+                        <button class="bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-black">Verificar Conexión</button>
+                    </div>
+
+                    <div x-show="settingsTab === 'mail'" class="grid grid-cols-12 gap-6">
+                        
+                        <div class="col-span-5 space-y-6">
+                            <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                                <div class="flex items-center gap-3 mb-4 border-b pb-4">
+                                    <div class="bg-blue-100 p-2 rounded text-blue-600"><i class="fas fa-server"></i></div>
+                                    <div>
+                                        <h3 class="font-bold text-gray-800">Servidor SMTP</h3>
+                                        <p class="text-xs text-gray-500">Configura Zoho, Gmail o Hosting.</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="input-group">
+                                        <label class="input-label">Host SMTP</label>
+                                        <input type="text" class="input-field font-mono" value="smtp.zoho.com">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="input-group">
+                                            <label class="input-label">Puerto</label>
+                                            <input type="text" class="input-field font-mono" value="465">
+                                        </div>
+                                        <div class="input-group">
+                                            <label class="input-label">Cifrado</label>
+                                            <select class="input-field"><option>SSL</option><option>TLS</option></select>
+                                        </div>
+                                    </div>
+                                    <div class="input-group">
+                                        <label class="input-label">Usuario / Correo</label>
+                                        <input type="text" class="input-field" value="notificaciones@miagencia.com">
+                                    </div>
+                                    <div class="input-group">
+                                        <label class="input-label">Contraseña</label>
+                                        <input type="password" class="input-field" value="**********">
+                                    </div>
+                                    <button class="w-full bg-gray-800 text-white py-2 rounded text-sm hover:bg-black mt-2">Guardar y Probar</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-span-7 space-y-6">
+                            <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm h-full">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-gray-800">Plantillas de Mensajes</h3>
+                                    <button class="text-xs text-primary font-bold">+ Nueva Plantilla</button>
+                                </div>
+                                
+                                <div class="border border-gray-200 rounded-lg overflow-hidden mb-4">
+                                    <div class="bg-gray-50 px-3 py-2 text-xs font-bold text-gray-500 border-b">
+                                        Seleccionar Plantilla a Editar
+                                    </div>
+                                    <div class="p-2">
+                                        <select class="input-field border-none shadow-none focus:ring-0">
+                                            <option>Bienvenida Nuevo Cliente</option>
+                                            <option>Alerta de Vencimiento</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <label class="input-label">Asunto</label>
+                                <input type="text" class="input-field mb-3" value="Bienvenido a RAMS - {{ company_name }}">
+                                
+                                <label class="input-label">Cuerpo del Mensaje (HTML)</label>
+                                <div class="border border-gray-300 rounded h-48 bg-gray-50 p-2 text-sm font-mono text-gray-600 overflow-auto">
+                                    Hola {{ contact_name }},<br><br>
+                                    Te damos la bienvenida...
+                                </div>
+                                <div class="mt-2 text-right">
+                                    <button class="bg-primary text-white px-4 py-2 rounded text-sm">Guardar Cambios</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+</body>
+</html>
