@@ -138,10 +138,14 @@
                             </label>
                             
                             <!-- Vista previa del logo actual -->
-                            @if($settings->agency_logo && file_exists(public_path($settings->agency_logo)))
+                            @php
+                                $logoPath = $settings->agency_logo ?? null;
+                                $logoExists = $logoPath && file_exists(public_path($logoPath));
+                            @endphp
+                            @if($logoExists)
                                 <div class="mb-4">
                                     <p class="text-sm text-gray-600 mb-2">Logo actual:</p>
-                                    <img src="{{ asset($settings->agency_logo) }}" 
+                                    <img src="{{ asset($logoPath) }}" 
                                          alt="Logo actual" 
                                          class="h-16 w-auto object-contain border border-gray-200 rounded-lg p-2 bg-white">
                                 </div>
