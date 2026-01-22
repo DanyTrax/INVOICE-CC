@@ -431,20 +431,25 @@ class SettingsController extends Controller
             $settings->save();
         }
 
-        // Validar que Client ID y Client Secret estén configurados
+        // Validar que Client ID, Client Secret y Email Remitente estén configurados
         if (empty($settings->zoho_client_id) || empty($settings->zoho_client_secret)) {
             return redirect()
                 ->route('admin.settings.section', 'mail')
-                ->with('error', 'Por favor, configura primero el Client ID y Client Secret de Zoho antes de autorizar.');
+                ->with('error', 'Configura Client ID y Client Secret de Zoho antes de autorizar.');
+        }
+        if (empty($settings->zoho_from_email)) {
+            return redirect()
+                ->route('admin.settings.section', 'mail')
+                ->with('error', 'Configura el Email Remitente (Zoho) y guarda los cambios antes de autorizar. Debes autorizar con esa misma cuenta en Zoho.');
         }
 
-        // Construir URL de autorización
+        // Construir URL de autorización (prompt=consent para asegurar consentimiento explícito)
         $redirectUri = route('admin.settings.zoho.callback');
         $scope = 'ZohoMail.messages.CREATE,ZohoMail.accounts.READ';
         $clientId = $settings->zoho_client_id;
         
         $authUrl = sprintf(
-            'https://accounts.zoho.com/oauth/v2/auth?scope=%s&client_id=%s&response_type=code&access_type=offline&redirect_uri=%s',
+            'https://accounts.zoho.com/oauth/v2/auth?scope=%s&client_id=%s&response_type=code&access_type=offline&redirect_uri=%s&prompt=consent',
             urlencode($scope),
             urlencode($clientId),
             urlencode($redirectUri)

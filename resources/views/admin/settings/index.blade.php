@@ -396,8 +396,8 @@
                                         <li>Crear aplicación en <a href="https://api-console.zoho.com/" target="_blank" class="underline font-semibold">Zoho API Console</a></li>
                                         <li>Configurar Redirect URI: <code class="bg-blue-100 px-1 rounded">{{ route('admin.settings.zoho.callback') }}</code></li>
                                         <li>Obtener Client ID y Client Secret</li>
-                                        <li>Generar Refresh Token usando OAuth2</li>
-                                        <li>Completar los campos a continuación</li>
+                                        <li>Completar <strong>Email Remitente</strong>, Client ID y Client Secret aquí; <strong>guardar</strong>.</li>
+                                        <li>Autorizar con Zoho (iniciar sesión en Zoho con el <strong>mismo correo</strong> que Email Remitente).</li>
                                     </ol>
                                 </div>
                             </div>
@@ -476,6 +476,27 @@
                                 </p>
                             </div>
 
+                            <!-- Email Remitente (DEBE ir antes de autorizar) -->
+                            <div>
+                                <label for="zoho_from_email" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Email Remitente <span class="text-red-500">*</span>
+                                </label>
+                                <input type="email" 
+                                       id="zoho_from_email" 
+                                       name="zoho_from_email" 
+                                       value="{{ old('zoho_from_email', $settings->zoho_from_email ?? '') }}"
+                                       placeholder="noreply@tudominio.com"
+                                       oninput="checkZohoCredentials()"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Email verificado en tu cuenta de Zoho Mail. Este será el remitente de todos los correos.
+                                </p>
+                                <p class="mt-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                    <strong>Crítico:</strong> Debes <strong>guardar los cambios</strong> y luego autorizar con Zoho iniciando sesión con <strong>este mismo correo</strong>. El token se vincula a la cuenta que autorice.
+                                </p>
+                            </div>
+
                             <!-- Refresh Token -->
                             <div>
                                 <label for="zoho_refresh_token" class="block mb-2 text-sm font-medium text-gray-900">
@@ -484,11 +505,22 @@
                                 
                                 <!-- Botón de Autorización Automática (PRIMERO) -->
                                 <div class="mb-4">
-                                    <div id="zoho-warning-box" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3" style="display: {{ (!empty($settings->zoho_client_id) && !empty($settings->zoho_client_secret)) ? 'none' : 'block' }};">
+                                    <div id="zoho-warning-box" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3">
                                         <p class="text-sm text-yellow-800 mb-2">
                                             <i class="fas fa-exclamation-triangle mr-2"></i>
-                                            <strong>Paso 1:</strong> Primero completa Client ID y Client Secret arriba, luego usa el botón de abajo.
+                                            <strong>Paso 1:</strong> Completa <strong>Email Remitente</strong>, Client ID y Client Secret arriba. <strong>Guarda los cambios</strong>. Luego usa el botón de abajo.
                                         </p>
+                                        <p class="text-sm text-yellow-800">
+                                            <strong>Paso 2:</strong> Al autorizar, inicia sesión en Zoho con el <strong>mismo correo</strong> que configuraste como Email Remitente. El token se vincula a esa cuenta; si autorizas con otra, los envíos fallarán.
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="bg-red-50 border-2 border-red-200 rounded-lg p-3 mb-3" id="zoho-account-hint">
+                                        <p class="text-sm text-red-800">
+                                            <i class="fas fa-user-shield mr-2"></i>
+                                            <strong>Debes autorizar con la cuenta:</strong> <span id="zoho-account-hint-email" class="font-mono">—</span>
+                                        </p>
+                                        <p class="text-xs text-red-700 mt-1">Cierra sesión en Zoho o usa ventana privada si sueles entrar con otro correo.</p>
                                     </div>
                                     
                                     <div class="bg-teal-50 border-2 border-teal-300 rounded-lg p-4">
@@ -499,7 +531,7 @@
                                                     Generación Automática de Refresh Token
                                                 </h4>
                                                 <p class="text-xs text-teal-700">
-                                                    Este botón enviará la información a Zoho, te redirigirá para autorizar y obtendrá automáticamente el Refresh Token.
+                                                    Redirige a Zoho para autorizar y obtiene el Refresh Token automáticamente. Usa la misma cuenta que el Email Remitente.
                                                 </p>
                                             </div>
                                         </div>
@@ -507,14 +539,14 @@
                                         <a href="{{ route('admin.settings.zoho.authorize') }}" 
                                            id="zoho-authorize-btn"
                                            onclick="return validateZohoCredentials(event)"
-                                           class="inline-flex items-center justify-center w-full px-6 py-3 bg-teal-600 text-white text-base font-semibold rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300 transition-all shadow-lg hover:shadow-xl {{ (!empty($settings->zoho_client_id) && !empty($settings->zoho_client_secret)) ? '' : 'opacity-50 cursor-not-allowed pointer-events-none' }}">
+                                           class="inline-flex items-center justify-center w-full px-6 py-3 bg-teal-600 text-white text-base font-semibold rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300 transition-all shadow-lg hover:shadow-xl {{ (!empty($settings->zoho_client_id) && !empty($settings->zoho_client_secret) && !empty($settings->zoho_from_email)) ? '' : 'opacity-50 cursor-not-allowed pointer-events-none' }}">
                                             <i class="fas fa-check-circle mr-2 text-lg"></i>
                                             <span>Autorizar con Zoho y Generar Refresh Token Automáticamente</span>
                                             <i class="fas fa-arrow-right ml-2"></i>
                                         </a>
                                         <p class="text-xs text-teal-600 mt-2 text-center">
                                             <i class="fas fa-info-circle mr-1"></i>
-                                            Asegúrate de haber configurado la Redirect URI en Zoho API Console antes de hacer clic
+                                            Redirect URI en Zoho API Console configurada y cambios guardados antes de hacer clic.
                                         </p>
                                     </div>
                                 </div>
@@ -590,23 +622,6 @@
                                 </details>
                             </div>
 
-                            <!-- From Email -->
-                            <div>
-                                <label for="zoho_from_email" class="block mb-2 text-sm font-medium text-gray-900">
-                                    Email Remitente <span class="text-red-500">*</span>
-                                </label>
-                                <input type="email" 
-                                       id="zoho_from_email" 
-                                       name="zoho_from_email" 
-                                       value="{{ old('zoho_from_email', $settings->zoho_from_email ?? '') }}"
-                                       placeholder="noreply@tudominio.com"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                                <p class="mt-1 text-xs text-gray-500">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    Email verificado y autorizado en tu cuenta de Zoho Mail. Este será el remitente de todos los correos.
-                                </p>
-                            </div>
-                            
                             <!-- Verificación -->
                             <div class="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
                                 <p class="text-sm text-green-800 mb-2">
@@ -1207,38 +1222,38 @@ function togglePasswordVisibility(fieldId) {
 function checkZohoCredentials() {
     const clientId = document.getElementById('zoho_client_id');
     const clientSecret = document.getElementById('zoho_client_secret');
+    const fromEmail = document.getElementById('zoho_from_email');
     const authorizeBtn = document.getElementById('zoho-authorize-btn');
     const warningBox = document.getElementById('zoho-warning-box');
+    const accountHint = document.getElementById('zoho-account-hint');
+    const accountHintEmail = document.getElementById('zoho-account-hint-email');
     
     if (!clientId || !clientSecret || !authorizeBtn) {
-        return; // Los elementos no existen (no estamos en el tab de Zoho)
+        return;
     }
     
     const hasClientId = clientId.value.trim().length > 0;
     const hasClientSecret = clientSecret.value.trim().length > 0;
+    const hasFromEmail = fromEmail && fromEmail.value.trim().length > 0;
     
-    if (hasClientId && hasClientSecret) {
-        // Habilitar botón
+    if (accountHintEmail && fromEmail) {
+        accountHintEmail.textContent = hasFromEmail ? fromEmail.value.trim() : '—';
+    }
+    
+    if (hasClientId && hasClientSecret && hasFromEmail) {
         authorizeBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
         authorizeBtn.classList.add('hover:bg-teal-700', 'cursor-pointer');
         authorizeBtn.style.pointerEvents = 'auto';
         authorizeBtn.style.opacity = '1';
-        
-        // Ocultar advertencia
-        if (warningBox) {
-            warningBox.style.display = 'none';
-        }
+        if (warningBox) warningBox.style.display = 'none';
+        if (accountHint) accountHint.style.display = 'block';
     } else {
-        // Deshabilitar botón
         authorizeBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
         authorizeBtn.classList.remove('hover:bg-teal-700', 'cursor-pointer');
         authorizeBtn.style.pointerEvents = 'none';
         authorizeBtn.style.opacity = '0.5';
-        
-        // Mostrar advertencia
-        if (warningBox) {
-            warningBox.style.display = 'block';
-        }
+        if (warningBox) warningBox.style.display = 'block';
+        if (accountHint) accountHint.style.display = hasFromEmail ? 'block' : 'none';
     }
 }
 
@@ -1246,27 +1261,31 @@ function checkZohoCredentials() {
 function validateZohoCredentials(event) {
     const clientId = document.getElementById('zoho_client_id');
     const clientSecret = document.getElementById('zoho_client_secret');
+    const fromEmail = document.getElementById('zoho_from_email');
     
-    if (!clientId || !clientSecret) {
+    if (!clientId || !clientSecret || !fromEmail) {
         event.preventDefault();
-        alert('Los campos de Client ID y Client Secret no están disponibles.');
+        alert('Completa Email Remitente, Client ID y Client Secret.');
         return false;
     }
     
     const hasClientId = clientId.value.trim().length > 0;
     const hasClientSecret = clientSecret.value.trim().length > 0;
+    const hasFromEmail = fromEmail.value.trim().length > 0;
     
-    if (!hasClientId || !hasClientSecret) {
+    if (!hasClientId || !hasClientSecret || !hasFromEmail) {
         event.preventDefault();
-        alert('Por favor, completa el Client ID y Client Secret antes de continuar.');
+        alert('Completa Email Remitente, Client ID y Client Secret. Luego guarda los cambios antes de autorizar.');
         return false;
     }
     
-    // Recordar al usuario sobre la Redirect URI
     const redirectUri = '{{ route("admin.settings.zoho.callback") }}';
-    const confirmMessage = 'IMPORTANTE: Asegúrate de haber configurado esta Redirect URI en Zoho API Console:\n\n' + 
-                          redirectUri + 
-                          '\n\n¿Ya configuraste la Redirect URI en Zoho API Console?';
+    const email = fromEmail.value.trim();
+    const confirmMessage = 'IMPORTANTE:\n\n' +
+        '1. ¿Ya guardaste los cambios? (El token usa los datos guardados.)\n\n' +
+        '2. ¿Redirect URI en Zoho API Console?\n' + redirectUri + '\n\n' +
+        '3. Al autorizar, inicia sesión en Zoho con este correo:\n' + email + '\n\n' +
+        '¿Continuar a Zoho para autorizar?';
     
     if (!confirm(confirmMessage)) {
         event.preventDefault();
