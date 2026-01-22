@@ -191,25 +191,36 @@
     
     // Esperar a que FullCalendar esté cargado
     function waitForFullCalendar() {
-        if (typeof FullCalendar !== 'undefined') {
+        // Verificar múltiples formas de acceso a FullCalendar
+        var fcAvailable = typeof FullCalendar !== 'undefined' || 
+                         (typeof window !== 'undefined' && window.FullCalendar) ||
+                         (typeof global !== 'undefined' && global.FullCalendar);
+        
+        if (fcAvailable && typeof FullCalendar !== 'undefined' && typeof FullCalendar.Calendar !== 'undefined') {
             // Esperar un poco más para asegurar que esté completamente cargado
             setTimeout(function() {
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', initCalendar);
-                } else {
-                    initCalendar();
-                }
-            }, 200);
+                initCalendar();
+            }, 300);
         } else {
-            setTimeout(waitForFullCalendar, 100);
+            if (initAttempts < maxAttempts) {
+                setTimeout(waitForFullCalendar, 100);
+            } else {
+                console.error('❌ FullCalendar no disponible después de', maxAttempts, 'intentos');
+                var calendarEl = document.getElementById(calendarId);
+                if (calendarEl) {
+                    calendarEl.innerHTML = '<div class="p-4 text-red-600 text-center">Error: FullCalendar no se pudo cargar. Verifica tu conexión a internet y recarga la página.</div>';
+                }
+            }
         }
     }
     
-    // Iniciar espera
+    // Iniciar espera cuando el DOM esté listo
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', waitForFullCalendar);
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(waitForFullCalendar, 500);
+        });
     } else {
-        waitForFullCalendar();
+        setTimeout(waitForFullCalendar, 500);
     }
 })();
 </script>
