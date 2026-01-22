@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Settings\GeneralSettings;
 use App\Models\EmailTemplate;
+use App\Models\EmailLog;
+use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -67,6 +69,9 @@ class SettingsController extends Controller
                 break;
             case 'email_template':
                 $this->updateEmailTemplate($request);
+                break;
+            case 'test_email':
+                return $this->sendTestEmail($request);
                 break;
         }
 
