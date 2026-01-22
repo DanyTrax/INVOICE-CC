@@ -1265,7 +1265,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="mt-3">
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-lg font-semibold text-red-600">Error al Cargar Detalles</h3>
-                                <button onclick="closeEmailDetails()" class="text-gray-400 hover:text-gray-600">
+                                <button onclick="if(typeof window.closeEmailDetails === 'function') { window.closeEmailDetails(); }" class="text-gray-400 hover:text-gray-600">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
