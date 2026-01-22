@@ -7,8 +7,6 @@ use BackedEnum;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
@@ -54,97 +52,84 @@ class Settings extends Page implements HasSchemas
     {
         return $schema
             ->components([
-                Tabs::make('Settings')
-                    ->tabs([
-                        Tab::make('Datos Empresa')
-                            ->icon(Heroicon::OutlinedBuildingOffice)
-                            ->schema([
-                                Section::make('Marca Blanca / Identidad')
-                                    ->schema([
-                                        TextInput::make('agency_name')
-                                            ->label('Nombre de la Agencia')
-                                            ->required()
-                                            ->maxLength(255),
-                                        
-                                        TextInput::make('agency_nit')
-                                            ->label('NIT / ID Fiscal')
-                                            ->required()
-                                            ->maxLength(255),
-                                        
-                                        FileUpload::make('agency_logo_path')
-                                            ->label('Logo Corporativo')
-                                            ->image()
-                                            ->directory('logos')
-                                            ->visibility('public'),
-                                    ])
-                                    ->columns(2),
-                            ]),
+                Section::make('Datos Empresa')
+                    ->icon(Heroicon::OutlinedBuildingOffice)
+                    ->schema([
+                        TextInput::make('agency_name')
+                            ->label('Nombre de la Agencia')
+                            ->required()
+                            ->maxLength(255),
                         
-                        Tab::make('Conexión Drive')
-                            ->icon(Heroicon::OutlinedCloudArrowUp)
-                            ->schema([
-                                Section::make('API de Google Drive')
-                                    ->description('Configura el Service Account JSON para conectar con Google Drive')
-                                    ->schema([
-                                        Textarea::make('drive_service_account_json')
-                                            ->label('Google Service Account (JSON)')
-                                            ->rows(10)
-                                            ->helperText('Pega el contenido completo del archivo JSON del Service Account')
-                                            ->columnSpanFull(),
-                                    ]),
-                            ]),
+                        TextInput::make('agency_nit')
+                            ->label('NIT / ID Fiscal')
+                            ->required()
+                            ->maxLength(255),
                         
-                        Tab::make('Correo & SMTP')
-                            ->icon(Heroicon::OutlinedEnvelope)
-                            ->schema([
-                                Section::make('Servidor SMTP')
-                                    ->description('Configura Zoho, Gmail o tu hosting de correo')
-                                    ->schema([
-                                        TextInput::make('smtp_host')
-                                            ->label('Host SMTP')
-                                            ->required()
-                                            ->maxLength(255),
-                                        
-                                        TextInput::make('smtp_port')
-                                            ->label('Puerto')
-                                            ->numeric()
-                                            ->default(587)
-                                            ->required(),
-                                        
-                                        Select::make('smtp_encryption')
-                                            ->label('Cifrado')
-                                            ->options([
-                                                'ssl' => 'SSL',
-                                                'tls' => 'TLS',
-                                            ])
-                                            ->default('tls')
-                                            ->required(),
-                                        
-                                        TextInput::make('smtp_username')
-                                            ->label('Usuario / Correo')
-                                            ->email()
-                                            ->required()
-                                            ->maxLength(255),
-                                        
-                                        TextInput::make('smtp_password')
-                                            ->label('Contraseña')
-                                            ->password()
-                                            ->required(),
-                                        
-                                        TextInput::make('smtp_from_address')
-                                            ->label('Dirección Remitente')
-                                            ->email()
-                                            ->required()
-                                            ->maxLength(255),
-                                        
-                                        TextInput::make('smtp_from_name')
-                                            ->label('Nombre Remitente')
-                                            ->maxLength(255),
-                                    ])
-                                    ->columns(2),
-                            ]),
+                        FileUpload::make('agency_logo_path')
+                            ->label('Logo Corporativo')
+                            ->image()
+                            ->directory('logos')
+                            ->visibility('public'),
                     ])
-                    ->columnSpanFull(),
+                    ->columns(2),
+                
+                Section::make('Conexión Drive')
+                    ->icon(Heroicon::OutlinedCloudArrowUp)
+                    ->description('Configura el Service Account JSON para conectar con Google Drive')
+                    ->schema([
+                        Textarea::make('drive_service_account_json')
+                            ->label('Google Service Account (JSON)')
+                            ->rows(10)
+                            ->helperText('Pega el contenido completo del archivo JSON del Service Account')
+                            ->columnSpanFull(),
+                    ]),
+                
+                Section::make('Correo & SMTP')
+                    ->icon(Heroicon::OutlinedEnvelope)
+                    ->description('Configura Zoho, Gmail o tu hosting de correo')
+                    ->schema([
+                        TextInput::make('smtp_host')
+                            ->label('Host SMTP')
+                            ->required()
+                            ->maxLength(255),
+                        
+                        TextInput::make('smtp_port')
+                            ->label('Puerto')
+                            ->numeric()
+                            ->default(587)
+                            ->required(),
+                        
+                        Select::make('smtp_encryption')
+                            ->label('Cifrado')
+                            ->options([
+                                'ssl' => 'SSL',
+                                'tls' => 'TLS',
+                            ])
+                            ->default('tls')
+                            ->required(),
+                        
+                        TextInput::make('smtp_username')
+                            ->label('Usuario / Correo')
+                            ->email()
+                            ->required()
+                            ->maxLength(255),
+                        
+                        TextInput::make('smtp_password')
+                            ->label('Contraseña')
+                            ->password()
+                            ->required(),
+                        
+                        TextInput::make('smtp_from_address')
+                            ->label('Dirección Remitente')
+                            ->email()
+                            ->required()
+                            ->maxLength(255),
+                        
+                        TextInput::make('smtp_from_name')
+                            ->label('Nombre Remitente')
+                            ->maxLength(255),
+                    ])
+                    ->columns(2),
             ])
             ->statePath('data');
     }
