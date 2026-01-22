@@ -66,8 +66,8 @@
                             $agencyName = 'R';
                         }
                     @endphp
-                    @if($logoPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath))
-                        <img src="{{ \Illuminate\Support\Facades\Storage::url($logoPath) }}" 
+                    @if($logoPath && file_exists(public_path($logoPath)))
+                        <img src="{{ asset($logoPath) }}" 
                              alt="{{ $agencyName }}" 
                              class="h-10 w-auto object-contain mr-2">
                     @endif

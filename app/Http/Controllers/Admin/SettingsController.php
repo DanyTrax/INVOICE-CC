@@ -41,6 +41,11 @@ class SettingsController extends Controller
             \Artisan::call('settings:migrate');
             $settings = app(GeneralSettings::class);
         }
+        
+        // Si aún no se pueden cargar, inicializar manualmente
+        if (!$settings) {
+            $settings = new GeneralSettings();
+        }
 
         switch ($section) {
             case 'agency':
@@ -95,24 +100,31 @@ class SettingsController extends Controller
         }
 
         // Asegurar que todas las propiedades estén establecidas antes de guardar
-        $settings->agency_name = $validated['agency_name'] ?? ($settings->agency_name ?? 'RAMS');
-        $settings->agency_nit = $validated['agency_nit'] ?? ($settings->agency_nit ?? '');
-        $settings->agency_address = $validated['agency_address'] ?? ($settings->agency_address ?? '');
-        $settings->agency_phone = $validated['agency_phone'] ?? ($settings->agency_phone ?? '');
-        $settings->agency_email = $validated['agency_email'] ?? ($settings->agency_email ?? '');
-        $settings->agency_website = $validated['agency_website'] ?? ($settings->agency_website ?? '');
+        // Usar valores del request o mantener los existentes
+        $settings->agency_name = $validated['agency_name'] ?? $settings->agency_name ?? 'RAMS';
+        $settings->agency_nit = $validated['agency_nit'] ?? $settings->agency_nit ?? '';
+        $settings->agency_address = $validated['agency_address'] ?? $settings->agency_address ?? '';
+        $settings->agency_phone = $validated['agency_phone'] ?? $settings->agency_phone ?? '';
+        $settings->agency_email = $validated['agency_email'] ?? $settings->agency_email ?? '';
+        $settings->agency_website = $validated['agency_website'] ?? $settings->agency_website ?? '';
         
         // Manejar logo
         if ($request->has('remove_logo') && $request->remove_logo) {
             // Eliminar logo existente
-            if ($settings->agency_logo && Storage::disk('public')->exists($settings->agency_logo)) {
-                Storage::disk('public')->delete($settings->agency_logo);
+            if ($settings->agency_logo) {
+                $oldLogoPath = public_path($settings->agency_logo);
+                if (file_exists($oldLogoPath)) {
+                    unlink($oldLogoPath);
+                }
             }
             $settings->agency_logo = '';
         } elseif ($request->hasFile('agency_logo')) {
             // Eliminar logo anterior si existe
-            if ($settings->agency_logo && Storage::disk('public')->exists($settings->agency_logo)) {
-                Storage::disk('public')->delete($settings->agency_logo);
+            if ($settings->agency_logo) {
+                $oldLogoPath = public_path($settings->agency_logo);
+                if (file_exists($oldLogoPath)) {
+                    unlink($oldLogoPath);
+                }
             }
             
             // Guardar nuevo logo usando funciones PHP nativas (evita php_fileinfo y finfo)
@@ -120,8 +132,8 @@ class SettingsController extends Controller
             $extension = $file->getClientOriginalExtension();
             $filename = 'logo_' . time() . '_' . uniqid() . '.' . $extension;
             
-            // Crear directorio si no existe
-            $logoDir = storage_path('app/public/logos');
+            // Crear directorio dentro del repositorio (public/uploads/logos)
+            $logoDir = public_path('uploads/logos');
             if (!is_dir($logoDir)) {
                 mkdir($logoDir, 0755, true);
             }
@@ -132,21 +144,22 @@ class SettingsController extends Controller
             // Mover archivo usando move_uploaded_file (no requiere php_fileinfo)
             move_uploaded_file($file->getRealPath(), $destinationPath);
             
-            // Guardar ruta relativa en settings
-            $settings->agency_logo = 'logos/' . $filename;
+            // Guardar ruta relativa para acceso web (uploads/logos/filename)
+            $settings->agency_logo = 'uploads/logos/' . $filename;
         }
         // Si no se envía nada, mantener el logo actual (ya está cargado en $settings)
         
-        // Asegurar que todas las demás propiedades estén establecidas
-        $settings->drive_service_account_json = $settings->drive_service_account_json ?? '';
-        $settings->mail_mailer = $settings->mail_mailer ?? 'smtp';
-        $settings->mail_host = $settings->mail_host ?? 'smtp.gmail.com';
-        $settings->mail_port = $settings->mail_port ?? 587;
-        $settings->mail_username = $settings->mail_username ?? '';
-        $settings->mail_password = $settings->mail_password ?? '';
-        $settings->mail_encryption = $settings->mail_encryption ?? 'tls';
-        $settings->mail_from_address = $settings->mail_from_address ?? 'noreply@rams.com';
-        $settings->mail_from_name = $settings->mail_from_name ?? 'RAMS Sistema';
+        // Asegurar que todas las demás propiedades estén establecidas (mantener valores existentes)
+        if (!isset($settings->drive_service_account_json)) $settings->drive_service_account_json = '';
+        if (!isset($settings->mail_mailer)) $settings->mail_mailer = 'smtp';
+        if (!isset($settings->mail_host)) $settings->mail_host = 'smtp.gmail.com';
+        if (!isset($settings->mail_port)) $settings->mail_port = 587;
+        if (!isset($settings->mail_username)) $settings->mail_username = '';
+        if (!isset($settings->mail_password)) $settings->mail_password = '';
+        if (!isset($settings->mail_encryption)) $settings->mail_encryption = 'tls';
+        if (!isset($settings->mail_from_address)) $settings->mail_from_address = 'noreply@rams.com';
+        if (!isset($settings->mail_from_name)) $settings->mail_from_name = 'RAMS Sistema';
+        if (!isset($settings->agency_logo)) $settings->agency_logo = '';
         
         $settings->save();
     }
