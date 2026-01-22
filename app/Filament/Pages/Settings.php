@@ -11,16 +11,16 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Schemas\Schema;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 
-class Settings extends Page implements HasForms
+class Settings extends Page implements HasSchemas
 {
-    use InteractsWithForms;
+    use InteractsWithSchemas;
     
     protected static BackedEnum|string|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
     
@@ -35,7 +35,7 @@ class Settings extends Page implements HasForms
     public function mount(): void
     {
         $settings = app(GeneralSettings::class);
-        $this->form->fill([
+        $this->schema->fill([
             'agency_name' => $settings->agency_name ?? '',
             'agency_nit' => $settings->agency_nit ?? '',
             'agency_logo_path' => $settings->agency_logo_path ?? null,
@@ -50,7 +50,7 @@ class Settings extends Page implements HasForms
         ]);
     }
     
-    public function form(Form $form): Form
+    public function schema(Schema $schema): Schema
     {
         return $form
             ->schema([
@@ -151,7 +151,7 @@ class Settings extends Page implements HasForms
     
     public function save(): void
     {
-        $data = $this->form->getState();
+        $data = $this->schema->getState();
         $settings = app(GeneralSettings::class);
         
         $settings->agency_name = $data['agency_name'];
