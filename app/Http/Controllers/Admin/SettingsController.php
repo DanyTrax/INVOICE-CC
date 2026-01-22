@@ -67,21 +67,23 @@ class SettingsController extends Controller
 
         // Validación del logo sin depender de php_fileinfo
         if ($request->hasFile('agency_logo')) {
-            $rules['agency_logo'] = [
-                'file',
-                'max:2048', // 2MB
-                function ($attribute, $value, $fail) {
-                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
-                    $extension = strtolower($value->getClientOriginalExtension());
-                    
-                    if (!in_array($extension, $allowedExtensions)) {
-                        $fail('El archivo debe ser una imagen válida (JPG, PNG, GIF, SVG, WEBP).');
-                    }
-                },
-            ];
+            $rules['agency_logo'] = 'file|max:2048'; // 2MB
         }
 
         $validated = $request->validate($rules);
+
+        // Validación manual de extensión del logo (sin depender de php_fileinfo)
+        if ($request->hasFile('agency_logo')) {
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
+            $extension = strtolower($request->file('agency_logo')->getClientOriginalExtension());
+            
+            if (!in_array($extension, $allowedExtensions)) {
+                return redirect()
+                    ->route('admin.settings.index')
+                    ->withInput()
+                    ->withErrors(['agency_logo' => 'El archivo debe ser una imagen válida (JPG, PNG, GIF, SVG, WEBP).']);
+            }
+        }
 
         $settings->agency_name = $validated['agency_name'];
         $settings->agency_nit = $validated['agency_nit'] ?? '';
