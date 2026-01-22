@@ -18,6 +18,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     @stack('styles')
 </head>
 <body class="h-full" x-data="{ 
@@ -32,17 +35,18 @@
 }">
     <div class="flex h-screen bg-gray-50">
         <!-- Overlay para móvil -->
-        <template x-if="sidebarOpen && window.innerWidth < 1024">
-            <div @click="sidebarOpen = false"
-                 x-transition:enter="transition-opacity ease-linear duration-300"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 x-transition:leave="transition-opacity ease-linear duration-300"
-                 x-transition:leave-start="opacity-100"
-                 x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-gray-600 bg-opacity-75 z-30 lg:hidden">
-            </div>
-        </template>
+        <div x-show="sidebarOpen" 
+             x-cloak
+             @click="sidebarOpen = false"
+             x-transition:enter="transition-opacity ease-linear duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-300"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-gray-600 bg-opacity-75 z-30 lg:hidden"
+             style="display: none;">
+        </div>
 
         <!-- Sidebar -->
         <aside id="sidebar" 
