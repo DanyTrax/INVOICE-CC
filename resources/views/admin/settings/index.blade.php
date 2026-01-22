@@ -521,16 +521,31 @@
                                 
                                 <!-- Campo de Refresh Token (se llena automáticamente) -->
                                 <div class="mb-2">
-                                    <textarea id="zoho_refresh_token" 
-                                              name="zoho_refresh_token" 
-                                              rows="3"
-                                              placeholder="1000.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX (se llenará automáticamente después de autorizar)"
-                                              class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 p-2.5 font-mono text-xs">{{ old('zoho_refresh_token', $settings->zoho_refresh_token ?? '') }}</textarea>
+                                    <div class="relative">
+                                        <textarea id="zoho_refresh_token" 
+                                                  name="zoho_refresh_token" 
+                                                  rows="3"
+                                                  placeholder="1000.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX (se llenará automáticamente después de autorizar)"
+                                                  class="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 p-2.5 font-mono text-xs pr-20">{{ old('zoho_refresh_token', $settings->zoho_refresh_token ?? '') }}</textarea>
+                                        @if(!empty($settings->zoho_refresh_token))
+                                        <button type="button" 
+                                                onclick="clearRefreshToken()"
+                                                class="absolute top-2 right-2 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                                title="Limpiar Refresh Token para regenerarlo">
+                                            <i class="fas fa-trash-alt mr-1"></i>Limpiar
+                                        </button>
+                                        @endif
+                                    </div>
                                     @if(!empty($settings->zoho_refresh_token))
-                                        <p class="text-xs text-green-600 mt-1">
-                                            <i class="fas fa-check-circle mr-1"></i>
-                                            Refresh Token configurado correctamente
-                                        </p>
+                                        <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                                            <p class="text-green-600 mb-1">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Refresh Token configurado correctamente
+                                            </p>
+                                            <p class="text-blue-700 mt-1">
+                                                <strong>⚠️ Si recibes el error "URL_RULE_NOT_CONFIGURED":</strong> Haz clic en "Limpiar" arriba, guarda los cambios, y luego usa el botón "Autorizar con Zoho" para regenerar el token.
+                                            </p>
+                                        </div>
                                     @endif
                                 </div>
                                 
@@ -1277,6 +1292,25 @@ function copyRedirectUri() {
     }).catch(function(err) {
         alert('Error al copiar. Por favor, copia manualmente: ' + redirectUri);
     });
+}
+
+// Función para limpiar el Refresh Token
+function clearRefreshToken() {
+    if (confirm('¿Estás seguro de que deseas limpiar el Refresh Token? Deberás autorizar nuevamente con Zoho para generar uno nuevo.')) {
+        const tokenField = document.getElementById('zoho_refresh_token');
+        if (tokenField) {
+            tokenField.value = '';
+            tokenField.focus();
+            // Mostrar mensaje temporal
+            const message = document.createElement('div');
+            message.className = 'mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800';
+            message.innerHTML = '<i class="fas fa-info-circle mr-1"></i>Refresh Token limpiado. Guarda los cambios y luego haz clic en "Autorizar con Zoho" para generar uno nuevo.';
+            tokenField.parentElement.parentElement.appendChild(message);
+            setTimeout(function() {
+                message.remove();
+            }, 5000);
+        }
+    }
 }
 
 // Verificar al cargar la página
