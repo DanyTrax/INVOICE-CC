@@ -26,7 +26,15 @@
                 id="{{ $calendarId }}" 
                 class="bg-white rounded-lg border border-gray-200 p-4"
                 wire:ignore
-            ></div>
+                style="min-height: 500px;"
+            >
+                <div id="{{ $calendarId }}-loading" class="flex items-center justify-center h-full text-gray-400">
+                    <div class="text-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-2"></div>
+                        <p class="text-sm">Cargando calendario...</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </x-filament::section>
 </x-filament-widgets::widget>
@@ -90,6 +98,12 @@
             
             calendarEl.dataset.initialized = 'true';
             
+            // Ocultar loading
+            var loadingEl = document.getElementById(calendarId + '-loading');
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
+            
             try {
                 var calendar = new FullCalendar.Calendar(calendarEl, {
                     initialView: 'dayGridMonth',
@@ -122,7 +136,10 @@
                 console.log('✅ Calendario inicializado');
             } catch (error) {
                 console.error('❌ Error:', error);
-                calendarEl.innerHTML = '<div class="p-4 text-red-600">Error: ' + error.message + '</div>';
+                var loadingEl = document.getElementById(calendarId + '-loading');
+                if (loadingEl) {
+                    loadingEl.innerHTML = '<div class="p-4 text-red-600 text-center">Error al cargar el calendario: ' + error.message + '<br><button onclick="location.reload()" class="mt-2 px-4 py-2 bg-teal-600 text-white rounded">Recargar</button></div>';
+                }
             }
         });
     }
