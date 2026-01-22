@@ -944,8 +944,6 @@ function closeEmailDetails() {
         modal.remove();
     }
 }
-</script>
-@endpush
 
 // Función para mostrar/ocultar campos según el proveedor seleccionado
 function toggleProviderFields() {
@@ -1107,5 +1105,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 });
-</script>
 @endpush
