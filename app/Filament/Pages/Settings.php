@@ -11,7 +11,7 @@ class Settings extends Page
     
     protected static ?string $navigationLabel = 'Configuración';
     
-    protected static ?string $navigationGroup = 'Sistema';
+    protected static string|null $navigationGroup = 'Sistema';
     
     protected static ?int $navigationSort = 2;
     

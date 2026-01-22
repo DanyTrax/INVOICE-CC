@@ -22,7 +22,7 @@ class UserResource extends Resource
     
     protected static ?string $navigationLabel = 'Agentes / Usuarios';
     
-    protected static ?string $navigationGroup = 'Sistema';
+    protected static string|null $navigationGroup = 'Sistema';
     
     protected static ?int $navigationSort = 1;
 

@@ -22,7 +22,7 @@ class RegistrationResource extends Resource
     
     protected static ?string $navigationLabel = 'Registros (Expedientes)';
     
-    protected static ?string $navigationGroup = 'Operación';
+    protected static string|null $navigationGroup = 'Operación';
     
     protected static ?int $navigationSort = 2;
 

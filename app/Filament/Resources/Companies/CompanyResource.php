@@ -22,7 +22,7 @@ class CompanyResource extends Resource
     
     protected static ?string $navigationLabel = 'Directorio Clientes';
     
-    protected static ?string $navigationGroup = 'Operación';
+    protected static string|null $navigationGroup = 'Operación';
     
     protected static ?int $navigationSort = 1;
 
