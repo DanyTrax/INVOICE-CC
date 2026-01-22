@@ -1,21 +1,7 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">
-            <div class="flex justify-between items-center w-full">
-                <span>Calendario de Vencimientos</span>
-                <div class="flex gap-2">
-                    <button 
-                        wire:click="previousMonth"
-                        class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                        Mes Anterior
-                    </button>
-                    <button 
-                        wire:click="nextMonth"
-                        class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                        Mes Siguiente
-                    </button>
-                </div>
-            </div>
+            Calendario de Vencimientos
         </x-slot>
         
         <div class="space-y-4">
@@ -30,77 +16,120 @@
                 </span>
             </div>
             
-            @php
-                $currentMonth = $this->getCurrentMonth();
-                $daysInMonth = $currentMonth->daysInMonth;
-                $firstDayOfWeek = ($currentMonth->dayOfWeek == 0) ? 6 : $currentMonth->dayOfWeek - 1;
-                $events = $this->getEvents();
-                $weeks = [];
-                $day = 1;
-                
-                // Construir semanas
-                for ($week = 0; $week < 6; $week++) {
-                    $weeks[$week] = [];
-                    for ($dow = 0; $dow < 7; $dow++) {
-                        if (($week == 0 && $dow < $firstDayOfWeek) || $day > $daysInMonth) {
-                            $weeks[$week][$dow] = null;
-                        } else {
-                            $date = $currentMonth->copy()->day($day)->format('Y-m-d');
-                            $dayEvents = collect($events)->filter(fn($e) => $e['date'] === $date);
-                            $weeks[$week][$dow] = [
-                                'day' => $day,
-                                'date' => $date,
-                                'events' => $dayEvents,
-                                'isWeekend' => $dow >= 5
-                            ];
-                            $day++;
-                        }
-                    }
-                    if ($day > $daysInMonth) break;
-                }
-            @endphp
-            
-            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                <table class="w-full" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-                    <thead>
-                        <tr>
-                            @foreach(['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'] as $index => $dayName)
-                                <th class="bg-gray-50 p-3 text-center text-xs font-bold text-gray-700 {{ $index >= 5 ? 'text-red-600' : '' }}" style="width: 14.28%; border: 1px solid #e5e7eb; border-top: none; {{ $index == 0 ? 'border-left: none;' : '' }} {{ $index == 6 ? 'border-right: none;' : '' }}">
-                                    {{ $dayName }}
-                                </th>
-                            @endforeach
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($weeks as $week)
-                            <tr>
-                                @foreach($week as $index => $cell)
-                                    <td class="p-2 align-top" style="height: 120px; vertical-align: top; border: 1px solid #e5e7eb; {{ $index == 0 ? 'border-left: none;' : '' }} {{ $index == 6 ? 'border-right: none;' : '' }} background-color: {{ $cell ? '#ffffff' : '#f9fafb' }};">
-                                        @if($cell)
-                                            <div class="h-full flex flex-col">
-                                                <span class="text-sm font-semibold mb-2 {{ $cell['isWeekend'] ? 'text-red-600' : 'text-gray-900' }}">
-                                                    {{ $cell['day'] }}
-                                                </span>
-                                                <div class="flex-1 space-y-1 overflow-y-auto">
-                                                    @foreach($cell['events'] as $event)
-                                                        <div class="text-[11px] px-2 py-1 rounded font-medium {{ $event['color'] === 'red' ? 'bg-red-100 border-l-2 border-red-500 text-red-800' : 'bg-blue-100 border-l-2 border-blue-500 text-blue-800' }}">
-                                                            {{ $event['title'] }}
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endif
-                                    </td>
-                                @endforeach
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="text-center text-sm text-gray-500">
-                {{ $currentMonth->locale('es')->translatedFormat('F Y') }}
-            </div>
+            <div id="calendar" class="bg-white rounded-lg border border-gray-200 p-4"></div>
         </div>
     </x-filament::section>
+    
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var calendarEl = document.getElementById('calendar');
+                var events = @json($this->getEvents());
+                
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    locale: 'es',
+                    firstDay: 1, // Lunes como primer día
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth'
+                    },
+                    buttonText: {
+                        today: 'Hoy',
+                        month: 'Mes',
+                        week: 'Semana',
+                        day: 'Día'
+                    },
+                    events: events,
+                    eventDisplay: 'block',
+                    eventTimeFormat: {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        meridiem: false
+                    },
+                    height: 'auto',
+                    dayMaxEvents: 3,
+                    moreLinkText: 'más',
+                    eventClick: function(info) {
+                        // Opcional: mostrar detalles del evento
+                        console.log('Evento:', info.event.title);
+                    },
+                    dayCellClassNames: function(date) {
+                        // Resaltar fines de semana
+                        var day = date.getDay();
+                        if (day === 0 || day === 6) {
+                            return ['weekend-day'];
+                        }
+                        return [];
+                    }
+                });
+                
+                calendar.render();
+                
+                // Recargar cuando Livewire actualice
+                Livewire.hook('morph.updated', () => {
+                    calendar.refetchEvents();
+                });
+            });
+        </script>
+        <style>
+            .fc {
+                font-family: inherit;
+            }
+            .fc-header-toolbar {
+                margin-bottom: 1rem;
+            }
+            .fc-button {
+                background-color: #0f766e;
+                border-color: #0f766e;
+                color: white;
+                padding: 0.5rem 1rem;
+                border-radius: 0.375rem;
+                font-weight: 500;
+            }
+            .fc-button:hover {
+                background-color: #0d9488;
+                border-color: #0d9488;
+            }
+            .fc-button-active {
+                background-color: #14b8a6;
+                border-color: #14b8a6;
+            }
+            .fc-today-button {
+                background-color: #64748b;
+                border-color: #64748b;
+            }
+            .fc-daygrid-day-top {
+                flex-direction: row;
+            }
+            .fc-daygrid-day-number {
+                padding: 0.25rem;
+                font-weight: 600;
+            }
+            .fc-day-sat .fc-daygrid-day-number,
+            .fc-day-sun .fc-daygrid-day-number {
+                color: #dc2626;
+            }
+            .fc-event {
+                border-radius: 0.25rem;
+                padding: 0.125rem 0.25rem;
+                font-size: 0.75rem;
+                cursor: pointer;
+            }
+            .fc-event:hover {
+                opacity: 0.9;
+            }
+            .fc-daygrid-event {
+                margin: 0.125rem 0;
+            }
+            .weekend-day {
+                background-color: #fef2f2;
+            }
+            .fc-daygrid-day-frame {
+                min-height: 100px;
+            }
+        </style>
+    @endpush
 </x-filament-widgets::widget>

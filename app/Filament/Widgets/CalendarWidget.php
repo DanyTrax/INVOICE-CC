@@ -4,7 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Registration;
 use Filament\Widgets\Widget;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class CalendarWidget extends Widget
 {
@@ -12,58 +12,42 @@ class CalendarWidget extends Widget
     
     protected int | string | array $columnSpan = 'full';
     
-    public ?string $currentMonth = null;
-    
-    public function mount(): void
-    {
-        $this->currentMonth = now()->format('Y-m');
-    }
-    
-    public function getCurrentMonth(): Carbon
-    {
-        return $this->currentMonth 
-            ? Carbon::parse($this->currentMonth . '-01')
-            : now()->startOfMonth();
-    }
-    
-    public function previousMonth(): void
-    {
-        $this->currentMonth = $this->getCurrentMonth()->subMonth()->format('Y-m');
-    }
-    
-    public function nextMonth(): void
-    {
-        $this->currentMonth = $this->getCurrentMonth()->addMonth()->format('Y-m');
-    }
-    
     public function getEvents(): array
     {
-        $month = $this->getCurrentMonth();
-        
         $expiring = Registration::whereNotNull('expiration_date')
-            ->where('expiration_date', '>=', $month->copy()->startOfMonth())
-            ->where('expiration_date', '<=', $month->copy()->endOfMonth())
             ->get()
             ->map(function ($reg) {
                 return [
-                    'title' => 'Vence: ' . Str::limit($reg->product_name, 15),
-                    'date' => $reg->expiration_date->format('Y-m-d'),
-                    'color' => 'red',
+                    'id' => 'exp_' . $reg->id,
+                    'title' => 'Vence: ' . Str::limit($reg->product_name, 20),
+                    'start' => $reg->expiration_date->format('Y-m-d'),
+                    'backgroundColor' => '#ef4444',
+                    'borderColor' => '#dc2626',
+                    'textColor' => '#ffffff',
+                    'extendedProps' => [
+                        'type' => 'vencimiento',
+                        'registration_id' => $reg->id,
+                    ],
                 ];
             });
         
         $responseDeadlines = Registration::whereNotNull('response_limit_date')
-            ->where('response_limit_date', '>=', $month->copy()->startOfMonth())
-            ->where('response_limit_date', '<=', $month->copy()->endOfMonth())
             ->get()
             ->map(function ($reg) {
                 return [
-                    'title' => 'Radicar: ' . Str::limit($reg->product_name, 15),
-                    'date' => $reg->response_limit_date->format('Y-m-d'),
-                    'color' => 'blue',
+                    'id' => 'resp_' . $reg->id,
+                    'title' => 'Radicar: ' . Str::limit($reg->product_name, 20),
+                    'start' => $reg->response_limit_date->format('Y-m-d'),
+                    'backgroundColor' => '#3b82f6',
+                    'borderColor' => '#2563eb',
+                    'textColor' => '#ffffff',
+                    'extendedProps' => [
+                        'type' => 'radicacion',
+                        'registration_id' => $reg->id,
+                    ],
                 ];
             });
         
-        return $expiring->merge($responseDeadlines)->toArray();
+        return $expiring->merge($responseDeadlines)->values()->toArray();
     }
 }
