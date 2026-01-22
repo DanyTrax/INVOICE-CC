@@ -65,7 +65,7 @@
                             <input type="text" 
                                    id="agency_name" 
                                    name="agency_name" 
-                                   value="{{ old('agency_name', $settings->agency_name) }}"
+                                   value="{{ old('agency_name', $settings->agency_name ?? 'RAMS') }}"
                                    required
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
@@ -78,7 +78,7 @@
                             <input type="text" 
                                    id="agency_nit" 
                                    name="agency_nit" 
-                                   value="{{ old('agency_nit', $settings->agency_nit) }}"
+                                   value="{{ old('agency_nit', $settings->agency_nit ?? '') }}"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
 
@@ -90,7 +90,7 @@
                             <input type="text" 
                                    id="agency_address" 
                                    name="agency_address" 
-                                   value="{{ old('agency_address', $settings->agency_address) }}"
+                                   value="{{ old('agency_address', $settings->agency_address ?? '') }}"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
 
@@ -102,7 +102,7 @@
                             <input type="text" 
                                    id="agency_phone" 
                                    name="agency_phone" 
-                                   value="{{ old('agency_phone', $settings->agency_phone) }}"
+                                   value="{{ old('agency_phone', $settings->agency_phone ?? '') }}"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
 
@@ -114,7 +114,7 @@
                             <input type="email" 
                                    id="agency_email" 
                                    name="agency_email" 
-                                   value="{{ old('agency_email', $settings->agency_email) }}"
+                                   value="{{ old('agency_email', $settings->agency_email ?? '') }}"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
 
@@ -126,7 +126,7 @@
                             <input type="url" 
                                    id="agency_website" 
                                    name="agency_website" 
-                                   value="{{ old('agency_website', $settings->agency_website) }}"
+                                   value="{{ old('agency_website', $settings->agency_website ?? '') }}"
                                    placeholder="https://..."
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
@@ -139,7 +139,7 @@
                             <input type="text" 
                                    id="agency_logo" 
                                    name="agency_logo" 
-                                   value="{{ old('agency_logo', $settings->agency_logo) }}"
+                                   value="{{ old('agency_logo', $settings->agency_logo ?? '') }}"
                                    placeholder="https://..."
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
@@ -177,7 +177,7 @@
                                   name="drive_service_account_json" 
                                   rows="10"
                                   placeholder='{"type": "service_account", "project_id": "...", ...}'
-                                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('drive_service_account_json', $settings->drive_service_account_json) }}</textarea>
+                                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('drive_service_account_json', $settings->drive_service_account_json ?? '') }}</textarea>
                         <p class="mt-2 text-xs text-gray-500">
                             Pega aquí el contenido completo del archivo JSON de tu Service Account de Google Cloud.
                         </p>
@@ -217,8 +217,8 @@
                                     name="mail_mailer" 
                                     required
                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                                <option value="smtp" {{ old('mail_mailer', $settings->mail_mailer) === 'smtp' ? 'selected' : '' }}>SMTP</option>
-                                <option value="sendmail" {{ old('mail_mailer', $settings->mail_mailer) === 'sendmail' ? 'selected' : '' }}>Sendmail</option>
+                                <option value="smtp" {{ old('mail_mailer', $settings->mail_mailer ?? 'smtp') === 'smtp' ? 'selected' : '' }}>SMTP</option>
+                                <option value="sendmail" {{ old('mail_mailer', $settings->mail_mailer ?? 'smtp') === 'sendmail' ? 'selected' : '' }}>Sendmail</option>
                             </select>
                         </div>
 
@@ -230,7 +230,7 @@
                             <input type="text" 
                                    id="mail_host" 
                                    name="mail_host" 
-                                   value="{{ old('mail_host', $settings->mail_host) }}"
+                                   value="{{ old('mail_host', $settings->mail_host ?? 'smtp.gmail.com') }}"
                                    required
                                    placeholder="smtp.gmail.com"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
@@ -244,7 +244,7 @@
                             <input type="number" 
                                    id="mail_port" 
                                    name="mail_port" 
-                                   value="{{ old('mail_port', $settings->mail_port) }}"
+                                   value="{{ old('mail_port', $settings->mail_port ?? 587) }}"
                                    required
                                    placeholder="587"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
@@ -258,7 +258,7 @@
                             <input type="text" 
                                    id="mail_username" 
                                    name="mail_username" 
-                                   value="{{ old('mail_username', $settings->mail_username) }}"
+                                   value="{{ old('mail_username', $settings->mail_username ?? '') }}"
                                    placeholder="tu@email.com"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
@@ -271,7 +271,7 @@
                             <input type="password" 
                                    id="mail_password" 
                                    name="mail_password" 
-                                   value="{{ old('mail_password', $settings->mail_password) }}"
+                                   value="{{ old('mail_password', $settings->mail_password ?? '') }}"
                                    placeholder="••••••••"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
@@ -285,8 +285,8 @@
                                     name="mail_encryption" 
                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                                 <option value="">Ninguna</option>
-                                <option value="tls" {{ old('mail_encryption', $settings->mail_encryption) === 'tls' ? 'selected' : '' }}>TLS</option>
-                                <option value="ssl" {{ old('mail_encryption', $settings->mail_encryption) === 'ssl' ? 'selected' : '' }}>SSL</option>
+                                <option value="tls" {{ old('mail_encryption', $settings->mail_encryption ?? 'tls') === 'tls' ? 'selected' : '' }}>TLS</option>
+                                <option value="ssl" {{ old('mail_encryption', $settings->mail_encryption ?? 'tls') === 'ssl' ? 'selected' : '' }}>SSL</option>
                             </select>
                         </div>
 
@@ -298,7 +298,7 @@
                             <input type="email" 
                                    id="mail_from_address" 
                                    name="mail_from_address" 
-                                   value="{{ old('mail_from_address', $settings->mail_from_address) }}"
+                                   value="{{ old('mail_from_address', $settings->mail_from_address ?? 'noreply@rams.com') }}"
                                    required
                                    placeholder="noreply@tudominio.com"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
@@ -312,7 +312,7 @@
                             <input type="text" 
                                    id="mail_from_name" 
                                    name="mail_from_name" 
-                                   value="{{ old('mail_from_name', $settings->mail_from_name) }}"
+                                   value="{{ old('mail_from_name', $settings->mail_from_name ?? 'RAMS Sistema') }}"
                                    required
                                    placeholder="RAMS Sistema"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
