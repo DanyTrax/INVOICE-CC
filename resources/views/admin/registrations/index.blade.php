@@ -40,10 +40,10 @@
             
             <select name="status" class="border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 px-3 py-2">
                 <option value="">Todos los estados</option>
-                <option value="en_tramite" {{ request('status') === 'en_tramite' ? 'selected' : '' }}>En Trámite</option>
-                <option value="aprobado" {{ request('status') === 'aprobado' ? 'selected' : '' }}>Aprobado</option>
-                <option value="rechazado" {{ request('status') === 'rechazado' ? 'selected' : '' }}>Rechazado</option>
-                <option value="pendiente" {{ request('status') === 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                <option value="tramite" {{ request('status') === 'tramite' ? 'selected' : '' }}>En Trámite</option>
+                <option value="vigente" {{ request('status') === 'vigente' ? 'selected' : '' }}>Vigente</option>
+                <option value="requerimiento" {{ request('status') === 'requerimiento' ? 'selected' : '' }}>Requerimiento</option>
+                <option value="vencido" {{ request('status') === 'vencido' ? 'selected' : '' }}>Vencido</option>
             </select>
             
             <select name="specialist" class="border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 px-3 py-2">
@@ -101,7 +101,10 @@
                             <td class="px-6 py-4">
                                 @php
                                     $statusColors = [
-                                        'en_tramite' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800'],
+                                        'tramite' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800'],
+                                        'vigente' => ['bg' => 'bg-green-100', 'text' => 'text-green-800'],
+                                        'requerimiento' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800'],
+                                        'vencido' => ['bg' => 'bg-red-100', 'text' => 'text-red-800'],
                                         'aprobado' => ['bg' => 'bg-green-100', 'text' => 'text-green-800'],
                                         'rechazado' => ['bg' => 'bg-red-100', 'text' => 'text-red-800'],
                                         'pendiente' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800'],
