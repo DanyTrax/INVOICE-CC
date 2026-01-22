@@ -50,7 +50,7 @@
         </div>
 
         <!-- Tab 1: Datos de la Empresa -->
-        <div id="panel-agency" class="tab-panel">
+        <div id="panel-agency" class="tab-panel {{ $activeSection === 'agency' ? '' : 'hidden' }}">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     <i class="fas fa-building text-teal-600 mr-2"></i>
@@ -860,19 +860,27 @@ function showTab(tabName) {
         panel.classList.add('hidden');
     });
     
-    // Remover active de todos los tabs
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('active', 'border-teal-600', 'text-teal-600');
-        button.classList.add('border-transparent', 'text-gray-500');
+    // Remover clase active de todos los tabs
+    document.querySelectorAll('.tab-link').forEach(link => {
+        link.classList.remove('border-teal-600', 'text-teal-600');
+        link.classList.add('border-transparent', 'text-gray-500');
     });
     
-    // Mostrar el panel seleccionado
-    document.getElementById('panel-' + tabName).classList.remove('hidden');
+    // Mostrar el panel correspondiente
+    const panel = document.getElementById('panel-' + tabName);
+    if (panel) {
+        panel.classList.remove('hidden');
+    }
     
-    // Activar el tab seleccionado
-    const tabButton = document.getElementById('tab-' + tabName);
-    tabButton.classList.add('active', 'border-teal-600', 'text-teal-600');
-    tabButton.classList.remove('border-transparent', 'text-gray-500');
+    // Activar el tab correspondiente
+    const tab = document.getElementById('tab-' + tabName);
+    if (tab) {
+        tab.classList.add('border-teal-600', 'text-teal-600');
+        tab.classList.remove('border-transparent', 'text-gray-500');
+    }
+    
+    // Actualizar URL sin recargar (opcional, para mejor UX)
+    updateUrl(tabName);
 }
 
 // Función para actualizar la URL sin recargar la página (opcional, para mejor UX)
