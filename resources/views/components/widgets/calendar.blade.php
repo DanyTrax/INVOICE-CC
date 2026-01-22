@@ -214,13 +214,23 @@
         }
     }
     
-    // Iniciar espera cuando el DOM esté listo
+    // Iniciar espera cuando el DOM y scripts estén listos
+    function startInit() {
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            waitForFullCalendar();
+        } else {
+            window.addEventListener('load', waitForFullCalendar);
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(waitForFullCalendar, 500);
+            });
+        }
+    }
+    
+    // Esperar a que el script esté en el DOM
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(waitForFullCalendar, 500);
-        });
+        document.addEventListener('DOMContentLoaded', startInit);
     } else {
-        setTimeout(waitForFullCalendar, 500);
+        startInit();
     }
 })();
 </script>

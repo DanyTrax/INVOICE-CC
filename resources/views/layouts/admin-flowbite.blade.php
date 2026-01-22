@@ -275,5 +275,14 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     @stack('scripts')
+    
+    <!-- Asegurar que todos los scripts estén cargados antes de inicializar componentes -->
+    <script>
+        // Evento global para notificar que todos los scripts están listos
+        window.addEventListener('load', function() {
+            window.allScriptsLoaded = true;
+            document.dispatchEvent(new Event('scriptsLoaded'));
+        });
+    </script>
 </body>
 </html>
