@@ -25,7 +25,7 @@ class DashboardController extends Controller
         // Eventos del calendario
         $events = $this->getCalendarEvents();
 
-        return view('admin.dashboard.index', compact('stats', 'events'));
+        return view('admin.dashboard.index-flowbite', compact('stats', 'events'));
     }
 
     private function getCalendarEvents()
