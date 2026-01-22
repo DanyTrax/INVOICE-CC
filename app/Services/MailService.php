@@ -193,7 +193,7 @@ class MailService
                     $errorMessage .= "\n🔟 Intenta enviar el correo de nuevo";
                     $errorMessage .= "\n\n";
                     $errorMessage .= '⚠️  IMPORTANTE: El token DEBE generarse con la MISMA cuenta que el Email Remitente.';
-                    $errorMessage .= "\n   Si autorizas con otra cuenta (ej. tu correo personal), los envíos fallarán.';
+                    $errorMessage .= "\n   Si autorizas con otra cuenta (ej. tu correo personal), los envíos fallarán.";
                 } elseif (isset($errorData['error'])) {
                     $errorMessage .= ': ' . $errorData['error'];
                     if (isset($errorData['message'])) {
