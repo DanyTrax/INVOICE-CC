@@ -142,4 +142,53 @@ class UserController extends Controller
             ->route('admin.users.index')
             ->with('success', 'Usuario eliminado exitosamente.');
     }
+
+    /**
+     * Mostrar perfil del usuario autenticado
+     */
+    public function profile()
+    {
+        $user = auth()->user();
+        $user->load('roles', 'companies');
+        $user->loadCount('companies', 'assignedRegistrations');
+        
+        return view('admin.users.profile', compact('user'));
+    }
+
+    /**
+     * Actualizar perfil del usuario autenticado
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+        
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:50',
+            'password' => 'nullable|string|min:8|confirmed',
+            'current_password' => 'required_with:password|string',
+        ]);
+
+        // Validar contraseña actual si se está cambiando la contraseña
+        if (!empty($validated['password'])) {
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return redirect()
+                    ->route('admin.profile')
+                    ->withErrors(['current_password' => 'La contraseña actual no es correcta.'])
+                    ->withInput();
+            }
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
+
+        unset($validated['current_password']);
+
+        $user->update($validated);
+
+        return redirect()
+            ->route('admin.profile')
+            ->with('success', 'Perfil actualizado exitosamente.');
+    }
 }

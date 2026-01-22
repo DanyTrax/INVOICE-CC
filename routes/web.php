@@ -31,6 +31,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Users
     Route::resource('users', UserController::class);
     
+    // Profile (perfil del usuario autenticado)
+    Route::get('/profile', [UserController::class, 'profile'])->name('profile');
+    Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+    
             // Settings
             Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
             Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');

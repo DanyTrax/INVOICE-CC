@@ -199,7 +199,7 @@
                                 <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
                             </div>
                             <div class="py-1">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                <a href="{{ route('admin.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-user mr-2"></i> Mi Perfil
                                 </a>
                                 <form method="POST" action="{{ route('logout') }}">
