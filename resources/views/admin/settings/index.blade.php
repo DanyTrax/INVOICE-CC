@@ -1078,9 +1078,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 });
-
-// Función para mostrar detalles del correo - Asegurar que esté disponible globalmente
-window.showEmailDetails = function(logId) {
     console.log('Intentando cargar detalles del correo ID:', logId);
     
     // Mostrar indicador de carga
