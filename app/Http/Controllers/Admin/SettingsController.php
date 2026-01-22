@@ -7,6 +7,7 @@ use App\Settings\GeneralSettings;
 use App\Models\EmailTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class SettingsController extends Controller
 {
@@ -33,9 +34,12 @@ class SettingsController extends Controller
     {
         $section = $request->input('section');
         
-        // Obtener settings completos para asegurar que todas las propiedades estén cargadas
+        // Asegurar que los settings existan en la BD antes de intentar cargarlos
+        // Ejecutar migración si es necesario
         try {
             $settings = app(GeneralSettings::class);
+            // Verificar que todas las propiedades estén en la BD
+            $this->ensureSettingsInDatabase();
         } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
             // Ejecutar migración de settings si no existen
             \Artisan::call('settings:migrate');
@@ -169,39 +173,70 @@ class SettingsController extends Controller
     }
     
     /**
+     * Asegurar que todos los settings estén en la base de datos
+     */
+    private function ensureSettingsInDatabase()
+    {
+        $requiredSettings = [
+            'agency_name', 'agency_nit', 'agency_address', 'agency_phone', 
+            'agency_email', 'agency_website', 'agency_logo', 
+            'drive_service_account_json', 'mail_mailer', 'mail_host', 
+            'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 
+            'mail_from_address', 'mail_from_name'
+        ];
+        
+        $existingSettings = \DB::table('settings')
+            ->where('group', 'general')
+            ->pluck('name')
+            ->toArray();
+        
+        $missingSettings = array_diff($requiredSettings, $existingSettings);
+        
+        if (!empty($missingSettings)) {
+            // Ejecutar migración para crear los settings faltantes
+            \Artisan::call('settings:migrate');
+        }
+    }
+    
+    /**
      * Asegurar que todas las propiedades de GeneralSettings estén establecidas
      * Spatie Settings requiere que todas las propiedades estén definidas antes de guardar
      */
     private function ensureAllPropertiesSet(GeneralSettings $settings)
     {
-        // Establecer todas las propiedades directamente sin verificar
-        // Si la propiedad no existe, se creará; si existe, se mantendrá su valor actual
+        // Establecer todas las propiedades directamente
+        // Spatie Settings necesita que todas estén definidas antes de guardar
         
-        // Primero intentar obtener valores actuales usando property_exists o isset
-        // Si no existen, establecer valores por defecto
-        
-        $properties = [
-            'agency_name' => property_exists($settings, 'agency_name') && isset($settings->agency_name) ? $settings->agency_name : 'RAMS',
-            'agency_nit' => property_exists($settings, 'agency_nit') && isset($settings->agency_nit) ? $settings->agency_nit : '',
-            'agency_address' => property_exists($settings, 'agency_address') && isset($settings->agency_address) ? $settings->agency_address : '',
-            'agency_phone' => property_exists($settings, 'agency_phone') && isset($settings->agency_phone) ? $settings->agency_phone : '',
-            'agency_email' => property_exists($settings, 'agency_email') && isset($settings->agency_email) ? $settings->agency_email : '',
-            'agency_website' => property_exists($settings, 'agency_website') && isset($settings->agency_website) ? $settings->agency_website : '',
-            'agency_logo' => property_exists($settings, 'agency_logo') && isset($settings->agency_logo) ? $settings->agency_logo : '',
-            'drive_service_account_json' => property_exists($settings, 'drive_service_account_json') && isset($settings->drive_service_account_json) ? $settings->drive_service_account_json : '',
-            'mail_mailer' => property_exists($settings, 'mail_mailer') && isset($settings->mail_mailer) ? $settings->mail_mailer : 'smtp',
-            'mail_host' => property_exists($settings, 'mail_host') && isset($settings->mail_host) ? $settings->mail_host : 'smtp.gmail.com',
-            'mail_port' => property_exists($settings, 'mail_port') && isset($settings->mail_port) ? $settings->mail_port : 587,
-            'mail_username' => property_exists($settings, 'mail_username') && isset($settings->mail_username) ? $settings->mail_username : '',
-            'mail_password' => property_exists($settings, 'mail_password') && isset($settings->mail_password) ? $settings->mail_password : '',
-            'mail_encryption' => property_exists($settings, 'mail_encryption') && isset($settings->mail_encryption) ? $settings->mail_encryption : 'tls',
-            'mail_from_address' => property_exists($settings, 'mail_from_address') && isset($settings->mail_from_address) ? $settings->mail_from_address : 'noreply@rams.com',
-            'mail_from_name' => property_exists($settings, 'mail_from_name') && isset($settings->mail_from_name) ? $settings->mail_from_name : 'RAMS Sistema',
+        $defaults = [
+            'agency_name' => 'RAMS',
+            'agency_nit' => '',
+            'agency_address' => '',
+            'agency_phone' => '',
+            'agency_email' => '',
+            'agency_website' => '',
+            'agency_logo' => '',
+            'drive_service_account_json' => '',
+            'mail_mailer' => 'smtp',
+            'mail_host' => 'smtp.gmail.com',
+            'mail_port' => 587,
+            'mail_username' => '',
+            'mail_password' => '',
+            'mail_encryption' => 'tls',
+            'mail_from_address' => 'noreply@rams.com',
+            'mail_from_name' => 'RAMS Sistema',
         ];
         
-        // Establecer todas las propiedades
-        foreach ($properties as $property => $value) {
-            $settings->$property = $value;
+        // Establecer todas las propiedades, usando valores existentes si están disponibles
+        foreach ($defaults as $property => $defaultValue) {
+            try {
+                $currentValue = $settings->$property ?? null;
+                if ($currentValue === null) {
+                    $settings->$property = $defaultValue;
+                }
+            } catch (\Exception $e) {
+                // Si la propiedad no existe o no se puede acceder, establecer valor por defecto
+                $settings->$property = $defaultValue;
+            }
         }
     }
 
