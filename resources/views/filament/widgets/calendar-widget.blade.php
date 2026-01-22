@@ -24,116 +24,115 @@
             
             <div 
                 id="{{ $calendarId }}" 
-                class="bg-white rounded-lg border border-gray-200 p-4 min-h-[500px]"
+                class="bg-white rounded-lg border border-gray-200 p-4"
                 wire:ignore
-                data-events='@json($events)'
-            >
-                <div class="flex items-center justify-center h-full text-gray-400">
-                    <div class="text-center">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                        <p>Cargando calendario...</p>
-                    </div>
-                </div>
-            </div>
+            ></div>
         </div>
     </x-filament::section>
 </x-filament-widgets::widget>
 
-@if(!isset($GLOBALS['fullcalendar_loaded']))
-    @php $GLOBALS['fullcalendar_loaded'] = true; @endphp
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
-@endif
-
+@once
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
 <script>
 (function() {
     var calendarId = '{{ $calendarId }}';
     var events = @json($events);
     
-    function loadFullCalendar() {
+    function ensureFullCalendar(callback) {
         if (typeof FullCalendar !== 'undefined') {
-            initCalendar();
+            callback();
             return;
         }
         
-        // Si FullCalendar no está cargado, intentar cargarlo
-        if (!document.querySelector('script[src*="fullcalendar"]')) {
-            var script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js';
-            script.onload = function() {
-                setTimeout(initCalendar, 100);
-            };
-            document.head.appendChild(script);
+        // Cargar FullCalendar si no está disponible
+        if (!window.fullcalendarLoading) {
+            window.fullcalendarLoading = true;
             
             var link = document.createElement('link');
             link.rel = 'stylesheet';
             link.href = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css';
             document.head.appendChild(link);
+            
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js';
+            script.onload = function() {
+                window.fullcalendarLoading = false;
+                setTimeout(callback, 100);
+            };
+            script.onerror = function() {
+                window.fullcalendarLoading = false;
+                console.error('Error al cargar FullCalendar');
+                var calendarEl = document.getElementById(calendarId);
+                if (calendarEl) {
+                    calendarEl.innerHTML = '<div class="p-4 text-red-600">Error al cargar el calendario. Verifica tu conexión a internet.</div>';
+                }
+            };
+            document.head.appendChild(script);
         } else {
-            setTimeout(loadFullCalendar, 200);
+            setTimeout(function() { ensureFullCalendar(callback); }, 200);
         }
     }
     
     function initCalendar() {
         var calendarEl = document.getElementById(calendarId);
         if (!calendarEl) {
-            setTimeout(initCalendar, 100);
+            setTimeout(initCalendar, 200);
             return;
         }
         
         if (calendarEl.dataset.initialized === 'true') return;
         
-        if (typeof FullCalendar === 'undefined') {
-            setTimeout(loadFullCalendar, 200);
-            return;
-        }
-        
-        calendarEl.dataset.initialized = 'true';
-        calendarEl.innerHTML = ''; // Limpiar loading
-        
-        try {
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'es',
-                firstDay: 1,
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: ''
-                },
-                buttonText: {
-                    today: 'Hoy',
-                    month: 'Mes'
-                },
-                events: events,
-                eventDisplay: 'block',
-                height: 'auto',
-                dayMaxEvents: 3,
-                moreLinkText: 'más',
-                eventClick: function(info) {
-                    console.log('Evento:', info.event.title);
-                },
-                dayCellClassNames: function(date) {
-                    var day = date.getDay();
-                    return (day === 0 || day === 6) ? ['weekend-day'] : [];
-                }
-            });
+        ensureFullCalendar(function() {
+            if (typeof FullCalendar === 'undefined') {
+                console.error('FullCalendar no disponible');
+                return;
+            }
             
-            calendar.render();
-            console.log('✅ Calendario inicializado:', calendarId);
-        } catch (error) {
-            console.error('❌ Error al inicializar calendario:', error);
-            calendarEl.dataset.initialized = 'false';
-            calendarEl.innerHTML = '<div class="p-4 text-red-600">Error al cargar el calendario. Por favor, recarga la página.</div>';
-        }
+            calendarEl.dataset.initialized = 'true';
+            
+            try {
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    locale: 'es',
+                    firstDay: 1,
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: ''
+                    },
+                    buttonText: {
+                        today: 'Hoy',
+                        month: 'Mes'
+                    },
+                    events: events,
+                    eventDisplay: 'block',
+                    height: 'auto',
+                    dayMaxEvents: 3,
+                    moreLinkText: 'más',
+                    eventClick: function(info) {
+                        console.log('Evento:', info.event.title);
+                    },
+                    dayCellClassNames: function(date) {
+                        var day = date.getDay();
+                        return (day === 0 || day === 6) ? ['weekend-day'] : [];
+                    }
+                });
+                
+                calendar.render();
+                console.log('✅ Calendario inicializado');
+            } catch (error) {
+                console.error('❌ Error:', error);
+                calendarEl.innerHTML = '<div class="p-4 text-red-600">Error: ' + error.message + '</div>';
+            }
+        });
     }
     
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(loadFullCalendar, 300);
+            setTimeout(initCalendar, 500);
         });
     } else {
-        setTimeout(loadFullCalendar, 300);
+        setTimeout(initCalendar, 500);
     }
     
     if (typeof Livewire !== 'undefined') {
@@ -141,12 +140,13 @@
             var calendarEl = document.getElementById(calendarId);
             if (calendarEl) {
                 calendarEl.dataset.initialized = 'false';
-                setTimeout(loadFullCalendar, 300);
+                setTimeout(initCalendar, 500);
             }
         });
     }
 })();
 </script>
+@endonce
 
 <style>
 .fc { font-family: inherit; }
