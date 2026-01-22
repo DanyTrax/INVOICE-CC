@@ -19,19 +19,29 @@
             <div id="calendar-{{ $this->getId() }}" class="bg-white rounded-lg border border-gray-200 p-4"></div>
         </div>
     </x-filament::section>
-    
-    @once
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-    @endonce
-    
-    <script>
-        (function() {
-            var calendarId = 'calendar-{{ $this->getId() }}';
+</x-filament-widgets::widget>
+
+@once
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function initCalendar(widgetId) {
+            var calendarId = 'calendar-' + widgetId;
             var calendarEl = document.getElementById(calendarId);
             
-            if (!calendarEl) return;
+            if (!calendarEl || calendarEl.dataset.initialized === 'true') return;
             
-            var events = @js($this->getEvents());
+            calendarEl.dataset.initialized = 'true';
+            
+            // Obtener eventos desde el atributo data
+            var eventsData = calendarEl.getAttribute('data-events');
+            var events = eventsData ? JSON.parse(eventsData) : [];
+            
+            if (typeof FullCalendar === 'undefined') {
+                console.error('FullCalendar no está cargado');
+                return;
+            }
             
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
@@ -66,71 +76,101 @@
             });
             
             calendar.render();
-            
-            // Recargar eventos cuando Livewire actualice
-            if (typeof Livewire !== 'undefined') {
-                Livewire.hook('morph.updated', () => {
-                    var newEvents = @js($this->getEvents());
-                    calendar.removeAllEvents();
-                    calendar.addEventSource(newEvents);
-                });
-            }
-        })();
-    </script>
-    <style>
-        .fc {
-            font-family: inherit;
         }
-        .fc-header-toolbar {
-            margin-bottom: 1rem;
+        
+        // Inicializar cuando Livewire termine de cargar
+        if (typeof Livewire !== 'undefined') {
+            Livewire.hook('morph.updated', () => {
+                setTimeout(function() {
+                    var widgets = document.querySelectorAll('[id^="calendar-"]');
+                    widgets.forEach(function(el) {
+                        var widgetId = el.id.replace('calendar-', '');
+                        if (el.dataset.initialized !== 'true') {
+                            initCalendar(widgetId);
+                        }
+                    });
+                }, 100);
+            });
         }
-        .fc-button {
-            background-color: #0f766e !important;
-            border-color: #0f766e !important;
-            color: white !important;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            font-weight: 500;
+        
+        // Inicializar inmediatamente
+        setTimeout(function() {
+            var widgets = document.querySelectorAll('[id^="calendar-"]');
+            widgets.forEach(function(el) {
+                var widgetId = el.id.replace('calendar-', '');
+                initCalendar(widgetId);
+            });
+        }, 500);
+    });
+</script>
+<style>
+    .fc {
+        font-family: inherit;
+    }
+    .fc-header-toolbar {
+        margin-bottom: 1rem;
+    }
+    .fc-button {
+        background-color: #0f766e !important;
+        border-color: #0f766e !important;
+        color: white !important;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+    }
+    .fc-button:hover {
+        background-color: #0d9488 !important;
+        border-color: #0d9488 !important;
+    }
+    .fc-button-active {
+        background-color: #14b8a6 !important;
+        border-color: #14b8a6 !important;
+    }
+    .fc-today-button {
+        background-color: #64748b !important;
+        border-color: #64748b !important;
+    }
+    .fc-daygrid-day-number {
+        padding: 0.25rem;
+        font-weight: 600;
+    }
+    .fc-day-sat .fc-daygrid-day-number,
+    .fc-day-sun .fc-daygrid-day-number {
+        color: #dc2626;
+    }
+    .fc-event {
+        border-radius: 0.25rem;
+        padding: 0.125rem 0.25rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+        border: none !important;
+    }
+    .fc-event:hover {
+        opacity: 0.9;
+    }
+    .fc-daygrid-event {
+        margin: 0.125rem 0;
+    }
+    .weekend-day {
+        background-color: #fef2f2;
+    }
+    .fc-daygrid-day-frame {
+        min-height: 100px;
+    }
+</style>
+@endpush
+@endonce
+
+@push('scripts')
+<script>
+    (function() {
+        var widgetId = '{{ $this->getId() }}';
+        var calendarEl = document.getElementById('calendar-' + widgetId);
+        
+        if (calendarEl) {
+            var events = @js($this->getEvents());
+            calendarEl.setAttribute('data-events', JSON.stringify(events));
         }
-        .fc-button:hover {
-            background-color: #0d9488 !important;
-            border-color: #0d9488 !important;
-        }
-        .fc-button-active {
-            background-color: #14b8a6 !important;
-            border-color: #14b8a6 !important;
-        }
-        .fc-today-button {
-            background-color: #64748b !important;
-            border-color: #64748b !important;
-        }
-        .fc-daygrid-day-number {
-            padding: 0.25rem;
-            font-weight: 600;
-        }
-        .fc-day-sat .fc-daygrid-day-number,
-        .fc-day-sun .fc-daygrid-day-number {
-            color: #dc2626;
-        }
-        .fc-event {
-            border-radius: 0.25rem;
-            padding: 0.125rem 0.25rem;
-            font-size: 0.75rem;
-            cursor: pointer;
-            border: none !important;
-        }
-        .fc-event:hover {
-            opacity: 0.9;
-        }
-        .fc-daygrid-event {
-            margin: 0.125rem 0;
-        }
-        .weekend-day {
-            background-color: #fef2f2;
-        }
-        .fc-daygrid-day-frame {
-            min-height: 100px;
-        }
-    </style>
-    @endscript
-</x-filament-widgets::widget>
+    })();
+</script>
+@endpush
