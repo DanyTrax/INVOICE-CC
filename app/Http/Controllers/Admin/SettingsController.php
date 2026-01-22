@@ -470,22 +470,19 @@ class SettingsController extends Controller
             if (str_contains(strtolower($errorDescription), 'redirect') || str_contains(strtolower($errorDescription), 'uri')) {
                 $redirectUri = route('admin.settings.zoho.callback');
                 return redirect()
-                    ->route('admin.settings.index')
-                    ->with('error', 'Error: URI de redireccionamiento no válido. Asegúrate de haber configurado EXACTAMENTE esta URL en Zoho API Console: ' . $redirectUri)
-                    ->with('tab', 'mail');
+                    ->route('admin.settings.section', 'mail')
+                    ->with('error', 'Error: URI de redireccionamiento no válido. Asegúrate de haber configurado EXACTAMENTE esta URL en Zoho API Console: ' . $redirectUri);
             }
             
             return redirect()
-                ->route('admin.settings.index')
-                ->with('error', 'Error en la autorización de Zoho: ' . $errorDescription)
-                ->with('tab', 'mail');
+                ->route('admin.settings.section', 'mail')
+                ->with('error', 'Error en la autorización de Zoho: ' . $errorDescription);
         }
 
         if (!$code) {
             return redirect()
-                ->route('admin.settings.index')
-                ->with('error', 'No se recibió el código de autorización de Zoho.')
-                ->with('tab', 'mail');
+                ->route('admin.settings.section', 'mail')
+                ->with('error', 'No se recibió el código de autorización de Zoho.');
         }
 
         // Asegurar que los settings existan
@@ -502,7 +499,7 @@ class SettingsController extends Controller
         // Validar que Client ID y Client Secret estén configurados
         if (empty($settings->zoho_client_id) || empty($settings->zoho_client_secret)) {
             return redirect()
-                ->route('admin.settings.index')
+                ->route('admin.settings.section', 'mail')
                 ->with('error', 'Client ID y Client Secret no están configurados.');
         }
 
@@ -534,14 +531,12 @@ class SettingsController extends Controller
                     $settings->save();
 
                     return redirect()
-                        ->route('admin.settings.index')
-                        ->with('success', '¡Autorización exitosa! El Refresh Token ha sido guardado automáticamente.')
-                        ->with('tab', 'mail'); // Para abrir el tab de correo
+                        ->route('admin.settings.section', 'mail')
+                        ->with('success', '¡Autorización exitosa! El Refresh Token ha sido guardado automáticamente.');
                 } else {
-                    return redirect()
-                        ->route('admin.settings.index')
-                        ->with('error', 'No se recibió el Refresh Token en la respuesta de Zoho.')
-                        ->with('tab', 'mail');
+                return redirect()
+                    ->route('admin.settings.section', 'mail')
+                    ->with('error', 'No se recibió el Refresh Token en la respuesta de Zoho.');
                 }
             } else {
                 $errorMessage = $response->json()['error_description'] ?? $response->body();
