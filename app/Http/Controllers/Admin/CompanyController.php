@@ -96,17 +96,17 @@ class CompanyController extends Controller
         }
         
         $companies = Company::where('name', 'like', "%{$query}%")
-            ->orWhere('email', 'like', "%{$query}%")
+            ->orWhere('contact_person_email', 'like', "%{$query}%")
             ->orWhere('nit_rut', 'like', "%{$query}%")
-            ->select('id', 'name', 'email', 'nit_rut')
+            ->select('id', 'name', 'contact_person_email', 'nit_rut')
             ->limit(20)
             ->get()
             ->map(function ($company) {
                 return [
                     'id' => $company->id,
-                    'text' => $company->name . ' - ' . ($company->nit_rut ?: 'Sin NIT') . ($company->email ? ' (' . $company->email . ')' : ''),
+                    'text' => $company->name . ' - ' . ($company->nit_rut ?: 'Sin NIT') . ($company->contact_person_email ? ' (' . $company->contact_person_email . ')' : ''),
                     'name' => $company->name,
-                    'email' => $company->email,
+                    'email' => $company->contact_person_email,
                     'nit_rut' => $company->nit_rut,
                 ];
             });
