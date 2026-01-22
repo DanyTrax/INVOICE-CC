@@ -20,29 +20,43 @@
                 id="calendar-{{ $this->getId() }}" 
                 class="bg-white rounded-lg border border-gray-200 p-4"
                 data-events='@json($this->getEvents())'
+                wire:ignore
             ></div>
         </div>
     </x-filament::section>
 </x-filament-widgets::widget>
 
 @once
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+@endonce
+
 <script>
 (function() {
-    function initCalendars() {
-        document.querySelectorAll('[id^="calendar-"]').forEach(function(calendarEl) {
-            if (calendarEl.dataset.initialized === 'true') return;
-            
-            calendarEl.dataset.initialized = 'true';
-            
-            var eventsData = calendarEl.getAttribute('data-events');
-            var events = eventsData ? JSON.parse(eventsData) : [];
-            
-            if (typeof FullCalendar === 'undefined') {
-                console.error('FullCalendar no está cargado');
-                return;
-            }
-            
+    var widgetId = '{{ $this->getId() }}';
+    var calendarId = 'calendar-' + widgetId;
+    
+    function initCalendar() {
+        var calendarEl = document.getElementById(calendarId);
+        if (!calendarEl) {
+            setTimeout(initCalendar, 100);
+            return;
+        }
+        
+        if (calendarEl.dataset.initialized === 'true') return;
+        
+        if (typeof FullCalendar === 'undefined') {
+            console.error('FullCalendar no está cargado, reintentando...');
+            setTimeout(initCalendar, 200);
+            return;
+        }
+        
+        calendarEl.dataset.initialized = 'true';
+        
+        var eventsData = calendarEl.getAttribute('data-events');
+        var events = eventsData ? JSON.parse(eventsData) : [];
+        
+        try {
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'es',
@@ -71,22 +85,34 @@
             });
             
             calendar.render();
-        });
+            console.log('Calendario inicializado correctamente');
+        } catch (error) {
+            console.error('Error al inicializar calendario:', error);
+        }
     }
     
+    // Intentar inicializar cuando el DOM esté listo
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initCalendars);
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initCalendar, 300);
+        });
     } else {
-        initCalendars();
+        setTimeout(initCalendar, 300);
     }
     
+    // Reinicializar cuando Livewire actualice
     if (typeof Livewire !== 'undefined') {
         Livewire.hook('morph.updated', function() {
-            setTimeout(initCalendars, 100);
+            var calendarEl = document.getElementById(calendarId);
+            if (calendarEl) {
+                calendarEl.dataset.initialized = 'false';
+                setTimeout(initCalendar, 200);
+            }
         });
     }
 })();
 </script>
+
 <style>
 .fc { font-family: inherit; }
 .fc-header-toolbar { margin-bottom: 1rem; }
@@ -130,4 +156,3 @@
 .weekend-day { background-color: #fef2f2; }
 .fc-daygrid-day-frame { min-height: 100px; }
 </style>
-@endonce
