@@ -569,6 +569,68 @@ class SettingsController extends Controller
             'test_email_body' => 'nullable|string',
         ]);
 
+        // Asegurar que los settings existan
+        $this->ensureSettingsInDatabase();
+        
+        try {
+            $settings = app(GeneralSettings::class);
+        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
+            $settings = new GeneralSettings();
+            $this->ensureAllPropertiesSet($settings);
+            $settings->save();
+        }
+
+        // Validar configuración antes de intentar enviar
+        if ($settings->mail_provider === 'zoho') {
+            $missingConfig = [];
+            
+            if (empty($settings->zoho_client_id)) {
+                $missingConfig[] = 'Client ID de Zoho';
+            }
+            if (empty($settings->zoho_client_secret)) {
+                $missingConfig[] = 'Client Secret de Zoho';
+            }
+            if (empty($settings->zoho_refresh_token)) {
+                $missingConfig[] = 'Refresh Token de Zoho (necesitas autorizar la aplicación)';
+            }
+            if (empty($settings->zoho_from_email)) {
+                $missingConfig[] = 'Email de origen de Zoho';
+            }
+            
+            if (!empty($missingConfig)) {
+                return redirect()
+                    ->route('admin.settings.section', 'mail')
+                    ->with('error', 'Configuración incompleta de Zoho. Faltan: ' . implode(', ', $missingConfig) . '. Por favor, completa la configuración antes de enviar.')
+                    ->with('tab', 'history');
+            }
+        } else {
+            // Validar SMTP
+            $missingConfig = [];
+            
+            if (empty($settings->mail_host)) {
+                $missingConfig[] = 'Host SMTP';
+            }
+            if (empty($settings->mail_port)) {
+                $missingConfig[] = 'Puerto SMTP';
+            }
+            if (empty($settings->mail_username)) {
+                $missingConfig[] = 'Usuario SMTP';
+            }
+            if (empty($settings->mail_password)) {
+                $missingConfig[] = 'Contraseña SMTP';
+            }
+            if (empty($settings->mail_from_address)) {
+                $missingConfig[] = 'Email de origen';
+            }
+            
+            if (!empty($missingConfig)) {
+                return redirect()
+                    ->route('admin.settings.section', 'mail')
+                    ->with('error', 'Configuración incompleta de SMTP. Faltan: ' . implode(', ', $missingConfig) . '. Por favor, completa la configuración antes de enviar.')
+                    ->with('tab', 'history');
+            }
+        }
+
         try {
             $mailService = app(MailService::class);
             
@@ -580,20 +642,17 @@ class SettingsController extends Controller
             
             if ($result) {
                 return redirect()
-                    ->route('admin.settings.index')
-                    ->with('success', 'Correo de prueba enviado exitosamente a ' . $to)
-                    ->with('tab', 'history');
+                    ->route('admin.settings.section', 'history')
+                    ->with('success', 'Correo de prueba enviado exitosamente a ' . $to);
             } else {
                 return redirect()
-                    ->route('admin.settings.index')
-                    ->with('error', 'Error al enviar correo de prueba. Revisa el historial para más detalles.')
-                    ->with('tab', 'history');
+                    ->route('admin.settings.section', 'history')
+                    ->with('error', 'Error al enviar correo de prueba. Revisa el historial para ver el error detallado.');
             }
         } catch (\Exception $e) {
             return redirect()
-                ->route('admin.settings.index')
-                ->with('error', 'Error al enviar correo de prueba: ' . $e->getMessage())
-                ->with('tab', 'history');
+                ->route('admin.settings.section', 'history')
+                ->with('error', 'Error al enviar correo de prueba: ' . $e->getMessage());
         }
     }
 
