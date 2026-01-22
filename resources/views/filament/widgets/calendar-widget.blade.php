@@ -24,9 +24,17 @@
             
             <div 
                 id="{{ $calendarId }}" 
-                class="bg-white rounded-lg border border-gray-200 p-4"
+                class="bg-white rounded-lg border border-gray-200 p-4 min-h-[500px]"
                 wire:ignore
-            ></div>
+                data-events='@json($events)'
+            >
+                <div class="flex items-center justify-center h-full text-gray-400">
+                    <div class="text-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                        <p>Cargando calendario...</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </x-filament::section>
 </x-filament-widgets::widget>
@@ -34,13 +42,37 @@
 @if(!isset($GLOBALS['fullcalendar_loaded']))
     @php $GLOBALS['fullcalendar_loaded'] = true; @endphp
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js" defer></script>
 @endif
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     var calendarId = '{{ $calendarId }}';
     var events = @json($events);
+    
+    function loadFullCalendar() {
+        if (typeof FullCalendar !== 'undefined') {
+            initCalendar();
+            return;
+        }
+        
+        // Si FullCalendar no está cargado, intentar cargarlo
+        if (!document.querySelector('script[src*="fullcalendar"]')) {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js';
+            script.onload = function() {
+                setTimeout(initCalendar, 100);
+            };
+            document.head.appendChild(script);
+            
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css';
+            document.head.appendChild(link);
+        } else {
+            setTimeout(loadFullCalendar, 200);
+        }
+    }
     
     function initCalendar() {
         var calendarEl = document.getElementById(calendarId);
@@ -52,12 +84,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (calendarEl.dataset.initialized === 'true') return;
         
         if (typeof FullCalendar === 'undefined') {
-            console.log('Esperando FullCalendar...');
-            setTimeout(initCalendar, 200);
+            setTimeout(loadFullCalendar, 200);
             return;
         }
         
         calendarEl.dataset.initialized = 'true';
+        calendarEl.innerHTML = ''; // Limpiar loading
         
         try {
             var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -92,21 +124,28 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('❌ Error al inicializar calendario:', error);
             calendarEl.dataset.initialized = 'false';
+            calendarEl.innerHTML = '<div class="p-4 text-red-600">Error al cargar el calendario. Por favor, recarga la página.</div>';
         }
     }
     
-    setTimeout(initCalendar, 500);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(loadFullCalendar, 300);
+        });
+    } else {
+        setTimeout(loadFullCalendar, 300);
+    }
     
     if (typeof Livewire !== 'undefined') {
         Livewire.hook('morph.updated', function() {
             var calendarEl = document.getElementById(calendarId);
             if (calendarEl) {
                 calendarEl.dataset.initialized = 'false';
-                setTimeout(initCalendar, 300);
+                setTimeout(loadFullCalendar, 300);
             }
         });
     }
-});
+})();
 </script>
 
 <style>
