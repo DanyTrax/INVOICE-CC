@@ -164,7 +164,7 @@
                                 </div>
                             </div>
                             
-                            @if($settings->agency_logo && Storage::disk('public')->exists($settings->agency_logo))
+                            @if($logoExists)
                                 <div class="mt-2">
                                     <label class="flex items-center space-x-2 text-sm text-gray-600">
                                         <input type="checkbox" 
