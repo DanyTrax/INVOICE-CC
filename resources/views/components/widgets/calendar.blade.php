@@ -74,17 +74,31 @@
     var nextBtnId = '{{ $nextBtnId }}';
     var events = @json($events);
     var calendar = null;
+    var initAttempts = 0;
+    var maxAttempts = 50; // 5 segundos máximo
     
     function initCalendar() {
-        // Esperar a que FullCalendar esté cargado
+        initAttempts++;
+        
+        // Verificar que FullCalendar esté cargado
         if (typeof FullCalendar === 'undefined') {
-            setTimeout(initCalendar, 100);
+            if (initAttempts < maxAttempts) {
+                setTimeout(initCalendar, 100);
+            } else {
+                console.error('❌ FullCalendar no se cargó después de', maxAttempts, 'intentos');
+                var calendarEl = document.getElementById(calendarId);
+                if (calendarEl) {
+                    calendarEl.innerHTML = '<div class="p-4 text-red-600 text-center">Error: FullCalendar no está disponible. Por favor, recarga la página.</div>';
+                }
+            }
             return;
         }
         
         var calendarEl = document.getElementById(calendarId);
         if (!calendarEl) {
-            setTimeout(initCalendar, 100);
+            if (initAttempts < maxAttempts) {
+                setTimeout(initCalendar, 100);
+            }
             return;
         }
         
@@ -96,6 +110,11 @@
         calendarEl.dataset.initialized = 'true';
         
         try {
+            // Verificar que FullCalendar.Calendar existe
+            if (typeof FullCalendar.Calendar === 'undefined') {
+                throw new Error('FullCalendar.Calendar no está definido');
+            }
+            
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'es',
@@ -111,7 +130,7 @@
                     week: 'Semana',
                     day: 'Día'
                 },
-                events: events,
+                events: events || [],
                 eventClick: function(info) {
                     var type = info.event.extendedProps.type === 'expiration' ? 'Vencimiento' : 'Límite de Respuesta';
                     var message = '<strong>' + type + '</strong><br>' +
@@ -163,17 +182,34 @@
             }
         } catch (error) {
             console.error('❌ Error al inicializar calendario:', error);
-            calendarEl.innerHTML = '<div class="p-4 text-red-600">Error al cargar el calendario. Por favor, recarga la página.</div>';
+            var calendarEl = document.getElementById(calendarId);
+            if (calendarEl) {
+                calendarEl.innerHTML = '<div class="p-4 text-red-600 text-center">Error al cargar el calendario: ' + error.message + '<br>Por favor, recarga la página.</div>';
+            }
         }
     }
     
-    // Inicializar cuando el DOM esté listo
+    // Esperar a que FullCalendar esté cargado
+    function waitForFullCalendar() {
+        if (typeof FullCalendar !== 'undefined') {
+            // Esperar un poco más para asegurar que esté completamente cargado
+            setTimeout(function() {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initCalendar);
+                } else {
+                    initCalendar();
+                }
+            }, 200);
+        } else {
+            setTimeout(waitForFullCalendar, 100);
+        }
+    }
+    
+    // Iniciar espera
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initCalendar, 500);
-        });
+        document.addEventListener('DOMContentLoaded', waitForFullCalendar);
     } else {
-        setTimeout(initCalendar, 500);
+        waitForFullCalendar();
     }
 })();
 </script>
