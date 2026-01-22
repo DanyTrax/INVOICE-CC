@@ -394,7 +394,7 @@
                                     </p>
                                     <ol class="text-sm text-blue-700 list-decimal list-inside ml-2 space-y-1">
                                         <li>Crear aplicación en <a href="https://api-console.zoho.com/" target="_blank" class="underline font-semibold">Zoho API Console</a></li>
-                                        <li>Configurar Redirect URI: <code class="bg-blue-100 px-1 rounded">{{ url('/admin/settings') }}</code></li>
+                                        <li>Configurar Redirect URI: <code class="bg-blue-100 px-1 rounded">{{ route('admin.settings.zoho.callback') }}</code></li>
                                         <li>Obtener Client ID y Client Secret</li>
                                         <li>Generar Refresh Token usando OAuth2</li>
                                         <li>Completar los campos a continuación</li>
@@ -600,7 +600,7 @@
                                 </p>
                                 <ul class="text-xs text-green-700 list-disc list-inside space-y-1 ml-2">
                                     <li>Client ID y Client Secret copiados correctamente desde Zoho API Console</li>
-                                    <li>Redirect URI configurada en Zoho API Console: <code class="bg-green-100 px-1 rounded">{{ url('/admin/settings') }}</code></li>
+                                    <li>Redirect URI configurada en Zoho API Console: <code class="bg-green-100 px-1 rounded">{{ route('admin.settings.zoho.callback') }}</code></li>
                                     <li>Refresh Token generado usando OAuth2 con <code class="bg-green-100 px-1 rounded">access_type=offline</code></li>
                                     <li>Email remitente verificado en tu cuenta de Zoho Mail</li>
                                 </ul>
