@@ -18,8 +18,8 @@ class RegistrationForm
     {
         return $schema
             ->components([
-                // Sección 1: Información del Cliente (Automático)
-                Section::make('1. Información del Cliente (Automático)')
+                // Secci?n 1: Informaci?n del Cliente (Autom?tico)
+                Section::make('1. Informaci?n del Cliente (Autom?tico)')
                     ->schema([
                         Select::make('company_id')
                             ->label('Cliente Seleccionado')
@@ -50,7 +50,7 @@ class RegistrationForm
                             ->default(fn ($get) => Company::find($get('company_id'))?->nit_rut),
                         
                         TextInput::make('company_address')
-                            ->label('Dirección')
+                            ->label('Direcci?n')
                             ->disabled()
                             ->dehydrated(false)
                             ->default(fn ($get) => Company::find($get('company_id'))?->address),
@@ -63,8 +63,8 @@ class RegistrationForm
                     ])
                     ->columns(4),
                 
-                // Sección 2: Datos del Trámite y Producto
-                Section::make('2. Datos del Trámite y Producto')
+                // Secci?n 2: Datos del Tr?mite y Producto
+                Section::make('2. Datos del Tr?mite y Producto')
                     ->schema([
                         TextInput::make('product_name')
                             ->label('Nombre del Producto')
@@ -83,7 +83,7 @@ class RegistrationForm
                             ->label('Status')
                             ->options([
                                 'vigente' => 'Vigente',
-                                'tramite' => 'En Trámite',
+                                'tramite' => 'En Tr?mite',
                                 'requerimiento' => 'Requerimiento',
                                 'vencido' => 'Vencido',
                             ])
@@ -95,20 +95,20 @@ class RegistrationForm
                             ->label('Tipo de Tr?mite')
                             ->options([
                                 'Nuevo' => 'Nuevo',
-                                'Renovación' => 'Renovación',
-                                'Modificación' => 'Modificación',
-                                'Cancelación' => 'Cancelación',
+                                'Renovaci?n' => 'Renovaci?n',
+                                'Modificaci?n' => 'Modificaci?n',
+                                'Cancelaci?n' => 'Cancelaci?n',
                             ])
                             ->columnSpan(4),
                         
                         TextInput::make('quotation_number')
-                            ->label('No. Cotización / Factura')
+                            ->label('No. Cotizaci?n / Factura')
                             ->maxLength(255)
                             ->columnSpan(4),
                     ])
                     ->columns(12),
                 
-                // Sección 3: Cronograma y Radicados
+                // Secci?n 3: Cronograma y Radicados
                 Section::make('3. Cronograma y Radicados')
                     ->schema([
                         DatePicker::make('client_request_date')
@@ -116,7 +116,7 @@ class RegistrationForm
                             ->columnSpan(3),
                         
                         DatePicker::make('radication_date')
-                            ->label('Fecha Radicación')
+                            ->label('Fecha Radicaci?n')
                             ->columnSpan(3),
                         
                         TextInput::make('radication_number')
@@ -125,12 +125,12 @@ class RegistrationForm
                             ->columnSpan(3),
                         
                         TextInput::make('key_code')
-                            ->label('Llave / Código')
+                            ->label('Llave / C?digo')
                             ->maxLength(255)
                             ->columnSpan(3),
                         
                         DatePicker::make('submission_date')
-                            ->label('Fecha de Presentación')
+                            ->label('Fecha de Presentaci?n')
                             ->columnSpan(3),
                         
                         DatePicker::make('expiration_date')
@@ -142,15 +142,15 @@ class RegistrationForm
                             ->columnSpan(3),
                         
                         DatePicker::make('response_limit_date')
-                            ->label('Fecha Límite de Respuesta')
+                            ->label('Fecha L?mite de Respuesta')
                             ->columnSpan(3),
                         
                         DatePicker::make('response_radication_date')
-                            ->label('Fecha Radicación de Respuesta')
+                            ->label('Fecha Radicaci?n de Respuesta')
                             ->columnSpan(3),
                         
                         TextInput::make('resolution_number')
-                            ->label('Número de Resolución')
+                            ->label('N?mero de Resoluci?n')
                             ->maxLength(255)
                             ->columnSpan(3),
                     ])
@@ -181,13 +181,13 @@ class RegistrationForm
                     ])
                     ->columns(12),
                 
-                // Sección 5: Documentos (Placeholder para Google Drive)
-                Section::make('4. Documentos en Drive')
-                    ->description('Los documentos se subirán directamente a la carpeta del cliente en Google Drive')
+                // Secci?n 5: Documentos (Placeholder para Google Drive)
+                Section::make('5. Documentos en Drive')
+                    ->description('Los documentos se subir?n directamente a la carpeta del cliente en Google Drive')
                     ->schema([
                         \Filament\Forms\Components\Placeholder::make('drive_info')
                             ->label('')
-                            ->content('La integración con Google Drive se configurará en la página de Configuración. Los archivos se organizarán automáticamente en: /RAMS/{Cliente}/{Expediente}/')
+                            ->content('La integraci?n con Google Drive se configurar? en la p?gina de Configuraci?n. Los archivos se organizar?n autom?ticamente en: /RAMS/{Cliente}/{Expediente}/')
                             ->columnSpanFull(),
                     ]),
             ]);
