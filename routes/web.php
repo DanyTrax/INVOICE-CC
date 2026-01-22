@@ -1,7 +1,37 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\RegistrationController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Auth\LoginController;
 
+// Redirigir raíz al dashboard
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('admin.dashboard');
+});
+
+// Autenticación
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login']);
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// Rutas Admin (requieren autenticación)
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Companies
+    Route::resource('companies', CompanyController::class);
+    
+    // Registrations
+    Route::resource('registrations', RegistrationController::class);
+    
+    // Users
+    Route::resource('users', UserController::class);
+    
+    // Settings
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 });
