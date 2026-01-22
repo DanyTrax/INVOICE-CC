@@ -18,8 +18,8 @@ class RegistrationForm
     {
         return $schema
             ->components([
-                // Secci?n 1: Informaci?n del Cliente (Autom?tico)
-                Section::make('1. Informaci?n del Cliente (Autom?tico)')
+                // Sección 1: Información del Cliente (Automático)
+                Section::make('1. Información del Cliente (Automático)')
                     ->schema([
                         Select::make('company_id')
                             ->label('Cliente Seleccionado')
@@ -50,7 +50,7 @@ class RegistrationForm
                             ->default(fn ($get) => Company::find($get('company_id'))?->nit_rut),
                         
                         TextInput::make('company_address')
-                            ->label('Direcci?n')
+                            ->label('Dirección')
                             ->disabled()
                             ->dehydrated(false)
                             ->default(fn ($get) => Company::find($get('company_id'))?->address),
@@ -102,13 +102,13 @@ class RegistrationForm
                             ->columnSpan(4),
                         
                         TextInput::make('quotation_number')
-                            ->label('No. Cotizaci?n / Factura')
+                            ->label('No. Cotización / Factura')
                             ->maxLength(255)
                             ->columnSpan(4),
                     ])
                     ->columns(12),
                 
-                // Secci?n 3: Cronograma y Radicados
+                // Sección 3: Cronograma y Radicados
                 Section::make('3. Cronograma y Radicados')
                     ->schema([
                         DatePicker::make('client_request_date')
@@ -116,7 +116,7 @@ class RegistrationForm
                             ->columnSpan(3),
                         
                         DatePicker::make('radication_date')
-                            ->label('Fecha Radicaci?n')
+                            ->label('Fecha Radicación')
                             ->columnSpan(3),
                         
                         TextInput::make('radication_number')
@@ -125,12 +125,12 @@ class RegistrationForm
                             ->columnSpan(3),
                         
                         TextInput::make('key_code')
-                            ->label('Llave / C?digo')
+                            ->label('Llave / Código')
                             ->maxLength(255)
                             ->columnSpan(3),
                         
                         DatePicker::make('submission_date')
-                            ->label('Fecha de Presentaci?n')
+                            ->label('Fecha de Presentación')
                             ->columnSpan(3),
                         
                         DatePicker::make('expiration_date')
@@ -142,15 +142,15 @@ class RegistrationForm
                             ->columnSpan(3),
                         
                         DatePicker::make('response_limit_date')
-                            ->label('Fecha L?mite de Respuesta')
+                            ->label('Fecha Límite de Respuesta')
                             ->columnSpan(3),
                         
                         DatePicker::make('response_radication_date')
-                            ->label('Fecha Radicaci?n de Respuesta')
+                            ->label('Fecha Radicación de Respuesta')
                             ->columnSpan(3),
                         
                         TextInput::make('resolution_number')
-                            ->label('N?mero de Resoluci?n')
+                            ->label('Número de Resolución')
                             ->maxLength(255)
                             ->columnSpan(3),
                     ])
