@@ -20,7 +20,20 @@
     
     @stack('styles')
 </head>
-<body class="h-full" x-data="{ sidebarOpen: window.innerWidth >= 1024 }" x-init="window.addEventListener('resize', () => { if (window.innerWidth >= 1024) sidebarOpen = true; })">
+<body class="h-full" x-data="{ sidebarOpen: true }" x-init="
+    // Inicializar según tamaño de pantalla
+    if (window.innerWidth >= 1024) {
+        sidebarOpen = true;
+    } else {
+        sidebarOpen = false;
+    }
+    // Ajustar al cambiar tamaño
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1024) {
+            sidebarOpen = true;
+        }
+    });
+">
     <div class="flex h-screen bg-gray-50">
         <!-- Overlay para móvil -->
         <div x-show="sidebarOpen && window.innerWidth < 1024" 
@@ -102,7 +115,7 @@
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300" 
-             :style="sidebarOpen && window.innerWidth >= 1024 ? 'margin-left: 16rem;' : 'margin-left: 0;'">
+             :style="sidebarOpen ? 'margin-left: 16rem;' : 'margin-left: 0;'">
             <!-- Top Navbar -->
             <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
                 <div class="flex items-center justify-between px-4 py-3">
