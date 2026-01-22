@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class CalendarWidget extends Widget
 {
-    protected string $view = 'filament.widgets.calendar-widget';
+    protected string $view = 'filament.widgets.calendar-widget-simple';
     
     protected int | string | array $columnSpan = 'full';
     
