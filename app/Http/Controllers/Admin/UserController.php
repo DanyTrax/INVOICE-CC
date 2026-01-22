@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -42,7 +43,8 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        return view('admin.users.create', compact('roles'));
+        $companies = Company::orderBy('name')->get();
+        return view('admin.users.create', compact('roles', 'companies'));
     }
 
     public function store(Request $request)
@@ -66,6 +68,11 @@ class UserController extends Controller
             $user->syncRoles($request->roles);
         }
 
+        // Asignar empresas (clientes)
+        if ($request->filled('companies')) {
+            $user->companies()->sync($request->companies);
+        }
+
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'Usuario creado exitosamente.');
@@ -82,8 +89,9 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles = Role::all();
-        $user->load('roles');
-        return view('admin.users.edit', compact('user', 'roles'));
+        $companies = Company::orderBy('name')->get();
+        $user->load('roles', 'companies');
+        return view('admin.users.edit', compact('user', 'roles', 'companies'));
     }
 
     public function update(Request $request, User $user)
@@ -95,6 +103,8 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
             'roles' => 'array',
+            'companies' => 'array',
+            'companies.*' => 'exists:companies,id',
         ]);
 
         // Solo actualizar password si se proporciona
@@ -113,6 +123,13 @@ class UserController extends Controller
             $user->syncRoles($request->roles);
         } else {
             $user->syncRoles([]);
+        }
+
+        // Sincronizar empresas (clientes)
+        if ($request->filled('companies')) {
+            $user->companies()->sync($request->companies);
+        } else {
+            $user->companies()->sync([]);
         }
 
         return redirect()

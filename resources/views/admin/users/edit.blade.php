@@ -138,6 +138,41 @@
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <!-- Clientes Asignados -->
+                <div class="md:col-span-2">
+                    <label class="block mb-2 text-sm font-medium text-gray-900">
+                        Clientes Asignados
+                    </label>
+                    <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 max-h-64 overflow-y-auto">
+                        @if($companies->count() > 0)
+                            <div class="space-y-2">
+                                @foreach($companies as $company)
+                                    <div class="flex items-center">
+                                        <input type="checkbox" 
+                                               id="company_{{ $company->id }}" 
+                                               name="companies[]" 
+                                               value="{{ $company->id }}"
+                                               {{ in_array($company->id, old('companies', $user->companies->pluck('id')->toArray())) ? 'checked' : '' }}
+                                               class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
+                                        <label for="company_{{ $company->id }}" class="ml-2 text-sm text-gray-900 flex-1">
+                                            <span class="font-medium">{{ $company->name }}</span>
+                                            @if($company->nit_rut)
+                                                <span class="text-gray-500 ml-2">({{ $company->nit_rut }})</span>
+                                            @endif
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-gray-500 text-center py-4">No hay clientes registrados</p>
+                        @endif
+                    </div>
+                    <p class="mt-2 text-xs text-gray-500">Selecciona los clientes que estarán asignados a este usuario</p>
+                    @error('companies')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
 
             <!-- Botones -->
