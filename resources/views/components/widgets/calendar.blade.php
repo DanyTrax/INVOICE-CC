@@ -156,7 +156,9 @@
                         alert(message);
                     }
                 },
-                dayCellClassNames: function(date) {
+                dayCellClassNames: function(arg) {
+                    // FullCalendar pasa un objeto DateInfo, necesitamos extraer la fecha
+                    var date = arg.date instanceof Date ? arg.date : new Date(arg.date);
                     var day = date.getDay();
                     return (day === 0 || day === 6) ? ['weekend-day'] : [];
                 }
