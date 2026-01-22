@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 
 class MailService
 {
@@ -156,7 +157,20 @@ class MailService
                 $errorData = $response->json();
                 $errorMessage = 'Error al enviar correo vía Zoho Mail API';
                 
-                if (isset($errorData['error'])) {
+                // Manejar error específico de URL_RULE_NOT_CONFIGURED
+                if (isset($errorData['data']['errorCode']) && $errorData['data']['errorCode'] === 'URL_RULE_NOT_CONFIGURED') {
+                    $redirectUri = route('admin.settings.zoho.callback');
+                    $errorMessage = 'Error de configuración en Zoho: La Redirect URI no está configurada en Zoho API Console.';
+                    $errorMessage .= "\n\n";
+                    $errorMessage .= 'SOLUCIÓN:';
+                    $errorMessage .= "\n1. Ve a https://api-console.zoho.com/";
+                    $errorMessage .= "\n2. Selecciona tu aplicación";
+                    $errorMessage .= "\n3. Ve a la pestaña \"Settings\" o \"Client Details\"";
+                    $errorMessage .= "\n4. En \"Authorized Redirect URIs\", agrega EXACTAMENTE esta URL:";
+                    $errorMessage .= "\n   " . $redirectUri;
+                    $errorMessage .= "\n5. Guarda los cambios en Zoho";
+                    $errorMessage .= "\n6. Vuelve a la configuración y autoriza nuevamente la aplicación";
+                } elseif (isset($errorData['error'])) {
                     $errorMessage .= ': ' . $errorData['error'];
                     if (isset($errorData['message'])) {
                         $errorMessage .= ' - ' . $errorData['message'];
