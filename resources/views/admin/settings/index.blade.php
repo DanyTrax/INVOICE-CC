@@ -401,11 +401,28 @@
                                     <strong>URL de Confianza (Redirect URI):</strong>
                                 </p>
                                 <div class="bg-white border border-yellow-300 rounded p-3 mb-2">
-                                    <code class="text-sm font-mono text-gray-900 break-all">{{ url('/admin/settings') }}</code>
+                                    <code class="text-sm font-mono text-gray-900 break-all" id="redirect-uri-display">{{ route('admin.settings.zoho.callback') }}</code>
+                                    <button type="button" 
+                                            onclick="copyRedirectUri()"
+                                            class="ml-2 text-teal-600 hover:text-teal-700 text-xs">
+                                        <i class="fas fa-copy mr-1"></i>Copiar
+                                    </button>
                                 </div>
-                                <p class="text-xs text-yellow-700">
-                                    ⚠️ <strong>IMPORTANTE:</strong> Esta URL debe estar configurada EXACTAMENTE igual en Zoho API Console → Tu aplicación → Authorized Redirect URIs
+                                <p class="text-xs text-yellow-700 mb-2">
+                                    ⚠️ <strong>IMPORTANTE:</strong> Esta URL debe estar configurada EXACTAMENTE igual (carácter por carácter) en Zoho API Console.
                                 </p>
+                                <div class="bg-white border border-yellow-300 rounded p-3 mt-2">
+                                    <p class="text-xs text-yellow-800 font-semibold mb-1">Pasos para configurar en Zoho:</p>
+                                    <ol class="text-xs text-yellow-700 list-decimal list-inside space-y-1 ml-2">
+                                        <li>Ve a <a href="https://api-console.zoho.com/" target="_blank" class="underline font-semibold">Zoho API Console</a></li>
+                                        <li>Selecciona tu aplicación "Regulatory"</li>
+                                        <li>Ve a la pestaña "Settings" o "Client Details"</li>
+                                        <li>En "Authorized Redirect URIs", haz clic en el botón "+" o "Add"</li>
+                                        <li>Copia y pega EXACTAMENTE esta URL: <code class="bg-yellow-100 px-1 rounded font-mono text-xs">{{ route('admin.settings.zoho.callback') }}</code></li>
+                                        <li>Guarda los cambios en Zoho</li>
+                                        <li>Vuelve aquí y haz clic en el botón de autorización nuevamente</li>
+                                    </ol>
+                                </div>
                             </div>
 
                             <!-- Client ID -->
@@ -809,7 +826,36 @@ function validateZohoCredentials(event) {
         return false;
     }
     
+    // Recordar al usuario sobre la Redirect URI
+    const redirectUri = '{{ route("admin.settings.zoho.callback") }}';
+    const confirmMessage = 'IMPORTANTE: Asegúrate de haber configurado esta Redirect URI en Zoho API Console:\n\n' + 
+                          redirectUri + 
+                          '\n\n¿Ya configuraste la Redirect URI en Zoho API Console?';
+    
+    if (!confirm(confirmMessage)) {
+        event.preventDefault();
+        return false;
+    }
+    
     return true;
+}
+
+// Función para copiar Redirect URI al portapapeles
+function copyRedirectUri() {
+    const redirectUri = '{{ route("admin.settings.zoho.callback") }}';
+    navigator.clipboard.writeText(redirectUri).then(function() {
+        // Mostrar mensaje de éxito
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check mr-1"></i>Copiado!';
+        button.classList.add('text-green-600');
+        setTimeout(function() {
+            button.innerHTML = originalText;
+            button.classList.remove('text-green-600');
+        }, 2000);
+    }).catch(function(err) {
+        alert('Error al copiar. Por favor, copia manualmente: ' + redirectUri);
+    });
 }
 
 // Verificar al cargar la página

@@ -436,15 +436,28 @@ class SettingsController extends Controller
         $error = $request->input('error');
 
         if ($error) {
+            $errorDescription = $request->input('error_description', $error);
+            
+            // Mensaje más específico para error de Redirect URI
+            if (str_contains(strtolower($errorDescription), 'redirect') || str_contains(strtolower($errorDescription), 'uri')) {
+                $redirectUri = route('admin.settings.zoho.callback');
+                return redirect()
+                    ->route('admin.settings.index')
+                    ->with('error', 'Error: URI de redireccionamiento no válido. Asegúrate de haber configurado EXACTAMENTE esta URL en Zoho API Console: ' . $redirectUri)
+                    ->with('tab', 'mail');
+            }
+            
             return redirect()
                 ->route('admin.settings.index')
-                ->with('error', 'Error en la autorización de Zoho: ' . $error);
+                ->with('error', 'Error en la autorización de Zoho: ' . $errorDescription)
+                ->with('tab', 'mail');
         }
 
         if (!$code) {
             return redirect()
                 ->route('admin.settings.index')
-                ->with('error', 'No se recibió el código de autorización de Zoho.');
+                ->with('error', 'No se recibió el código de autorización de Zoho.')
+                ->with('tab', 'mail');
         }
 
         // Asegurar que los settings existan
