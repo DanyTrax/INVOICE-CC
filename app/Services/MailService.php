@@ -160,16 +160,21 @@ class MailService
                 // Manejar error específico de URL_RULE_NOT_CONFIGURED
                 if (isset($errorData['data']['errorCode']) && $errorData['data']['errorCode'] === 'URL_RULE_NOT_CONFIGURED') {
                     $redirectUri = route('admin.settings.zoho.callback');
-                    $errorMessage = 'Error de configuración en Zoho: La Redirect URI no está configurada en Zoho API Console.';
+                    $errorMessage = 'Error de configuración en Zoho: La Redirect URI no está configurada correctamente o el Refresh Token fue generado antes de configurarla.';
                     $errorMessage .= "\n\n";
-                    $errorMessage .= 'SOLUCIÓN:';
-                    $errorMessage .= "\n1. Ve a https://api-console.zoho.com/";
-                    $errorMessage .= "\n2. Selecciona tu aplicación";
-                    $errorMessage .= "\n3. Ve a la pestaña \"Settings\" o \"Client Details\"";
-                    $errorMessage .= "\n4. En \"Authorized Redirect URIs\", agrega EXACTAMENTE esta URL:";
+                    $errorMessage .= 'SOLUCIÓN (IMPORTANTE - Sigue estos pasos en orden):';
+                    $errorMessage .= "\n\n1. Verifica que la Redirect URI esté configurada en Zoho API Console:";
                     $errorMessage .= "\n   " . $redirectUri;
-                    $errorMessage .= "\n5. Guarda los cambios en Zoho";
-                    $errorMessage .= "\n6. Vuelve a la configuración y autoriza nuevamente la aplicación";
+                    $errorMessage .= "\n   (Debe estar EXACTAMENTE igual, carácter por carácter)";
+                    $errorMessage .= "\n\n2. Si ya está configurada, el problema es que el Refresh Token fue generado ANTES de configurar la URI.";
+                    $errorMessage .= "\n   NECESITAS REGENERAR EL REFRESH TOKEN:";
+                    $errorMessage .= "\n   a) Ve a la configuración de correo en RAMS";
+                    $errorMessage .= "\n   b) Elimina el Refresh Token actual (déjalo vacío)";
+                    $errorMessage .= "\n   c) Guarda los cambios";
+                    $errorMessage .= "\n   d) Haz clic en \"Autorizar con Zoho\" nuevamente";
+                    $errorMessage .= "\n   e) Acepta los permisos en Zoho";
+                    $errorMessage .= "\n   f) El nuevo Refresh Token se generará automáticamente";
+                    $errorMessage .= "\n\n3. Después de regenerar el Refresh Token, intenta enviar el correo de nuevo.";
                 } elseif (isset($errorData['error'])) {
                     $errorMessage .= ': ' . $errorData['error'];
                     if (isset($errorData['message'])) {
