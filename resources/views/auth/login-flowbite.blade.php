@@ -25,9 +25,42 @@
         <div class="bg-white rounded-lg shadow-xl p-8">
             <!-- Logo -->
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">
-                    <span class="text-teal-600">R</span> REGULATORY APP
-                </h1>
+                @php
+                    try {
+                        $settings = app(\App\Settings\GeneralSettings::class);
+                        $logoPath = $settings->agency_logo ?? null;
+                        $agencyName = $settings->agency_name ?? null;
+                        $hasLogo = $logoPath && file_exists(public_path($logoPath));
+                        $hasName = !empty($agencyName) && $agencyName !== 'RAMS';
+                    } catch (\Exception $e) {
+                        $logoPath = null;
+                        $agencyName = null;
+                        $hasLogo = false;
+                        $hasName = false;
+                    }
+                @endphp
+                
+                @if($hasLogo)
+                    {{-- Mostrar logo si existe --}}
+                    <div class="flex justify-center mb-4">
+                        <img src="{{ asset($logoPath) }}" 
+                             alt="{{ $agencyName ?? 'Logo' }}" 
+                             class="h-16 w-auto object-contain">
+                    </div>
+                    @if($hasName)
+                        <h2 class="text-xl font-semibold text-gray-900 mt-2">{{ $agencyName }}</h2>
+                    @endif
+                @elseif($hasName)
+                    {{-- Solo mostrar nombre de agencia si no hay logo --}}
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        <span class="text-teal-600">{{ $agencyName }}</span>
+                    </h1>
+                @else
+                    {{-- Por defecto: R REGULATORY APP --}}
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        <span class="text-teal-600">R</span> REGULATORY APP
+                    </h1>
+                @endif
                 <p class="text-gray-600 mt-2">Inicia sesión para continuar</p>
             </div>
 
