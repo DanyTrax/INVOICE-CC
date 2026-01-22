@@ -7,7 +7,7 @@ use Filament\Support\Icons\Heroicon;
 
 class Settings extends Page
 {
-    protected static ?string $navigationIcon = Heroicon::OutlinedCog6Tooth;
+    protected static BackedEnum|string|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
     
     protected static ?string $navigationLabel = 'Configuración';
     
