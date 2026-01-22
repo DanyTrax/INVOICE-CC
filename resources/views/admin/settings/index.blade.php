@@ -758,7 +758,7 @@
                                             </td>
                                             <td class="px-4 py-3">
                                                 <button type="button" 
-                                                        onclick="showEmailDetails({{ $log->id }})"
+                                                        onclick="if(typeof showEmailDetails === 'function') { showEmailDetails({{ $log->id }}); } else { console.error('showEmailDetails no está definida'); alert('Error: La función de visualización no está disponible. Por favor, recarga la página.'); }"
                                                         class="text-teal-600 hover:text-teal-700 text-sm font-medium hover:underline">
                                                     <i class="fas fa-eye mr-1"></i> Ver Detalles
                                                 </button>
@@ -1078,6 +1078,12 @@ function closeEmailDetails() {
     }
 }
 
+// Asegurar que las funciones estén disponibles globalmente inmediatamente
+if (typeof window !== 'undefined') {
+    window.showEmailDetails = showEmailDetails;
+    window.closeEmailDetails = closeEmailDetails;
+}
+
 // Función para mostrar/ocultar campos según el proveedor seleccionado
 function toggleProviderFields() {
     const provider = document.getElementById('mail_provider').value;
@@ -1240,4 +1246,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 });
+
+// Asegurar que showEmailDetails esté disponible globalmente
+window.showEmailDetails = showEmailDetails;
+window.closeEmailDetails = closeEmailDetails;
 @endpush
