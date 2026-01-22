@@ -8,8 +8,14 @@
         
         {{-- Widgets de Estadísticas --}}
         <x-filament-widgets::widgets
-            :widgets="$this->getWidgets()"
-            :columns="$this->getColumns()"
+            :widgets="$this->getHeaderWidgets()"
+            :columns="$this->getHeaderWidgetsColumns()"
+        />
+        
+        {{-- Calendario --}}
+        <x-filament-widgets::widgets
+            :widgets="$this->getFooterWidgets()"
+            :columns="$this->getFooterWidgetsColumns()"
         />
     </div>
 </x-filament-panels::page>
