@@ -136,12 +136,13 @@ class MailService
             if ($response->successful()) {
                 return true;
             } else {
-                Log::error('Error enviando correo Zoho: ' . $response->body());
-                return false;
+                $errorBody = $response->body();
+                Log::error('Error enviando correo Zoho: ' . $errorBody);
+                throw new \Exception('Error Zoho: ' . $errorBody);
             }
         } catch (\Exception $e) {
             Log::error('Error enviando correo Zoho: ' . $e->getMessage());
-            return false;
+            throw $e; // Re-lanzar para que el método send() pueda capturarlo
         }
     }
 

@@ -45,4 +45,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             // Zoho OAuth
             Route::get('/settings/zoho/authorize', [SettingsController::class, 'zohoAuthorize'])->name('settings.zoho.authorize');
             Route::get('/settings/zoho/callback', [SettingsController::class, 'zohoCallback'])->name('settings.zoho.callback');
+            
+            // Email Logs
+            Route::get('/settings/email-logs/{log}', [SettingsController::class, 'getEmailLog'])->name('settings.email-logs.show');
         });

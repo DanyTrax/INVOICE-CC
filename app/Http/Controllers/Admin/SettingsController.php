@@ -572,4 +572,27 @@ class SettingsController extends Controller
                 ->with('tab', 'history');
         }
     }
+
+    /**
+     * Obtener detalles de un log de correo
+     */
+    public function getEmailLog(EmailLog $log)
+    {
+        return response()->json([
+            'success' => true,
+            'log' => [
+                'id' => $log->id,
+                'to' => $log->to,
+                'from_email' => $log->from_email,
+                'from_name' => $log->from_name,
+                'subject' => $log->subject,
+                'body' => $log->body,
+                'provider' => $log->provider,
+                'status' => $log->status,
+                'error_message' => $log->error_message,
+                'is_test' => $log->is_test,
+                'created_at' => $log->created_at->toIso8601String(),
+            ],
+        ]);
+    }
 }

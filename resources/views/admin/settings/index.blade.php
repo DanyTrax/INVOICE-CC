@@ -720,7 +720,7 @@
                                                 <span class="font-medium text-gray-900">{{ $log->to }}</span>
                                             </td>
                                             <td class="px-4 py-3">
-                                                <span class="text-gray-900">{{ Str::limit($log->subject, 50) }}</span>
+                                                <span class="text-gray-900">{{ strlen($log->subject) > 50 ? substr($log->subject, 0, 50) . '...' : $log->subject }}</span>
                                             </td>
                                             <td class="px-4 py-3">
                                                 <span class="px-2 py-1 text-xs font-medium rounded-full {{ $log->provider === 'zoho' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}">
@@ -889,9 +889,60 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Función para mostrar detalles del correo
 function showEmailDetails(logId) {
-    // Aquí puedes implementar un modal o expandir la fila para mostrar detalles
-    // Por ahora, redirigir a una ruta de detalle o mostrar en modal
-    alert('Funcionalidad de detalles próximamente. ID: ' + logId);
+    // Hacer una petición AJAX para obtener los detalles del correo
+    fetch(`/admin/settings/email-logs/${logId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const log = data.log;
+                const modal = `
+                    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="email-detail-modal">
+                        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                            <div class="mt-3">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900">Detalles del Correo</h3>
+                                    <button onclick="closeEmailDetails()" class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="space-y-3 text-sm">
+                                    <div><strong>Fecha:</strong> ${new Date(log.created_at).toLocaleString('es-ES')}</div>
+                                    <div><strong>Destinatario:</strong> ${log.to}</div>
+                                    <div><strong>Remitente:</strong> ${log.from_email} (${log.from_name || 'Sin nombre'})</div>
+                                    <div><strong>Asunto:</strong> ${log.subject}</div>
+                                    <div><strong>Proveedor:</strong> ${log.provider.toUpperCase()}</div>
+                                    <div><strong>Estado:</strong> ${log.status === 'sent' ? '✅ Enviado' : log.status === 'failed' ? '❌ Fallido' : '⏳ Pendiente'}</div>
+                                    ${log.error_message ? `<div class="text-red-600"><strong>Error:</strong> ${log.error_message}</div>` : ''}
+                                    <div class="border-t pt-3">
+                                        <strong>Cuerpo del Mensaje:</strong>
+                                        <div class="mt-2 p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto">
+                                            ${log.body}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex justify-end">
+                                    <button onclick="closeEmailDetails()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                                        Cerrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modal);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar los detalles del correo');
+        });
+}
+
+function closeEmailDetails() {
+    const modal = document.getElementById('email-detail-modal');
+    if (modal) {
+        modal.remove();
+    }
 }
 </script>
 @endpush
