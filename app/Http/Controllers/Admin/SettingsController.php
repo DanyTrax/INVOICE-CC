@@ -105,9 +105,16 @@ class SettingsController extends Controller
                 Storage::disk('public')->delete($settings->agency_logo);
             }
             
-            // Guardar nuevo logo
-            $logoPath = $request->file('agency_logo')->store('logos', 'public');
-            $settings->agency_logo = $logoPath;
+            // Guardar nuevo logo sin usar MIME type (evita php_fileinfo)
+            $file = $request->file('agency_logo');
+            $extension = $file->getClientOriginalExtension();
+            $filename = 'logo_' . time() . '_' . uniqid() . '.' . $extension;
+            $path = 'logos/' . $filename;
+            
+            // Usar put() con el contenido del archivo directamente (evita detección de MIME)
+            $fileContent = file_get_contents($file->getRealPath());
+            Storage::disk('public')->put($path, $fileContent);
+            $settings->agency_logo = $path;
         }
         // Si no se envía nada, mantener el logo actual
         
