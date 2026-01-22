@@ -454,27 +454,107 @@
                                 <label for="zoho_refresh_token" class="block mb-2 text-sm font-medium text-gray-900">
                                     Refresh Token <span class="text-red-500">*</span>
                                 </label>
-                                <textarea id="zoho_refresh_token" 
-                                          name="zoho_refresh_token" 
-                                          rows="3"
-                                          placeholder="1000.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-                                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('zoho_refresh_token', $settings->zoho_refresh_token ?? '') }}</textarea>
-                                <div class="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                    <p class="text-xs text-gray-700 mb-2">
-                                        <strong>Pasos para generar Refresh Token:</strong>
-                                    </p>
-                                    <ol class="text-xs text-gray-600 list-decimal list-inside space-y-1 ml-2">
-                                        <li>Construye la URL de autorización (ver instructivo)</li>
-                                        <li>Autoriza la aplicación en el navegador</li>
-                                        <li>Obtén el código de la URL de redirect</li>
-                                        <li>Usa cURL o Postman para intercambiar el código por Refresh Token</li>
-                                    </ol>
-                                    <p class="text-xs text-gray-600 mt-2">
-                                        <a href="https://www.zoho.com/mail/help/api/using-oauth.html" target="_blank" class="text-teal-600 hover:text-teal-700 underline font-semibold">
-                                            <i class="fas fa-external-link-alt mr-1"></i>Ver documentación completa
-                                        </a>
-                                    </p>
+                                
+                                <!-- Botón de Autorización Automática (PRIMERO) -->
+                                <div class="mb-4">
+                                    @if(empty($settings->zoho_client_id) || empty($settings->zoho_client_secret))
+                                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3">
+                                            <p class="text-sm text-yellow-800 mb-2">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                <strong>Paso 1:</strong> Primero completa Client ID y Client Secret arriba, luego usa el botón de abajo.
+                                            </p>
+                                        </div>
+                                    @endif
+                                    
+                                    <div class="bg-teal-50 border-2 border-teal-300 rounded-lg p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-teal-900 mb-1">
+                                                    <i class="fas fa-magic mr-2"></i>
+                                                    Generación Automática de Refresh Token
+                                                </h4>
+                                                <p class="text-xs text-teal-700">
+                                                    Este botón enviará la información a Zoho, te redirigirá para autorizar y obtendrá automáticamente el Refresh Token.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        @if(!empty($settings->zoho_client_id) && !empty($settings->zoho_client_secret))
+                                            <a href="{{ route('admin.settings.zoho.authorize') }}" 
+                                               class="inline-flex items-center justify-center w-full px-6 py-3 bg-teal-600 text-white text-base font-semibold rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300 transition-all shadow-lg hover:shadow-xl">
+                                                <i class="fas fa-check-circle mr-2 text-lg"></i>
+                                                <span>Autorizar con Zoho y Generar Refresh Token Automáticamente</span>
+                                                <i class="fas fa-arrow-right ml-2"></i>
+                                            </a>
+                                            <p class="text-xs text-teal-600 mt-2 text-center">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Asegúrate de haber configurado la Redirect URI en Zoho API Console antes de hacer clic
+                                            </p>
+                                        @else
+                                            <button type="button" 
+                                                    disabled
+                                                    class="inline-flex items-center justify-center w-full px-6 py-3 bg-gray-400 text-white text-base font-semibold rounded-lg cursor-not-allowed opacity-60">
+                                                <i class="fas fa-lock mr-2"></i>
+                                                <span>Completa Client ID y Client Secret primero</span>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
+                                
+                                <!-- Campo de Refresh Token (se llena automáticamente) -->
+                                <div class="mb-2">
+                                    <textarea id="zoho_refresh_token" 
+                                              name="zoho_refresh_token" 
+                                              rows="3"
+                                              placeholder="1000.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX (se llenará automáticamente después de autorizar)"
+                                              class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 p-2.5 font-mono text-xs">{{ old('zoho_refresh_token', $settings->zoho_refresh_token ?? '') }}</textarea>
+                                    @if(!empty($settings->zoho_refresh_token))
+                                        <p class="text-xs text-green-600 mt-1">
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            Refresh Token configurado correctamente
+                                        </p>
+                                    @endif
+                                </div>
+                                
+                                <!-- Información del Proceso -->
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                                    <p class="text-xs text-blue-800 mb-2">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <strong>¿Cómo funciona el botón?</strong>
+                                    </p>
+                                    <ol class="text-xs text-blue-700 list-decimal list-inside space-y-1 ml-2">
+                                        <li>La plataforma envía tu Client ID a Zoho</li>
+                                        <li>Zoho te muestra una pantalla de autorización</li>
+                                        <li>Autorizas la aplicación en Zoho</li>
+                                        <li>Zoho confirma y redirige de vuelta con un código</li>
+                                        <li>La plataforma intercambia el código por Refresh Token automáticamente</li>
+                                        <li>El Refresh Token se guarda automáticamente en el campo de arriba</li>
+                                    </ol>
+                                </div>
+                                
+                                <!-- Método Manual (Alternativo) -->
+                                <details class="mt-4">
+                                    <summary class="text-xs text-gray-600 cursor-pointer hover:text-gray-800">
+                                        <i class="fas fa-chevron-down mr-1"></i>
+                                        Ver método manual (alternativo)
+                                    </summary>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2">
+                                        <p class="text-xs text-gray-700 mb-2">
+                                            <strong>Si prefieres hacerlo manualmente:</strong>
+                                        </p>
+                                        <ol class="text-xs text-gray-600 list-decimal list-inside space-y-1 ml-2">
+                                            <li>Construye la URL de autorización (ver instructivo)</li>
+                                            <li>Autoriza la aplicación en el navegador</li>
+                                            <li>Obtén el código de la URL de redirect</li>
+                                            <li>Usa cURL o Postman para intercambiar el código por Refresh Token</li>
+                                        </ol>
+                                        <p class="text-xs text-gray-600 mt-2">
+                                            <a href="https://www.zoho.com/mail/help/api/using-oauth.html" target="_blank" class="text-teal-600 hover:text-teal-700 underline font-semibold">
+                                                <i class="fas fa-external-link-alt mr-1"></i>Ver documentación completa
+                                            </a>
+                                        </p>
+                                    </div>
+                                </details>
                             </div>
 
                             <!-- From Email -->
