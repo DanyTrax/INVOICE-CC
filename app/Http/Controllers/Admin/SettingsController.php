@@ -427,7 +427,8 @@ class SettingsController extends Controller
     }
 
     /**
-     * Callback de OAuth de Zoho - recibe el código y obtiene Refresh Token
+     * Callback de OAuth de Zoho - recibe el código de confirmación de Zoho y obtiene Refresh Token
+     * Este método se ejecuta después de que Zoho confirma la autorización y redirige de vuelta
      */
     public function zohoCallback(Request $request)
     {
