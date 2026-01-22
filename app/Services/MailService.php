@@ -85,7 +85,7 @@ class MailService
                 'mail.from.name' => $fromName ?? $this->settings->mail_from_name,
             ]);
 
-            Mail::raw($body, function ($message) use ($to, $subject, $fromName, $fromEmail) {
+            Mail::html($body, function ($message) use ($to, $subject, $fromName, $fromEmail) {
                 $message->to($to)
                         ->subject($subject)
                         ->from(
@@ -97,7 +97,7 @@ class MailService
             return true;
         } catch (\Exception $e) {
             Log::error('Error enviando correo SMTP: ' . $e->getMessage());
-            return false;
+            throw $e; // Re-lanzar para que el método send() pueda capturarlo
         }
     }
 
