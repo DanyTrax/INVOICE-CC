@@ -15,10 +15,12 @@ Sistema SAAS para gestión de expedientes regulatorios sanitarios construido con
 
 ## 📋 Requisitos
 
-- PHP 8.2 o superior
+- **PHP 8.2.0 o superior** (compatible con 8.2, 8.3, 8.4)
 - MySQL 5.7+ o MariaDB 10.3+
-- Composer
+- Composer 2.x
 - Extensiones PHP: intl, mbstring, openssl, pdo, pdo_mysql, tokenizer, xml, curl, zip
+
+> **Nota:** El proyecto está configurado para funcionar con PHP 8.2. Si tu servidor tiene PHP 8.2.x, el proyecto funcionará sin problemas.
 
 ## 🛠️ Instalación Rápida
 
