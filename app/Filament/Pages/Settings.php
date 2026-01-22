@@ -52,8 +52,8 @@ class Settings extends Page implements HasSchemas
     
     public function schema(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Tabs::make('Settings')
                     ->tabs([
                         Tab::make('Datos Empresa')
