@@ -33,7 +33,6 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Teal,
             ])
             ->darkMode(false)
-            ->viteTheme('resources/css/app.css')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
