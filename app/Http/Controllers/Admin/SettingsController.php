@@ -39,12 +39,31 @@ class SettingsController extends Controller
         } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
             // Ejecutar migración de settings si no existen
             \Artisan::call('settings:migrate');
-            $settings = app(GeneralSettings::class);
-        }
-        
-        // Si aún no se pueden cargar, inicializar manualmente
-        if (!$settings) {
-            $settings = new GeneralSettings();
+            try {
+                $settings = app(GeneralSettings::class);
+            } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e2) {
+                // Si aún falla, inicializar todas las propiedades manualmente
+                $settings = new GeneralSettings();
+                // Establecer todas las propiedades con valores por defecto
+                $settings->agency_name = 'RAMS';
+                $settings->agency_nit = '';
+                $settings->agency_address = '';
+                $settings->agency_phone = '';
+                $settings->agency_email = '';
+                $settings->agency_website = '';
+                $settings->agency_logo = '';
+                $settings->drive_service_account_json = '';
+                $settings->mail_mailer = 'smtp';
+                $settings->mail_host = 'smtp.gmail.com';
+                $settings->mail_port = 587;
+                $settings->mail_username = '';
+                $settings->mail_password = '';
+                $settings->mail_encryption = 'tls';
+                $settings->mail_from_address = 'noreply@rams.com';
+                $settings->mail_from_name = 'RAMS Sistema';
+                // Guardar inicial
+                $settings->save();
+            }
         }
 
         switch ($section) {
