@@ -1,3 +1,9 @@
+@php
+    $widgetId = $this->getId();
+    $calendarId = 'calendar-' . $widgetId;
+    $events = $this->getEvents();
+@endphp
+
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">
@@ -17,24 +23,24 @@
             </div>
             
             <div 
-                id="calendar-{{ $this->getId() }}" 
+                id="{{ $calendarId }}" 
                 class="bg-white rounded-lg border border-gray-200 p-4"
-                data-events='@json($this->getEvents())'
                 wire:ignore
             ></div>
         </div>
     </x-filament::section>
 </x-filament-widgets::widget>
 
-@once
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-@endonce
+@if(!isset($GLOBALS['fullcalendar_loaded']))
+    @php $GLOBALS['fullcalendar_loaded'] = true; @endphp
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+@endif
 
 <script>
-(function() {
-    var widgetId = '{{ $this->getId() }}';
-    var calendarId = 'calendar-' + widgetId;
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarId = '{{ $calendarId }}';
+    var events = @json($events);
     
     function initCalendar() {
         var calendarEl = document.getElementById(calendarId);
@@ -46,15 +52,12 @@
         if (calendarEl.dataset.initialized === 'true') return;
         
         if (typeof FullCalendar === 'undefined') {
-            console.error('FullCalendar no está cargado, reintentando...');
+            console.log('Esperando FullCalendar...');
             setTimeout(initCalendar, 200);
             return;
         }
         
         calendarEl.dataset.initialized = 'true';
-        
-        var eventsData = calendarEl.getAttribute('data-events');
-        var events = eventsData ? JSON.parse(eventsData) : [];
         
         try {
             var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -85,32 +88,25 @@
             });
             
             calendar.render();
-            console.log('Calendario inicializado correctamente');
+            console.log('✅ Calendario inicializado:', calendarId);
         } catch (error) {
-            console.error('Error al inicializar calendario:', error);
+            console.error('❌ Error al inicializar calendario:', error);
+            calendarEl.dataset.initialized = 'false';
         }
     }
     
-    // Intentar inicializar cuando el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initCalendar, 300);
-        });
-    } else {
-        setTimeout(initCalendar, 300);
-    }
+    setTimeout(initCalendar, 500);
     
-    // Reinicializar cuando Livewire actualice
     if (typeof Livewire !== 'undefined') {
         Livewire.hook('morph.updated', function() {
             var calendarEl = document.getElementById(calendarId);
             if (calendarEl) {
                 calendarEl.dataset.initialized = 'false';
-                setTimeout(initCalendar, 200);
+                setTimeout(initCalendar, 300);
             }
         });
     }
-})();
+});
 </script>
 
 <style>
