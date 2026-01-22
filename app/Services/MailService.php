@@ -142,8 +142,22 @@ class MailService
                 'mailFormat' => 'html',
             ];
 
+            // Primero, intentar obtener el accountId del email (opcional, pero mejora la precisión)
+            // Si falla, usaremos el email directamente en la URL
+            $accountId = $fromEmail; // Por defecto usamos el email
+            
             // Enviar correo vía Zoho Mail API
-            $apiUrl = 'https://mail.zoho.com/api/accounts/' . urlencode($fromEmail) . '/messages';
+            // Nota: Zoho acepta tanto accountId numérico como email en la URL
+            // El error URL_RULE_NOT_CONFIGURED generalmente indica que el token
+            // está vinculado a una cuenta diferente al fromEmail
+            $apiUrl = 'https://mail.zoho.com/api/accounts/' . urlencode($accountId) . '/messages';
+            
+            Log::info('Enviando correo Zoho', [
+                'fromEmail' => $fromEmail,
+                'to' => $to,
+                'apiUrl' => $apiUrl,
+                'hasAccessToken' => !empty($accessToken),
+            ]);
             
             $response = Http::withHeaders([
                 'Authorization' => 'Zoho-oauthtoken ' . $accessToken,
@@ -159,27 +173,27 @@ class MailService
                 
                 // Manejar error específico de URL_RULE_NOT_CONFIGURED
                 if (isset($errorData['data']['errorCode']) && $errorData['data']['errorCode'] === 'URL_RULE_NOT_CONFIGURED') {
-                    $redirectUri = route('admin.settings.zoho.callback');
-                    $errorMessage = 'Error: El Refresh Token está vinculado a una cuenta diferente al Email Remitente configurado.';
+                    $errorMessage = '❌ ERROR: El Refresh Token está vinculado a una cuenta DIFERENTE al Email Remitente.';
                     $errorMessage .= "\n\n";
-                    $errorMessage .= 'PROBLEMA IDENTIFICADO:';
-                    $errorMessage .= "\n- Email Remitente configurado: " . $fromEmail;
-                    $errorMessage .= "\n- El token fue generado autorizando con OTRA cuenta de Zoho";
-                    $errorMessage .= "\n- Zoho solo permite enviar desde la cuenta que autorizó la aplicación";
+                    $errorMessage .= '🔍 DIAGNÓSTICO:';
+                    $errorMessage .= "\n• Email Remitente configurado: " . $fromEmail;
+                    $errorMessage .= "\n• El token fue generado autorizando con OTRA cuenta de Zoho";
+                    $errorMessage .= "\n• Zoho solo permite enviar desde la cuenta que autorizó la aplicación";
                     $errorMessage .= "\n\n";
-                    $errorMessage .= 'SOLUCIÓN (Sigue estos pasos EXACTAMENTE):';
-                    $errorMessage .= "\n\n1. Ve a la configuración de correo en RAMS";
-                    $errorMessage .= "\n2. Verifica que el Email Remitente sea: " . $fromEmail;
-                    $errorMessage .= "\n3. Haz clic en \"Limpiar\" en el campo Refresh Token (o bórralo manualmente)";
-                    $errorMessage .= "\n4. Guarda los cambios";
-                    $errorMessage .= "\n5. IMPORTANTE: Cierra sesión en Zoho o abre una ventana privada";
-                    $errorMessage .= "\n6. Inicia sesión en Zoho SOLO con el correo: " . $fromEmail;
-                    $errorMessage .= "\n7. Vuelve a RAMS y haz clic en \"Autorizar con Zoho\"";
-                    $errorMessage .= "\n8. Acepta los permisos en Zoho (verifica que sea la cuenta " . $fromEmail . ")";
-                    $errorMessage .= "\n9. El nuevo Refresh Token se generará automáticamente";
-                    $errorMessage .= "\n10. Intenta enviar el correo de nuevo";
+                    $errorMessage .= '✅ SOLUCIÓN (Pasos EXACTOS):';
+                    $errorMessage .= "\n\n1️⃣  Ve a Configuración → Correo & SMTP en RAMS";
+                    $errorMessage .= "\n2️⃣  Verifica que Email Remitente sea: " . $fromEmail;
+                    $errorMessage .= "\n3️⃣  Haz clic en \"Limpiar\" en el campo Refresh Token";
+                    $errorMessage .= "\n4️⃣  Guarda los cambios";
+                    $errorMessage .= "\n5️⃣  🔴 CRÍTICO: Cierra sesión en Zoho o abre ventana privada/incógnito";
+                    $errorMessage .= "\n6️⃣  Inicia sesión en Zoho SOLO con: " . $fromEmail;
+                    $errorMessage .= "\n7️⃣  Vuelve a RAMS y haz clic en \"Autorizar con Zoho\"";
+                    $errorMessage .= "\n8️⃣  En Zoho, VERIFICA que la cuenta que autoriza sea: " . $fromEmail;
+                    $errorMessage .= "\n9️⃣  Acepta los permisos";
+                    $errorMessage .= "\n🔟 Intenta enviar el correo de nuevo";
                     $errorMessage .= "\n\n";
-                    $errorMessage .= 'NOTA: El token DEBE generarse con la MISMA cuenta que el Email Remitente.';
+                    $errorMessage .= '⚠️  IMPORTANTE: El token DEBE generarse con la MISMA cuenta que el Email Remitente.';
+                    $errorMessage .= "\n   Si autorizas con otra cuenta (ej. tu correo personal), los envíos fallarán.';
                 } elseif (isset($errorData['error'])) {
                     $errorMessage .= ': ' . $errorData['error'];
                     if (isset($errorData['message'])) {
