@@ -367,9 +367,146 @@
                                    id="mail_from_name" 
                                    name="mail_from_name" 
                                    value="{{ old('mail_from_name', $settings->mail_from_name ?? 'RAMS Sistema') }}"
-                                   required
                                    placeholder="RAMS Sistema"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                        </div>
+                        </div>
+
+                        <!-- Campos Zoho Mail API -->
+                        <div id="zoho-fields" class="md:col-span-2 {{ old('mail_provider', $settings->mail_provider ?? 'smtp') === 'smtp' ? 'hidden' : '' }}">
+                            <div class="border-t border-gray-200 pt-6 mb-6">
+                                <h4 class="text-md font-semibold text-gray-900 mb-4">Configuración Zoho Mail API</h4>
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                                    <p class="text-sm text-blue-800 mb-2">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        <strong>Instrucciones completas:</strong> Consulta el archivo <code class="bg-blue-100 px-2 py-1 rounded">INSTRUCTIVO_ZOHO_MAIL.md</code> en la raíz del proyecto para una guía paso a paso.
+                                    </p>
+                                    <p class="text-sm text-blue-700">
+                                        <strong>Pasos rápidos:</strong>
+                                    </p>
+                                    <ol class="text-sm text-blue-700 list-decimal list-inside ml-2 space-y-1">
+                                        <li>Crear aplicación en <a href="https://api-console.zoho.com/" target="_blank" class="underline font-semibold">Zoho API Console</a></li>
+                                        <li>Configurar Redirect URI: <code class="bg-blue-100 px-1 rounded">{{ url('/admin/settings') }}</code></li>
+                                        <li>Obtener Client ID y Client Secret</li>
+                                        <li>Generar Refresh Token usando OAuth2</li>
+                                        <li>Completar los campos a continuación</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <!-- Redirect URI Info -->
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                                <p class="text-sm text-yellow-800 mb-2">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    <strong>URL de Confianza (Redirect URI):</strong>
+                                </p>
+                                <div class="bg-white border border-yellow-300 rounded p-3 mb-2">
+                                    <code class="text-sm font-mono text-gray-900 break-all">{{ url('/admin/settings') }}</code>
+                                </div>
+                                <p class="text-xs text-yellow-700">
+                                    ⚠️ <strong>IMPORTANTE:</strong> Esta URL debe estar configurada EXACTAMENTE igual en Zoho API Console → Tu aplicación → Authorized Redirect URIs
+                                </p>
+                            </div>
+
+                            <!-- Client ID -->
+                            <div>
+                                <label for="zoho_client_id" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Client ID <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" 
+                                       id="zoho_client_id" 
+                                       name="zoho_client_id" 
+                                       value="{{ old('zoho_client_id', $settings->zoho_client_id ?? '') }}"
+                                       placeholder="1000.XXXXXXXXXXXX"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-sm">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                    <strong>Dónde encontrarlo:</strong> Zoho API Console → Tu aplicación → Client ID
+                                </p>
+                            </div>
+
+                            <!-- Client Secret -->
+                            <div>
+                                <label for="zoho_client_secret" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Client Secret <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="password" 
+                                           id="zoho_client_secret" 
+                                           name="zoho_client_secret" 
+                                           value="{{ old('zoho_client_secret', $settings->zoho_client_secret ?? '') }}"
+                                           placeholder="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-sm">
+                                    <button type="button" 
+                                            onclick="togglePasswordVisibility('zoho_client_secret')"
+                                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                                        <i class="fas fa-eye" id="eye-zoho_client_secret"></i>
+                                    </button>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                    <strong>Dónde encontrarlo:</strong> Zoho API Console → Tu aplicación → Client Secret
+                                </p>
+                            </div>
+
+                            <!-- Refresh Token -->
+                            <div>
+                                <label for="zoho_refresh_token" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Refresh Token <span class="text-red-500">*</span>
+                                </label>
+                                <textarea id="zoho_refresh_token" 
+                                          name="zoho_refresh_token" 
+                                          rows="3"
+                                          placeholder="1000.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('zoho_refresh_token', $settings->zoho_refresh_token ?? '') }}</textarea>
+                                <div class="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                    <p class="text-xs text-gray-700 mb-2">
+                                        <strong>Pasos para generar Refresh Token:</strong>
+                                    </p>
+                                    <ol class="text-xs text-gray-600 list-decimal list-inside space-y-1 ml-2">
+                                        <li>Construye la URL de autorización (ver instructivo)</li>
+                                        <li>Autoriza la aplicación en el navegador</li>
+                                        <li>Obtén el código de la URL de redirect</li>
+                                        <li>Usa cURL o Postman para intercambiar el código por Refresh Token</li>
+                                    </ol>
+                                    <p class="text-xs text-gray-600 mt-2">
+                                        <a href="https://www.zoho.com/mail/help/api/using-oauth.html" target="_blank" class="text-teal-600 hover:text-teal-700 underline font-semibold">
+                                            <i class="fas fa-external-link-alt mr-1"></i>Ver documentación completa
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- From Email -->
+                            <div>
+                                <label for="zoho_from_email" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Email Remitente <span class="text-red-500">*</span>
+                                </label>
+                                <input type="email" 
+                                       id="zoho_from_email" 
+                                       name="zoho_from_email" 
+                                       value="{{ old('zoho_from_email', $settings->zoho_from_email ?? '') }}"
+                                       placeholder="noreply@tudominio.com"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Email verificado y autorizado en tu cuenta de Zoho Mail. Este será el remitente de todos los correos.
+                                </p>
+                            </div>
+                            
+                            <!-- Verificación -->
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                                <p class="text-sm text-green-800 mb-2">
+                                    <i class="fas fa-check-circle mr-2"></i>
+                                    <strong>Verificación de Configuración:</strong>
+                                </p>
+                                <ul class="text-xs text-green-700 list-disc list-inside space-y-1 ml-2">
+                                    <li>Client ID y Client Secret copiados correctamente desde Zoho API Console</li>
+                                    <li>Redirect URI configurada en Zoho API Console: <code class="bg-green-100 px-1 rounded">{{ url('/admin/settings') }}</code></li>
+                                    <li>Refresh Token generado usando OAuth2 con <code class="bg-green-100 px-1 rounded">access_type=offline</code></li>
+                                    <li>Email remitente verificado en tu cuenta de Zoho Mail</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
