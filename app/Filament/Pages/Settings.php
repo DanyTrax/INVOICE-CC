@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 
