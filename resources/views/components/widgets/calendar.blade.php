@@ -157,10 +157,39 @@
                     }
                 },
                 dayCellClassNames: function(arg) {
-                    // FullCalendar pasa un objeto DateInfo, necesitamos extraer la fecha
-                    var date = arg.date instanceof Date ? arg.date : new Date(arg.date);
-                    var day = date.getDay();
-                    return (day === 0 || day === 6) ? ['weekend-day'] : [];
+                    try {
+                        // FullCalendar pasa un objeto con propiedades date, dayEl, etc.
+                        // arg.date es un objeto DateInfo, necesitamos acceder a la fecha correctamente
+                        var dateObj = null;
+                        
+                        if (arg.date) {
+                            // Si arg.date es un objeto DateInfo, puede tener una propiedad date o ser directamente un Date
+                            if (arg.date instanceof Date) {
+                                dateObj = arg.date;
+                            } else if (arg.date.date instanceof Date) {
+                                dateObj = arg.date.date;
+                            } else if (typeof arg.date === 'string') {
+                                dateObj = new Date(arg.date);
+                            } else {
+                                // Intentar convertir a Date
+                                dateObj = new Date(arg.date);
+                            }
+                        } else if (arg instanceof Date) {
+                            dateObj = arg;
+                        } else {
+                            return [];
+                        }
+                        
+                        if (!dateObj || isNaN(dateObj.getTime())) {
+                            return [];
+                        }
+                        
+                        var day = dateObj.getDay();
+                        return (day === 0 || day === 6) ? ['weekend-day'] : [];
+                    } catch (e) {
+                        console.warn('Error en dayCellClassNames:', e);
+                        return [];
+                    }
                 }
             });
             
