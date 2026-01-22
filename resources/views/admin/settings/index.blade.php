@@ -900,17 +900,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const validSections = ['agency', 'drive', 'mail', 'templates', 'history'];
     const activeSection = validSections.includes(currentSection) ? currentSection : 'agency';
     
-    // Mostrar el tab correspondiente
-    showTab(activeSection);
-    
     // Inicializar campos según el proveedor
     toggleProviderFields();
     
-    // Si hay un parámetro tab en la sesión (después de guardar), mostrar ese tab
+    // Si hay un parámetro tab en la sesión (después de guardar), redirigir a esa sección
     const tabFromSession = '{{ session('tab', '') }}';
-    if (tabFromSession && validSections.includes(tabFromSession)) {
-        showTab(tabFromSession);
-        updateUrl(tabFromSession);
+    if (tabFromSession && validSections.includes(tabFromSession) && tabFromSession !== activeSection) {
+        // Redirigir a la sección de la sesión si es diferente a la actual
+        window.location.href = '/admin/settings/' + tabFromSession;
+        return;
     }
 });
 

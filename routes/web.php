@@ -36,7 +36,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
     
             // Settings - Rutas independientes para cada sección
-            Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+            Route::get('/settings', function() {
+                return redirect()->route('admin.settings.section', 'agency');
+            })->name('settings.index');
             Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history');
             Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
             
