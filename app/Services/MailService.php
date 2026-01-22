@@ -160,21 +160,26 @@ class MailService
                 // Manejar error específico de URL_RULE_NOT_CONFIGURED
                 if (isset($errorData['data']['errorCode']) && $errorData['data']['errorCode'] === 'URL_RULE_NOT_CONFIGURED') {
                     $redirectUri = route('admin.settings.zoho.callback');
-                    $errorMessage = 'Error de configuración en Zoho: La Redirect URI no está configurada correctamente o el Refresh Token fue generado antes de configurarla.';
+                    $errorMessage = 'Error: El Refresh Token está vinculado a una cuenta diferente al Email Remitente configurado.';
                     $errorMessage .= "\n\n";
-                    $errorMessage .= 'SOLUCIÓN (IMPORTANTE - Sigue estos pasos en orden):';
-                    $errorMessage .= "\n\n1. Verifica que la Redirect URI esté configurada en Zoho API Console:";
-                    $errorMessage .= "\n   " . $redirectUri;
-                    $errorMessage .= "\n   (Debe estar EXACTAMENTE igual, carácter por carácter)";
-                    $errorMessage .= "\n\n2. Si ya está configurada, el problema es que el Refresh Token fue generado ANTES de configurar la URI.";
-                    $errorMessage .= "\n   NECESITAS REGENERAR EL REFRESH TOKEN:";
-                    $errorMessage .= "\n   a) Ve a la configuración de correo en RAMS";
-                    $errorMessage .= "\n   b) Elimina el Refresh Token actual (déjalo vacío)";
-                    $errorMessage .= "\n   c) Guarda los cambios";
-                    $errorMessage .= "\n   d) Haz clic en \"Autorizar con Zoho\" nuevamente";
-                    $errorMessage .= "\n   e) Acepta los permisos en Zoho";
-                    $errorMessage .= "\n   f) El nuevo Refresh Token se generará automáticamente";
-                    $errorMessage .= "\n\n3. Después de regenerar el Refresh Token, intenta enviar el correo de nuevo.";
+                    $errorMessage .= 'PROBLEMA IDENTIFICADO:';
+                    $errorMessage .= "\n- Email Remitente configurado: " . $fromEmail;
+                    $errorMessage .= "\n- El token fue generado autorizando con OTRA cuenta de Zoho";
+                    $errorMessage .= "\n- Zoho solo permite enviar desde la cuenta que autorizó la aplicación";
+                    $errorMessage .= "\n\n";
+                    $errorMessage .= 'SOLUCIÓN (Sigue estos pasos EXACTAMENTE):';
+                    $errorMessage .= "\n\n1. Ve a la configuración de correo en RAMS";
+                    $errorMessage .= "\n2. Verifica que el Email Remitente sea: " . $fromEmail;
+                    $errorMessage .= "\n3. Haz clic en \"Limpiar\" en el campo Refresh Token (o bórralo manualmente)";
+                    $errorMessage .= "\n4. Guarda los cambios";
+                    $errorMessage .= "\n5. IMPORTANTE: Cierra sesión en Zoho o abre una ventana privada";
+                    $errorMessage .= "\n6. Inicia sesión en Zoho SOLO con el correo: " . $fromEmail;
+                    $errorMessage .= "\n7. Vuelve a RAMS y haz clic en \"Autorizar con Zoho\"";
+                    $errorMessage .= "\n8. Acepta los permisos en Zoho (verifica que sea la cuenta " . $fromEmail . ")";
+                    $errorMessage .= "\n9. El nuevo Refresh Token se generará automáticamente";
+                    $errorMessage .= "\n10. Intenta enviar el correo de nuevo";
+                    $errorMessage .= "\n\n";
+                    $errorMessage .= 'NOTA: El token DEBE generarse con la MISMA cuenta que el Email Remitente.';
                 } elseif (isset($errorData['error'])) {
                     $errorMessage .= ': ' . $errorData['error'];
                     if (isset($errorData['message'])) {
