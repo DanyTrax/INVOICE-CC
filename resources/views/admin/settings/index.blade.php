@@ -973,7 +973,7 @@ window.showEmailDetails = function(logId) {
                                     <h3 class="text-lg font-semibold text-gray-900">
                                         <i class="fas fa-envelope text-teal-600 mr-2"></i>Detalles del Correo
                                     </h3>
-                                    <button onclick="closeEmailDetails()" class="text-gray-400 hover:text-gray-600 text-xl">
+                                    <button onclick="if(typeof window.closeEmailDetails === 'function') { window.closeEmailDetails(); }" class="text-gray-400 hover:text-gray-600 text-xl">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
@@ -1008,12 +1008,12 @@ window.showEmailDetails = function(logId) {
                                     <div class="border-t pt-4 mt-4">
                                         <strong class="text-gray-700 block mb-2">Cuerpo del Mensaje:</strong>
                                         <div class="mt-2 p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto text-xs">
-                                            ${log.body}
+                                            ${escapeHtml(log.body)}
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mt-6 flex justify-end border-t pt-4">
-                                    <button onclick="closeEmailDetails()" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                                    <button onclick="if(typeof window.closeEmailDetails === 'function') { window.closeEmailDetails(); }" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
                                         <i class="fas fa-times mr-2"></i>Cerrar
                                     </button>
                                 </div>
@@ -1053,7 +1053,7 @@ window.showEmailDetails = function(logId) {
                                 <p class="text-xs text-gray-500 mt-2">Por favor, verifica la consola del navegador para más detalles.</p>
                             </div>
                             <div class="mt-4 flex justify-end">
-                                <button onclick="closeEmailDetails()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                                <button onclick="if(typeof window.closeEmailDetails === 'function') { window.closeEmailDetails(); }" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
                                     Cerrar
                                 </button>
                             </div>
