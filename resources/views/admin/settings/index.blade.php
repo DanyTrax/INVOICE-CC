@@ -230,10 +230,10 @@
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     <i class="fas fa-envelope text-teal-600 mr-2"></i>
-                    Configuración de Correo (SMTP)
+                    Configuración de Correo
                 </h3>
                 <p class="text-sm text-gray-600 mb-6">
-                    Configura los parámetros SMTP para el envío de correos electrónicos.
+                    Selecciona el proveedor de correo y configura los parámetros correspondientes.
                 </p>
 
                 <form action="{{ route('admin.settings.update') }}" method="POST">
@@ -241,19 +241,40 @@
                     <input type="hidden" name="section" value="mail">
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Mailer -->
-                        <div>
-                            <label for="mail_mailer" class="block mb-2 text-sm font-medium text-gray-900">
-                                Mailer <span class="text-red-500">*</span>
+                        <!-- Proveedor de Correo -->
+                        <div class="md:col-span-2">
+                            <label for="mail_provider" class="block mb-2 text-sm font-medium text-gray-900">
+                                Proveedor de Correo <span class="text-red-500">*</span>
                             </label>
-                            <select id="mail_mailer" 
-                                    name="mail_mailer" 
+                            <select id="mail_provider" 
+                                    name="mail_provider" 
                                     required
+                                    onchange="toggleProviderFields()"
                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                                <option value="smtp" {{ old('mail_mailer', $settings->mail_mailer ?? 'smtp') === 'smtp' ? 'selected' : '' }}>SMTP</option>
-                                <option value="sendmail" {{ old('mail_mailer', $settings->mail_mailer ?? 'smtp') === 'sendmail' ? 'selected' : '' }}>Sendmail</option>
+                                <option value="smtp" {{ old('mail_provider', $settings->mail_provider ?? 'smtp') === 'smtp' ? 'selected' : '' }}>SMTP (Gmail, Outlook, etc.)</option>
+                                <option value="zoho" {{ old('mail_provider', $settings->mail_provider ?? 'smtp') === 'zoho' ? 'selected' : '' }}>Zoho Mail API</option>
                             </select>
+                            <p class="mt-1 text-xs text-gray-500">Selecciona el método de envío de correos</p>
                         </div>
+
+                        <!-- Campos SMTP -->
+                        <div id="smtp-fields" class="md:col-span-2 {{ old('mail_provider', $settings->mail_provider ?? 'smtp') === 'zoho' ? 'hidden' : '' }}">
+                            <div class="border-t border-gray-200 pt-6 mb-6">
+                                <h4 class="text-md font-semibold text-gray-900 mb-4">Configuración SMTP</h4>
+                            </div>
+                            
+                            <!-- Mailer -->
+                            <div>
+                                <label for="mail_mailer" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Mailer <span class="text-red-500">*</span>
+                                </label>
+                                <select id="mail_mailer" 
+                                        name="mail_mailer" 
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                    <option value="smtp" {{ old('mail_mailer', $settings->mail_mailer ?? 'smtp') === 'smtp' ? 'selected' : '' }}>SMTP</option>
+                                    <option value="sendmail" {{ old('mail_mailer', $settings->mail_mailer ?? 'smtp') === 'sendmail' ? 'selected' : '' }}>Sendmail</option>
+                                </select>
+                            </div>
 
                         <!-- Host -->
                         <div>
@@ -456,6 +477,42 @@ function showTab(tabName) {
 // Mostrar el primer tab por defecto
 document.addEventListener('DOMContentLoaded', function() {
     showTab('agency');
+    toggleProviderFields();
 });
+
+// Función para mostrar/ocultar campos según el proveedor seleccionado
+function toggleProviderFields() {
+    const provider = document.getElementById('mail_provider').value;
+    const smtpFields = document.getElementById('smtp-fields');
+    const zohoFields = document.getElementById('zoho-fields');
+    
+    if (provider === 'smtp') {
+        smtpFields.classList.remove('hidden');
+        zohoFields.classList.add('hidden');
+        // Hacer campos SMTP requeridos
+        document.getElementById('mail_host').required = true;
+        document.getElementById('mail_port').required = true;
+        document.getElementById('mail_from_address').required = true;
+        document.getElementById('mail_from_name').required = true;
+        // Quitar requeridos de Zoho
+        document.getElementById('zoho_client_id').required = false;
+        document.getElementById('zoho_client_secret').required = false;
+        document.getElementById('zoho_refresh_token').required = false;
+        document.getElementById('zoho_from_email').required = false;
+    } else {
+        smtpFields.classList.add('hidden');
+        zohoFields.classList.remove('hidden');
+        // Quitar requeridos de SMTP
+        document.getElementById('mail_host').required = false;
+        document.getElementById('mail_port').required = false;
+        document.getElementById('mail_from_address').required = false;
+        document.getElementById('mail_from_name').required = false;
+        // Hacer campos Zoho requeridos
+        document.getElementById('zoho_client_id').required = true;
+        document.getElementById('zoho_client_secret').required = true;
+        document.getElementById('zoho_refresh_token').required = true;
+        document.getElementById('zoho_from_email').required = true;
+    }
+}
 </script>
 @endpush

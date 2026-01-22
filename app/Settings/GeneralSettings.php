@@ -18,6 +18,9 @@ class GeneralSettings extends Settings
     // Google Drive
     public string $drive_service_account_json = '';
 
+    // Mail Provider
+    public string $mail_provider = 'smtp'; // 'smtp' o 'zoho'
+    
     // SMTP
     public string $mail_mailer = 'smtp';
     public string $mail_host = 'smtp.gmail.com';
@@ -27,6 +30,13 @@ class GeneralSettings extends Settings
     public string $mail_encryption = 'tls';
     public string $mail_from_address = 'noreply@rams.com';
     public string $mail_from_name = 'RAMS Sistema';
+    
+    // Zoho Mail API
+    public string $zoho_client_id = '';
+    public string $zoho_client_secret = '';
+    public string $zoho_refresh_token = '';
+    public string $zoho_access_token = '';
+    public string $zoho_from_email = '';
 
     public static function group(): string
     {

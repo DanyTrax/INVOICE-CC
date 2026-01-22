@@ -191,6 +191,7 @@ class SettingsController extends Controller
             'agency_website' => '',
             'agency_logo' => '',
             'drive_service_account_json' => '',
+            'mail_provider' => 'smtp',
             'mail_mailer' => 'smtp',
             'mail_host' => 'smtp.gmail.com',
             'mail_port' => 587,
@@ -199,6 +200,11 @@ class SettingsController extends Controller
             'mail_encryption' => 'tls',
             'mail_from_address' => 'noreply@rams.com',
             'mail_from_name' => 'RAMS Sistema',
+            'zoho_client_id' => '',
+            'zoho_client_secret' => '',
+            'zoho_refresh_token' => '',
+            'zoho_access_token' => '',
+            'zoho_from_email' => '',
         ];
         
         $existingSettings = DB::table('settings')
@@ -242,6 +248,7 @@ class SettingsController extends Controller
             'agency_website' => '',
             'agency_logo' => '',
             'drive_service_account_json' => '',
+            'mail_provider' => 'smtp',
             'mail_mailer' => 'smtp',
             'mail_host' => 'smtp.gmail.com',
             'mail_port' => 587,
@@ -250,6 +257,11 @@ class SettingsController extends Controller
             'mail_encryption' => 'tls',
             'mail_from_address' => 'noreply@rams.com',
             'mail_from_name' => 'RAMS Sistema',
+            'zoho_client_id' => '',
+            'zoho_client_secret' => '',
+            'zoho_refresh_token' => '',
+            'zoho_access_token' => '',
+            'zoho_from_email' => '',
         ];
         
         // Establecer todas las propiedades, usando valores existentes si están disponibles
@@ -286,6 +298,7 @@ class SettingsController extends Controller
     private function updateMailSettings(Request $request, GeneralSettings $settings)
     {
         $rules = [
+            'mail_provider' => 'required|in:smtp,zoho',
             'mail_mailer' => 'nullable|string|max:50',
             'mail_host' => 'nullable|string|max:255',
             'mail_port' => 'nullable|integer',
@@ -294,6 +307,10 @@ class SettingsController extends Controller
             'mail_encryption' => 'nullable|string|max:10',
             'mail_from_address' => 'nullable|email|max:255',
             'mail_from_name' => 'nullable|string|max:255',
+            'zoho_client_id' => 'nullable|string|max:255',
+            'zoho_client_secret' => 'nullable|string|max:255',
+            'zoho_refresh_token' => 'nullable|string',
+            'zoho_from_email' => 'nullable|email|max:255',
         ];
 
         $validated = $request->validate($rules);
@@ -301,7 +318,12 @@ class SettingsController extends Controller
         // Asegurar que todas las propiedades estén establecidas
         $this->ensureAllPropertiesSet($settings);
         
-        // Actualizar campos del request
+        // Actualizar proveedor
+        if (isset($validated['mail_provider'])) {
+            $settings->mail_provider = $validated['mail_provider'];
+        }
+        
+        // Actualizar campos SMTP
         if (isset($validated['mail_mailer'])) {
             $settings->mail_mailer = $validated['mail_mailer'];
         }
@@ -325,6 +347,20 @@ class SettingsController extends Controller
         }
         if (isset($validated['mail_from_name'])) {
             $settings->mail_from_name = $validated['mail_from_name'];
+        }
+        
+        // Actualizar campos Zoho
+        if (isset($validated['zoho_client_id'])) {
+            $settings->zoho_client_id = $validated['zoho_client_id'] ?? '';
+        }
+        if (isset($validated['zoho_client_secret'])) {
+            $settings->zoho_client_secret = $validated['zoho_client_secret'] ?? '';
+        }
+        if (isset($validated['zoho_refresh_token'])) {
+            $settings->zoho_refresh_token = $validated['zoho_refresh_token'] ?? '';
+        }
+        if (isset($validated['zoho_from_email'])) {
+            $settings->zoho_from_email = $validated['zoho_from_email'] ?? '';
         }
         
         $settings->save();
