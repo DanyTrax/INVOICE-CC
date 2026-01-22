@@ -678,4 +678,24 @@ class SettingsController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Eliminar un log de correo
+     */
+    public function deleteEmailLog(EmailLog $log)
+    {
+        try {
+            $log->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Correo eliminado exitosamente',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar el correo: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

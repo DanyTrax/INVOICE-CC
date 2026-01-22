@@ -715,7 +715,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach($emailLogs as $log)
-                                        <tr class="bg-white border-b hover:bg-gray-50">
+                                        <tr class="bg-white border-b hover:bg-gray-50" data-log-id="{{ $log->id }}">
                                             <td class="px-4 py-3">
                                                 {{ $log->created_at->format('d/m/Y H:i') }}
                                             </td>
@@ -855,6 +855,10 @@
 @push('scripts')
 <script>
 // Definir funciones globales PRIMERO para que estén disponibles inmediatamente
+// Asegurar que estén disponibles incluso si el script se carga después
+(function() {
+    'use strict';
+    
 window.showEmailDetails = function(logId) {
     console.log('Intentando cargar detalles del correo ID:', logId);
     
@@ -1020,6 +1024,54 @@ window.closeEmailDetails = function() {
         modal.remove();
     }
 };
+
+// Función para eliminar un correo del historial
+window.deleteEmailLog = function(logId) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este correo del historial?')) {
+        return;
+    }
+    
+    fetch(`/admin/settings/email-logs/${logId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        credentials: 'same-origin'
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Eliminar la fila de la tabla
+                const row = document.querySelector(`tr[data-log-id="${logId}"]`);
+                if (row) {
+                    row.style.transition = 'opacity 0.3s';
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        row.remove();
+                        // Si no quedan más correos, recargar la página
+                        const remainingRows = document.querySelectorAll('tbody tr[data-log-id]');
+                        if (remainingRows.length === 0) {
+                            window.location.reload();
+                        }
+                    }, 300);
+                } else {
+                    // Si no encontramos la fila, recargar la página
+                    window.location.reload();
+                }
+            } else {
+                alert('Error al eliminar el correo: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error al eliminar correo:', error);
+            alert('Error al eliminar el correo. Por favor, intenta de nuevo.');
+        });
+};
+
+})(); // Fin de la función auto-ejecutada
 
 function showTab(tabName) {
     // Ocultar todos los paneles
