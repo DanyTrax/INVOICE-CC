@@ -56,8 +56,23 @@
             <div class="h-full px-3 py-4 overflow-y-auto">
                 <!-- Logo -->
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center ps-2.5 mb-5">
+                    @php
+                        try {
+                            $settings = app(\App\Settings\GeneralSettings::class);
+                            $logoPath = $settings->agency_logo ?? null;
+                            $agencyName = $settings->agency_name ?? 'R';
+                        } catch (\Exception $e) {
+                            $logoPath = null;
+                            $agencyName = 'R';
+                        }
+                    @endphp
+                    @if($logoPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($logoPath))
+                        <img src="{{ \Illuminate\Support\Facades\Storage::url($logoPath) }}" 
+                             alt="{{ $agencyName }}" 
+                             class="h-10 w-auto object-contain mr-2">
+                    @endif
                     <span class="self-center text-xl font-semibold whitespace-nowrap text-white">
-                        <span class="text-teal-400">R</span> REGULATORY APP
+                        <span class="text-teal-400">{{ $agencyName }}</span> REGULATORY APP
                     </span>
                 </a>
                 

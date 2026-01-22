@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Settings\GeneralSettings;
 use App\Models\EmailTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SettingsController extends Controller
 {
@@ -61,7 +62,8 @@ class SettingsController extends Controller
             'agency_phone' => 'nullable|string|max:50',
             'agency_email' => 'nullable|email|max:255',
             'agency_website' => 'nullable|url|max:255',
-            'agency_logo' => 'nullable|string|max:500',
+            'agency_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'remove_logo' => 'nullable|boolean',
         ]);
 
         $settings->agency_name = $validated['agency_name'];
@@ -70,7 +72,25 @@ class SettingsController extends Controller
         $settings->agency_phone = $validated['agency_phone'] ?? '';
         $settings->agency_email = $validated['agency_email'] ?? '';
         $settings->agency_website = $validated['agency_website'] ?? '';
-        $settings->agency_logo = $validated['agency_logo'] ?? '';
+        
+        // Manejar logo
+        if ($request->has('remove_logo') && $request->remove_logo) {
+            // Eliminar logo existente
+            if ($settings->agency_logo && Storage::disk('public')->exists($settings->agency_logo)) {
+                Storage::disk('public')->delete($settings->agency_logo);
+            }
+            $settings->agency_logo = '';
+        } elseif ($request->hasFile('agency_logo')) {
+            // Eliminar logo anterior si existe
+            if ($settings->agency_logo && Storage::disk('public')->exists($settings->agency_logo)) {
+                Storage::disk('public')->delete($settings->agency_logo);
+            }
+            
+            // Guardar nuevo logo
+            $logoPath = $request->file('agency_logo')->store('logos', 'public');
+            $settings->agency_logo = $logoPath;
+        }
+        // Si no se envía nada, mantener el logo actual
         
         $settings->save();
     }

@@ -52,7 +52,7 @@
                     Configura los datos de tu empresa que aparecerán en el sistema.
                 </p>
 
-                <form action="{{ route('admin.settings.update') }}" method="POST">
+                <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="section" value="agency">
 
@@ -134,14 +134,43 @@
                         <!-- Logo -->
                         <div class="md:col-span-2">
                             <label for="agency_logo" class="block mb-2 text-sm font-medium text-gray-900">
-                                URL del Logo
+                                Logo de la Empresa
                             </label>
-                            <input type="text" 
-                                   id="agency_logo" 
-                                   name="agency_logo" 
-                                   value="{{ old('agency_logo', $settings->agency_logo ?? '') }}"
-                                   placeholder="https://..."
-                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                            
+                            <!-- Vista previa del logo actual -->
+                            @if($settings->agency_logo && \Illuminate\Support\Facades\Storage::disk('public')->exists($settings->agency_logo))
+                                <div class="mb-4">
+                                    <p class="text-sm text-gray-600 mb-2">Logo actual:</p>
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($settings->agency_logo) }}" 
+                                         alt="Logo actual" 
+                                         class="h-16 w-auto object-contain border border-gray-200 rounded-lg p-2 bg-white">
+                                </div>
+                            @endif
+                            
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-1">
+                                    <input type="file" 
+                                           id="agency_logo" 
+                                           name="agency_logo" 
+                                           accept="image/*"
+                                           class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        Formatos permitidos: JPG, PNG, GIF, SVG. Tamaño máximo: 2MB
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            @if($settings->agency_logo && Storage::disk('public')->exists($settings->agency_logo))
+                                <div class="mt-2">
+                                    <label class="flex items-center space-x-2 text-sm text-gray-600">
+                                        <input type="checkbox" 
+                                               name="remove_logo" 
+                                               value="1"
+                                               class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                                        <span>Eliminar logo actual</span>
+                                    </label>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
