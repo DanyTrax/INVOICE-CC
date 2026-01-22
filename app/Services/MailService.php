@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\EmailLog;
 use App\Settings\GeneralSettings;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -19,12 +21,49 @@ class MailService
     /**
      * Enviar correo usando el proveedor configurado
      */
-    public function send($to, $subject, $body, $fromName = null, $fromEmail = null)
+    public function send($to, $subject, $body, $fromName = null, $fromEmail = null, $isTest = false)
     {
-        if ($this->settings->mail_provider === 'zoho') {
-            return $this->sendViaZoho($to, $subject, $body, $fromName, $fromEmail);
-        } else {
-            return $this->sendViaSmtp($to, $subject, $body, $fromName, $fromEmail);
+        $provider = $this->settings->mail_provider;
+        $fromEmail = $fromEmail ?? ($provider === 'zoho' ? $this->settings->zoho_from_email : $this->settings->mail_from_address);
+        $fromName = $fromName ?? $this->settings->mail_from_name;
+        
+        // Crear log antes de enviar
+        $emailLog = EmailLog::create([
+            'to' => is_array($to) ? implode(', ', $to) : $to,
+            'from_email' => $fromEmail,
+            'from_name' => $fromName,
+            'subject' => $subject,
+            'body' => $body,
+            'provider' => $provider,
+            'status' => 'pending',
+            'user_id' => Auth::id(),
+            'is_test' => $isTest,
+        ]);
+        
+        try {
+            $result = false;
+            if ($provider === 'zoho') {
+                $result = $this->sendViaZoho($to, $subject, $body, $fromName, $fromEmail);
+            } else {
+                $result = $this->sendViaSmtp($to, $subject, $body, $fromName, $fromEmail);
+            }
+            
+            // Actualizar log con resultado
+            $emailLog->update([
+                'status' => $result ? 'sent' : 'failed',
+                'error_message' => $result ? null : 'Error al enviar correo',
+            ]);
+            
+            return $result;
+        } catch (\Exception $e) {
+            // Actualizar log con error
+            $emailLog->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+            ]);
+            
+            Log::error('Error enviando correo: ' . $e->getMessage());
+            return false;
         }
     }
 

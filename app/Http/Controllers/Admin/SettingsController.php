@@ -14,6 +14,9 @@ class SettingsController extends Controller
     public function index()
     {
         $emailTemplates = EmailTemplate::all();
+        $emailLogs = EmailLog::orderBy('created_at', 'desc')
+            ->with('user')
+            ->paginate(20);
         
         // Asegurar que los settings existan en la BD
         $this->ensureSettingsInDatabase();
@@ -31,6 +34,7 @@ class SettingsController extends Controller
         return view('admin.settings.index', [
             'settings' => $settings,
             'emailTemplates' => $emailTemplates,
+            'emailLogs' => $emailLogs,
         ]);
     }
 
@@ -527,6 +531,45 @@ class SettingsController extends Controller
                 ->route('admin.settings.index')
                 ->with('error', 'Error al procesar la autorización: ' . $e->getMessage())
                 ->with('tab', 'mail');
+        }
+    }
+
+    /**
+     * Enviar correo de prueba
+     */
+    public function sendTestEmail(Request $request)
+    {
+        $validated = $request->validate([
+            'test_email_to' => 'required|email',
+            'test_email_subject' => 'nullable|string|max:255',
+            'test_email_body' => 'nullable|string',
+        ]);
+
+        try {
+            $mailService = app(MailService::class);
+            
+            $to = $validated['test_email_to'];
+            $subject = $validated['test_email_subject'] ?? 'Correo de Prueba - RAMS';
+            $body = $validated['test_email_body'] ?? '<h1>Correo de Prueba</h1><p>Este es un correo de prueba enviado desde el sistema RAMS.</p><p>Si recibes este correo, la configuración de correo está funcionando correctamente.</p>';
+            
+            $result = $mailService->send($to, $subject, $body, null, null, true);
+            
+            if ($result) {
+                return redirect()
+                    ->route('admin.settings.index')
+                    ->with('success', 'Correo de prueba enviado exitosamente a ' . $to)
+                    ->with('tab', 'history');
+            } else {
+                return redirect()
+                    ->route('admin.settings.index')
+                    ->with('error', 'Error al enviar correo de prueba. Revisa el historial para más detalles.')
+                    ->with('tab', 'history');
+            }
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('admin.settings.index')
+                ->with('error', 'Error al enviar correo de prueba: ' . $e->getMessage())
+                ->with('tab', 'history');
         }
     }
 }
