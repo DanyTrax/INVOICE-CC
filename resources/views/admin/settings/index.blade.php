@@ -613,7 +613,16 @@ function showTab(tabName) {
 
 // Mostrar el primer tab por defecto
 document.addEventListener('DOMContentLoaded', function() {
-    showTab('agency');
+    // Si hay un parámetro tab en la URL o en la sesión, mostrar ese tab
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab') || '{{ session('tab', 'agency') }}';
+    
+    if (tabParam && ['agency', 'drive', 'mail', 'templates'].includes(tabParam)) {
+        showTab(tabParam);
+    } else {
+        showTab('agency');
+    }
+    
     toggleProviderFields();
 });
 

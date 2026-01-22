@@ -41,4 +41,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             
             // API: Buscar clientes
             Route::get('/api/companies/search', [CompanyController::class, 'search'])->name('api.companies.search');
+            
+            // Zoho OAuth
+            Route::get('/settings/zoho/authorize', [SettingsController::class, 'zohoAuthorize'])->name('settings.zoho.authorize');
+            Route::get('/settings/zoho/callback', [SettingsController::class, 'zohoCallback'])->name('settings.zoho.callback');
         });

@@ -66,9 +66,16 @@ class SettingsController extends Controller
                 break;
         }
 
-        return redirect()
+        $redirect = redirect()
             ->route('admin.settings.index')
             ->with('success', 'Configuración actualizada exitosamente.');
+        
+        // Si hay un tab específico, agregarlo a la URL
+        if ($request->has('tab')) {
+            $redirect->with('tab', $request->input('tab'));
+        }
+        
+        return $redirect;
     }
 
     private function updateAgencySettings(Request $request, GeneralSettings $settings)
@@ -378,5 +385,134 @@ class SettingsController extends Controller
         $template->subject = $validated['subject'];
         $template->body = $validated['body'];
         $template->save();
+    }
+
+    /**
+     * Iniciar proceso de autorización OAuth con Zoho
+     */
+    public function zohoAuthorize(Request $request)
+    {
+        // Asegurar que los settings existan
+        $this->ensureSettingsInDatabase();
+        
+        try {
+            $settings = app(GeneralSettings::class);
+        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
+            $settings = new GeneralSettings();
+            $this->ensureAllPropertiesSet($settings);
+            $settings->save();
+        }
+
+        // Validar que Client ID y Client Secret estén configurados
+        if (empty($settings->zoho_client_id) || empty($settings->zoho_client_secret)) {
+            return redirect()
+                ->route('admin.settings.index')
+                ->with('error', 'Por favor, configura primero el Client ID y Client Secret de Zoho antes de autorizar.');
+        }
+
+        // Construir URL de autorización
+        $redirectUri = route('admin.settings.zoho.callback');
+        $scope = 'ZohoMail.messages.CREATE,ZohoMail.accounts.READ';
+        $clientId = $settings->zoho_client_id;
+        
+        $authUrl = sprintf(
+            'https://accounts.zoho.com/oauth/v2/auth?scope=%s&client_id=%s&response_type=code&access_type=offline&redirect_uri=%s',
+            urlencode($scope),
+            urlencode($clientId),
+            urlencode($redirectUri)
+        );
+
+        // Redirigir a Zoho para autorización
+        return redirect($authUrl);
+    }
+
+    /**
+     * Callback de OAuth de Zoho - recibe el código y obtiene Refresh Token
+     */
+    public function zohoCallback(Request $request)
+    {
+        $code = $request->input('code');
+        $error = $request->input('error');
+
+        if ($error) {
+            return redirect()
+                ->route('admin.settings.index')
+                ->with('error', 'Error en la autorización de Zoho: ' . $error);
+        }
+
+        if (!$code) {
+            return redirect()
+                ->route('admin.settings.index')
+                ->with('error', 'No se recibió el código de autorización de Zoho.');
+        }
+
+        // Asegurar que los settings existan
+        $this->ensureSettingsInDatabase();
+        
+        try {
+            $settings = app(GeneralSettings::class);
+        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
+            $settings = new GeneralSettings();
+            $this->ensureAllPropertiesSet($settings);
+            $settings->save();
+        }
+
+        // Validar que Client ID y Client Secret estén configurados
+        if (empty($settings->zoho_client_id) || empty($settings->zoho_client_secret)) {
+            return redirect()
+                ->route('admin.settings.index')
+                ->with('error', 'Client ID y Client Secret no están configurados.');
+        }
+
+        // Intercambiar código por Refresh Token
+        $redirectUri = route('admin.settings.zoho.callback');
+        
+        try {
+            $response = \Illuminate\Support\Facades\Http::asForm()->post('https://accounts.zoho.com/oauth/v2/token', [
+                'grant_type' => 'authorization_code',
+                'client_id' => $settings->zoho_client_id,
+                'client_secret' => $settings->zoho_client_secret,
+                'redirect_uri' => $redirectUri,
+                'code' => $code,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                $refreshToken = $data['refresh_token'] ?? null;
+                $accessToken = $data['access_token'] ?? null;
+
+                if ($refreshToken) {
+                    // Guardar Refresh Token y Access Token en settings
+                    $this->ensureAllPropertiesSet($settings);
+                    $settings->zoho_refresh_token = $refreshToken;
+                    if ($accessToken) {
+                        $settings->zoho_access_token = $accessToken;
+                    }
+                    $settings->save();
+
+                    return redirect()
+                        ->route('admin.settings.index')
+                        ->with('success', '¡Autorización exitosa! El Refresh Token ha sido guardado automáticamente.')
+                        ->with('tab', 'mail'); // Para abrir el tab de correo
+                } else {
+                    return redirect()
+                        ->route('admin.settings.index')
+                        ->with('error', 'No se recibió el Refresh Token en la respuesta de Zoho.')
+                        ->with('tab', 'mail');
+                }
+            } else {
+                $errorMessage = $response->json()['error_description'] ?? $response->body();
+                return redirect()
+                    ->route('admin.settings.index')
+                    ->with('error', 'Error al obtener Refresh Token: ' . $errorMessage)
+                    ->with('tab', 'mail');
+            }
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('admin.settings.index')
+                ->with('error', 'Error al procesar la autorización: ' . $e->getMessage())
+                ->with('tab', 'mail');
+        }
     }
 }
