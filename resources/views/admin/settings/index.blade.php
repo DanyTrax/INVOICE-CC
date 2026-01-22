@@ -418,6 +418,7 @@
                                        name="zoho_client_id" 
                                        value="{{ old('zoho_client_id', $settings->zoho_client_id ?? '') }}"
                                        placeholder="1000.XXXXXXXXXXXX"
+                                       oninput="checkZohoCredentials()"
                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-sm">
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="fas fa-map-marker-alt mr-1"></i>
@@ -436,6 +437,7 @@
                                            name="zoho_client_secret" 
                                            value="{{ old('zoho_client_secret', $settings->zoho_client_secret ?? '') }}"
                                            placeholder="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                                           oninput="checkZohoCredentials()"
                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-sm">
                                     <button type="button" 
                                             onclick="togglePasswordVisibility('zoho_client_secret')"
@@ -457,14 +459,12 @@
                                 
                                 <!-- Botón de Autorización Automática (PRIMERO) -->
                                 <div class="mb-4">
-                                    @if(empty($settings->zoho_client_id) || empty($settings->zoho_client_secret))
-                                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3">
-                                            <p class="text-sm text-yellow-800 mb-2">
-                                                <i class="fas fa-exclamation-triangle mr-2"></i>
-                                                <strong>Paso 1:</strong> Primero completa Client ID y Client Secret arriba, luego usa el botón de abajo.
-                                            </p>
-                                        </div>
-                                    @endif
+                                    <div id="zoho-warning-box" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3" style="display: {{ (!empty($settings->zoho_client_id) && !empty($settings->zoho_client_secret)) ? 'none' : 'block' }};">
+                                        <p class="text-sm text-yellow-800 mb-2">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            <strong>Paso 1:</strong> Primero completa Client ID y Client Secret arriba, luego usa el botón de abajo.
+                                        </p>
+                                    </div>
                                     
                                     <div class="bg-teal-50 border-2 border-teal-300 rounded-lg p-4">
                                         <div class="flex items-center justify-between mb-3">
@@ -479,25 +479,18 @@
                                             </div>
                                         </div>
                                         
-                                        @if(!empty($settings->zoho_client_id) && !empty($settings->zoho_client_secret))
-                                            <a href="{{ route('admin.settings.zoho.authorize') }}" 
-                                               class="inline-flex items-center justify-center w-full px-6 py-3 bg-teal-600 text-white text-base font-semibold rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300 transition-all shadow-lg hover:shadow-xl">
-                                                <i class="fas fa-check-circle mr-2 text-lg"></i>
-                                                <span>Autorizar con Zoho y Generar Refresh Token Automáticamente</span>
-                                                <i class="fas fa-arrow-right ml-2"></i>
-                                            </a>
-                                            <p class="text-xs text-teal-600 mt-2 text-center">
-                                                <i class="fas fa-info-circle mr-1"></i>
-                                                Asegúrate de haber configurado la Redirect URI en Zoho API Console antes de hacer clic
-                                            </p>
-                                        @else
-                                            <button type="button" 
-                                                    disabled
-                                                    class="inline-flex items-center justify-center w-full px-6 py-3 bg-gray-400 text-white text-base font-semibold rounded-lg cursor-not-allowed opacity-60">
-                                                <i class="fas fa-lock mr-2"></i>
-                                                <span>Completa Client ID y Client Secret primero</span>
-                                            </button>
-                                        @endif
+                                        <a href="{{ route('admin.settings.zoho.authorize') }}" 
+                                           id="zoho-authorize-btn"
+                                           onclick="return validateZohoCredentials(event)"
+                                           class="inline-flex items-center justify-center w-full px-6 py-3 bg-teal-600 text-white text-base font-semibold rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300 transition-all shadow-lg hover:shadow-xl {{ (!empty($settings->zoho_client_id) && !empty($settings->zoho_client_secret)) ? '' : 'opacity-50 cursor-not-allowed pointer-events-none' }}">
+                                            <i class="fas fa-check-circle mr-2 text-lg"></i>
+                                            <span>Autorizar con Zoho y Generar Refresh Token Automáticamente</span>
+                                            <i class="fas fa-arrow-right ml-2"></i>
+                                        </a>
+                                        <p class="text-xs text-teal-600 mt-2 text-center">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Asegúrate de haber configurado la Redirect URI en Zoho API Console antes de hacer clic
+                                        </p>
                                     </div>
                                 </div>
                                 
@@ -756,5 +749,86 @@ function togglePasswordVisibility(fieldId) {
         eyeIcon.classList.add('fa-eye');
     }
 }
+
+// Función para verificar si los campos de Zoho están completos y habilitar/deshabilitar el botón
+function checkZohoCredentials() {
+    const clientId = document.getElementById('zoho_client_id');
+    const clientSecret = document.getElementById('zoho_client_secret');
+    const authorizeBtn = document.getElementById('zoho-authorize-btn');
+    const warningBox = document.getElementById('zoho-warning-box');
+    
+    if (!clientId || !clientSecret || !authorizeBtn) {
+        return; // Los elementos no existen (no estamos en el tab de Zoho)
+    }
+    
+    const hasClientId = clientId.value.trim().length > 0;
+    const hasClientSecret = clientSecret.value.trim().length > 0;
+    
+    if (hasClientId && hasClientSecret) {
+        // Habilitar botón
+        authorizeBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        authorizeBtn.classList.add('hover:bg-teal-700', 'cursor-pointer');
+        authorizeBtn.style.pointerEvents = 'auto';
+        authorizeBtn.style.opacity = '1';
+        
+        // Ocultar advertencia
+        if (warningBox) {
+            warningBox.style.display = 'none';
+        }
+    } else {
+        // Deshabilitar botón
+        authorizeBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        authorizeBtn.classList.remove('hover:bg-teal-700', 'cursor-pointer');
+        authorizeBtn.style.pointerEvents = 'none';
+        authorizeBtn.style.opacity = '0.5';
+        
+        // Mostrar advertencia
+        if (warningBox) {
+            warningBox.style.display = 'block';
+        }
+    }
+}
+
+// Función para validar antes de hacer clic
+function validateZohoCredentials(event) {
+    const clientId = document.getElementById('zoho_client_id');
+    const clientSecret = document.getElementById('zoho_client_secret');
+    
+    if (!clientId || !clientSecret) {
+        event.preventDefault();
+        alert('Los campos de Client ID y Client Secret no están disponibles.');
+        return false;
+    }
+    
+    const hasClientId = clientId.value.trim().length > 0;
+    const hasClientSecret = clientSecret.value.trim().length > 0;
+    
+    if (!hasClientId || !hasClientSecret) {
+        event.preventDefault();
+        alert('Por favor, completa el Client ID y Client Secret antes de continuar.');
+        return false;
+    }
+    
+    return true;
+}
+
+// Verificar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar un momento para que los campos se carguen
+    setTimeout(function() {
+        checkZohoCredentials();
+    }, 100);
+    
+    // También verificar cuando se cambia de tab
+    const originalShowTab = showTab;
+    showTab = function(tabName) {
+        originalShowTab(tabName);
+        if (tabName === 'mail') {
+            setTimeout(function() {
+                checkZohoCredentials();
+            }, 100);
+        }
+    };
+});
 </script>
 @endpush
