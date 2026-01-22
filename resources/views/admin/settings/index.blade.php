@@ -912,8 +912,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Función para mostrar detalles del correo
-function showEmailDetails(logId) {
+// Función para mostrar detalles del correo - Asegurar que esté disponible globalmente
+window.showEmailDetails = function(logId) {
     console.log('Intentando cargar detalles del correo ID:', logId);
     
     // Mostrar indicador de carga
@@ -1071,18 +1071,12 @@ function showEmailDetails(logId) {
         });
 }
 
-function closeEmailDetails() {
+window.closeEmailDetails = function() {
     const modal = document.getElementById('email-detail-modal');
     if (modal) {
         modal.remove();
     }
-}
-
-// Asegurar que las funciones estén disponibles globalmente inmediatamente
-if (typeof window !== 'undefined') {
-    window.showEmailDetails = showEmailDetails;
-    window.closeEmailDetails = closeEmailDetails;
-}
+};
 
 // Función para mostrar/ocultar campos según el proveedor seleccionado
 function toggleProviderFields() {
@@ -1246,8 +1240,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 });
-
-// Asegurar que showEmailDetails esté disponible globalmente
-window.showEmailDetails = showEmailDetails;
-window.closeEmailDetails = closeEmailDetails;
 @endpush
