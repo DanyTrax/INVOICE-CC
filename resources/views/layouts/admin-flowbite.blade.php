@@ -60,20 +60,33 @@
                         try {
                             $settings = app(\App\Settings\GeneralSettings::class);
                             $logoPath = $settings->agency_logo ?? null;
-                            $agencyName = $settings->agency_name ?? 'R';
+                            $agencyName = $settings->agency_name ?? null;
+                            $hasLogo = $logoPath && file_exists(public_path($logoPath));
+                            $hasName = !empty($agencyName) && $agencyName !== 'RAMS';
                         } catch (\Exception $e) {
                             $logoPath = null;
-                            $agencyName = 'R';
+                            $agencyName = null;
+                            $hasLogo = false;
+                            $hasName = false;
                         }
                     @endphp
-                    @if($logoPath && file_exists(public_path($logoPath)))
+                    
+                    @if($hasLogo)
+                        {{-- Solo mostrar logo si existe --}}
                         <img src="{{ asset($logoPath) }}" 
-                             alt="{{ $agencyName }}" 
-                             class="h-10 w-auto object-contain mr-2">
+                             alt="{{ $agencyName ?? 'Logo' }}" 
+                             class="h-10 w-auto object-contain">
+                    @elseif($hasName)
+                        {{-- Solo mostrar nombre de agencia si no hay logo --}}
+                        <span class="self-center text-xl font-semibold whitespace-nowrap text-white">
+                            <span class="text-teal-400">{{ $agencyName }}</span>
+                        </span>
+                    @else
+                        {{-- Por defecto: R REGULATORY APP --}}
+                        <span class="self-center text-xl font-semibold whitespace-nowrap text-white">
+                            <span class="text-teal-400">R</span> REGULATORY APP
+                        </span>
                     @endif
-                    <span class="self-center text-xl font-semibold whitespace-nowrap text-white">
-                        <span class="text-teal-400">{{ $agencyName }}</span> REGULATORY APP
-                    </span>
                 </a>
                 
                 <!-- Menu -->
