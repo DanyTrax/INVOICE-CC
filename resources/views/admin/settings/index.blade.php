@@ -18,31 +18,34 @@
         <!-- Tabs Navigation -->
         <div class="border-b border-gray-200">
             <nav class="flex -mb-px" aria-label="Tabs">
-                <button onclick="showTab('agency')" 
+                @php
+                    $activeSection = $activeSection ?? 'agency';
+                @endphp
+                <a href="{{ route('admin.settings.section', 'agency') }}" 
                         id="tab-agency"
-                        class="tab-button active px-6 py-3 text-sm font-medium border-b-2 border-teal-600 text-teal-600">
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'agency' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-building mr-2"></i> Datos de la Empresa
-                </button>
-                <button onclick="showTab('drive')" 
+                </a>
+                <a href="{{ route('admin.settings.section', 'drive') }}" 
                         id="tab-drive"
-                        class="tab-button px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'drive' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-cloud mr-2"></i> Conexión Google Drive
-                </button>
-                <button onclick="showTab('mail')" 
+                </a>
+                <a href="{{ route('admin.settings.section', 'mail') }}" 
                         id="tab-mail"
-                        class="tab-button px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'mail' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-envelope mr-2"></i> Correo & SMTP
-                </button>
-                <button onclick="showTab('templates')" 
+                </a>
+                <a href="{{ route('admin.settings.section', 'templates') }}" 
                         id="tab-templates"
-                        class="tab-button px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'templates' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-file-alt mr-2"></i> Plantillas de Email
-                </button>
-                <button onclick="showTab('history')" 
+                </a>
+                <a href="{{ route('admin.settings.section', 'history') }}" 
                         id="tab-history"
-                        class="tab-button px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'history' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-history mr-2"></i> Histórico y Pruebas
-                </button>
+                </a>
             </nav>
         </div>
 
@@ -231,7 +234,7 @@
         </div>
 
         <!-- Tab 3: Correo & SMTP -->
-        <div id="panel-mail" class="tab-panel hidden">
+        <div id="panel-mail" class="tab-panel {{ $activeSection === 'mail' ? '' : 'hidden' }}">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     <i class="fas fa-envelope text-teal-600 mr-2"></i>
@@ -615,7 +618,7 @@
         </div>
 
         <!-- Tab 5: Histórico y Pruebas -->
-        <div id="panel-history" class="tab-panel hidden">
+        <div id="panel-history" class="tab-panel {{ $activeSection === 'history' ? '' : 'hidden' }}">
             <div class="space-y-6">
                 <!-- Enviar Correo de Prueba -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -781,7 +784,7 @@
         </div>
 
         <!-- Tab 4: Plantillas de Email -->
-        <div id="panel-templates" class="tab-panel hidden">
+        <div id="panel-templates" class="tab-panel {{ $activeSection === 'templates' ? '' : 'hidden' }}">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     <i class="fas fa-file-alt text-teal-600 mr-2"></i>
@@ -872,19 +875,35 @@ function showTab(tabName) {
     tabButton.classList.remove('border-transparent', 'text-gray-500');
 }
 
-// Mostrar el primer tab por defecto
+// Función para actualizar la URL sin recargar la página (opcional, para mejor UX)
+function updateUrl(section) {
+    const url = new URL(window.location);
+    url.pathname = '/admin/settings/' + section;
+    window.history.pushState({}, '', url);
+}
+
+// Mostrar el tab activo basado en la URL actual
 document.addEventListener('DOMContentLoaded', function() {
-    // Si hay un parámetro tab en la URL o en la sesión, mostrar ese tab
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('tab') || '{{ session('tab', 'agency') }}';
+    // Obtener la sección activa desde la URL
+    const pathParts = window.location.pathname.split('/');
+    const currentSection = pathParts[pathParts.length - 1] || 'agency';
     
-    if (tabParam && ['agency', 'drive', 'mail', 'templates', 'history'].includes(tabParam)) {
-        showTab(tabParam);
-    } else {
-        showTab('agency');
-    }
+    // Validar que sea una sección válida
+    const validSections = ['agency', 'drive', 'mail', 'templates', 'history'];
+    const activeSection = validSections.includes(currentSection) ? currentSection : 'agency';
     
+    // Mostrar el tab correspondiente
+    showTab(activeSection);
+    
+    // Inicializar campos según el proveedor
     toggleProviderFields();
+    
+    // Si hay un parámetro tab en la sesión (después de guardar), mostrar ese tab
+    const tabFromSession = '{{ session('tab', '') }}';
+    if (tabFromSession && validSections.includes(tabFromSession)) {
+        showTab(tabFromSession);
+        updateUrl(tabFromSession);
+    }
 });
 
 // Función para mostrar detalles del correo
@@ -1094,7 +1113,9 @@ document.addEventListener('DOMContentLoaded', function() {
         checkZohoCredentials();
     }, 100);
     
-    // También verificar cuando se cambia de tab
+    // También verificar cuando se cambia de tab (si se usa JavaScript para cambiar)
+    // Nota: Ahora los tabs usan enlaces reales, pero mantenemos esta funcionalidad
+    // para compatibilidad con código existente que pueda llamar showTab()
     const originalShowTab = showTab;
     showTab = function(tabName) {
         originalShowTab(tabName);

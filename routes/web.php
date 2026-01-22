@@ -35,8 +35,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
     
-            // Settings
+            // Settings - Rutas independientes para cada sección
             Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+            Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history');
             Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
             
             // API: Buscar clientes

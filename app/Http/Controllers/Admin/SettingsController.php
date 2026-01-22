@@ -13,8 +13,14 @@ use Illuminate\Support\Facades\DB;
 
 class SettingsController extends Controller
 {
-    public function index()
+    public function index(Request $request, $section = 'agency')
     {
+        // Validar que la sección sea válida
+        $validSections = ['agency', 'drive', 'mail', 'templates', 'history'];
+        if (!in_array($section, $validSections)) {
+            $section = 'agency';
+        }
+        
         $emailTemplates = EmailTemplate::all();
         
         // Verificar si la tabla email_logs existe antes de consultarla
@@ -49,6 +55,7 @@ class SettingsController extends Controller
             'settings' => $settings,
             'emailTemplates' => $emailTemplates,
             'emailLogs' => $emailLogs,
+            'activeSection' => $section,
         ]);
     }
 
