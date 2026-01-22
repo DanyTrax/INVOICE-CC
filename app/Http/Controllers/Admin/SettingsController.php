@@ -15,13 +15,17 @@ class SettingsController extends Controller
     {
         $emailTemplates = EmailTemplate::all();
         
+        // Asegurar que los settings existan en la BD
+        $this->ensureSettingsInDatabase();
+        
         // Inicializar settings con valores por defecto si no existen
         try {
             $settings = app(GeneralSettings::class);
         } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
-            // Ejecutar migración de settings si no existen
-            \Artisan::call('settings:migrate');
-            $settings = app(GeneralSettings::class);
+            // Si aún falla, crear settings con valores por defecto
+            $settings = new GeneralSettings();
+            $this->ensureAllPropertiesSet($settings);
+            $settings->save();
         }
         
         return view('admin.settings.index', [
@@ -35,15 +39,16 @@ class SettingsController extends Controller
         $section = $request->input('section');
         
         // Asegurar que los settings existan en la BD antes de intentar cargarlos
-        // Ejecutar migración si es necesario
+        $this->ensureSettingsInDatabase();
+        
+        // Obtener settings completos
         try {
             $settings = app(GeneralSettings::class);
-            // Verificar que todas las propiedades estén en la BD
-            $this->ensureSettingsInDatabase();
         } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
-            // Ejecutar migración de settings si no existen
-            \Artisan::call('settings:migrate');
-            $settings = app(GeneralSettings::class);
+            // Si aún falla después de asegurar settings, crear un nuevo objeto con valores por defecto
+            $settings = new GeneralSettings();
+            $this->ensureAllPropertiesSet($settings);
+            $settings->save();
         }
 
         switch ($section) {
@@ -178,23 +183,44 @@ class SettingsController extends Controller
     private function ensureSettingsInDatabase()
     {
         $requiredSettings = [
-            'agency_name', 'agency_nit', 'agency_address', 'agency_phone', 
-            'agency_email', 'agency_website', 'agency_logo', 
-            'drive_service_account_json', 'mail_mailer', 'mail_host', 
-            'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 
-            'mail_from_address', 'mail_from_name'
+            'agency_name' => 'RAMS',
+            'agency_nit' => '',
+            'agency_address' => '',
+            'agency_phone' => '',
+            'agency_email' => '',
+            'agency_website' => '',
+            'agency_logo' => '',
+            'drive_service_account_json' => '',
+            'mail_mailer' => 'smtp',
+            'mail_host' => 'smtp.gmail.com',
+            'mail_port' => 587,
+            'mail_username' => '',
+            'mail_password' => '',
+            'mail_encryption' => 'tls',
+            'mail_from_address' => 'noreply@rams.com',
+            'mail_from_name' => 'RAMS Sistema',
         ];
         
-        $existingSettings = \DB::table('settings')
+        $existingSettings = DB::table('settings')
             ->where('group', 'general')
             ->pluck('name')
             ->toArray();
         
-        $missingSettings = array_diff($requiredSettings, $existingSettings);
+        $missingSettings = array_diff_key($requiredSettings, array_flip($existingSettings));
         
         if (!empty($missingSettings)) {
-            // Ejecutar migración para crear los settings faltantes
-            \Artisan::call('settings:migrate');
+            // Insertar settings faltantes directamente en la BD
+            $now = now();
+            foreach ($missingSettings as $name => $defaultValue) {
+                DB::table('settings')->insert([
+                    'group' => 'general',
+                    'name' => $name,
+                    'locked' => false,
+                    'payload' => json_encode($defaultValue),
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
         }
     }
     
