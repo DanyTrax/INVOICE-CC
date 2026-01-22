@@ -726,42 +726,51 @@
                                                 <span class="text-gray-900">{{ strlen($log->subject) > 50 ? substr($log->subject, 0, 50) . '...' : $log->subject }}</span>
                                             </td>
                                             <td class="px-4 py-3">
-                                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $log->provider === 'zoho' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}">
-                                                    {{ strtoupper($log->provider) }}
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $log->provider === 'zoho' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}" title="{{ strtoupper($log->provider) }}">
+                                                    <i class="fas {{ $log->provider === 'zoho' ? 'fa-envelope-circle-check' : 'fa-server' }}"></i>
                                                 </span>
                                             </td>
                                             <td class="px-4 py-3">
                                                 @if($log->status === 'sent')
-                                                    <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                                                        <i class="fas fa-check-circle mr-1"></i> Enviado
+                                                    <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full" title="Enviado">
+                                                        <i class="fas fa-check-circle"></i>
                                                     </span>
                                                 @elseif($log->status === 'failed')
-                                                    <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-                                                        <i class="fas fa-times-circle mr-1"></i> Fallido
+                                                    <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full" title="Fallido">
+                                                        <i class="fas fa-times-circle"></i>
                                                     </span>
                                                 @else
-                                                    <span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                                                        <i class="fas fa-clock mr-1"></i> Pendiente
+                                                    <span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full" title="Pendiente">
+                                                        <i class="fas fa-clock"></i>
                                                     </span>
                                                 @endif
                                             </td>
                                             <td class="px-4 py-3">
                                                 @if($log->is_test)
-                                                    <span class="px-2 py-1 text-xs font-medium bg-teal-100 text-teal-800 rounded-full">
-                                                        <i class="fas fa-flask mr-1"></i> Prueba
+                                                    <span class="px-2 py-1 text-xs font-medium bg-teal-100 text-teal-800 rounded-full" title="Correo de Prueba">
+                                                        <i class="fas fa-flask"></i>
                                                     </span>
                                                 @else
-                                                    <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-                                                        Normal
+                                                    <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full" title="Correo Normal">
+                                                        <i class="fas fa-envelope"></i>
                                                     </span>
                                                 @endif
                                             </td>
                                             <td class="px-4 py-3">
-                                                <button type="button" 
-                                                        onclick="if(typeof showEmailDetails === 'function') { showEmailDetails({{ $log->id }}); } else { console.error('showEmailDetails no está definida'); alert('Error: La función de visualización no está disponible. Por favor, recarga la página.'); }"
-                                                        class="text-teal-600 hover:text-teal-700 text-sm font-medium hover:underline">
-                                                    <i class="fas fa-eye mr-1"></i> Ver Detalles
-                                                </button>
+                                                <div class="flex items-center space-x-2">
+                                                    <button type="button" 
+                                                            onclick="if(typeof window.showEmailDetails === 'function') { window.showEmailDetails({{ $log->id }}); } else { console.error('showEmailDetails no disponible'); }"
+                                                            class="text-teal-600 hover:text-teal-700 p-2 rounded-lg hover:bg-teal-50 transition-colors"
+                                                            title="Ver Detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button type="button" 
+                                                            onclick="if(typeof window.deleteEmailLog === 'function') { window.deleteEmailLog({{ $log->id }}); } else { console.error('deleteEmailLog no disponible'); }"
+                                                            class="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                                                            title="Eliminar">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
