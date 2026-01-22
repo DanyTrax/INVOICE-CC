@@ -29,9 +29,18 @@ class SettingsController extends Controller
         ]);
     }
 
-    public function update(Request $request, GeneralSettings $settings)
+    public function update(Request $request)
     {
         $section = $request->input('section');
+        
+        // Obtener settings completos para asegurar que todas las propiedades estén cargadas
+        try {
+            $settings = app(GeneralSettings::class);
+        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
+            // Ejecutar migración de settings si no existen
+            \Artisan::call('settings:migrate');
+            $settings = app(GeneralSettings::class);
+        }
 
         switch ($section) {
             case 'agency':
@@ -85,12 +94,13 @@ class SettingsController extends Controller
             }
         }
 
-        $settings->agency_name = $validated['agency_name'];
-        $settings->agency_nit = $validated['agency_nit'] ?? '';
-        $settings->agency_address = $validated['agency_address'] ?? '';
-        $settings->agency_phone = $validated['agency_phone'] ?? '';
-        $settings->agency_email = $validated['agency_email'] ?? '';
-        $settings->agency_website = $validated['agency_website'] ?? '';
+        // Asegurar que todas las propiedades estén establecidas antes de guardar
+        $settings->agency_name = $validated['agency_name'] ?? ($settings->agency_name ?? 'RAMS');
+        $settings->agency_nit = $validated['agency_nit'] ?? ($settings->agency_nit ?? '');
+        $settings->agency_address = $validated['agency_address'] ?? ($settings->agency_address ?? '');
+        $settings->agency_phone = $validated['agency_phone'] ?? ($settings->agency_phone ?? '');
+        $settings->agency_email = $validated['agency_email'] ?? ($settings->agency_email ?? '');
+        $settings->agency_website = $validated['agency_website'] ?? ($settings->agency_website ?? '');
         
         // Manejar logo
         if ($request->has('remove_logo') && $request->remove_logo) {
@@ -125,7 +135,18 @@ class SettingsController extends Controller
             // Guardar ruta relativa en settings
             $settings->agency_logo = 'logos/' . $filename;
         }
-        // Si no se envía nada, mantener el logo actual
+        // Si no se envía nada, mantener el logo actual (ya está cargado en $settings)
+        
+        // Asegurar que todas las demás propiedades estén establecidas
+        $settings->drive_service_account_json = $settings->drive_service_account_json ?? '';
+        $settings->mail_mailer = $settings->mail_mailer ?? 'smtp';
+        $settings->mail_host = $settings->mail_host ?? 'smtp.gmail.com';
+        $settings->mail_port = $settings->mail_port ?? 587;
+        $settings->mail_username = $settings->mail_username ?? '';
+        $settings->mail_password = $settings->mail_password ?? '';
+        $settings->mail_encryption = $settings->mail_encryption ?? 'tls';
+        $settings->mail_from_address = $settings->mail_from_address ?? 'noreply@rams.com';
+        $settings->mail_from_name = $settings->mail_from_name ?? 'RAMS Sistema';
         
         $settings->save();
     }
@@ -136,7 +157,24 @@ class SettingsController extends Controller
             'drive_service_account_json' => 'nullable|string',
         ]);
 
+        // Asegurar que todas las propiedades estén establecidas
         $settings->drive_service_account_json = $validated['drive_service_account_json'] ?? '';
+        $settings->agency_name = $settings->agency_name ?? 'RAMS';
+        $settings->agency_nit = $settings->agency_nit ?? '';
+        $settings->agency_address = $settings->agency_address ?? '';
+        $settings->agency_phone = $settings->agency_phone ?? '';
+        $settings->agency_email = $settings->agency_email ?? '';
+        $settings->agency_website = $settings->agency_website ?? '';
+        $settings->agency_logo = $settings->agency_logo ?? '';
+        $settings->mail_mailer = $settings->mail_mailer ?? 'smtp';
+        $settings->mail_host = $settings->mail_host ?? 'smtp.gmail.com';
+        $settings->mail_port = $settings->mail_port ?? 587;
+        $settings->mail_username = $settings->mail_username ?? '';
+        $settings->mail_password = $settings->mail_password ?? '';
+        $settings->mail_encryption = $settings->mail_encryption ?? 'tls';
+        $settings->mail_from_address = $settings->mail_from_address ?? 'noreply@rams.com';
+        $settings->mail_from_name = $settings->mail_from_name ?? 'RAMS Sistema';
+        
         $settings->save();
     }
 
@@ -153,6 +191,7 @@ class SettingsController extends Controller
             'mail_from_name' => 'required|string|max:255',
         ]);
 
+        // Asegurar que todas las propiedades estén establecidas
         $settings->mail_mailer = $validated['mail_mailer'];
         $settings->mail_host = $validated['mail_host'];
         $settings->mail_port = $validated['mail_port'];
@@ -161,6 +200,14 @@ class SettingsController extends Controller
         $settings->mail_encryption = $validated['mail_encryption'] ?? '';
         $settings->mail_from_address = $validated['mail_from_address'];
         $settings->mail_from_name = $validated['mail_from_name'];
+        $settings->agency_name = $settings->agency_name ?? 'RAMS';
+        $settings->agency_nit = $settings->agency_nit ?? '';
+        $settings->agency_address = $settings->agency_address ?? '';
+        $settings->agency_phone = $settings->agency_phone ?? '';
+        $settings->agency_email = $settings->agency_email ?? '';
+        $settings->agency_website = $settings->agency_website ?? '';
+        $settings->agency_logo = $settings->agency_logo ?? '';
+        $settings->drive_service_account_json = $settings->drive_service_account_json ?? '';
         
         $settings->save();
     }
