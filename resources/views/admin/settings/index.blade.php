@@ -937,7 +937,7 @@ function showEmailDetails(logId) {
                                     <div><strong>Asunto:</strong> ${log.subject}</div>
                                     <div><strong>Proveedor:</strong> ${log.provider.toUpperCase()}</div>
                                     <div><strong>Estado:</strong> ${log.status === 'sent' ? '✅ Enviado' : log.status === 'failed' ? '❌ Fallido' : '⏳ Pendiente'}</div>
-                                    ${log.error_message ? `<div class="text-red-600"><strong>Error:</strong> ${log.error_message}</div>` : ''}
+                                    ${log.error_message ? `<div class="text-red-600 mt-2 p-3 bg-red-50 rounded border border-red-200"><strong>Error:</strong><br><pre class="mt-2 text-xs whitespace-pre-wrap">${log.error_message}</pre></div>` : ''}
                                     <div class="border-t pt-3">
                                         <strong>Cuerpo del Mensaje:</strong>
                                         <div class="mt-2 p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto">

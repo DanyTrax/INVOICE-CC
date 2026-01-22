@@ -107,16 +107,30 @@ class MailService
     protected function sendViaZoho($to, $subject, $body, $fromName = null, $fromEmail = null)
     {
         try {
+            // Validar configuración de Zoho
+            if (empty($this->settings->zoho_from_email)) {
+                throw new \Exception('El email de origen de Zoho no está configurado. Por favor, configura "Zoho From Email" en la configuración de correo.');
+            }
+            
+            if (empty($this->settings->zoho_refresh_token)) {
+                throw new \Exception('El Refresh Token de Zoho no está configurado. Por favor, autoriza la aplicación con Zoho primero.');
+            }
+            
             // Obtener o refrescar access token
             $accessToken = $this->getZohoAccessToken();
             
             if (!$accessToken) {
-                Log::error('No se pudo obtener el access token de Zoho');
-                return false;
+                $errorMsg = 'No se pudo obtener el access token de Zoho. Verifica que el Refresh Token, Client ID y Client Secret estén correctamente configurados.';
+                Log::error($errorMsg);
+                throw new \Exception($errorMsg);
             }
 
             $fromEmail = $fromEmail ?? $this->settings->zoho_from_email;
             $fromName = $fromName ?? $this->settings->mail_from_name;
+            
+            if (empty($fromEmail)) {
+                throw new \Exception('El email de origen no está configurado.');
+            }
 
             // Preparar el correo
             $emailData = [
@@ -128,20 +142,43 @@ class MailService
             ];
 
             // Enviar correo vía Zoho Mail API
+            $apiUrl = 'https://mail.zoho.com/api/accounts/' . urlencode($fromEmail) . '/messages';
+            
             $response = Http::withHeaders([
                 'Authorization' => 'Zoho-oauthtoken ' . $accessToken,
                 'Content-Type' => 'application/json',
-            ])->post('https://mail.zoho.com/api/accounts/' . urlencode($fromEmail) . '/messages', $emailData);
+            ])->post($apiUrl, $emailData);
 
             if ($response->successful()) {
                 return true;
             } else {
-                $errorBody = $response->body();
-                Log::error('Error enviando correo Zoho: ' . $errorBody);
-                throw new \Exception('Error Zoho: ' . $errorBody);
+                // Intentar obtener mensaje de error más detallado
+                $errorData = $response->json();
+                $errorMessage = 'Error al enviar correo vía Zoho Mail API';
+                
+                if (isset($errorData['error'])) {
+                    $errorMessage .= ': ' . $errorData['error'];
+                    if (isset($errorData['message'])) {
+                        $errorMessage .= ' - ' . $errorData['message'];
+                    }
+                } elseif (isset($errorData['message'])) {
+                    $errorMessage .= ': ' . $errorData['message'];
+                } else {
+                    $errorBody = $response->body();
+                    $errorMessage .= '. Respuesta: ' . (strlen($errorBody) > 200 ? substr($errorBody, 0, 200) . '...' : $errorBody);
+                }
+                
+                // Agregar código de estado HTTP
+                $errorMessage .= ' (HTTP ' . $response->status() . ')';
+                
+                Log::error('Error enviando correo Zoho: ' . $errorMessage);
+                Log::error('URL: ' . $apiUrl);
+                Log::error('Response: ' . $response->body());
+                
+                throw new \Exception($errorMessage);
             }
         } catch (\Exception $e) {
-            Log::error('Error enviando correo Zoho: ' . $e->getMessage());
+            Log::error('Excepción enviando correo Zoho: ' . $e->getMessage());
             throw $e; // Re-lanzar para que el método send() pueda capturarlo
         }
     }
@@ -151,10 +188,20 @@ class MailService
      */
     protected function getZohoAccessToken()
     {
-        // Si ya tenemos un access token válido, usarlo
-        if (!empty($this->settings->zoho_access_token)) {
-            // TODO: Verificar si el token aún es válido (no expiró)
-            // Por ahora, siempre refrescamos para asegurar validez
+        // Validar que tengamos los datos necesarios
+        if (empty($this->settings->zoho_refresh_token)) {
+            Log::error('Refresh Token de Zoho no configurado');
+            return null;
+        }
+        
+        if (empty($this->settings->zoho_client_id)) {
+            Log::error('Client ID de Zoho no configurado');
+            return null;
+        }
+        
+        if (empty($this->settings->zoho_client_secret)) {
+            Log::error('Client Secret de Zoho no configurado');
+            return null;
         }
 
         try {
@@ -175,9 +222,23 @@ class MailService
                     $this->settings->save();
                     
                     return $accessToken;
+                } else {
+                    Log::error('No se recibió access_token en la respuesta de Zoho: ' . json_encode($data));
                 }
             } else {
-                Log::error('Error obteniendo access token de Zoho: ' . $response->body());
+                $errorData = $response->json();
+                $errorMsg = 'Error obteniendo access token de Zoho';
+                
+                if (isset($errorData['error'])) {
+                    $errorMsg .= ': ' . $errorData['error'];
+                    if (isset($errorData['error_description'])) {
+                        $errorMsg .= ' - ' . $errorData['error_description'];
+                    }
+                } else {
+                    $errorMsg .= ': ' . $response->body();
+                }
+                
+                Log::error($errorMsg . ' (HTTP ' . $response->status() . ')');
             }
         } catch (\Exception $e) {
             Log::error('Excepción obteniendo access token de Zoho: ' . $e->getMessage());
