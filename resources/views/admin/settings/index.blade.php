@@ -1023,18 +1023,21 @@ window.showEmailDetails = function(logId) {
         });
 };
 
-    window.closeEmailDetails = function() {
-        const modal = document.getElementById('email-detail-modal');
-        if (modal) {
-            modal.remove();
-        }
-    };
-    
-    // Función para eliminar un correo del historial
-    window.deleteEmailLog = function(logId) {
+// Función para cerrar el modal
+window.closeEmailDetails = function() {
+    const modal = document.getElementById('email-detail-modal');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+// Función para eliminar un correo del historial
+window.deleteEmailLog = function(logId) {
     if (!confirm('¿Estás seguro de que deseas eliminar este correo del historial?')) {
         return;
     }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     
     fetch(`/admin/settings/email-logs/${logId}`, {
         method: 'DELETE',
@@ -1042,14 +1045,14 @@ window.showEmailDetails = function(logId) {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            'X-CSRF-TOKEN': csrfToken
         },
         credentials: 'same-origin'
     })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Eliminar la fila de la tabla
+                // Eliminar la fila de la tabla con animación
                 const row = document.querySelector(`tr[data-log-id="${logId}"]`);
                 if (row) {
                     row.style.transition = 'opacity 0.3s';
@@ -1072,7 +1075,7 @@ window.showEmailDetails = function(logId) {
         })
         .catch(error => {
             console.error('Error al eliminar correo:', error);
-                alert('Error al eliminar el correo. Por favor, intenta de nuevo.');
+            alert('Error al eliminar el correo. Por favor, intenta de nuevo.');
         });
 };
 
