@@ -158,36 +158,53 @@
                 },
                 dayCellClassNames: function(arg) {
                     try {
-                        // FullCalendar pasa un objeto con propiedades date, dayEl, etc.
-                        // arg.date es un objeto DateInfo, necesitamos acceder a la fecha correctamente
+                        // En FullCalendar 6, dayCellClassNames recibe un objeto DayCellContentArg
+                        // que tiene una propiedad 'date' que es un objeto DateMarker
+                        // Necesitamos convertir a Date usando el método toDate() o accediendo directamente
                         var dateObj = null;
                         
-                        if (arg.date) {
-                            // Si arg.date es un objeto DateInfo, puede tener una propiedad date o ser directamente un Date
-                            if (arg.date instanceof Date) {
+                        // Intentar diferentes formas de acceder a la fecha
+                        if (arg && arg.date) {
+                            // Si tiene método toDate(), usarlo (DateMarker)
+                            if (typeof arg.date.toDate === 'function') {
+                                dateObj = arg.date.toDate();
+                            }
+                            // Si es directamente un Date
+                            else if (arg.date instanceof Date) {
                                 dateObj = arg.date;
-                            } else if (arg.date.date instanceof Date) {
-                                dateObj = arg.date.date;
-                            } else if (typeof arg.date === 'string') {
-                                dateObj = new Date(arg.date);
-                            } else {
-                                // Intentar convertir a Date
+                            }
+                            // Si es un string, convertir
+                            else if (typeof arg.date === 'string') {
                                 dateObj = new Date(arg.date);
                             }
-                        } else if (arg instanceof Date) {
+                            // Si tiene propiedad date dentro
+                            else if (arg.date.date instanceof Date) {
+                                dateObj = arg.date.date;
+                            }
+                            // Último intento: convertir directamente
+                            else {
+                                dateObj = new Date(arg.date);
+                            }
+                        }
+                        // Si arg es directamente un Date (caso raro)
+                        else if (arg instanceof Date) {
                             dateObj = arg;
-                        } else {
+                        }
+                        // Si no hay fecha, retornar vacío
+                        else {
                             return [];
                         }
                         
-                        if (!dateObj || isNaN(dateObj.getTime())) {
+                        // Validar que la fecha sea válida
+                        if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
                             return [];
                         }
                         
+                        // Obtener el día de la semana (0 = domingo, 6 = sábado)
                         var day = dateObj.getDay();
                         return (day === 0 || day === 6) ? ['weekend-day'] : [];
                     } catch (e) {
-                        console.warn('Error en dayCellClassNames:', e);
+                        console.warn('Error en dayCellClassNames:', e, 'arg:', arg);
                         return [];
                     }
                 }
