@@ -170,107 +170,38 @@ class SettingsController extends Controller
     
     /**
      * Asegurar que todas las propiedades de GeneralSettings estén establecidas
+     * Spatie Settings requiere que todas las propiedades estén definidas antes de guardar
      */
     private function ensureAllPropertiesSet(GeneralSettings $settings)
     {
-        // Establecer todas las propiedades explícitamente con valores por defecto si no existen
-        // Esto es necesario porque Spatie Settings requiere todas las propiedades al guardar
+        // Establecer todas las propiedades directamente sin verificar
+        // Si la propiedad no existe, se creará; si existe, se mantendrá su valor actual
         
-        try {
-            // Intentar obtener valores actuales, si falla usar defaults
-            $settings->agency_name = $settings->agency_name ?? 'RAMS';
-        } catch (\Exception $e) {
-            $settings->agency_name = 'RAMS';
-        }
+        // Primero intentar obtener valores actuales usando property_exists o isset
+        // Si no existen, establecer valores por defecto
         
-        try {
-            $settings->agency_nit = $settings->agency_nit ?? '';
-        } catch (\Exception $e) {
-            $settings->agency_nit = '';
-        }
+        $properties = [
+            'agency_name' => property_exists($settings, 'agency_name') && isset($settings->agency_name) ? $settings->agency_name : 'RAMS',
+            'agency_nit' => property_exists($settings, 'agency_nit') && isset($settings->agency_nit) ? $settings->agency_nit : '',
+            'agency_address' => property_exists($settings, 'agency_address') && isset($settings->agency_address) ? $settings->agency_address : '',
+            'agency_phone' => property_exists($settings, 'agency_phone') && isset($settings->agency_phone) ? $settings->agency_phone : '',
+            'agency_email' => property_exists($settings, 'agency_email') && isset($settings->agency_email) ? $settings->agency_email : '',
+            'agency_website' => property_exists($settings, 'agency_website') && isset($settings->agency_website) ? $settings->agency_website : '',
+            'agency_logo' => property_exists($settings, 'agency_logo') && isset($settings->agency_logo) ? $settings->agency_logo : '',
+            'drive_service_account_json' => property_exists($settings, 'drive_service_account_json') && isset($settings->drive_service_account_json) ? $settings->drive_service_account_json : '',
+            'mail_mailer' => property_exists($settings, 'mail_mailer') && isset($settings->mail_mailer) ? $settings->mail_mailer : 'smtp',
+            'mail_host' => property_exists($settings, 'mail_host') && isset($settings->mail_host) ? $settings->mail_host : 'smtp.gmail.com',
+            'mail_port' => property_exists($settings, 'mail_port') && isset($settings->mail_port) ? $settings->mail_port : 587,
+            'mail_username' => property_exists($settings, 'mail_username') && isset($settings->mail_username) ? $settings->mail_username : '',
+            'mail_password' => property_exists($settings, 'mail_password') && isset($settings->mail_password) ? $settings->mail_password : '',
+            'mail_encryption' => property_exists($settings, 'mail_encryption') && isset($settings->mail_encryption) ? $settings->mail_encryption : 'tls',
+            'mail_from_address' => property_exists($settings, 'mail_from_address') && isset($settings->mail_from_address) ? $settings->mail_from_address : 'noreply@rams.com',
+            'mail_from_name' => property_exists($settings, 'mail_from_name') && isset($settings->mail_from_name) ? $settings->mail_from_name : 'RAMS Sistema',
+        ];
         
-        try {
-            $settings->agency_address = $settings->agency_address ?? '';
-        } catch (\Exception $e) {
-            $settings->agency_address = '';
-        }
-        
-        try {
-            $settings->agency_phone = $settings->agency_phone ?? '';
-        } catch (\Exception $e) {
-            $settings->agency_phone = '';
-        }
-        
-        try {
-            $settings->agency_email = $settings->agency_email ?? '';
-        } catch (\Exception $e) {
-            $settings->agency_email = '';
-        }
-        
-        try {
-            $settings->agency_website = $settings->agency_website ?? '';
-        } catch (\Exception $e) {
-            $settings->agency_website = '';
-        }
-        
-        try {
-            $settings->agency_logo = $settings->agency_logo ?? '';
-        } catch (\Exception $e) {
-            $settings->agency_logo = '';
-        }
-        
-        try {
-            $settings->drive_service_account_json = $settings->drive_service_account_json ?? '';
-        } catch (\Exception $e) {
-            $settings->drive_service_account_json = '';
-        }
-        
-        try {
-            $settings->mail_mailer = $settings->mail_mailer ?? 'smtp';
-        } catch (\Exception $e) {
-            $settings->mail_mailer = 'smtp';
-        }
-        
-        try {
-            $settings->mail_host = $settings->mail_host ?? 'smtp.gmail.com';
-        } catch (\Exception $e) {
-            $settings->mail_host = 'smtp.gmail.com';
-        }
-        
-        try {
-            $settings->mail_port = $settings->mail_port ?? 587;
-        } catch (\Exception $e) {
-            $settings->mail_port = 587;
-        }
-        
-        try {
-            $settings->mail_username = $settings->mail_username ?? '';
-        } catch (\Exception $e) {
-            $settings->mail_username = '';
-        }
-        
-        try {
-            $settings->mail_password = $settings->mail_password ?? '';
-        } catch (\Exception $e) {
-            $settings->mail_password = '';
-        }
-        
-        try {
-            $settings->mail_encryption = $settings->mail_encryption ?? 'tls';
-        } catch (\Exception $e) {
-            $settings->mail_encryption = 'tls';
-        }
-        
-        try {
-            $settings->mail_from_address = $settings->mail_from_address ?? 'noreply@rams.com';
-        } catch (\Exception $e) {
-            $settings->mail_from_address = 'noreply@rams.com';
-        }
-        
-        try {
-            $settings->mail_from_name = $settings->mail_from_name ?? 'RAMS Sistema';
-        } catch (\Exception $e) {
-            $settings->mail_from_name = 'RAMS Sistema';
+        // Establecer todas las propiedades
+        foreach ($properties as $property => $value) {
+            $settings->$property = $value;
         }
     }
 
