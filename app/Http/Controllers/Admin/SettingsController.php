@@ -9,9 +9,18 @@ use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
-    public function index(GeneralSettings $settings)
+    public function index()
     {
         $emailTemplates = EmailTemplate::all();
+        
+        // Inicializar settings con valores por defecto si no existen
+        try {
+            $settings = app(GeneralSettings::class);
+        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
+            // Ejecutar migración de settings si no existen
+            \Artisan::call('settings:migrate');
+            $settings = app(GeneralSettings::class);
+        }
         
         return view('admin.settings.index', [
             'settings' => $settings,
