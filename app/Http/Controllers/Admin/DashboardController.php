@@ -18,7 +18,7 @@ class DashboardController extends Controller
             'expiring_this_month' => Registration::whereMonth('expiration_date', now()->month)
                 ->whereYear('expiration_date', now()->year)
                 ->count(),
-            'in_process_invima' => Registration::where('status', 'en_tramite')->count(),
+            'in_process_invima' => Registration::where('status', 'tramite')->count(),
             'total_companies' => Company::count(),
         ];
 

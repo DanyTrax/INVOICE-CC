@@ -153,10 +153,10 @@
                                 name="status" 
                                 required
                                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                            <option value="pendiente" {{ old('status') === 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                            <option value="en_tramite" {{ old('status') === 'en_tramite' ? 'selected' : '' }}>En Trámite</option>
-                            <option value="aprobado" {{ old('status') === 'aprobado' ? 'selected' : '' }}>Aprobado</option>
-                            <option value="rechazado" {{ old('status') === 'rechazado' ? 'selected' : '' }}>Rechazado</option>
+                            <option value="tramite" {{ old('status', 'tramite') === 'tramite' ? 'selected' : '' }}>En Trámite</option>
+                            <option value="vigente" {{ old('status') === 'vigente' ? 'selected' : '' }}>Vigente</option>
+                            <option value="requerimiento" {{ old('status') === 'requerimiento' ? 'selected' : '' }}>Requerimiento</option>
+                            <option value="vencido" {{ old('status') === 'vencido' ? 'selected' : '' }}>Vencido</option>
                         </select>
                     </div>
 
