@@ -87,6 +87,33 @@ class CompanyController extends Controller
             ->with('success', 'Cliente actualizado exitosamente.');
     }
 
+    public function search(Request $request)
+    {
+        $query = $request->input('q', '');
+        
+        if (empty($query)) {
+            return response()->json([]);
+        }
+        
+        $companies = Company::where('name', 'like', "%{$query}%")
+            ->orWhere('email', 'like', "%{$query}%")
+            ->orWhere('nit_rut', 'like', "%{$query}%")
+            ->select('id', 'name', 'email', 'nit_rut')
+            ->limit(20)
+            ->get()
+            ->map(function ($company) {
+                return [
+                    'id' => $company->id,
+                    'text' => $company->name . ' - ' . ($company->nit_rut ?: 'Sin NIT') . ($company->email ? ' (' . $company->email . ')' : ''),
+                    'name' => $company->name,
+                    'email' => $company->email,
+                    'nit_rut' => $company->nit_rut,
+                ];
+            });
+        
+        return response()->json($companies);
+    }
+
     public function destroy(Company $company)
     {
         // Verificar si tiene registros

@@ -35,17 +35,73 @@
                         <label for="company_id" class="block mb-2 text-sm font-medium text-gray-900">
                             Cliente <span class="text-red-500">*</span>
                         </label>
-                        <select id="company_id" 
-                                name="company_id" 
-                                required
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 @error('company_id') border-red-500 @enderror">
-                            <option value="">Seleccionar cliente...</option>
-                            @foreach($companies as $company)
-                                <option value="{{ $company->id }}" {{ old('company_id', $registration->company_id) == $company->id ? 'selected' : '' }}>
-                                    {{ $company->name }} - {{ $company->nit_rut }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="relative" x-data="{ 
+                            open: false, 
+                            search: '{{ old('company_search', $registration->company ? $registration->company->name . ' - ' . ($registration->company->nit_rut ?: 'Sin NIT') . ($registration->company->email ? ' (' . $registration->company->email . ')' : '') : '') }}', 
+                            companies: [], 
+                            selectedCompany: {{ old('company_id', $registration->company_id) ? json_encode(['id' => old('company_id', $registration->company_id), 'text' => old('company_search', $registration->company ? $registration->company->name . ' - ' . ($registration->company->nit_rut ?: 'Sin NIT') . ($registration->company->email ? ' (' . $registration->company->email . ')' : '') : '')]) : 'null' }},
+                            loading: false
+                        }">
+                            <input type="hidden" name="company_id" :value="selectedCompany ? selectedCompany.id : ''" required>
+                            <input type="text" 
+                                   x-model="search"
+                                   @input="
+                                       if (search.length >= 2) {
+                                           loading = true;
+                                           fetch('/admin/api/companies/search?q=' + encodeURIComponent(search))
+                                               .then(res => res.json())
+                                               .then(data => { companies = data; loading = false; open = true; })
+                                               .catch(() => { loading = false; });
+                                       } else {
+                                           companies = [];
+                                           open = false;
+                                       }
+                                   "
+                                   @focus="if (companies.length > 0) open = true"
+                                   @click.away="open = false"
+                                   placeholder="Buscar por nombre, correo o NIT..."
+                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 @error('company_id') border-red-500 @enderror">
+                            
+                            <!-- Loading indicator -->
+                            <div x-show="loading" class="absolute right-3 top-2.5">
+                                <i class="fas fa-spinner fa-spin text-gray-400"></i>
+                            </div>
+                            
+                            <!-- Dropdown de resultados -->
+                            <div x-show="open && companies.length > 0" 
+                                 x-cloak
+                                 class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                                <template x-for="company in companies" :key="company.id">
+                                    <div @click="
+                                        selectedCompany = company;
+                                        search = company.text;
+                                        open = false;
+                                    " 
+                                    class="px-4 py-2 hover:bg-teal-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                                        <div class="font-medium text-gray-900" x-text="company.name"></div>
+                                        <div class="text-xs text-gray-500" x-text="(company.nit_rut ? 'NIT: ' + company.nit_rut : '') + (company.email ? ' | ' + company.email : '')"></div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <!-- Mensaje cuando no hay resultados -->
+                            <div x-show="open && !loading && companies.length === 0 && search.length >= 2" 
+                                 x-cloak
+                                 class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-sm text-gray-500 text-center">
+                                No se encontraron clientes
+                            </div>
+                            
+                            <!-- Cliente seleccionado -->
+                            <div x-show="selectedCompany" class="mt-2 flex items-center space-x-2 text-sm">
+                                <span class="text-teal-600">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <span class="text-gray-700" x-text="selectedCompany ? selectedCompany.text : ''"></span>
+                                <button type="button" @click="selectedCompany = null; search = ''" class="text-red-500 hover:text-red-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
                         @error('company_id')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

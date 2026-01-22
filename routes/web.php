@@ -31,7 +31,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Users
     Route::resource('users', UserController::class);
     
-    // Settings
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
-});
+            // Settings
+            Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+            Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+            
+            // API: Buscar clientes
+            Route::get('/api/companies/search', [CompanyController::class, 'search'])->name('api.companies.search');
+        });
