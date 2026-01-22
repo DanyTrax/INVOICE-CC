@@ -1136,10 +1136,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 });
-    console.log('Intentando cargar detalles del correo ID:', logId);
-    
-    // Mostrar indicador de carga
-    const loadingModal = `
+
+// Función para mostrar/ocultar campos según el proveedor seleccionado
         <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="email-detail-modal">
             <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
                 <div class="text-center py-8">
