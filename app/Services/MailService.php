@@ -237,29 +237,75 @@ class MailService
             if ($response->successful()) {
                 $data = $response->json();
                 
+                Log::info('Respuesta de Zoho accounts API', [
+                    'data_structure' => $data,
+                ]);
+                
                 // Buscar la cuenta que coincida con el email
+                // La estructura puede variar, intentar diferentes formatos
+                $accounts = null;
+                
                 if (isset($data['data']) && is_array($data['data'])) {
-                    foreach ($data['data'] as $account) {
-                        if (isset($account['accountId']) && isset($account['emailAddress'])) {
+                    $accounts = $data['data'];
+                } elseif (isset($data['accounts']) && is_array($data['accounts'])) {
+                    $accounts = $data['accounts'];
+                } elseif (is_array($data) && isset($data[0])) {
+                    $accounts = $data;
+                }
+                
+                if ($accounts && is_array($accounts)) {
+                    foreach ($accounts as $account) {
+                        if (!is_array($account)) {
+                            continue;
+                        }
+                        
+                        // Obtener emailAddress - puede ser string o estar en diferentes campos
+                        $accountEmail = null;
+                        if (isset($account['emailAddress']) && is_string($account['emailAddress'])) {
+                            $accountEmail = $account['emailAddress'];
+                        } elseif (isset($account['email']) && is_string($account['email'])) {
+                            $accountEmail = $account['email'];
+                        } elseif (isset($account['emailAddress']) && is_array($account['emailAddress'])) {
+                            // Si es array, tomar el primer elemento o buscar 'address'
+                            if (isset($account['emailAddress']['address'])) {
+                                $accountEmail = $account['emailAddress']['address'];
+                            } elseif (isset($account['emailAddress'][0])) {
+                                $accountEmail = is_string($account['emailAddress'][0]) 
+                                    ? $account['emailAddress'][0] 
+                                    : ($account['emailAddress'][0]['address'] ?? null);
+                            }
+                        }
+                        
+                        // Obtener accountId
+                        $accountId = $account['accountId'] ?? $account['id'] ?? null;
+                        
+                        if ($accountId && $accountEmail && is_string($accountEmail)) {
                             // Comparar emails (case-insensitive)
-                            if (strtolower($account['emailAddress']) === strtolower($email)) {
+                            if (strtolower($accountEmail) === strtolower($email)) {
                                 Log::info('AccountId encontrado para email', [
                                     'email' => $email,
-                                    'accountId' => $account['accountId'],
+                                    'accountId' => $accountId,
+                                    'accountEmail' => $accountEmail,
                                 ]);
-                                return $account['accountId'];
+                                return $accountId;
                             }
                         }
                     }
                 }
                 
                 // Si no encontramos por email, intentar usar el primer accountId disponible
-                if (isset($data['data'][0]['accountId'])) {
-                    Log::warning('No se encontró accountId para email específico, usando primer accountId disponible', [
-                        'email' => $email,
-                        'accountId' => $data['data'][0]['accountId'],
-                    ]);
-                    return $data['data'][0]['accountId'];
+                if ($accounts && isset($accounts[0])) {
+                    $firstAccount = $accounts[0];
+                    $firstAccountId = $firstAccount['accountId'] ?? $firstAccount['id'] ?? null;
+                    
+                    if ($firstAccountId) {
+                        Log::warning('No se encontró accountId para email específico, usando primer accountId disponible', [
+                            'email' => $email,
+                            'accountId' => $firstAccountId,
+                            'firstAccount' => $firstAccount,
+                        ]);
+                        return $firstAccountId;
+                    }
                 }
             } else {
                 Log::error('Error obteniendo accounts de Zoho', [
@@ -268,7 +314,9 @@ class MailService
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('Excepción obteniendo accountId de Zoho: ' . $e->getMessage());
+            Log::error('Excepción obteniendo accountId de Zoho: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
         
         return null;
