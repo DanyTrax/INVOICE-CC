@@ -1577,6 +1577,19 @@ let currentEditorView = 'visual'; // 'visual' o 'html'
 
 // Abrir modal de edición
 window.openEditTemplateModal = function(templateId) {
+    // Primero, asegurar que no haya editor previo
+    if (templateEditor) {
+        try {
+            const container = document.getElementById('template_body_visual');
+            if (container) {
+                container.innerHTML = '';
+            }
+            templateEditor = null;
+        } catch (e) {
+            console.error('Error limpiando editor previo:', e);
+        }
+    }
+    
     // Obtener datos de la plantilla
     fetch(`/admin/settings/templates/${templateId}`)
         .then(response => response.json())
@@ -1588,19 +1601,23 @@ window.openEditTemplateModal = function(templateId) {
                 document.getElementById('template_id').value = template.id;
                 document.getElementById('template_name').value = template.name;
                 document.getElementById('template_type').value = template.type;
-                document.getElementById('template_subject').value = template.subject;
+                document.getElementById('template_subject').value = template.subject || '';
                 
-                // Inicializar editor visual
-                initializeVisualEditor(template.body);
-                
-                // También llenar el textarea HTML
-                document.getElementById('template_body').value = template.body;
+                // Llenar el textarea HTML PRIMERO (por si el editor falla)
+                const bodyContent = template.body || '';
+                document.getElementById('template_body').value = bodyContent;
                 
                 // Mostrar shortcodes disponibles
                 displayAvailableShortcodes(template.type);
                 
-                // Mostrar modal
+                // Mostrar modal ANTES de inicializar el editor
                 document.getElementById('edit-template-modal').classList.remove('hidden');
+                
+                // Inicializar editor visual DESPUÉS de mostrar el modal
+                // Esto asegura que el contenedor esté visible en el DOM
+                setTimeout(function() {
+                    initializeVisualEditor(bodyContent);
+                }, 200);
             } else {
                 alert('Error al cargar la plantilla: ' + (data.message || 'Error desconocido'));
             }
@@ -1613,29 +1630,46 @@ window.openEditTemplateModal = function(templateId) {
 
 // Inicializar editor visual (Quill)
 function initializeVisualEditor(initialContent = '') {
+    const container = document.getElementById('template_body_visual');
+    
+    if (!container) {
+        console.error('Contenedor del editor no encontrado');
+        return;
+    }
+    
     // Si ya existe un editor, destruirlo completamente primero
     if (templateEditor) {
         try {
-            // Quill no tiene método remove, así que limpiamos el contenedor
-            const container = document.getElementById('template_body_visual');
-            if (container) {
-                // Guardar el contenido actual antes de limpiar
-                const currentContent = templateEditor.root.innerHTML;
-                container.innerHTML = '';
-                templateEditor = null;
-            }
+            // Quill no tiene método remove oficial, así que limpiamos manualmente
+            // Primero, desconectar todos los eventos
+            templateEditor.off('text-change');
+            templateEditor.off('selection-change');
+            
+            // Limpiar el contenedor completamente (esto elimina el toolbar también)
+            container.innerHTML = '';
+            
+            // Anular referencia
+            templateEditor = null;
         } catch (e) {
             console.error('Error al destruir editor:', e);
+            // Forzar limpieza si hay error
+            container.innerHTML = '';
+            templateEditor = null;
         }
+    } else {
+        // Asegurar que el contenedor esté limpio
+        container.innerHTML = '';
     }
     
-    // Limpiar completamente el contenedor antes de crear nuevo editor
-    const container = document.getElementById('template_body_visual');
-    if (container) {
-        container.innerHTML = '';
+    // Esperar un momento para asegurar que el DOM se actualizó completamente
+    setTimeout(function() {
+        // Verificar que el contenedor aún existe y está limpio
+        if (!container || container.querySelector('.ql-toolbar')) {
+            console.warn('El contenedor ya tiene un editor, limpiando...');
+            container.innerHTML = '';
+        }
         
-        // Esperar un momento para asegurar que el DOM se actualizó
-        setTimeout(function() {
+        try {
             // Configurar Quill
             templateEditor = new Quill(container, {
                 theme: 'snow',
@@ -1654,17 +1688,23 @@ function initializeVisualEditor(initialContent = '') {
                 placeholder: 'Escribe el contenido del correo aquí...',
             });
             
-            // Establecer contenido inicial
-            if (initialContent) {
-                templateEditor.root.innerHTML = initialContent;
+            // Establecer contenido inicial DESPUÉS de crear el editor
+            if (initialContent && initialContent.trim() !== '') {
+                // Usar setContents para mejor compatibilidad con HTML complejo
+                const delta = templateEditor.clipboard.convert({ html: initialContent });
+                templateEditor.setContents(delta);
             }
             
             // Sincronizar con textarea HTML cuando cambia el contenido
             templateEditor.on('text-change', function() {
                 syncToHtmlEditor();
             });
-        }, 100);
-    }
+        } catch (e) {
+            console.error('Error al inicializar Quill:', e);
+            // Si falla, mostrar el contenido en el textarea HTML
+            document.getElementById('template_body').value = initialContent || '';
+        }
+    }, 150);
 }
 
 // Alternar entre vista visual y HTML
@@ -1731,28 +1771,57 @@ function syncToVisualEditor() {
 window.closeEditTemplateModal = function() {
     // Destruir editor Quill si existe
     if (templateEditor) {
-        const container = document.getElementById('template_body_visual');
-        container.innerHTML = '';
-        templateEditor = null;
+        try {
+            // Desconectar eventos
+            templateEditor.off('text-change');
+            templateEditor.off('selection-change');
+            
+            // Limpiar contenedor completamente
+            const container = document.getElementById('template_body_visual');
+            if (container) {
+                container.innerHTML = '';
+            }
+            
+            templateEditor = null;
+        } catch (e) {
+            console.error('Error al cerrar editor:', e);
+            const container = document.getElementById('template_body_visual');
+            if (container) {
+                container.innerHTML = '';
+            }
+            templateEditor = null;
+        }
     }
     
     // Resetear vista a visual
     currentEditorView = 'visual';
-    document.getElementById('visual-editor-container').classList.remove('hidden');
-    document.getElementById('html-editor-container').classList.add('hidden');
+    const visualContainer = document.getElementById('visual-editor-container');
+    const htmlContainer = document.getElementById('html-editor-container');
+    if (visualContainer) visualContainer.classList.remove('hidden');
+    if (htmlContainer) htmlContainer.classList.add('hidden');
     
     // Resetear botón
     const toggleIcon = document.getElementById('toggle-editor-icon');
     const toggleText = document.getElementById('toggle-editor-text');
     const toggleBtn = document.getElementById('toggle-editor-btn');
-    toggleIcon.className = 'fas fa-code mr-1';
-    toggleText.textContent = 'Ver HTML';
-    toggleBtn.classList.remove('bg-gray-50', 'text-gray-700', 'border-gray-200');
-    toggleBtn.classList.add('bg-teal-50', 'text-teal-700', 'border-teal-200');
+    if (toggleIcon) toggleIcon.className = 'fas fa-code mr-1';
+    if (toggleText) toggleText.textContent = 'Ver HTML';
+    if (toggleBtn) {
+        toggleBtn.classList.remove('bg-gray-50', 'text-gray-700', 'border-gray-200');
+        toggleBtn.classList.add('bg-teal-50', 'text-teal-700', 'border-teal-200');
+    }
     
-    document.getElementById('edit-template-modal').classList.add('hidden');
+    // Ocultar modal
+    const modal = document.getElementById('edit-template-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    
     // Limpiar formulario
-    document.getElementById('edit-template-form').reset();
+    const form = document.getElementById('edit-template-form');
+    if (form) {
+        form.reset();
+    }
 };
 
 // Mostrar shortcodes disponibles
