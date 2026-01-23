@@ -133,6 +133,13 @@ class MailService
                 throw new \Exception('El email de origen no está configurado.');
             }
 
+            // Obtener el accountId de Zoho (requerido para el endpoint)
+            $accountId = $this->getZohoAccountId($accessToken, $fromEmail);
+            
+            if (!$accountId) {
+                throw new \Exception('No se pudo obtener el Account ID de Zoho para el email: ' . $fromEmail . '. Verifica que el token esté vinculado a la cuenta correcta.');
+            }
+
             // Preparar el correo
             $emailData = [
                 'fromAddress' => $fromEmail,
@@ -142,18 +149,12 @@ class MailService
                 'mailFormat' => 'html',
             ];
 
-            // Primero, intentar obtener el accountId del email (opcional, pero mejora la precisión)
-            // Si falla, usaremos el email directamente en la URL
-            $accountId = $fromEmail; // Por defecto usamos el email
-            
-            // Enviar correo vía Zoho Mail API
-            // Nota: Zoho acepta tanto accountId numérico como email en la URL
-            // El error URL_RULE_NOT_CONFIGURED generalmente indica que el token
-            // está vinculado a una cuenta diferente al fromEmail
+            // Enviar correo vía Zoho Mail API usando accountId
             $apiUrl = 'https://mail.zoho.com/api/accounts/' . urlencode($accountId) . '/messages';
             
             Log::info('Enviando correo Zoho', [
                 'fromEmail' => $fromEmail,
+                'accountId' => $accountId,
                 'to' => $to,
                 'apiUrl' => $apiUrl,
                 'hasAccessToken' => !empty($accessToken),
@@ -219,6 +220,58 @@ class MailService
             Log::error('Excepción enviando correo Zoho: ' . $e->getMessage());
             throw $e; // Re-lanzar para que el método send() pueda capturarlo
         }
+    }
+
+    /**
+     * Obtener accountId de Zoho para un email específico
+     */
+    protected function getZohoAccountId($accessToken, $email)
+    {
+        try {
+            // Obtener lista de cuentas del usuario autenticado
+            $response = Http::withHeaders([
+                'Authorization' => 'Zoho-oauthtoken ' . $accessToken,
+                'Content-Type' => 'application/json',
+            ])->get('https://mail.zoho.com/api/accounts');
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                // Buscar la cuenta que coincida con el email
+                if (isset($data['data']) && is_array($data['data'])) {
+                    foreach ($data['data'] as $account) {
+                        if (isset($account['accountId']) && isset($account['emailAddress'])) {
+                            // Comparar emails (case-insensitive)
+                            if (strtolower($account['emailAddress']) === strtolower($email)) {
+                                Log::info('AccountId encontrado para email', [
+                                    'email' => $email,
+                                    'accountId' => $account['accountId'],
+                                ]);
+                                return $account['accountId'];
+                            }
+                        }
+                    }
+                }
+                
+                // Si no encontramos por email, intentar usar el primer accountId disponible
+                if (isset($data['data'][0]['accountId'])) {
+                    Log::warning('No se encontró accountId para email específico, usando primer accountId disponible', [
+                        'email' => $email,
+                        'accountId' => $data['data'][0]['accountId'],
+                    ]);
+                    return $data['data'][0]['accountId'];
+                }
+            } else {
+                Log::error('Error obteniendo accounts de Zoho', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Excepción obteniendo accountId de Zoho: ' . $e->getMessage());
+        }
+        
+        return null;
     }
 
     /**
