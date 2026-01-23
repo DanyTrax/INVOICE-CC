@@ -1591,11 +1591,30 @@ window.openEditTemplateModal = function(templateId) {
     }
     
     // Obtener datos de la plantilla
+    console.log('Cargando plantilla ID:', templateId);
+    
     fetch(`/admin/settings/templates/${templateId}`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Respuesta recibida, status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Datos recibidos:', data);
+            
             if (data.success) {
                 const template = data.template;
+                
+                console.log('Template data:', {
+                    id: template.id,
+                    name: template.name,
+                    type: template.type,
+                    subject: template.subject,
+                    bodyLength: template.body ? template.body.length : 0,
+                    bodyPreview: template.body ? template.body.substring(0, 300) : 'VACÍO'
+                });
                 
                 // Llenar campos del formulario
                 document.getElementById('template_id').value = template.id;
@@ -1606,16 +1625,23 @@ window.openEditTemplateModal = function(templateId) {
                 // Obtener contenido del body - asegurar que no esté vacío
                 let bodyContent = template.body || '';
                 
+                console.log('Body content recibido:', {
+                    length: bodyContent.length,
+                    isEmpty: !bodyContent || bodyContent.trim() === '',
+                    isMinimal: bodyContent.trim() === '<p><br></p>' || bodyContent.trim() === '<p></p>',
+                    preview: bodyContent.substring(0, 500)
+                });
+                
                 // Si el body está vacío o solo tiene <p><br></p>, loguear para debugging
                 if (!bodyContent || bodyContent.trim() === '' || bodyContent.trim() === '<p><br></p>' || bodyContent.trim() === '<p></p>') {
-                    console.warn('Plantilla con body vacío o mínimo:', {
+                    console.warn('⚠️ Plantilla con body vacío o mínimo:', {
                         id: template.id,
                         type: template.type,
                         bodyLength: bodyContent ? bodyContent.length : 0,
                         bodyPreview: bodyContent ? bodyContent.substring(0, 100) : 'vacío'
                     });
                 } else {
-                    console.log('Cargando plantilla con contenido:', {
+                    console.log('✅ Cargando plantilla con contenido:', {
                         id: template.id,
                         type: template.type,
                         bodyLength: bodyContent.length,
@@ -1624,7 +1650,11 @@ window.openEditTemplateModal = function(templateId) {
                 }
                 
                 // Llenar el textarea HTML PRIMERO (por si el editor falla)
-                document.getElementById('template_body').value = bodyContent;
+                const textarea = document.getElementById('template_body');
+                if (textarea) {
+                    textarea.value = bodyContent;
+                    console.log('Textarea HTML llenado, valor:', textarea.value.substring(0, 200));
+                }
                 
                 // Mostrar shortcodes disponibles
                 displayAvailableShortcodes(template.type);
@@ -1635,15 +1665,17 @@ window.openEditTemplateModal = function(templateId) {
                 // Inicializar editor visual DESPUÉS de mostrar el modal
                 // Esto asegura que el contenedor esté visible en el DOM
                 setTimeout(function() {
+                    console.log('Inicializando editor visual con contenido de', bodyContent.length, 'caracteres');
                     initializeVisualEditor(bodyContent);
                 }, 300);
             } else {
+                console.error('Error en respuesta:', data);
                 alert('Error al cargar la plantilla: ' + (data.message || 'Error desconocido'));
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('Error al cargar la plantilla. Por favor, recarga la página.');
+            console.error('❌ Error al cargar plantilla:', error);
+            alert('Error al cargar la plantilla. Por favor, recarga la página. Ver consola para más detalles.');
         });
 };
 
