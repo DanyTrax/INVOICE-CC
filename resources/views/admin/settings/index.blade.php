@@ -974,12 +974,12 @@
                                 </div>
                             </div>
                             
-                            <!-- Editor Visual (TinyMCE) -->
+                            <!-- Editor Visual (Quill) -->
                             <div id="visual-editor-container" class="border border-gray-300 rounded-lg">
-                                <textarea id="template_body_visual" 
+                                <div id="template_body_visual" style="height: 400px;"></div>
+                                <textarea id="template_body_visual_hidden" 
                                           name="body_visual" 
-                                          rows="15"
-                                          class="hidden">{{ old('body') }}</textarea>
+                                          class="hidden"></textarea>
                             </div>
                             
                             <!-- Editor HTML (Textarea) -->
@@ -1560,7 +1560,7 @@ const templateVariables = {
     },
 };
 
-// Variable global para el editor TinyMCE
+// Variable global para el editor Quill
 let templateEditor = null;
 let currentEditorView = 'visual'; // 'visual' o 'html'
 
@@ -1600,43 +1600,47 @@ window.openEditTemplateModal = function(templateId) {
         });
 };
 
-// Inicializar editor visual (TinyMCE)
+// Inicializar editor visual (Quill)
 function initializeVisualEditor(initialContent = '') {
     // Si ya existe un editor, destruirlo primero
     if (templateEditor) {
-        tinymce.remove('#template_body_visual');
+        const container = document.getElementById('template_body_visual');
+        container.innerHTML = '';
         templateEditor = null;
     }
     
-    // Configurar contenido inicial
-    document.getElementById('template_body_visual').value = initialContent;
+    // Configurar Quill
+    const container = document.getElementById('template_body_visual');
+    templateEditor = new Quill(container, {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'align': [] }],
+                ['link', 'image'],
+                ['blockquote', 'code-block'],
+                ['clean']
+            ]
+        },
+        placeholder: 'Escribe el contenido del correo aquí...',
+    });
     
-    // Inicializar TinyMCE
-    tinymce.init({
-        selector: '#template_body_visual',
-        height: 400,
-        menubar: false,
-        plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-        ],
-        toolbar: 'undo redo | blocks | ' +
-            'bold italic forecolor | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist outdent indent | ' +
-            'removeformat | code | help',
-        content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
-        // Deshabilitar branding (ya no es necesario con API key válida, pero lo dejamos por si acaso)
-        promotion: false,
-        branding: false,
-        setup: function(editor) {
-            templateEditor = editor;
-            
-            // Sincronizar con textarea HTML cuando cambia el contenido
-            editor.on('change keyup', function() {
-                syncToHtmlEditor();
-            });
-        }
+    // Establecer contenido inicial
+    if (initialContent) {
+        templateEditor.root.innerHTML = initialContent;
+    }
+    
+    // Sincronizar con textarea HTML cuando cambia el contenido
+    templateEditor.on('text-change', function() {
+        syncToHtmlEditor();
+    });
+    
+    // También sincronizar en cambios de formato
+    templateEditor.on('selection-change', function() {
+        syncToHtmlEditor();
     });
 }
 
@@ -1686,8 +1690,9 @@ window.toggleEditorView = function() {
 // Sincronizar contenido del editor visual al textarea HTML
 function syncToHtmlEditor() {
     if (templateEditor) {
-        const visualContent = templateEditor.getContent();
+        const visualContent = templateEditor.root.innerHTML;
         document.getElementById('template_body').value = visualContent;
+        document.getElementById('template_body_visual_hidden').value = visualContent;
     }
 }
 
@@ -1695,15 +1700,16 @@ function syncToHtmlEditor() {
 function syncToVisualEditor() {
     if (templateEditor) {
         const htmlContent = document.getElementById('template_body').value;
-        templateEditor.setContent(htmlContent);
+        templateEditor.root.innerHTML = htmlContent;
     }
 }
 
 // Cerrar modal
 window.closeEditTemplateModal = function() {
-    // Destruir editor TinyMCE si existe
+    // Destruir editor Quill si existe
     if (templateEditor) {
-        tinymce.remove('#template_body_visual');
+        const container = document.getElementById('template_body_visual');
+        container.innerHTML = '';
         templateEditor = null;
     }
     
