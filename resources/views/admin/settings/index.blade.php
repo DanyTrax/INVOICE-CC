@@ -1743,34 +1743,81 @@ function initializeVisualEditor(initialContent = '') {
             if (initialContent && initialContent.trim() !== '' && initialContent.trim() !== '<p><br></p>' && initialContent.trim() !== '<p></p>') {
                 console.log('Estableciendo contenido en Quill, longitud:', initialContent.length);
                 
+                // Extraer solo el contenido del body si es un documento HTML completo
+                let contentToLoad = initialContent;
+                
+                // Si el contenido incluye DOCTYPE o etiquetas html/head/body, extraer solo el body
+                if (initialContent.includes('<!DOCTYPE') || initialContent.includes('<html') || initialContent.includes('<body')) {
+                    console.log('Detectado documento HTML completo, extrayendo contenido del body...');
+                    
+                    // Crear un elemento temporal para parsear el HTML
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = initialContent;
+                    
+                    // Buscar el body
+                    const bodyElement = tempDiv.querySelector('body');
+                    if (bodyElement) {
+                        contentToLoad = bodyElement.innerHTML;
+                        console.log('Contenido extraído del body, nueva longitud:', contentToLoad.length);
+                    } else {
+                        // Si no hay body, intentar extraer solo el contenido dentro de <body> tags
+                        const bodyMatch = initialContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+                        if (bodyMatch && bodyMatch[1]) {
+                            contentToLoad = bodyMatch[1];
+                            console.log('Contenido extraído con regex, nueva longitud:', contentToLoad.length);
+                        } else {
+                            // Si no se encuentra body, usar el contenido completo pero limpiar DOCTYPE y etiquetas html/head
+                            contentToLoad = initialContent
+                                .replace(/<!DOCTYPE[^>]*>/gi, '')
+                                .replace(/<html[^>]*>/gi, '')
+                                .replace(/<\/html>/gi, '')
+                                .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+                                .replace(/<body[^>]*>/gi, '')
+                                .replace(/<\/body>/gi, '');
+                            console.log('Contenido limpiado, nueva longitud:', contentToLoad.length);
+                        }
+                    }
+                }
+                
                 // Esperar un momento más para asegurar que Quill esté completamente inicializado
                 setTimeout(function() {
                     try {
-                        // Método 1: Usar clipboard.convert (recomendado para HTML complejo)
-                        const delta = templateEditor.clipboard.convert({ html: initialContent });
+                        // Método 1: Usar clipboard.convert con el contenido extraído
+                        const delta = templateEditor.clipboard.convert({ html: contentToLoad });
                         templateEditor.setContents(delta, 'silent'); // 'silent' evita disparar eventos
                         
                         // Verificar que se estableció correctamente
                         const loadedContent = templateEditor.root.innerHTML;
                         console.log('Contenido cargado en Quill, longitud:', loadedContent.length);
                         
-                        if (loadedContent.trim() === '' || loadedContent.trim() === '<p><br></p>') {
-                            console.warn('Quill no cargó el contenido correctamente, intentando método alternativo');
+                        if (loadedContent.trim() === '' || loadedContent.trim() === '<p><br></p>' || loadedContent.length < 50) {
+                            console.warn('⚠️ Quill no cargó el contenido correctamente, intentando método alternativo');
                             // Método alternativo: establecer directamente el HTML
-                            templateEditor.root.innerHTML = initialContent;
+                            templateEditor.root.innerHTML = contentToLoad;
+                            
+                            // Verificar nuevamente
+                            const altContent = templateEditor.root.innerHTML;
+                            console.log('Método alternativo, contenido cargado, longitud:', altContent.length);
+                            
+                            if (altContent.length < 50) {
+                                console.error('❌ Ambos métodos fallaron. Usando contenido completo como fallback.');
+                                templateEditor.root.innerHTML = initialContent;
+                            }
+                        } else {
+                            console.log('✅ Contenido cargado correctamente en Quill');
                         }
                         
-                        // Sincronizar con textarea HTML
+                        // Sincronizar con textarea HTML (usar el contenido original completo)
                         syncToHtmlEditor();
                     } catch (e) {
-                        console.error('Error al establecer contenido en Quill:', e);
+                        console.error('❌ Error al establecer contenido en Quill:', e);
                         // Fallback: establecer HTML directamente
-                        templateEditor.root.innerHTML = initialContent;
+                        templateEditor.root.innerHTML = contentToLoad || initialContent;
                         syncToHtmlEditor();
                     }
                 }, 100);
             } else {
-                console.warn('Contenido inicial vacío o inválido:', initialContent);
+                console.warn('⚠️ Contenido inicial vacío o inválido:', initialContent);
             }
             
             // Sincronizar con textarea HTML cuando cambia el contenido
@@ -1832,8 +1879,40 @@ window.toggleEditorView = function() {
 function syncToHtmlEditor() {
     if (templateEditor) {
         const visualContent = templateEditor.root.innerHTML;
-        document.getElementById('template_body').value = visualContent;
-        document.getElementById('template_body_visual_hidden').value = visualContent;
+        const textarea = document.getElementById('template_body');
+        if (textarea) {
+            // Si el contenido original tenía DOCTYPE/html/head/body, mantenerlo
+            // De lo contrario, usar el contenido del editor directamente
+            const originalContent = textarea.value || '';
+            
+            // Si el contenido original era un documento HTML completo, reconstruirlo
+            if (originalContent.includes('<!DOCTYPE') || originalContent.includes('<html')) {
+                // Extraer las partes del documento original
+                const bodyMatch = originalContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+                if (bodyMatch) {
+                    // Reemplazar solo el contenido del body
+                    const newContent = originalContent.replace(
+                        /<body[^>]*>[\s\S]*<\/body>/i,
+                        '<body>' + visualContent + '</body>'
+                    );
+                    textarea.value = newContent;
+                } else {
+                    // Si no se encuentra body, insertar el contenido en el lugar apropiado
+                    textarea.value = originalContent.replace(
+                        /(<body[^>]*>)([\s\S]*)(<\/body>)/i,
+                        '$1' + visualContent + '$3'
+                    ) || visualContent;
+                }
+            } else {
+                // Si no es un documento completo, usar el contenido directamente
+                textarea.value = visualContent;
+            }
+            
+            const hiddenTextarea = document.getElementById('template_body_visual_hidden');
+            if (hiddenTextarea) {
+                hiddenTextarea.value = textarea.value;
+            }
+        }
     }
 }
 
