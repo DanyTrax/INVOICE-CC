@@ -1626,7 +1626,7 @@ function initializeVisualEditor(initialContent = '') {
             'alignright alignjustify | bullist numlist outdent indent | ' +
             'removeformat | code | help',
         content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
-        // Deshabilitar verificación de API key
+        // Deshabilitar branding (ya no es necesario con API key válida, pero lo dejamos por si acaso)
         promotion: false,
         branding: false,
         setup: function(editor) {
