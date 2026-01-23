@@ -410,6 +410,21 @@ class SettingsController extends Controller
         ]);
 
         $template = EmailTemplate::findOrFail($validated['template_id']);
+        
+        // Verificar que el body no esté vacío
+        if (empty(trim($validated['body']))) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El cuerpo de la plantilla no puede estar vacío',
+                ], 422);
+            }
+            
+            return redirect()
+                ->route('admin.settings.section', 'templates')
+                ->with('error', 'El cuerpo de la plantilla no puede estar vacío');
+        }
+        
         $template->subject = $validated['subject'];
         $template->body = $validated['body'];
         $template->save();

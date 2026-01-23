@@ -836,8 +836,19 @@
                 @if($emailTemplates->isEmpty())
                     <div class="text-center py-8 text-gray-500">
                         <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
-                        <p>No hay plantillas configuradas</p>
-                        <p class="text-xs mt-2">Ejecuta: <code class="bg-gray-100 px-2 py-1 rounded">php artisan db:seed --class=EmailTemplateSeeder</code></p>
+                        <p class="mb-2">No hay plantillas configuradas</p>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
+                            <p class="text-sm text-yellow-800 mb-2">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                <strong>Plantillas no encontradas</strong>
+                            </p>
+                            <p class="text-xs text-yellow-700 mb-3">
+                                Ejecuta este comando en tu servidor para restaurar las plantillas:
+                            </p>
+                            <code class="block bg-yellow-100 px-3 py-2 rounded text-xs text-yellow-900">
+                                php artisan db:seed --class=EmailTemplateSeeder
+                            </code>
+                        </div>
                     </div>
                 @else
                     <!-- Tabla de Plantillas -->
@@ -1602,46 +1613,58 @@ window.openEditTemplateModal = function(templateId) {
 
 // Inicializar editor visual (Quill)
 function initializeVisualEditor(initialContent = '') {
-    // Si ya existe un editor, destruirlo primero
+    // Si ya existe un editor, destruirlo completamente primero
     if (templateEditor) {
-        const container = document.getElementById('template_body_visual');
-        container.innerHTML = '';
-        templateEditor = null;
+        try {
+            // Quill no tiene método remove, así que limpiamos el contenedor
+            const container = document.getElementById('template_body_visual');
+            if (container) {
+                // Guardar el contenido actual antes de limpiar
+                const currentContent = templateEditor.root.innerHTML;
+                container.innerHTML = '';
+                templateEditor = null;
+            }
+        } catch (e) {
+            console.error('Error al destruir editor:', e);
+        }
     }
     
-    // Configurar Quill
+    // Limpiar completamente el contenedor antes de crear nuevo editor
     const container = document.getElementById('template_body_visual');
-    templateEditor = new Quill(container, {
-        theme: 'snow',
-        modules: {
-            toolbar: [
-                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'color': [] }, { 'background': [] }],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                [{ 'align': [] }],
-                ['link', 'image'],
-                ['blockquote', 'code-block'],
-                ['clean']
-            ]
-        },
-        placeholder: 'Escribe el contenido del correo aquí...',
-    });
-    
-    // Establecer contenido inicial
-    if (initialContent) {
-        templateEditor.root.innerHTML = initialContent;
+    if (container) {
+        container.innerHTML = '';
+        
+        // Esperar un momento para asegurar que el DOM se actualizó
+        setTimeout(function() {
+            // Configurar Quill
+            templateEditor = new Quill(container, {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'align': [] }],
+                        ['link', 'image'],
+                        ['blockquote', 'code-block'],
+                        ['clean']
+                    ]
+                },
+                placeholder: 'Escribe el contenido del correo aquí...',
+            });
+            
+            // Establecer contenido inicial
+            if (initialContent) {
+                templateEditor.root.innerHTML = initialContent;
+            }
+            
+            // Sincronizar con textarea HTML cuando cambia el contenido
+            templateEditor.on('text-change', function() {
+                syncToHtmlEditor();
+            });
+        }, 100);
     }
-    
-    // Sincronizar con textarea HTML cuando cambia el contenido
-    templateEditor.on('text-change', function() {
-        syncToHtmlEditor();
-    });
-    
-    // También sincronizar en cambios de formato
-    templateEditor.on('selection-change', function() {
-        syncToHtmlEditor();
-    });
 }
 
 // Alternar entre vista visual y HTML
