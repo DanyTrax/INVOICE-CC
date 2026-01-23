@@ -1603,8 +1603,27 @@ window.openEditTemplateModal = function(templateId) {
                 document.getElementById('template_type').value = template.type;
                 document.getElementById('template_subject').value = template.subject || '';
                 
+                // Obtener contenido del body - asegurar que no esté vacío
+                let bodyContent = template.body || '';
+                
+                // Si el body está vacío o solo tiene <p><br></p>, loguear para debugging
+                if (!bodyContent || bodyContent.trim() === '' || bodyContent.trim() === '<p><br></p>' || bodyContent.trim() === '<p></p>') {
+                    console.warn('Plantilla con body vacío o mínimo:', {
+                        id: template.id,
+                        type: template.type,
+                        bodyLength: bodyContent ? bodyContent.length : 0,
+                        bodyPreview: bodyContent ? bodyContent.substring(0, 100) : 'vacío'
+                    });
+                } else {
+                    console.log('Cargando plantilla con contenido:', {
+                        id: template.id,
+                        type: template.type,
+                        bodyLength: bodyContent.length,
+                        bodyPreview: bodyContent.substring(0, 200)
+                    });
+                }
+                
                 // Llenar el textarea HTML PRIMERO (por si el editor falla)
-                const bodyContent = template.body || '';
                 document.getElementById('template_body').value = bodyContent;
                 
                 // Mostrar shortcodes disponibles
@@ -1617,7 +1636,7 @@ window.openEditTemplateModal = function(templateId) {
                 // Esto asegura que el contenedor esté visible en el DOM
                 setTimeout(function() {
                     initializeVisualEditor(bodyContent);
-                }, 200);
+                }, 300);
             } else {
                 alert('Error al cargar la plantilla: ' + (data.message || 'Error desconocido'));
             }
@@ -1689,10 +1708,37 @@ function initializeVisualEditor(initialContent = '') {
             });
             
             // Establecer contenido inicial DESPUÉS de crear el editor
-            if (initialContent && initialContent.trim() !== '') {
-                // Usar setContents para mejor compatibilidad con HTML complejo
-                const delta = templateEditor.clipboard.convert({ html: initialContent });
-                templateEditor.setContents(delta);
+            if (initialContent && initialContent.trim() !== '' && initialContent.trim() !== '<p><br></p>' && initialContent.trim() !== '<p></p>') {
+                console.log('Estableciendo contenido en Quill, longitud:', initialContent.length);
+                
+                // Esperar un momento más para asegurar que Quill esté completamente inicializado
+                setTimeout(function() {
+                    try {
+                        // Método 1: Usar clipboard.convert (recomendado para HTML complejo)
+                        const delta = templateEditor.clipboard.convert({ html: initialContent });
+                        templateEditor.setContents(delta, 'silent'); // 'silent' evita disparar eventos
+                        
+                        // Verificar que se estableció correctamente
+                        const loadedContent = templateEditor.root.innerHTML;
+                        console.log('Contenido cargado en Quill, longitud:', loadedContent.length);
+                        
+                        if (loadedContent.trim() === '' || loadedContent.trim() === '<p><br></p>') {
+                            console.warn('Quill no cargó el contenido correctamente, intentando método alternativo');
+                            // Método alternativo: establecer directamente el HTML
+                            templateEditor.root.innerHTML = initialContent;
+                        }
+                        
+                        // Sincronizar con textarea HTML
+                        syncToHtmlEditor();
+                    } catch (e) {
+                        console.error('Error al establecer contenido en Quill:', e);
+                        // Fallback: establecer HTML directamente
+                        templateEditor.root.innerHTML = initialContent;
+                        syncToHtmlEditor();
+                    }
+                }, 100);
+            } else {
+                console.warn('Contenido inicial vacío o inválido:', initialContent);
             }
             
             // Sincronizar con textarea HTML cuando cambia el contenido

@@ -450,12 +450,22 @@ class SettingsController extends Controller
         try {
             $template = EmailTemplate::findOrFail($id);
             
-            // Asegurar que el body tenga contenido
+            // Obtener el body directamente de la BD
             $body = $template->body ?? '';
             
-            // Si está vacío, loguear para debugging
+            // Logging detallado para debugging
+            \Log::info("Obteniendo plantilla {$id}", [
+                'id' => $template->id,
+                'name' => $template->name,
+                'type' => $template->type,
+                'body_length' => strlen($body),
+                'body_preview' => substr($body, 0, 200),
+                'body_is_empty' => empty(trim($body)),
+            ]);
+            
+            // Si está vacío, loguear warning
             if (empty(trim($body))) {
-                \Log::warning("Plantilla {$id} ({$template->type}) tiene body vacío");
+                \Log::warning("Plantilla {$id} ({$template->type}) tiene body vacío en la BD");
             }
             
             return response()->json([
@@ -465,11 +475,14 @@ class SettingsController extends Controller
                     'name' => $template->name ?? '',
                     'type' => $template->type ?? '',
                     'subject' => $template->subject ?? '',
-                    'body' => $body,
+                    'body' => $body, // Asegurar que siempre se devuelva, aunque esté vacío
                 ],
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error obteniendo plantilla: ' . $e->getMessage());
+            \Log::error('Error obteniendo plantilla: ' . $e->getMessage(), [
+                'id' => $id,
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Plantilla no encontrada: ' . $e->getMessage(),
