@@ -17,8 +17,8 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- TinyMCE CDN (sin API key requerida) -->
-    <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
+    <!-- TinyMCE CDN (sin API key requerida) - usando unpkg -->
+    <script src="https://unpkg.com/tinymce@6/tinymce.min.js"></script>
     
     <style>
         [x-cloak] { display: none !important; }
