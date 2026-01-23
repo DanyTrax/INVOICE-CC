@@ -450,20 +450,29 @@ class SettingsController extends Controller
         try {
             $template = EmailTemplate::findOrFail($id);
             
+            // Asegurar que el body tenga contenido
+            $body = $template->body ?? '';
+            
+            // Si está vacío, loguear para debugging
+            if (empty(trim($body))) {
+                \Log::warning("Plantilla {$id} ({$template->type}) tiene body vacío");
+            }
+            
             return response()->json([
                 'success' => true,
                 'template' => [
                     'id' => $template->id,
-                    'name' => $template->name,
-                    'type' => $template->type,
-                    'subject' => $template->subject,
-                    'body' => $template->body,
+                    'name' => $template->name ?? '',
+                    'type' => $template->type ?? '',
+                    'subject' => $template->subject ?? '',
+                    'body' => $body,
                 ],
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error obteniendo plantilla: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Plantilla no encontrada',
+                'message' => 'Plantilla no encontrada: ' . $e->getMessage(),
             ], 404);
         }
     }
