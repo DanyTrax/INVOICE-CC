@@ -959,16 +959,41 @@
 
                         <!-- Cuerpo del Mensaje -->
                         <div>
-                            <label for="template_body" class="block mb-2 text-sm font-medium text-gray-900">
-                                Cuerpo del Mensaje (HTML) <span class="text-red-500">*</span>
-                            </label>
-                            <textarea id="template_body" 
-                                      name="body" 
-                                      rows="15"
-                                      required
-                                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('body') }}</textarea>
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="template_body" class="block text-sm font-medium text-gray-900">
+                                    Cuerpo del Mensaje <span class="text-red-500">*</span>
+                                </label>
+                                <div class="flex items-center space-x-2">
+                                    <button type="button" 
+                                            id="toggle-editor-btn"
+                                            onclick="toggleEditorView()"
+                                            class="px-3 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                        <i class="fas fa-code mr-1" id="toggle-editor-icon"></i>
+                                        <span id="toggle-editor-text">Ver HTML</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Editor Visual (TinyMCE) -->
+                            <div id="visual-editor-container" class="border border-gray-300 rounded-lg">
+                                <textarea id="template_body_visual" 
+                                          name="body_visual" 
+                                          rows="15"
+                                          class="hidden">{{ old('body') }}</textarea>
+                            </div>
+                            
+                            <!-- Editor HTML (Textarea) -->
+                            <div id="html-editor-container" class="hidden">
+                                <textarea id="template_body" 
+                                          name="body" 
+                                          rows="15"
+                                          required
+                                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('body') }}</textarea>
+                            </div>
+                            
                             <p class="mt-1 text-xs text-gray-500">
-                                Puedes usar HTML y shortcodes. El HTML se renderizará en el correo.
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Puedes alternar entre vista visual y código HTML. Los shortcodes funcionan en ambas vistas.
                             </p>
                         </div>
 
@@ -1535,6 +1560,10 @@ const templateVariables = {
     },
 };
 
+// Variable global para el editor TinyMCE
+let templateEditor = null;
+let currentEditorView = 'visual'; // 'visual' o 'html'
+
 // Abrir modal de edición
 window.openEditTemplateModal = function(templateId) {
     // Obtener datos de la plantilla
@@ -1549,6 +1578,11 @@ window.openEditTemplateModal = function(templateId) {
                 document.getElementById('template_name').value = template.name;
                 document.getElementById('template_type').value = template.type;
                 document.getElementById('template_subject').value = template.subject;
+                
+                // Inicializar editor visual
+                initializeVisualEditor(template.body);
+                
+                // También llenar el textarea HTML
                 document.getElementById('template_body').value = template.body;
                 
                 // Mostrar shortcodes disponibles
@@ -1566,8 +1600,124 @@ window.openEditTemplateModal = function(templateId) {
         });
 };
 
+// Inicializar editor visual (TinyMCE)
+function initializeVisualEditor(initialContent = '') {
+    // Si ya existe un editor, destruirlo primero
+    if (templateEditor) {
+        tinymce.remove('#template_body_visual');
+        templateEditor = null;
+    }
+    
+    // Configurar contenido inicial
+    document.getElementById('template_body_visual').value = initialContent;
+    
+    // Inicializar TinyMCE
+    tinymce.init({
+        selector: '#template_body_visual',
+        height: 400,
+        menubar: false,
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+        ],
+        toolbar: 'undo redo | blocks | ' +
+            'bold italic forecolor | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'removeformat | code | help',
+        content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+        setup: function(editor) {
+            templateEditor = editor;
+            
+            // Sincronizar con textarea HTML cuando cambia el contenido
+            editor.on('change keyup', function() {
+                syncToHtmlEditor();
+            });
+        }
+    });
+}
+
+// Alternar entre vista visual y HTML
+window.toggleEditorView = function() {
+    const visualContainer = document.getElementById('visual-editor-container');
+    const htmlContainer = document.getElementById('html-editor-container');
+    const toggleBtn = document.getElementById('toggle-editor-btn');
+    const toggleIcon = document.getElementById('toggle-editor-icon');
+    const toggleText = document.getElementById('toggle-editor-text');
+    
+    if (currentEditorView === 'visual') {
+        // Cambiar a vista HTML
+        currentEditorView = 'html';
+        
+        // Sincronizar contenido de visual a HTML antes de cambiar
+        syncToHtmlEditor();
+        
+        // Ocultar visual, mostrar HTML
+        visualContainer.classList.add('hidden');
+        htmlContainer.classList.remove('hidden');
+        
+        // Actualizar botón
+        toggleIcon.className = 'fas fa-eye mr-1';
+        toggleText.textContent = 'Ver Visual';
+        toggleBtn.classList.remove('bg-teal-50', 'text-teal-700', 'border-teal-200');
+        toggleBtn.classList.add('bg-gray-50', 'text-gray-700', 'border-gray-200');
+    } else {
+        // Cambiar a vista visual
+        currentEditorView = 'visual';
+        
+        // Sincronizar contenido de HTML a visual antes de cambiar
+        syncToVisualEditor();
+        
+        // Ocultar HTML, mostrar visual
+        htmlContainer.classList.add('hidden');
+        visualContainer.classList.remove('hidden');
+        
+        // Actualizar botón
+        toggleIcon.className = 'fas fa-code mr-1';
+        toggleText.textContent = 'Ver HTML';
+        toggleBtn.classList.remove('bg-gray-50', 'text-gray-700', 'border-gray-200');
+        toggleBtn.classList.add('bg-teal-50', 'text-teal-700', 'border-teal-200');
+    }
+};
+
+// Sincronizar contenido del editor visual al textarea HTML
+function syncToHtmlEditor() {
+    if (templateEditor) {
+        const visualContent = templateEditor.getContent();
+        document.getElementById('template_body').value = visualContent;
+    }
+}
+
+// Sincronizar contenido del textarea HTML al editor visual
+function syncToVisualEditor() {
+    if (templateEditor) {
+        const htmlContent = document.getElementById('template_body').value;
+        templateEditor.setContent(htmlContent);
+    }
+}
+
 // Cerrar modal
 window.closeEditTemplateModal = function() {
+    // Destruir editor TinyMCE si existe
+    if (templateEditor) {
+        tinymce.remove('#template_body_visual');
+        templateEditor = null;
+    }
+    
+    // Resetear vista a visual
+    currentEditorView = 'visual';
+    document.getElementById('visual-editor-container').classList.remove('hidden');
+    document.getElementById('html-editor-container').classList.add('hidden');
+    
+    // Resetear botón
+    const toggleIcon = document.getElementById('toggle-editor-icon');
+    const toggleText = document.getElementById('toggle-editor-text');
+    const toggleBtn = document.getElementById('toggle-editor-btn');
+    toggleIcon.className = 'fas fa-code mr-1';
+    toggleText.textContent = 'Ver HTML';
+    toggleBtn.classList.remove('bg-gray-50', 'text-gray-700', 'border-gray-200');
+    toggleBtn.classList.add('bg-teal-50', 'text-teal-700', 'border-teal-200');
+    
     document.getElementById('edit-template-modal').classList.add('hidden');
     // Limpiar formulario
     document.getElementById('edit-template-form').reset();
@@ -1622,6 +1772,11 @@ function copyShortcode(shortcode, button) {
 // Guardar plantilla
 window.saveTemplate = function(event) {
     event.preventDefault();
+    
+    // Sincronizar contenido antes de guardar
+    if (currentEditorView === 'visual') {
+        syncToHtmlEditor();
+    }
     
     const form = event.target;
     const formData = new FormData(form);
