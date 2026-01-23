@@ -830,62 +830,164 @@
                     Plantillas de Email
                 </h3>
                 <p class="text-sm text-gray-600 mb-6">
-                    Gestiona las plantillas de correo electrónico del sistema.
+                    Gestiona las plantillas de correo electrónico del sistema. Haz clic en "Editar" para modificar cada plantilla.
                 </p>
 
-                <div class="space-y-6">
-                    @foreach($emailTemplates as $template)
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <h4 class="font-semibold text-gray-900 mb-2">{{ $template->name }}</h4>
-                            <p class="text-sm text-gray-600 mb-4">{{ $template->description }}</p>
+                @if($emailTemplates->isEmpty())
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                        <p>No hay plantillas configuradas</p>
+                        <p class="text-xs mt-2">Ejecuta: <code class="bg-gray-100 px-2 py-1 rounded">php artisan db:seed --class=EmailTemplateSeeder</code></p>
+                    </div>
+                @else
+                    <!-- Tabla de Plantillas -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Nombre</th>
+                                    <th scope="col" class="px-6 py-3">Tipo</th>
+                                    <th scope="col" class="px-6 py-3">Asunto</th>
+                                    <th scope="col" class="px-6 py-3 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($emailTemplates as $template)
+                                    <tr class="bg-white border-b hover:bg-gray-50">
+                                        <td class="px-6 py-4 font-medium text-gray-900">
+                                            {{ $template->name }}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {{ $template->type }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-gray-600 truncate block max-w-md" title="{{ $template->subject }}">
+                                                {{ Str::limit($template->subject, 60) }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <button type="button" 
+                                                    onclick="openEditTemplateModal({{ $template->id }})"
+                                                    class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-teal-600 rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300">
+                                                <i class="fas fa-edit mr-2"></i>
+                                                Editar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
 
-                            <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-4">
-                                @csrf
-                                <input type="hidden" name="section" value="email_template">
-                                <input type="hidden" name="template_id" value="{{ $template->id }}">
-
-                                <div>
-                                    <label for="subject_{{ $template->id }}" class="block mb-2 text-sm font-medium text-gray-900">
-                                        Asunto
-                                    </label>
-                                    <input type="text" 
-                                           id="subject_{{ $template->id }}" 
-                                           name="subject" 
-                                           value="{{ old('subject', $template->subject) }}"
-                                           required
-                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                                </div>
-
-                                <div>
-                                    <label for="body_{{ $template->id }}" class="block mb-2 text-sm font-medium text-gray-900">
-                                        Cuerpo del Mensaje
-                                    </label>
-                                    <textarea id="body_{{ $template->id }}" 
-                                              name="body" 
-                                              rows="8"
-                                              required
-                                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('body', $template->body) }}</textarea>
-                                    <p class="mt-1 text-xs text-gray-500">
-                                        Puedes usar variables: {name}, {email}, {link}, etc.
-                                    </p>
-                                </div>
-
-                                <div class="flex justify-end">
-                                    <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm">
-                                        <i class="fas fa-save mr-2"></i> Guardar Plantilla
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    @endforeach
-
-                    @if($emailTemplates->isEmpty())
-                        <div class="text-center py-8 text-gray-500">
-                            <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
-                            <p>No hay plantillas configuradas</p>
-                        </div>
-                    @endif
+        <!-- Modal de Edición de Plantilla -->
+        <div id="edit-template-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-edit text-teal-600 mr-2"></i>
+                        Editar Plantilla
+                    </h3>
+                    <button type="button" 
+                            onclick="closeEditTemplateModal()"
+                            class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
                 </div>
+
+                <form id="edit-template-form" onsubmit="saveTemplate(event)">
+                    @csrf
+                    <input type="hidden" name="section" value="email_template">
+                    <input type="hidden" id="template_id" name="template_id" value="">
+
+                    <div class="space-y-4">
+                        <!-- Nombre de la Plantilla (solo lectura) -->
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900">
+                                Nombre de la Plantilla
+                            </label>
+                            <input type="text" 
+                                   id="template_name" 
+                                   readonly
+                                   class="bg-gray-100 border border-gray-300 text-gray-600 text-sm rounded-lg block w-full p-2.5 cursor-not-allowed">
+                        </div>
+
+                        <!-- Tipo de Plantilla (solo lectura) -->
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-900">
+                                Tipo
+                            </label>
+                            <input type="text" 
+                                   id="template_type" 
+                                   readonly
+                                   class="bg-gray-100 border border-gray-300 text-gray-600 text-sm rounded-lg block w-full p-2.5 cursor-not-allowed">
+                        </div>
+
+                        <!-- Shortcodes Disponibles -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h4 class="text-sm font-semibold text-blue-900 mb-2">
+                                <i class="fas fa-code mr-2"></i>
+                                Shortcodes Disponibles
+                            </h4>
+                            <div id="available-shortcodes" class="flex flex-wrap gap-2">
+                                <!-- Se llenará dinámicamente -->
+                            </div>
+                            <p class="text-xs text-blue-700 mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Haz clic en un shortcode para copiarlo al portapapeles
+                            </p>
+                        </div>
+
+                        <!-- Asunto -->
+                        <div>
+                            <label for="template_subject" class="block mb-2 text-sm font-medium text-gray-900">
+                                Asunto <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="template_subject" 
+                                   name="subject" 
+                                   required
+                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                            <p class="mt-1 text-xs text-gray-500">
+                                Puedes usar shortcodes como {name}, {email}, etc.
+                            </p>
+                        </div>
+
+                        <!-- Cuerpo del Mensaje -->
+                        <div>
+                            <label for="template_body" class="block mb-2 text-sm font-medium text-gray-900">
+                                Cuerpo del Mensaje (HTML) <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="template_body" 
+                                      name="body" 
+                                      rows="15"
+                                      required
+                                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('body') }}</textarea>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Puedes usar HTML y shortcodes. El HTML se renderizará en el correo.
+                            </p>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" 
+                                    onclick="closeEditTemplateModal()"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-4 focus:outline-none focus:ring-gray-200">
+                                <i class="fas fa-times mr-2"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" 
+                                    class="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300">
+                                <i class="fas fa-save mr-2"></i>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1351,6 +1453,218 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 100);
         }
     };
+});
+
+// ========== FUNCIONES PARA MODAL DE PLANTILLAS ==========
+
+// Variables disponibles por tipo de plantilla
+const templateVariables = {
+    'client_invitation': {
+        'name': 'Nombre del cliente',
+        'email': 'Email del cliente',
+        'link': 'Link de registro/acceso',
+        'company_name': 'Nombre de la empresa',
+        'agency_name': 'Nombre de la agencia',
+        'agency_email': 'Email de la agencia',
+        'agency_phone': 'Teléfono de la agencia',
+        'agency_address': 'Dirección de la agencia',
+        'agency_website': 'Sitio web de la agencia',
+    },
+    'expiration_reminder': {
+        'name': 'Nombre del destinatario',
+        'product_name': 'Nombre del producto/registro',
+        'expiration_date': 'Fecha de vencimiento',
+        'company_name': 'Nombre de la empresa',
+        'registration_number': 'Número de registro',
+        'agency_name': 'Nombre de la agencia',
+    },
+    'new_registration': {
+        'name': 'Nombre del destinatario',
+        'product_name': 'Nombre del producto/registro',
+        'company_name': 'Nombre de la empresa',
+        'registration_number': 'Número de registro',
+        'status': 'Estado del registro',
+        'expiration_date': 'Fecha de vencimiento',
+        'assigned_specialist': 'Especialista asignado',
+        'agency_name': 'Nombre de la agencia',
+    },
+    'status_change': {
+        'name': 'Nombre del destinatario',
+        'product_name': 'Nombre del producto/registro',
+        'status': 'Nuevo estado',
+        'previous_status': 'Estado anterior',
+        'company_name': 'Nombre de la empresa',
+        'registration_number': 'Número de registro',
+        'observations': 'Observaciones',
+        'agency_name': 'Nombre de la agencia',
+    },
+    'pending_documents': {
+        'name': 'Nombre del destinatario',
+        'product_name': 'Nombre del producto/registro',
+        'pending_documents': 'Lista de documentos pendientes',
+        'company_name': 'Nombre de la empresa',
+        'registration_number': 'Número de registro',
+        'agency_name': 'Nombre de la agencia',
+    },
+    'specialist_assignment': {
+        'name': 'Nombre del destinatario',
+        'product_name': 'Nombre del producto/registro',
+        'specialist_name': 'Nombre del especialista',
+        'specialist_email': 'Email del especialista',
+        'company_name': 'Nombre de la empresa',
+        'registration_number': 'Número de registro',
+        'agency_name': 'Nombre de la agencia',
+    },
+    'important_date_reminder': {
+        'name': 'Nombre del destinatario',
+        'event_name': 'Nombre del evento',
+        'event_date': 'Fecha del evento',
+        'product_name': 'Nombre del producto/registro',
+        'company_name': 'Nombre de la empresa',
+        'registration_number': 'Número de registro',
+        'agency_name': 'Nombre de la agencia',
+    },
+    'requirement_notification': {
+        'name': 'Nombre del destinatario',
+        'product_name': 'Nombre del producto/registro',
+        'requirement_type': 'Tipo de requerimiento',
+        'requirement_description': 'Descripción del requerimiento',
+        'company_name': 'Nombre de la empresa',
+        'registration_number': 'Número de registro',
+        'agency_name': 'Nombre de la agencia',
+    },
+};
+
+// Abrir modal de edición
+window.openEditTemplateModal = function(templateId) {
+    // Obtener datos de la plantilla
+    fetch(`/admin/settings/templates/${templateId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const template = data.template;
+                
+                // Llenar campos del formulario
+                document.getElementById('template_id').value = template.id;
+                document.getElementById('template_name').value = template.name;
+                document.getElementById('template_type').value = template.type;
+                document.getElementById('template_subject').value = template.subject;
+                document.getElementById('template_body').value = template.body;
+                
+                // Mostrar shortcodes disponibles
+                displayAvailableShortcodes(template.type);
+                
+                // Mostrar modal
+                document.getElementById('edit-template-modal').classList.remove('hidden');
+            } else {
+                alert('Error al cargar la plantilla: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar la plantilla. Por favor, recarga la página.');
+        });
+};
+
+// Cerrar modal
+window.closeEditTemplateModal = function() {
+    document.getElementById('edit-template-modal').classList.add('hidden');
+    // Limpiar formulario
+    document.getElementById('edit-template-form').reset();
+};
+
+// Mostrar shortcodes disponibles
+function displayAvailableShortcodes(templateType) {
+    const container = document.getElementById('available-shortcodes');
+    container.innerHTML = '';
+    
+    const variables = templateVariables[templateType] || {};
+    
+    Object.keys(variables).forEach(key => {
+        const shortcode = `{${key}}`;
+        const description = variables[key];
+        
+        const badge = document.createElement('button');
+        badge.type = 'button';
+        badge.className = 'px-3 py-1.5 text-xs font-medium text-blue-800 bg-blue-100 border border-blue-200 rounded-lg hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500';
+        badge.innerHTML = `<code class="font-mono">${shortcode}</code> <span class="ml-1 text-blue-600">${description}</span>`;
+        badge.title = `Clic para copiar: ${shortcode}`;
+        badge.onclick = function() {
+            copyShortcode(shortcode, badge);
+        };
+        
+        container.appendChild(badge);
+    });
+    
+    if (Object.keys(variables).length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-600">No hay shortcodes específicos para este tipo de plantilla.</p>';
+    }
+}
+
+// Copiar shortcode al portapapeles
+function copyShortcode(shortcode, button) {
+    navigator.clipboard.writeText(shortcode).then(function() {
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check mr-1"></i>Copiado!';
+        button.classList.add('bg-green-100', 'text-green-800', 'border-green-300');
+        button.classList.remove('bg-blue-100', 'text-blue-800', 'border-blue-200');
+        
+        setTimeout(function() {
+            button.innerHTML = originalHTML;
+            button.classList.remove('bg-green-100', 'text-green-800', 'border-green-300');
+            button.classList.add('bg-blue-100', 'text-blue-800', 'border-blue-200');
+        }, 2000);
+    }).catch(function(err) {
+        alert('Error al copiar. Por favor, copia manualmente: ' + shortcode);
+    });
+}
+
+// Guardar plantilla
+window.saveTemplate = function(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonHTML = submitButton.innerHTML;
+    
+    // Deshabilitar botón y mostrar loading
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+    
+    fetch('{{ route("admin.settings.update") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            alert('Plantilla guardada exitosamente');
+            // Recargar página para ver cambios
+            window.location.reload();
+        } else {
+            alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonHTML;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar la plantilla. Por favor, intenta de nuevo.');
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonHTML;
+    });
+};
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('edit-template-modal')?.addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeEditTemplateModal();
+    }
 });
 </script>
 @endpush

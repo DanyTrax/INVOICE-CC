@@ -413,6 +413,44 @@ class SettingsController extends Controller
         $template->subject = $validated['subject'];
         $template->body = $validated['body'];
         $template->save();
+
+        // Si es una petición AJAX, devolver JSON
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Plantilla guardada exitosamente',
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.settings.section', 'templates')
+            ->with('success', 'Plantilla guardada exitosamente');
+    }
+
+    /**
+     * Obtener datos de una plantilla (para modal)
+     */
+    public function getTemplate($id)
+    {
+        try {
+            $template = EmailTemplate::findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'template' => [
+                    'id' => $template->id,
+                    'name' => $template->name,
+                    'type' => $template->type,
+                    'subject' => $template->subject,
+                    'body' => $template->body,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Plantilla no encontrada',
+            ], 404);
+        }
     }
 
     /**

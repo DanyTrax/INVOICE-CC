@@ -52,4 +52,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             // Email Logs
             Route::get('/settings/email-logs/{log}', [SettingsController::class, 'getEmailLog'])->name('settings.email-logs.show');
             Route::delete('/settings/email-logs/{log}', [SettingsController::class, 'deleteEmailLog'])->name('settings.email-logs.destroy');
+            
+            // Email Templates
+            Route::get('/settings/templates/{template}', [SettingsController::class, 'getTemplate'])->name('settings.templates.show');
         });
