@@ -140,5 +140,27 @@
 
     <!-- Flowbite JS -->
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
+    
+    <script>
+        // Suprimir errores de Cloudflare Insights beacon (se inyecta automáticamente por Cloudflare)
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('cloudflareinsights.com')) {
+                e.preventDefault();
+                return false;
+            }
+        }, true);
+        
+        // Suprimir errores de integrity hash para Cloudflare beacon
+        const originalError = console.error;
+        console.error = function(...args) {
+            const message = args.join(' ');
+            if (message.includes('cloudflareinsights.com') || 
+                message.includes('beacon.min.js') ||
+                (message.includes('integrity') && message.includes('sha512'))) {
+                return; // Suprimir estos errores específicos
+            }
+            originalError.apply(console, args);
+        };
+    </script>
 </body>
 </html>
