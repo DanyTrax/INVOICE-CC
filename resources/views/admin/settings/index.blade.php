@@ -1750,31 +1750,37 @@ function initializeVisualEditor(initialContent = '') {
                 if (initialContent.includes('<!DOCTYPE') || initialContent.includes('<html') || initialContent.includes('<body')) {
                     console.log('Detectado documento HTML completo, extrayendo contenido del body...');
                     
-                    // Crear un elemento temporal para parsear el HTML
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = initialContent;
-                    
-                    // Buscar el body
-                    const bodyElement = tempDiv.querySelector('body');
-                    if (bodyElement) {
-                        contentToLoad = bodyElement.innerHTML;
-                        console.log('Contenido extraído del body, nueva longitud:', contentToLoad.length);
+                    // Usar regex para extraer el contenido del body (más confiable que querySelector)
+                    const bodyMatch = initialContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+                    if (bodyMatch && bodyMatch[1]) {
+                        contentToLoad = bodyMatch[1].trim();
+                        console.log('✅ Contenido extraído del body con regex, nueva longitud:', contentToLoad.length);
+                        console.log('Preview del contenido extraído:', contentToLoad.substring(0, 300));
                     } else {
-                        // Si no hay body, intentar extraer solo el contenido dentro de <body> tags
-                        const bodyMatch = initialContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-                        if (bodyMatch && bodyMatch[1]) {
-                            contentToLoad = bodyMatch[1];
-                            console.log('Contenido extraído con regex, nueva longitud:', contentToLoad.length);
-                        } else {
-                            // Si no se encuentra body, usar el contenido completo pero limpiar DOCTYPE y etiquetas html/head
-                            contentToLoad = initialContent
-                                .replace(/<!DOCTYPE[^>]*>/gi, '')
-                                .replace(/<html[^>]*>/gi, '')
-                                .replace(/<\/html>/gi, '')
-                                .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
-                                .replace(/<body[^>]*>/gi, '')
-                                .replace(/<\/body>/gi, '');
-                            console.log('Contenido limpiado, nueva longitud:', contentToLoad.length);
+                        // Si no se encuentra body con regex, intentar con querySelector
+                        try {
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = initialContent;
+                            const bodyElement = tempDiv.querySelector('body');
+                            if (bodyElement) {
+                                contentToLoad = bodyElement.innerHTML;
+                                console.log('✅ Contenido extraído del body con querySelector, nueva longitud:', contentToLoad.length);
+                            } else {
+                                // Si no se encuentra body, limpiar DOCTYPE y etiquetas html/head
+                                contentToLoad = initialContent
+                                    .replace(/<!DOCTYPE[^>]*>/gi, '')
+                                    .replace(/<html[^>]*>/gi, '')
+                                    .replace(/<\/html>/gi, '')
+                                    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+                                    .replace(/<body[^>]*>/gi, '')
+                                    .replace(/<\/body>/gi, '')
+                                    .trim();
+                                console.log('⚠️ Contenido limpiado (body no encontrado), nueva longitud:', contentToLoad.length);
+                            }
+                        } catch (e) {
+                            console.error('Error al extraer body:', e);
+                            // Fallback: usar contenido completo
+                            contentToLoad = initialContent;
                         }
                     }
                 }
@@ -1782,30 +1788,44 @@ function initializeVisualEditor(initialContent = '') {
                 // Esperar un momento más para asegurar que Quill esté completamente inicializado
                 setTimeout(function() {
                     try {
-                        // Método 1: Usar clipboard.convert con el contenido extraído
-                        const delta = templateEditor.clipboard.convert({ html: contentToLoad });
-                        templateEditor.setContents(delta, 'silent'); // 'silent' evita disparar eventos
+                        // Para HTML complejo con tablas y estilos, usar directamente innerHTML
+                        // clipboard.convert() tiene problemas con HTML complejo
+                        console.log('Estableciendo contenido directamente en Quill con innerHTML...');
+                        
+                        // Deshabilitar temporalmente los eventos de Quill para evitar problemas
+                        templateEditor.off('text-change');
+                        
+                        // Establecer el contenido directamente
+                        templateEditor.root.innerHTML = contentToLoad;
                         
                         // Verificar que se estableció correctamente
                         const loadedContent = templateEditor.root.innerHTML;
-                        console.log('Contenido cargado en Quill, longitud:', loadedContent.length);
+                        console.log('✅ Contenido establecido en Quill, longitud:', loadedContent.length);
                         
                         if (loadedContent.trim() === '' || loadedContent.trim() === '<p><br></p>' || loadedContent.length < 50) {
-                            console.warn('⚠️ Quill no cargó el contenido correctamente, intentando método alternativo');
-                            // Método alternativo: establecer directamente el HTML
-                            templateEditor.root.innerHTML = contentToLoad;
+                            console.warn('⚠️ Contenido aún vacío después de innerHTML, intentando método alternativo');
                             
-                            // Verificar nuevamente
-                            const altContent = templateEditor.root.innerHTML;
-                            console.log('Método alternativo, contenido cargado, longitud:', altContent.length);
-                            
-                            if (altContent.length < 50) {
-                                console.error('❌ Ambos métodos fallaron. Usando contenido completo como fallback.');
-                                templateEditor.root.innerHTML = initialContent;
+                            // Método alternativo: usar clipboard.convert como último recurso
+                            try {
+                                const delta = templateEditor.clipboard.convert({ html: contentToLoad });
+                                templateEditor.setContents(delta, 'silent');
+                                const altContent = templateEditor.root.innerHTML;
+                                console.log('Método clipboard.convert, contenido cargado, longitud:', altContent.length);
+                                
+                                if (altContent.length < 50) {
+                                    console.error('❌ Ambos métodos fallaron. Usando contenido completo como fallback.');
+                                    templateEditor.root.innerHTML = initialContent;
+                                }
+                            } catch (e2) {
+                                console.error('Error en método alternativo:', e2);
+                                templateEditor.root.innerHTML = contentToLoad || initialContent;
                             }
-                        } else {
-                            console.log('✅ Contenido cargado correctamente en Quill');
                         }
+                        
+                        // Re-conectar eventos después de cargar el contenido
+                        templateEditor.on('text-change', function() {
+                            syncToHtmlEditor();
+                        });
                         
                         // Sincronizar con textarea HTML (usar el contenido original completo)
                         syncToHtmlEditor();
@@ -1815,7 +1835,7 @@ function initializeVisualEditor(initialContent = '') {
                         templateEditor.root.innerHTML = contentToLoad || initialContent;
                         syncToHtmlEditor();
                     }
-                }, 100);
+                }, 150);
             } else {
                 console.warn('⚠️ Contenido inicial vacío o inválido:', initialContent);
             }
