@@ -15,7 +15,7 @@
         </a>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
                 <p class="text-sm font-medium text-gray-500">Registros Vigentes</p>
@@ -33,6 +33,16 @@
             </div>
             <div class="w-12 h-12 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center text-xl">
                 <i class="fas fa-clock"></i>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-xl border-l-4 border-amber-500 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-sm font-bold text-amber-600">Requerimientos</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-1">{{ $requerimiento }}</h3>
+                <p class="text-xs text-gray-400 mt-1">Pendientes de atender</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                <i class="fas fa-tasks"></i>
             </div>
         </div>
         <div class="bg-white p-6 rounded-xl border-l-4 border-red-500 shadow-sm flex items-center justify-between">
@@ -104,17 +114,27 @@
     <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <h3 class="font-bold text-gray-800 mb-4">Próximas Fechas Importantes</h3>
         <ul class="space-y-2">
-            @foreach($calendarRegistrations->take(10) as $r)
+            @foreach($calendarRegistrations->take(15) as $r)
+            @php
+                $isRequerimiento = $r->status === 'requerimiento';
+                $useResponseLimit = $isRequerimiento && $r->response_limit_date;
+                $fecha = $useResponseLimit ? $r->response_limit_date : ($r->expiration_date ?? $r->response_limit_date);
+            @endphp
+            @if($fecha)
             <li class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50">
-                @if($r->expiration_date)
-                    <span class="text-xs font-medium text-red-600">{{ $r->expiration_date->format('d/m/Y') }}</span>
+                @if($isRequerimiento && $r->response_limit_date)
+                    <span class="text-xs font-medium text-amber-600 shrink-0">{{ $r->response_limit_date->format('d/m/Y') }}</span>
+                    <span class="text-sm text-gray-700">Requerimiento: {{ $r->product_name }}</span>
+                @elseif($r->expiration_date)
+                    <span class="text-xs font-medium text-red-600 shrink-0">{{ $r->expiration_date->format('d/m/Y') }}</span>
                     <span class="text-sm text-gray-700">Vence: {{ $r->product_name }}</span>
-                @elseif($r->response_limit_date)
-                    <span class="text-xs font-medium text-blue-600">{{ $r->response_limit_date->format('d/m/Y') }}</span>
+                @else
+                    <span class="text-xs font-medium text-blue-600 shrink-0">{{ $r->response_limit_date->format('d/m/Y') }}</span>
                     <span class="text-sm text-gray-700">Límite respuesta: {{ $r->product_name }}</span>
                 @endif
-                <a href="{{ route('portal.registrations.show', $r) }}" class="ml-auto text-teal-600 hover:text-teal-700 text-sm font-medium">Ver</a>
+                <a href="{{ route('portal.registrations.show', $r) }}" class="ml-auto text-teal-600 hover:text-teal-700 text-sm font-medium shrink-0">Ver</a>
             </li>
+            @endif
             @endforeach
         </ul>
     </div>

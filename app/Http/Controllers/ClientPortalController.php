@@ -64,7 +64,7 @@ class ClientPortalController extends Controller
                 $q->whereNotNull('expiration_date')
                   ->orWhereNotNull('response_limit_date');
             })
-            ->orderBy('expiration_date')
+            ->orderByRaw('COALESCE(expiration_date, response_limit_date) ASC')
             ->get();
 
         return view('portal.dashboard', compact(
