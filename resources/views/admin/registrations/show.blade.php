@@ -188,24 +188,39 @@
                 @if($registration->documents && $registration->documents->count() > 0)
                     <ul class="space-y-3">
                         @foreach($registration->documents as $document)
+                            @php
+                                $hasLocal = $document->file_path && !str_starts_with($document->file_path ?? '', 'temp/');
+                            @endphp
                             <li class="flex items-center justify-between gap-3 py-2 border-b border-gray-100 last:border-0">
                                 <div class="flex items-center min-w-0 flex-1">
                                     <i class="fas fa-file text-teal-500 mr-2 flex-shrink-0"></i>
                                     <span class="text-sm text-gray-900 truncate" title="{{ $document->file_name }}">{{ $document->file_name }}</span>
                                 </div>
                                 <div class="flex items-center gap-2 flex-shrink-0">
-                                    @if($document->drive_id)
-                                        <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
+                                    @if($hasLocal)
+                                        <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
                                            target="_blank"
                                            class="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg"
                                            title="Ver">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('admin.registrations.documents.download', [$registration, $document]) }}" 
+                                           class="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg"
+                                           title="Descargar">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    @elseif($document->drive_id)
+                                        <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
+                                           target="_blank"
+                                           class="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg"
+                                           title="Ver (Drive)">
                                             <i class="fas fa-external-link-alt"></i>
                                         </a>
                                     @endif
                                     <form action="{{ route('admin.registrations.documents.destroy', [$registration, $document]) }}" 
                                           method="POST" 
                                           class="inline"
-                                          onsubmit="return confirm('¿Eliminar este documento? Se borrará también de Google Drive.');">
+                                          onsubmit="return confirm('¿Eliminar este documento?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
@@ -223,7 +238,7 @@
                             <a href="{{ $registration->drive_folder_url }}" 
                                target="_blank"
                                class="text-sm text-teal-600 hover:text-teal-700">
-                                <i class="fas fa-folder-open mr-1"></i> Abrir carpeta en Drive
+                                <i class="fas fa-folder-open mr-1"></i> Abrir carpeta en Drive (legacy)
                             </a>
                         </p>
                     @endif
@@ -233,7 +248,7 @@
                         <a href="{{ $registration->drive_folder_url }}" 
                            target="_blank"
                            class="inline-flex items-center text-sm text-teal-600 hover:text-teal-700 mt-2">
-                            <i class="fas fa-folder-open mr-1"></i> Abrir carpeta en Drive
+                            <i class="fas fa-folder-open mr-1"></i> Abrir carpeta en Drive (legacy)
                         </a>
                     @endif
                 @endif

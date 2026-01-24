@@ -370,23 +370,41 @@
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @foreach($registration->documents as $document)
+                    @php
+                        $hasLocal = $document->file_path && !str_starts_with($document->file_path ?? '', 'temp/');
+                    @endphp
                     <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <div class="flex items-center space-x-3">
-                            <i class="fas fa-file text-teal-600"></i>
-                            <div>
-                                <p class="text-sm font-medium text-gray-900">{{ $document->file_name }}</p>
+                        <div class="flex items-center space-x-3 min-w-0">
+                            <i class="fas fa-file text-teal-600 flex-shrink-0"></i>
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate" title="{{ $document->file_name }}">{{ $document->file_name }}</p>
                                 <p class="text-xs text-gray-500">
                                     Subido: {{ $document->created_at->format('d/m/Y H:i') }}
                                 </p>
                             </div>
                         </div>
-                        @if($document->drive_id)
-                        <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
-                           target="_blank"
-                           class="text-teal-600 hover:text-teal-800">
-                            <i class="fas fa-external-link-alt"></i>
-                        </a>
-                        @endif
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                            @if($hasLocal)
+                                <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
+                                   target="_blank"
+                                   class="p-2 text-teal-600 hover:bg-teal-100 rounded-lg"
+                                   title="Ver">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ route('admin.registrations.documents.download', [$registration, $document]) }}" 
+                                   class="p-2 text-teal-600 hover:bg-teal-100 rounded-lg"
+                                   title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            @elseif($document->drive_id)
+                                <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
+                                   target="_blank"
+                                   class="p-2 text-teal-600 hover:bg-teal-100 rounded-lg"
+                                   title="Ver (Drive)">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            @endif
+                        </div>
                     </div>
                     @endforeach
                 </div>
@@ -423,45 +441,26 @@
                     <div id="file-list" class="mt-4 space-y-2"></div>
                     <p class="mt-2 text-xs text-gray-500">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Los documentos se subirán automáticamente a Google Drive en la carpeta del expediente.
+                        Los documentos se guardan en el almacenamiento de la plataforma. Podrás verlos y descargarlos desde el expediente.
                     </p>
                 </div>
             </div>
 
-            <!-- Sección 7: Google Drive Info -->
+            @if($registration->drive_folder_url)
+            <!-- Sección legacy: Google Drive (solo si ya existía carpeta) -->
             <div class="mb-8">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
-                    <span class="text-teal-600">{{ $registration->documents && $registration->documents->count() > 0 ? '7' : '6' }}.</span> Información de Google Drive
+                    <span class="text-teal-600">{{ $registration->documents && $registration->documents->count() > 0 ? '7' : '6' }}.</span> Carpeta en Drive (legacy)
                 </h3>
-                <div class="space-y-3">
-                    @if($registration->drive_folder_url)
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p class="text-sm text-green-800 mb-2">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            <strong>Carpeta creada:</strong>
-                        </p>
-                        <a href="{{ $registration->drive_folder_url }}" 
-                           target="_blank"
-                           class="text-sm text-green-700 hover:underline break-all">
-                            {{ $registration->drive_folder_url }}
-                        </a>
-                    </div>
-                    @else
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <p class="text-sm text-yellow-800">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            <strong>Nota:</strong> La carpeta en Google Drive se creará automáticamente cuando guardes el expediente.
-                        </p>
-                    </div>
-                    @endif
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p class="text-sm text-blue-800">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            Si cambias el cliente, los documentos se transferirán automáticamente a la carpeta del nuevo cliente.
-                        </p>
-                    </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <a href="{{ $registration->drive_folder_url }}" 
+                       target="_blank"
+                       class="text-sm text-teal-700 hover:underline break-all">
+                        <i class="fas fa-folder-open mr-1"></i> {{ $registration->drive_folder_url }}
+                    </a>
                 </div>
             </div>
+            @endif
 
             <!-- Botones -->
             <div class="mt-6 flex justify-end gap-3">

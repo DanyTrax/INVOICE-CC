@@ -26,6 +26,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::resource('companies', CompanyController::class);
     
     // Registrations
+    Route::get('/registrations/{registration}/documents/{document}/view', [RegistrationController::class, 'viewDocument'])
+        ->name('registrations.documents.view');
+    Route::get('/registrations/{registration}/documents/{document}/download', [RegistrationController::class, 'downloadDocument'])
+        ->name('registrations.documents.download');
     Route::delete('/registrations/{registration}/documents/{document}', [RegistrationController::class, 'destroyDocument'])
         ->name('registrations.documents.destroy');
     Route::resource('registrations', RegistrationController::class);

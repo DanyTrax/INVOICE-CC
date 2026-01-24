@@ -396,20 +396,7 @@
                     <div id="file-list" class="mt-4 space-y-2"></div>
                     <p class="mt-2 text-xs text-gray-500">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Los documentos se subirán automáticamente a Google Drive en la carpeta del expediente.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Sección 6: Información de Google Drive -->
-            <div class="mb-8">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
-                    <span class="text-teal-600">6.</span> Información de Google Drive
-                </h3>
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p class="text-sm text-blue-800">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        La carpeta se creará automáticamente al guardar. Si asignas un cliente con carpeta en Drive, el expediente se creará dentro de ella.
+                        Los documentos se guardan en el almacenamiento de la plataforma. Podrás verlos y descargarlos desde el expediente.
                     </p>
                 </div>
             </div>
