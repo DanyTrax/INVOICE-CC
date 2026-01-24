@@ -837,32 +837,73 @@ class SettingsController extends Controller
         try {
             // Cambiar al directorio del proyecto
             $projectPath = base_path();
-            chdir($projectPath);
             
-            // Ejecutar git pull usando la función global de PHP
-            $output = [];
+            // Verificar qué funciones están disponibles
+            $output = '';
             $returnCode = 0;
-            \exec($command, $output, $returnCode);
             
-            $outputText = implode("\n", $output);
+            // Intentar con exec() primero
+            if (function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')))) {
+                $outputArray = [];
+                \exec("cd {$projectPath} && {$command}", $outputArray, $returnCode);
+                $output = implode("\n", $outputArray);
+            }
+            // Si exec() no está disponible, intentar con shell_exec()
+            elseif (function_exists('shell_exec') && !in_array('shell_exec', explode(',', ini_get('disable_functions')))) {
+                $output = \shell_exec("cd {$projectPath} && {$command}");
+                $returnCode = $output !== null ? 0 : 1;
+            }
+            // Si ninguna está disponible, usar passthru con output buffering
+            elseif (function_exists('passthru') && !in_array('passthru', explode(',', ini_get('disable_functions')))) {
+                \ob_start();
+                \passthru("cd {$projectPath} && {$command}", $returnCode);
+                $output = \ob_get_clean();
+            }
+            // Último recurso: usar proc_open
+            elseif (function_exists('proc_open')) {
+                $descriptorspec = [
+                    0 => ['pipe', 'r'],
+                    1 => ['pipe', 'w'],
+                    2 => ['pipe', 'w'],
+                ];
+                
+                $process = \proc_open(
+                    "cd {$projectPath} && {$command}",
+                    $descriptorspec,
+                    $pipes
+                );
+                
+                if (is_resource($process)) {
+                    \fclose($pipes[0]);
+                    $output = \stream_get_contents($pipes[1]);
+                    \fclose($pipes[1]);
+                    \fclose($pipes[2]);
+                    $returnCode = \proc_close($process);
+                } else {
+                    throw new \Exception('No se pudo ejecutar el comando. Las funciones de ejecución están deshabilitadas.');
+                }
+            } else {
+                throw new \Exception('Las funciones de ejecución de comandos están deshabilitadas en este servidor. Contacta al administrador del servidor.');
+            }
             
-            if ($returnCode === 0) {
+            if ($returnCode === 0 || $output !== null) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Git pull ejecutado exitosamente',
-                    'output' => $outputText,
+                    'output' => $output ?: 'Comando ejecutado (sin salida)',
                 ]);
             } else {
                 return response()->json([
                     'success' => false,
                     'message' => 'Error al ejecutar git pull',
-                    'output' => $outputText,
+                    'output' => $output ?: 'No se pudo obtener la salida del comando',
                 ], 500);
             }
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage(),
+                'output' => 'Las funciones de ejecución pueden estar deshabilitadas. Verifica la configuración de PHP (disable_functions).',
             ], 500);
         }
     }
