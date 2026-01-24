@@ -27,6 +27,17 @@
             </span>
         </div>
 
+        @php
+            $portalAgent = null;
+            foreach (auth()->user()->companies as $company) {
+                $reg = \App\Models\Registration::where('company_id', $company->id)->whereNotNull('assigned_specialist_id')->with('assignedSpecialist')->first();
+                if ($reg?->assignedSpecialist) {
+                    $portalAgent = $reg->assignedSpecialist;
+                    break;
+                }
+            }
+            $portalHelpEmail = $portalAgent?->email ?? (app(\App\Settings\GeneralSettings::class)->agency_email ?? null);
+        @endphp
         <nav class="flex-1 py-6 space-y-1 px-3 overflow-y-auto">
             <a href="{{ route('portal.dashboard') }}"
                class="flex items-center px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('portal.dashboard') ? 'bg-teal-50 text-teal-700 font-bold' : 'text-gray-500 hover:bg-gray-50' }}">
@@ -38,20 +49,35 @@
                 <i class="fas fa-file-contract w-6 text-center"></i>
                 <span x-show="sidebarOpen" class="ml-3 text-sm">Mis Expedientes</span>
             </a>
-            <a href="mailto:{{ app(\App\Settings\GeneralSettings::class)->agency_email ?? '#' }}" class="flex items-center px-3 py-2.5 rounded-lg text-gray-500 hover:bg-gray-50 mt-4">
+            @if($portalHelpEmail)
+            <a href="mailto:{{ $portalHelpEmail }}" class="flex items-center px-3 py-2.5 rounded-lg text-gray-500 hover:bg-gray-50 mt-4">
                 <i class="fas fa-life-ring w-6 text-center"></i>
                 <span x-show="sidebarOpen" class="ml-3 text-sm">Soporte / Ayuda</span>
             </a>
+            @endif
         </nav>
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm z-30">
-            <button @click="sidebarOpen = !sidebarOpen" class="text-gray-400 hover:text-gray-600">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 shadow-sm z-30 gap-4">
+            <button @click="sidebarOpen = !sidebarOpen" class="text-gray-400 hover:text-gray-600 shrink-0">
                 <i class="fas fa-bars"></i>
             </button>
 
-            <div class="relative" x-data="{ open: false }">
+            @if($portalAgent ?? null)
+            <div class="flex items-center gap-2 md:gap-3 min-w-0 flex-1 flex-wrap">
+                <div class="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-blue-50 border border-blue-100">
+                    <span class="text-[10px] md:text-xs font-medium text-blue-600">Agente:</span>
+                    <span class="text-xs md:text-sm font-semibold text-gray-800 truncate max-w-[120px] md:max-w-none">{{ $portalAgent->name }}</span>
+                </div>
+                <a href="mailto:{{ $portalAgent->email }}" class="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-teal-600 text-white text-xs md:text-sm font-medium hover:bg-teal-700 shrink-0" title="Contactar a {{ $portalAgent->name }}">
+                    <i class="fas fa-envelope"></i>
+                    <span>Ayuda</span>
+                </a>
+            </div>
+            @endif
+
+            <div class="relative shrink-0" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg transition-colors focus:outline-none">
                     <div class="text-right hidden sm:block">
                         <p class="text-sm font-bold text-gray-800">{{ auth()->user()->name }}</p>
