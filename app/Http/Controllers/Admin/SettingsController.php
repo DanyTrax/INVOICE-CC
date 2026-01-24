@@ -385,6 +385,9 @@ class SettingsController extends Controller
             }
         }
 
+        // Asegurar que todos los settings estén en la base de datos primero
+        $this->ensureSettingsInDatabase();
+        
         // Asegurar que todas las propiedades estén establecidas ANTES de actualizar
         $this->ensureAllPropertiesSet($settings);
         
