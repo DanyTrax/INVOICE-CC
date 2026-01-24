@@ -465,25 +465,53 @@
                                     5
                                 </div>
                                 <div class="flex-1">
-                                    <h4 class="font-semibold text-gray-900 mb-2">Compartir Carpeta en Google Drive</h4>
+                                    <h4 class="font-semibold text-gray-900 mb-2">Configurar Shared Drive (Unidad Compartida)</h4>
+                                    <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
+                                        <p class="text-sm text-yellow-800">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            <strong>Importante:</strong> Las Service Accounts de Google no tienen cuota de almacenamiento propia. 
+                                            Debes usar una <strong>Shared Drive (Unidad Compartida)</strong> o compartir una carpeta en tu Drive personal.
+                                        </p>
+                                    </div>
                                     <ol class="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-4">
-                                        <li>Abre <a href="https://drive.google.com" target="_blank" class="text-teal-600 hover:underline">Google Drive</a></li>
-                                        <li>Crea una carpeta nueva (ej: "RAMS Documentos") o selecciona una existente</li>
-                                        <li>Haz clic derecho en la carpeta → <strong>"Compartir"</strong></li>
-                                        <li>En el campo de búsqueda, pega el <strong>email de la Service Account</strong>
-                                            <ul class="list-disc list-inside ml-6 mt-1">
-                                                <li>Este email está en el archivo JSON descargado, en el campo <code class="bg-gray-100 px-1 rounded">"client_email"</code></li>
-                                                <li>Ejemplo: <code class="bg-gray-100 px-1 rounded">rams-drive-service@tu-proyecto.iam.gserviceaccount.com</code></li>
+                                        <li><strong>Opción A - Usar Shared Drive (Recomendado):</strong>
+                                            <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                                <li>Ve a <a href="https://drive.google.com" target="_blank" class="text-teal-600 hover:underline">Google Drive</a></li>
+                                                <li>En el menú lateral, haz clic en <strong>"Unidades compartidas"</strong> o <strong>"Shared drives"</strong></li>
+                                                <li>Haz clic en <strong>"Nueva"</strong> para crear una nueva unidad compartida (ej: "RAMS Documentos")</li>
+                                                <li>Haz clic derecho en la unidad compartida → <strong>"Administrar miembros"</strong></li>
+                                                <li>Haz clic en <strong>"Agregar miembros"</strong></li>
+                                                <li>Pega el <strong>email de la Service Account</strong> (del archivo JSON, campo <code class="bg-gray-100 px-1 rounded">"client_email"</code>)</li>
+                                                <li>Selecciona el rol: <strong>"Administrador de contenido"</strong> o <strong>"Editor"</strong></li>
+                                                <li>Haz clic en <strong>"Enviar"</strong></li>
+                                                <li>Copia el <strong>ID de la unidad compartida</strong> desde la URL (la parte después de <code class="bg-gray-100 px-1 rounded">folders/</code>)</li>
+                                                <li>Pega este ID en el campo <strong>"ID de Carpeta Base de Drive"</strong> más arriba</li>
                                             </ul>
                                         </li>
-                                        <li>Selecciona el email de la lista de sugerencias</li>
-                                        <li>Cambia el permiso a <strong>"Editor"</strong> (o "Administrador" si necesitas más control)</li>
-                                        <li>Haz clic en <strong>"Enviar"</strong> o <strong>"Listo"</strong></li>
+                                        <li class="mt-3"><strong>Opción B - Compartir Carpeta Personal:</strong>
+                                            <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                                <li>Abre <a href="https://drive.google.com" target="_blank" class="text-teal-600 hover:underline">Google Drive</a></li>
+                                                <li>Crea una carpeta nueva (ej: "RAMS Documentos") o selecciona una existente</li>
+                                                <li>Haz clic derecho en la carpeta → <strong>"Compartir"</strong></li>
+                                                <li>En el campo de búsqueda, pega el <strong>email de la Service Account</strong>
+                                                    <ul class="list-disc list-inside ml-6 mt-1">
+                                                        <li>Este email está en el archivo JSON descargado, en el campo <code class="bg-gray-100 px-1 rounded">"client_email"</code></li>
+                                                        <li>Ejemplo: <code class="bg-gray-100 px-1 rounded">rams-drive-service@tu-proyecto.iam.gserviceaccount.com</code></li>
+                                                    </ul>
+                                                </li>
+                                                <li>Selecciona el email de la lista de sugerencias</li>
+                                                <li>Cambia el permiso a <strong>"Editor"</strong> (o "Administrador" si necesitas más control)</li>
+                                                <li>Haz clic en <strong>"Enviar"</strong> o <strong>"Listo"</strong></li>
+                                                <li>Copia el <strong>ID de la carpeta</strong> desde la URL (la parte después de <code class="bg-gray-100 px-1 rounded">folders/</code>)</li>
+                                                <li>Pega este ID en el campo <strong>"ID de Carpeta Base de Drive"</strong> más arriba</li>
+                                            </ul>
+                                        </li>
                                     </ol>
                                     <div class="mt-3 bg-blue-50 border border-blue-200 rounded p-3">
                                         <p class="text-xs text-blue-800">
                                             <i class="fas fa-info-circle mr-1"></i>
-                                            <strong>Nota:</strong> No necesitas enviar una notificación por correo. Solo comparte la carpeta con el email de la Service Account.
+                                            <strong>Nota:</strong> La <strong>Opción A (Shared Drive)</strong> es recomendada porque las unidades compartidas no tienen límite de almacenamiento 
+                                            y son más adecuadas para uso empresarial. Si usas la Opción B, asegúrate de tener suficiente espacio en tu Drive personal.
                                         </p>
                                     </div>
                                 </div>

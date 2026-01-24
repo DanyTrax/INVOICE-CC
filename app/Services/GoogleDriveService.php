@@ -142,7 +142,10 @@ class GoogleDriveService
 
             $response = Http::withToken($token)
                 ->asJson()
-                ->post($this->baseUrl . '/files', $metadata);
+                ->post($this->baseUrl . '/files', $metadata, [
+                    'supportsAllDrives' => 'true',
+                    'fields' => 'id, name, webViewLink',
+                ]);
 
             if (!$response->successful()) {
                 $errorData = $response->json();
@@ -244,12 +247,19 @@ class GoogleDriveService
             $body .= file_get_contents($filePath);
             $body .= $closeDelimiter;
             
+            // Agregar parámetros para soportar Shared Drives
+            $queryParams = [
+                'uploadType' => 'multipart',
+                'supportsAllDrives' => 'true',
+                'fields' => 'id, name, webViewLink, webContentLink',
+            ];
+            
             $response = Http::withToken($token)
                 ->withHeaders([
                     'Content-Type' => 'multipart/related; boundary=' . $boundary,
                 ])
                 ->withBody($body, 'multipart/related; boundary=' . $boundary)
-                ->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart');
+                ->post('https://www.googleapis.com/upload/drive/v3/files?' . http_build_query($queryParams));
 
             if (!$response->successful()) {
                 Log::error('Error al subir archivo a Google Drive', [
