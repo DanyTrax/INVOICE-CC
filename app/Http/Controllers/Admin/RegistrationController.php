@@ -135,6 +135,44 @@ class RegistrationController extends Controller
     {
         $registration->load(['company', 'assignedSpecialist', 'documents']);
         
+        // Verificar qué documentos realmente existen en Drive
+        $driveService = app(GoogleDriveService::class);
+        $validDocuments = collect();
+        
+        foreach ($registration->documents as $document) {
+            // Si tiene drive_id, verificar que existe en Drive
+            if ($document->drive_id) {
+                try {
+                    $driveService->getFileInfo($document->drive_id);
+                    // Si existe, agregarlo a la lista válida
+                    $validDocuments->push($document);
+                } catch (\Exception $e) {
+                    // Si no existe en Drive, no mostrarlo
+                    Log::warning('Documento eliminado de Drive, no se mostrará en la vista', [
+                        'document_id' => $document->id,
+                        'drive_id' => $document->drive_id,
+                        'file_name' => $document->file_name,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Opcional: eliminar el registro de la BD si fue borrado de Drive
+                    // $document->delete();
+                }
+            } else {
+                // Documentos legacy sin drive_id, verificar que existan localmente
+                if ($document->file_path && str_starts_with($document->file_path, 'registration-documents/') && Storage::disk('local')->exists($document->file_path)) {
+                    $validDocuments->push($document);
+                } else {
+                    Log::warning('Documento legacy no encontrado localmente', [
+                        'document_id' => $document->id,
+                        'file_path' => $document->file_path,
+                    ]);
+                }
+            }
+        }
+        
+        // Reemplazar la colección de documentos con solo los válidos
+        $registration->setRelation('documents', $validDocuments);
+        
         return view('admin.registrations.show', compact('registration'));
     }
 
@@ -143,6 +181,42 @@ class RegistrationController extends Controller
         $companies = Company::orderBy('name')->get();
         $specialists = User::where('is_active', true)->orderBy('name')->get();
         $registration->load(['company', 'assignedSpecialist', 'documents']);
+        
+        // Verificar qué documentos realmente existen en Drive (misma lógica que show)
+        $driveService = app(GoogleDriveService::class);
+        $validDocuments = collect();
+        
+        foreach ($registration->documents as $document) {
+            // Si tiene drive_id, verificar que existe en Drive
+            if ($document->drive_id) {
+                try {
+                    $driveService->getFileInfo($document->drive_id);
+                    // Si existe, agregarlo a la lista válida
+                    $validDocuments->push($document);
+                } catch (\Exception $e) {
+                    // Si no existe en Drive, no mostrarlo
+                    Log::warning('Documento eliminado de Drive, no se mostrará en la vista de edición', [
+                        'document_id' => $document->id,
+                        'drive_id' => $document->drive_id,
+                        'file_name' => $document->file_name,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                // Documentos legacy sin drive_id, verificar que existan localmente
+                if ($document->file_path && str_starts_with($document->file_path, 'registration-documents/') && Storage::disk('local')->exists($document->file_path)) {
+                    $validDocuments->push($document);
+                } else {
+                    Log::warning('Documento legacy no encontrado localmente en edición', [
+                        'document_id' => $document->id,
+                        'file_path' => $document->file_path,
+                    ]);
+                }
+            }
+        }
+        
+        // Reemplazar la colección de documentos con solo los válidos
+        $registration->setRelation('documents', $validDocuments);
         
         return view('admin.registrations.edit', compact('registration', 'companies', 'specialists'));
     }
