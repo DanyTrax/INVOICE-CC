@@ -1727,6 +1727,7 @@ function initializeVisualEditor(initialContent = '') {
     try {
         tinymce.init({
             selector: '#' + textareaId,
+            license_key: 'gpl', // Open source license, no API key required
             height: 400,
             menubar: false,
             promotion: false,
@@ -1751,8 +1752,10 @@ function initializeVisualEditor(initialContent = '') {
             },
             init_instance_callback: function(editor) {
                 console.log('✅ TinyMCE inicializado correctamente');
-                // El contenido ya está en el textarea, TinyMCE lo cargará automáticamente
-                syncToHtmlEditor();
+                // Esperar un momento para que TinyMCE cargue el contenido del textarea
+                setTimeout(function() {
+                    syncToHtmlEditor();
+                }, 100);
             }
         });
     } catch (e) {
@@ -1807,41 +1810,40 @@ window.toggleEditorView = function() {
 
 // Sincronizar contenido del editor visual al textarea HTML
 function syncToHtmlEditor() {
-    if (templateEditor) {
-        const visualContent = templateEditor.root.innerHTML;
-        const textarea = document.getElementById('template_body');
-        if (textarea) {
-            // Si el contenido original tenía DOCTYPE/html/head/body, mantenerlo
-            // De lo contrario, usar el contenido del editor directamente
-            const originalContent = textarea.value || '';
-            
-            // Si el contenido original era un documento HTML completo, reconstruirlo
-            if (originalContent.includes('<!DOCTYPE') || originalContent.includes('<html')) {
-                // Extraer las partes del documento original
-                const bodyMatch = originalContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-                if (bodyMatch) {
-                    // Reemplazar solo el contenido del body
-                    const newContent = originalContent.replace(
-                        /<body[^>]*>[\s\S]*<\/body>/i,
-                        '<body>' + visualContent + '</body>'
-                    );
-                    textarea.value = newContent;
+    if (templateEditor && typeof templateEditor.getContent === 'function') {
+        try {
+            const visualContent = templateEditor.getContent();
+            const textarea = document.getElementById('template_body');
+            if (textarea) {
+                // Si el contenido original tenía DOCTYPE/html/head/body, mantenerlo
+                // De lo contrario, usar el contenido del editor directamente
+                const originalContent = textarea.value || '';
+                
+                // Si el contenido original era un documento HTML completo, reconstruirlo
+                if (originalContent.includes('<!DOCTYPE') || originalContent.includes('<html')) {
+                    // Extraer las partes del documento original
+                    const bodyMatch = originalContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+                    if (bodyMatch) {
+                        // Reemplazar solo el contenido del body
+                        const newContent = originalContent.replace(
+                            /<body[^>]*>[\s\S]*<\/body>/i,
+                            '<body>' + visualContent + '</body>'
+                        );
+                        textarea.value = newContent;
+                    } else {
+                        // Si no se encuentra body, insertar el contenido en el lugar apropiado
+                        textarea.value = originalContent.replace(
+                            /(<body[^>]*>)([\s\S]*)(<\/body>)/i,
+                            '$1' + visualContent + '$3'
+                        ) || visualContent;
+                    }
                 } else {
-                    // Si no se encuentra body, insertar el contenido en el lugar apropiado
-                    textarea.value = originalContent.replace(
-                        /(<body[^>]*>)([\s\S]*)(<\/body>)/i,
-                        '$1' + visualContent + '$3'
-                    ) || visualContent;
+                    // Si no es un documento completo, usar el contenido directamente
+                    textarea.value = visualContent;
                 }
-            } else {
-                // Si no es un documento completo, usar el contenido directamente
-                textarea.value = visualContent;
             }
-            
-            const hiddenTextarea = document.getElementById('template_body_visual_hidden');
-            if (hiddenTextarea) {
-                hiddenTextarea.value = textarea.value;
-            }
+        } catch (e) {
+            console.error('Error al sincronizar contenido:', e);
         }
     }
 }
