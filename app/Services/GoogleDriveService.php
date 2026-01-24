@@ -144,12 +144,26 @@ class GoogleDriveService
                 ->post($this->baseUrl . '/files', $metadata);
 
             if (!$response->successful()) {
+                $errorData = $response->json();
+                $errorMessage = $errorData['error']['message'] ?? $response->body();
+                
+                // Mensaje específico para API no habilitada
+                if (str_contains($errorMessage, 'API has not been used') || 
+                    str_contains($errorMessage, 'API not enabled') ||
+                    str_contains($errorMessage, 'API activation')) {
+                    $message = 'La API de Google Drive no está habilitada. Por favor, habilítala en Google Cloud Console: https://console.cloud.google.com/apis/library/drive.googleapis.com';
+                } else {
+                    $message = 'Error al crear carpeta en Google Drive: ' . $errorMessage;
+                }
+                
                 Log::error('Error al crear carpeta en Google Drive', [
                     'response' => $response->body(),
                     'status' => $response->status(),
                     'folderName' => $folderName,
+                    'errorMessage' => $errorMessage,
                 ]);
-                throw new \Exception('Error al crear carpeta en Google Drive: ' . $response->body());
+                
+                throw new \Exception($message);
             }
 
             $folder = $response->json();
