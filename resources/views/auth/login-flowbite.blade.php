@@ -7,6 +7,85 @@
     <meta name="cf-2fa-verify" content="">
     <title>Iniciar Sesión - RAMS</title>
     
+    <!-- Suprimir errores de Cloudflare beacon ANTES de que se carguen otros scripts -->
+    <script>
+        // Ejecutar INMEDIATAMENTE, antes de cualquier otro script
+        (function() {
+            'use strict';
+            
+            // Guardar referencias originales
+            const originalError = window.console.error;
+            const originalWarn = window.console.warn;
+            
+            // Función para verificar si el mensaje debe ser suprimido
+            function shouldSuppress(message) {
+                if (!message || typeof message !== 'string') return false;
+                const lowerMessage = message.toLowerCase();
+                return lowerMessage.includes('cloudflareinsights.com') ||
+                       lowerMessage.includes('beacon.min.js') ||
+                       (lowerMessage.includes('integrity') && lowerMessage.includes('sha512') && lowerMessage.includes('cloudflare')) ||
+                       (lowerMessage.includes('solicitud de origen cruzado') && lowerMessage.includes('cloudflare')) ||
+                       (lowerMessage.includes('cors') && lowerMessage.includes('cloudflare')) ||
+                       lowerMessage.includes('cdn.tailwindcss.com should not be used in production');
+            }
+            
+            // Sobrescribir console.error
+            window.console.error = function(...args) {
+                const message = args.map(arg => 
+                    typeof arg === 'string' ? arg : 
+                    typeof arg === 'object' ? JSON.stringify(arg) : 
+                    String(arg)
+                ).join(' ');
+                
+                if (shouldSuppress(message)) {
+                    return; // Suprimir estos errores específicos
+                }
+                originalError.apply(console, args);
+            };
+            
+            // Sobrescribir console.warn
+            window.console.warn = function(...args) {
+                const message = args.map(arg => 
+                    typeof arg === 'string' ? arg : 
+                    typeof arg === 'object' ? JSON.stringify(arg) : 
+                    String(arg)
+                ).join(' ');
+                
+                if (shouldSuppress(message)) {
+                    return; // Suprimir estas advertencias específicas
+                }
+                originalWarn.apply(console, args);
+            };
+            
+            // Capturar errores globales ANTES de que se muestren
+            const errorHandler = function(e) {
+                const message = e.message || e.reason || (e.target && e.target.src) || '';
+                if (shouldSuppress(message)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            };
+            
+            // Registrar múltiples listeners para capturar todos los tipos de errores
+            window.addEventListener('error', errorHandler, true);
+            window.addEventListener('unhandledrejection', errorHandler, true);
+            
+            // Interceptar errores de recursos (imágenes, scripts, etc.)
+            document.addEventListener('error', function(e) {
+                if (e.target && (
+                    (e.target.src && e.target.src.includes('cloudflareinsights.com')) ||
+                    (e.target.href && e.target.href.includes('cloudflareinsights.com'))
+                )) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
+        })();
+    </script>
+    
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
