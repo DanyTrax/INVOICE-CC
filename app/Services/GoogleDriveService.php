@@ -630,42 +630,6 @@ class GoogleDriveService
         ];
     }
 
-                $errorData = $response->json();
-                $errorMessage = $errorData['error']['message'] ?? $response->body();
-                
-                // Mensaje específico para API no habilitada
-                if (str_contains($errorMessage, 'API has not been used') || 
-                    str_contains($errorMessage, 'API not enabled') ||
-                    str_contains($errorMessage, 'API activation')) {
-                    return [
-                        'success' => false,
-                        'message' => 'La API de Google Drive no está habilitada. Por favor, habilítala en Google Cloud Console: https://console.cloud.google.com/apis/library/drive.googleapis.com',
-                    ];
-                }
-                
-                return [
-                    'success' => false,
-                    'message' => 'Error al conectar con Google Drive: ' . $errorMessage,
-                ];
-            }
-        } catch (\Exception $e) {
-            $message = $e->getMessage();
-            
-            // Mensaje específico para errores comunes
-            if (str_contains($message, 'Google Drive no está configurado')) {
-                return [
-                    'success' => false,
-                    'message' => $message,
-                ];
-            }
-            
-            return [
-                'success' => false,
-                'message' => 'Error al probar conexión: ' . $message,
-            ];
-        }
-    }
-
     /**
      * Obtener o crear carpeta base para expedientes sin cliente
      */
