@@ -109,7 +109,7 @@ class RegistrationController extends Controller
         if ($request->hasFile('documents')) {
             try {
                 $this->uploadDocuments($registration, $request->file('documents'));
-                Log::info('Documentos subidos a almacenamiento local', [
+                Log::info('Documentos subidos a Google Drive', [
                     'registration_id' => $registration->id,
                     'files_count' => count($request->file('documents')),
                 ]);
@@ -184,7 +184,7 @@ class RegistrationController extends Controller
         if ($request->hasFile('documents')) {
             try {
                 $this->uploadDocuments($registration, $request->file('documents'));
-                Log::info('Documentos subidos a almacenamiento local', [
+                Log::info('Documentos subidos a Google Drive', [
                     'registration_id' => $registration->id,
                     'files_count' => count($request->file('documents')),
                 ]);
@@ -206,46 +206,96 @@ class RegistrationController extends Controller
     }
 
     /**
-     * Subir documentos a almacenamiento local y guardar en BD
+     * Subir documentos a Google Drive y guardar en BD
      */
     protected function uploadDocuments(Registration $registration, array $files): void
     {
-        $baseDir = 'registration-documents/' . $registration->id;
+        $driveService = app(GoogleDriveService::class);
+        
+        // Obtener o crear carpeta del expediente en Drive
+        $driveFolderId = $driveService->getOrCreateRegistrationFolder($registration);
+        
         $uploadedCount = 0;
         $errors = [];
+        $tempDir = storage_path('app/temp');
 
         foreach ($files as $file) {
+            $tempPath = null;
+            $fullPath = null;
+            
             try {
                 $originalName = $file->getClientOriginalName();
                 $mimeType = $file->getMimeType() ?: 'application/octet-stream';
+                
+                // Crear directorio temporal si no existe
+                if (!is_dir($tempDir)) {
+                    if (!mkdir($tempDir, 0755, true)) {
+                        throw new \Exception("No se pudo crear el directorio temporal: {$tempDir}");
+                    }
+                }
+                
+                // Guardar archivo temporalmente
                 $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
                 $baseName = pathinfo($originalName, PATHINFO_FILENAME);
                 $safeName = preg_replace('/[^a-zA-Z0-9_\-\pL]/u', '_', $baseName) ?: 'file';
                 $uniqueName = Str::uuid() . '_' . $safeName . ($extension ? '.' . $extension : '');
-
-                $path = $file->storeAs($baseDir, $uniqueName, 'local');
-                if (!$path) {
-                    throw new \Exception("No se pudo guardar el archivo: {$originalName}");
+                $fullPath = $tempDir . '/' . $uniqueName;
+                
+                if (!$file->move($tempDir, $uniqueName)) {
+                    throw new \Exception("No se pudo guardar el archivo temporal: {$originalName}");
                 }
-
+                
+                if (!file_exists($fullPath) || filesize($fullPath) === 0) {
+                    throw new \Exception("El archivo temporal está vacío o no existe: {$originalName}");
+                }
+                
+                // Subir a Google Drive
+                $driveFile = $driveService->uploadFile(
+                    $fullPath,
+                    $originalName,
+                    $driveFolderId,
+                    $mimeType,
+                    $registration->id,
+                    $registration->company_id
+                );
+                
+                // Guardar en BD con drive_id
                 Document::create([
                     'registration_id' => $registration->id,
                     'uploaded_by_id' => auth()->id(),
-                    'file_path' => $path,
+                    'file_path' => 'drive://' . $driveFile['id'], // Marcar como archivo de Drive
                     'file_name' => $originalName,
                     'file_type' => $mimeType,
-                    'drive_id' => null,
+                    'drive_id' => $driveFile['id'],
                 ]);
 
                 $uploadedCount++;
+                
+                Log::info('Documento subido a Google Drive', [
+                    'registration_id' => $registration->id,
+                    'file_name' => $originalName,
+                    'drive_id' => $driveFile['id'],
+                ]);
             } catch (\Exception $e) {
                 $errors[] = "Error al subir {$file->getClientOriginalName()}: " . $e->getMessage();
-                Log::error('Error al subir documento a almacenamiento local', [
+                Log::error('Error al subir documento a Google Drive', [
                     'registration_id' => $registration->id,
                     'file_name' => $file->getClientOriginalName(),
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
+            } finally {
+                // Eliminar archivo temporal
+                if ($fullPath && file_exists($fullPath)) {
+                    try {
+                        unlink($fullPath);
+                    } catch (\Exception $e) {
+                        Log::warning('No se pudo eliminar archivo temporal', [
+                            'path' => $fullPath,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
             }
         }
 
@@ -255,15 +305,40 @@ class RegistrationController extends Controller
     }
 
     /**
-     * Ver documento en el navegador (inline).
+     * Ver documento en el navegador (inline) desde Google Drive.
      */
-    public function viewDocument(Registration $registration, Document $document): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+    public function viewDocument(Registration $registration, Document $document): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
     {
         if ($document->registration_id !== $registration->id) {
             abort(404);
         }
 
-        if (Storage::disk('local')->exists($document->file_path)) {
+        if ($document->drive_id) {
+            try {
+                $driveService = app(GoogleDriveService::class);
+                $fileContent = $driveService->downloadFile($document->drive_id);
+                $mime = $document->file_type ?: 'application/octet-stream';
+                $filename = $document->file_name;
+                $disposition = 'inline; filename="' . addcslashes($filename, '"\\') . '"';
+
+                return response($fileContent, 200, [
+                    'Content-Type' => $mime,
+                    'Content-Disposition' => $disposition,
+                    'Content-Length' => strlen($fileContent),
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error al obtener archivo de Drive para ver', [
+                    'document_id' => $document->id,
+                    'drive_id' => $document->drive_id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Fallback: redirigir a Drive
+                return redirect('https://drive.google.com/file/d/' . $document->drive_id . '/view');
+            }
+        }
+
+        // Legacy: archivo local
+        if ($document->file_path && str_starts_with($document->file_path, 'registration-documents/') && Storage::disk('local')->exists($document->file_path)) {
             $path = Storage::disk('local')->path($document->file_path);
             $mime = $document->file_type ?: 'application/octet-stream';
             $filename = $document->file_name;
@@ -275,23 +350,44 @@ class RegistrationController extends Controller
             ]);
         }
 
-        if ($document->drive_id) {
-            return redirect('https://drive.google.com/file/d/' . $document->drive_id . '/view');
-        }
-
         abort(404, 'Documento no encontrado.');
     }
 
     /**
-     * Descargar documento.
+     * Descargar documento desde Google Drive.
      */
-    public function downloadDocument(Registration $registration, Document $document): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\RedirectResponse
+    public function downloadDocument(Registration $registration, Document $document): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
     {
         if ($document->registration_id !== $registration->id) {
             abort(404);
         }
 
-        if (Storage::disk('local')->exists($document->file_path)) {
+        if ($document->drive_id) {
+            try {
+                $driveService = app(GoogleDriveService::class);
+                $fileContent = $driveService->downloadFile($document->drive_id);
+                $mime = $document->file_type ?: 'application/octet-stream';
+                $filename = $document->file_name;
+                $disposition = 'attachment; filename="' . addcslashes($filename, '"\\') . '"';
+
+                return response($fileContent, 200, [
+                    'Content-Type' => $mime,
+                    'Content-Disposition' => $disposition,
+                    'Content-Length' => strlen($fileContent),
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error al obtener archivo de Drive para descargar', [
+                    'document_id' => $document->id,
+                    'drive_id' => $document->drive_id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Fallback: redirigir a Drive
+                return redirect('https://drive.google.com/uc?export=download&id=' . $document->drive_id);
+            }
+        }
+
+        // Legacy: archivo local
+        if ($document->file_path && str_starts_with($document->file_path, 'registration-documents/') && Storage::disk('local')->exists($document->file_path)) {
             return Storage::disk('local')->download(
                 $document->file_path,
                 $document->file_name,
@@ -299,20 +395,31 @@ class RegistrationController extends Controller
             );
         }
 
-        if ($document->drive_id) {
-            return redirect('https://drive.google.com/uc?export=download&id=' . $document->drive_id);
-        }
-
         abort(404, 'Documento no encontrado.');
     }
 
     public function destroy(Registration $registration)
     {
+        $driveService = app(GoogleDriveService::class);
+        
+        // Eliminar documentos de Drive y local
         foreach ($registration->documents as $doc) {
-            if ($doc->file_path && !str_starts_with($doc->file_path, 'temp/') && Storage::disk('local')->exists($doc->file_path)) {
+            if ($doc->drive_id) {
+                try {
+                    $driveService->deleteFile($doc->drive_id);
+                } catch (\Exception $e) {
+                    Log::warning('No se pudo eliminar documento de Drive al eliminar expediente', [
+                        'document_id' => $doc->id,
+                        'drive_id' => $doc->drive_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+            if ($doc->file_path && str_starts_with($doc->file_path, 'registration-documents/') && Storage::disk('local')->exists($doc->file_path)) {
                 Storage::disk('local')->delete($doc->file_path);
             }
         }
+        
         $registration->delete();
 
         return redirect()

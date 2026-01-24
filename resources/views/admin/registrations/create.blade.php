@@ -396,7 +396,7 @@
                     <div id="file-list" class="mt-4 space-y-2"></div>
                     <p class="mt-2 text-xs text-gray-500">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Los documentos se guardan en el almacenamiento de la plataforma. Podrás verlos y descargarlos desde el expediente.
+                        Los documentos se suben a Google Drive y se pueden ver y descargar desde la plataforma.
                     </p>
                 </div>
             </div>

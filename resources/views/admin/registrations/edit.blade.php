@@ -371,7 +371,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @foreach($registration->documents as $document)
                     @php
-                        $hasLocal = $document->file_path && 
+                        $hasDrive = !empty($document->drive_id);
+                        $hasLocal = !$hasDrive && $document->file_path && 
                                     !str_starts_with($document->file_path, 'temp/') &&
                                     str_starts_with($document->file_path, 'registration-documents/');
                     @endphp
@@ -386,7 +387,7 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2 flex-shrink-0">
-                            @if($hasLocal)
+                            @if($hasDrive || $hasLocal)
                                 <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
                                    target="_blank"
                                    class="p-2.5 text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors shadow-sm"
@@ -397,13 +398,6 @@
                                    class="p-2.5 text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors shadow-sm"
                                    title="Descargar documento">
                                     <i class="fas fa-download"></i>
-                                </a>
-                            @elseif($document->drive_id)
-                                <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
-                                   target="_blank"
-                                   class="p-2.5 text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors shadow-sm"
-                                   title="Ver en Google Drive (legacy)">
-                                    <i class="fas fa-external-link-alt"></i>
                                 </a>
                             @endif
                         </div>
@@ -443,7 +437,7 @@
                     <div id="file-list" class="mt-4 space-y-2"></div>
                     <p class="mt-2 text-xs text-gray-500">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Los documentos se guardan en el almacenamiento de la plataforma. Podrás verlos y descargarlos desde el expediente.
+                        Los documentos se suben a Google Drive y se pueden ver y descargar desde la plataforma.
                     </p>
                 </div>
             </div>

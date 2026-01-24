@@ -189,10 +189,9 @@
                     <ul class="space-y-3">
                         @foreach($registration->documents as $document)
                             @php
-                                // Verificar si el documento está almacenado localmente
-                                // Los nuevos documentos tienen path que empieza con 'registration-documents/'
-                                // Los legacy tienen 'temp/' o solo drive_id
-                                $hasLocal = $document->file_path && 
+                                // Verificar si el documento está en Google Drive (prioridad) o localmente
+                                $hasDrive = !empty($document->drive_id);
+                                $hasLocal = !$hasDrive && $document->file_path && 
                                             !str_starts_with($document->file_path, 'temp/') &&
                                             str_starts_with($document->file_path, 'registration-documents/');
                             @endphp
@@ -202,7 +201,7 @@
                                     <span class="text-sm font-medium text-gray-900 truncate" title="{{ $document->file_name }}">{{ $document->file_name }}</span>
                                 </div>
                                 <div class="flex items-center gap-2 flex-shrink-0">
-                                    @if($hasLocal)
+                                    @if($hasDrive || $hasLocal)
                                         <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
                                            target="_blank"
                                            class="p-2.5 text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors shadow-sm"
@@ -213,13 +212,6 @@
                                            class="p-2.5 text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors shadow-sm"
                                            title="Descargar documento">
                                             <i class="fas fa-download"></i>
-                                        </a>
-                                    @elseif($document->drive_id)
-                                        <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
-                                           target="_blank"
-                                           class="p-2.5 text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors shadow-sm"
-                                           title="Ver en Google Drive (legacy)">
-                                            <i class="fas fa-external-link-alt"></i>
                                         </a>
                                     @endif
                                     <button type="button" 

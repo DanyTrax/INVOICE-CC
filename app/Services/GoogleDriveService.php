@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Settings\GeneralSettings;
 use App\Models\DriveOperationLog;
+use App\Models\Registration;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -411,6 +412,103 @@ class GoogleDriveService
             ]);
             throw new \Exception('Error al eliminar archivo de Google Drive: ' . ($response->json()['error']['message'] ?? $response->body()));
         }
+    }
+
+    /**
+     * Descargar contenido de archivo desde Google Drive
+     */
+    public function downloadFile(string $fileId): string
+    {
+        $token = $this->getAccessToken();
+        $isSharedDrive = ($this->settings->drive_mode ?? 'service_account') !== 'oauth_user';
+        
+        $queryParams = ['alt' => 'media', 'supportsAllDrives' => 'true'];
+        if ($isSharedDrive) {
+            $queryParams['includeItemsFromAllDrives'] = 'true';
+        }
+
+        $response = Http::withToken($token)
+            ->get($this->baseUrl . '/files/' . $fileId . '?' . http_build_query($queryParams));
+
+        if (!$response->successful()) {
+            $errorData = $response->json();
+            $errorMessage = $errorData['error']['message'] ?? $response->body();
+            
+            Log::error('Error al descargar archivo de Google Drive', [
+                'response' => $response->body(),
+                'status' => $response->status(),
+                'fileId' => $fileId,
+                'errorMessage' => $errorMessage,
+            ]);
+            throw new \Exception('Error al descargar archivo de Google Drive: ' . $errorMessage);
+        }
+
+        return $response->body();
+    }
+
+    /**
+     * Obtener información de archivo desde Google Drive
+     */
+    public function getFileInfo(string $fileId): array
+    {
+        $token = $this->getAccessToken();
+        $isSharedDrive = ($this->settings->drive_mode ?? 'service_account') !== 'oauth_user';
+        
+        $queryParams = ['fields' => 'id, name, mimeType, size, webViewLink, webContentLink', 'supportsAllDrives' => 'true'];
+        if ($isSharedDrive) {
+            $queryParams['includeItemsFromAllDrives'] = 'true';
+        }
+
+        $response = Http::withToken($token)
+            ->get($this->baseUrl . '/files/' . $fileId . '?' . http_build_query($queryParams));
+
+        if (!$response->successful()) {
+            Log::error('Error al obtener información de archivo de Google Drive', [
+                'response' => $response->body(),
+                'status' => $response->status(),
+                'fileId' => $fileId,
+            ]);
+            throw new \Exception('Error al obtener información de archivo: ' . ($response->json()['error']['message'] ?? $response->body()));
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Obtener o crear carpeta del expediente en Google Drive
+     */
+    public function getOrCreateRegistrationFolder(Registration $registration): string
+    {
+        // Si ya tiene carpeta, retornarla
+        if ($registration->drive_folder_id) {
+            return $registration->drive_folder_id;
+        }
+
+        // Crear carpeta del expediente
+        $folderName = $registration->product_name . ' - ' . ($registration->registration_number ?? 'Sin Número');
+        
+        // Determinar carpeta padre
+        $parentFolderId = null;
+        if ($registration->company_id) {
+            $company = $registration->company;
+            if ($company && $company->drive_folder_id) {
+                $parentFolderId = $company->drive_folder_id;
+            } else {
+                $parentFolderId = $this->getOrCreateClientsFolder();
+            }
+        } else {
+            $parentFolderId = $this->getOrCreateNoClientFolder();
+        }
+
+        $folder = $this->createFolder($folderName, $parentFolderId, $registration->id, $registration->company_id);
+        
+        // Actualizar registro con la carpeta
+        $registration->update([
+            'drive_folder_id' => $folder['id'],
+            'drive_folder_url' => $folder['webViewLink'],
+        ]);
+
+        return $folder['id'];
     }
 
     /**
