@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Registration;
 use App\Models\Company;
 use App\Models\User;
+use App\Models\Document;
+use App\Services\GoogleDriveService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RegistrationController extends Controller
 {
