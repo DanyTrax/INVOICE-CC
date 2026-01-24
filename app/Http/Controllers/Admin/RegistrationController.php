@@ -259,11 +259,30 @@ class RegistrationController extends Controller
                     $registration->company_id
                 );
                 
-                // Guardar en BD con drive_id
+                // Eliminar archivo temporal INMEDIATAMENTE después de subir a Drive (ANTES de guardar en BD)
+                // Esto asegura que NO se mantenga ninguna copia local
+                if ($fullPath && file_exists($fullPath)) {
+                    try {
+                        unlink($fullPath);
+                        $fullPath = null; // Marcar como eliminado para evitar doble eliminación
+                        Log::debug('Archivo temporal eliminado inmediatamente después de subir a Drive', [
+                            'file' => $originalName,
+                            'drive_id' => $driveFile['id'],
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::warning('No se pudo eliminar archivo temporal', [
+                            'path' => $fullPath,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+                
+                // Guardar en BD SOLO con drive_id (SIN almacenamiento local)
+                // file_path solo es una referencia 'drive://id', NO un archivo físico
                 Document::create([
                     'registration_id' => $registration->id,
                     'uploaded_by_id' => auth()->id(),
-                    'file_path' => 'drive://' . $driveFile['id'], // Marcar como archivo de Drive
+                    'file_path' => 'drive://' . $driveFile['id'], // Solo referencia a Drive, NO archivo local
                     'file_name' => $originalName,
                     'file_type' => $mimeType,
                     'drive_id' => $driveFile['id'],
@@ -271,7 +290,7 @@ class RegistrationController extends Controller
 
                 $uploadedCount++;
                 
-                Log::info('Documento subido a Google Drive', [
+                Log::info('Documento subido a Google Drive (sin copia local)', [
                     'registration_id' => $registration->id,
                     'file_name' => $originalName,
                     'drive_id' => $driveFile['id'],
@@ -285,12 +304,13 @@ class RegistrationController extends Controller
                     'trace' => $e->getTraceAsString(),
                 ]);
             } finally {
-                // Eliminar archivo temporal
-                if ($fullPath && file_exists($fullPath)) {
+                // Asegurar eliminación del archivo temporal incluso si hay error
+                if (isset($fullPath) && $fullPath && file_exists($fullPath)) {
                     try {
                         unlink($fullPath);
+                        Log::debug('Archivo temporal eliminado en finally', ['path' => $fullPath]);
                     } catch (\Exception $e) {
-                        Log::warning('No se pudo eliminar archivo temporal', [
+                        Log::warning('No se pudo eliminar archivo temporal en finally', [
                             'path' => $fullPath,
                             'error' => $e->getMessage(),
                         ]);
@@ -396,6 +416,43 @@ class RegistrationController extends Controller
         }
 
         abort(404, 'Documento no encontrado.');
+    }
+
+    /**
+     * Limpiar archivos temporales antiguos (más de 1 hora)
+     */
+    protected function cleanOldTempFiles(string $tempDir): void
+    {
+        if (!is_dir($tempDir)) {
+            return;
+        }
+
+        try {
+            $files = glob($tempDir . '/*');
+            $now = time();
+            $maxAge = 3600; // 1 hora
+
+            foreach ($files as $file) {
+                if (is_file($file)) {
+                    $fileAge = $now - filemtime($file);
+                    if ($fileAge > $maxAge) {
+                        try {
+                            unlink($file);
+                            Log::debug('Archivo temporal antiguo eliminado', ['file' => basename($file)]);
+                        } catch (\Exception $e) {
+                            Log::warning('No se pudo eliminar archivo temporal antiguo', [
+                                'file' => $file,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Error al limpiar archivos temporales antiguos', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function destroy(Registration $registration)
