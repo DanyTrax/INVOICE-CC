@@ -45,6 +45,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             // Git Pull (solo super_admin)
             Route::post('/settings/git-pull', [SettingsController::class, 'gitPull'])->name('settings.git-pull');
             
+            // Artisan Commands (solo super_admin)
+            Route::post('/settings/artisan', [SettingsController::class, 'artisanCommand'])->name('settings.artisan');
+            
             // API: Buscar clientes
             Route::get('/api/companies/search', [CompanyController::class, 'search'])->name('api.companies.search');
             
