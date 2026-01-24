@@ -366,23 +366,50 @@
                 </div>
             </div>
 
-            <!-- Sección 5: Google Drive -->
+            <!-- Sección 5: Documentos -->
             <div class="mb-8">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
-                    <span class="text-teal-600">5.</span> Documentos en Google Drive
+                    <span class="text-teal-600">5.</span> Agregar Documentos
                 </h3>
                 <div>
-                    <label for="drive_folder_url" class="block mb-2 text-sm font-medium text-gray-900">
-                        URL de Carpeta en Drive
+                    <label for="documents" class="block mb-2 text-sm font-medium text-gray-900">
+                        Subir Documentos <span class="text-gray-500">(Opcional)</span>
                     </label>
-                    <input type="url" 
-                           id="drive_folder_url" 
-                           name="drive_folder_url" 
-                           value="{{ old('drive_folder_url') }}"
-                           placeholder="https://drive.google.com/drive/folders/..."
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                    <p class="mt-1 text-xs text-gray-500">
-                        La carpeta se creará automáticamente en: /RAMS/{Cliente}/{Expediente}/
+                    <div class="flex items-center justify-center w-full">
+                        <label for="documents" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                                <p class="mb-2 text-sm text-gray-500">
+                                    <span class="font-semibold">Clic para seleccionar</span> o arrastra archivos aquí
+                                </p>
+                                <p class="text-xs text-gray-500">PDF, DOC, DOCX, XLS, XLSX, imágenes (Máx. 10MB por archivo)</p>
+                            </div>
+                            <input type="file" 
+                                   id="documents" 
+                                   name="documents[]" 
+                                   multiple
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                                   class="hidden"
+                                   onchange="updateFileList(this)">
+                        </label>
+                    </div>
+                    <div id="file-list" class="mt-4 space-y-2"></div>
+                    <p class="mt-2 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Los documentos se subirán automáticamente a Google Drive en la carpeta del expediente.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Sección 6: Información de Google Drive -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                    <span class="text-teal-600">6.</span> Información de Google Drive
+                </h3>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        La carpeta se creará automáticamente al guardar. Si asignas un cliente con carpeta en Drive, el expediente se creará dentro de ella.
                     </p>
                 </div>
             </div>
@@ -405,6 +432,7 @@
     <script>
         function updateFileList(input) {
             const fileList = document.getElementById('file-list');
+            if (!fileList) return;
             fileList.innerHTML = '';
             
             if (input.files && input.files.length > 0) {
@@ -430,6 +458,7 @@
 
         function removeFile(index) {
             const input = document.getElementById('documents');
+            if (!input) return;
             const dt = new DataTransfer();
             const files = Array.from(input.files);
             

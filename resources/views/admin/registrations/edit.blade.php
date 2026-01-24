@@ -33,7 +33,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="company_id" class="block mb-2 text-sm font-medium text-gray-900">
-                            Cliente <span class="text-red-500">*</span>
+                            Cliente <span class="text-gray-500">(Opcional)</span>
                         </label>
                         <div class="relative" x-data="{ 
                             open: false, 
@@ -42,7 +42,7 @@
                             selectedCompany: {{ old('company_id', $registration->company_id) ? json_encode(['id' => old('company_id', $registration->company_id), 'text' => old('company_search', $registration->company ? $registration->company->name . ' - ' . ($registration->company->nit_rut ?: 'Sin NIT') . ($registration->company->email ? ' (' . $registration->company->email . ')' : '') : '')]) : 'null' }},
                             loading: false
                         }">
-                            <input type="hidden" name="company_id" :value="selectedCompany ? selectedCompany.id : ''" required>
+                            <input type="hidden" name="company_id" :value="selectedCompany ? selectedCompany.id : ''">
                             <input type="text" 
                                    x-model="search"
                                    @input="
