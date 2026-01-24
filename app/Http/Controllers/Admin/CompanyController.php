@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanyInvite;
+use App\Models\EmailLog;
 use App\Services\GoogleDriveService;
 use App\Services\MailService;
 use App\Services\EmailTemplateService;
@@ -79,12 +80,17 @@ class CompanyController extends Controller
         $company = Company::create($validated);
 
         if ($sendInvite && !empty($validated['contact_person_email'])) {
-            $sent = $this->sendCompanyInviteEmail($company, $validated['contact_person_email'], $validated['contact_person_name'] ?? $validated['name']);
+            $lastError = null;
+            $sent = $this->sendCompanyInviteEmail($company, $validated['contact_person_email'], $validated['contact_person_name'] ?? $validated['name'], $lastError);
             if ($sent) {
                 return redirect()
                     ->route('admin.companies.index')
                     ->with('success', 'Cliente creado exitosamente. Se envió correo de invitación para registro.');
             }
+            return redirect()
+                ->route('admin.companies.index')
+                ->with('success', 'Cliente creado exitosamente.')
+                ->with('error', 'No se pudo enviar el correo de invitación.' . ($lastError ? ' ' . $lastError : ''));
         }
 
         return redirect()
@@ -179,10 +185,12 @@ class CompanyController extends Controller
                 ->with('error', 'El cliente no tiene email de contacto. Edítalo y añade uno.');
         }
 
+        $lastError = null;
         $sent = $this->sendCompanyInviteEmail(
             $company,
             $company->contact_person_email,
-            $company->contact_person_name ?? $company->name
+            $company->contact_person_name ?? $company->name,
+            $lastError
         );
 
         if ($sent) {
@@ -191,16 +199,25 @@ class CompanyController extends Controller
                 ->with('success', 'Correo de invitación enviado a ' . $company->contact_person_email);
         }
 
+        $msg = 'No se pudo enviar el correo de invitación.';
+        if ($lastError) {
+            $msg .= ' ' . $lastError;
+        } else {
+            $msg .= ' Revisa Configuración → Correo y el Historial de correos.';
+        }
         return redirect()
             ->route('admin.companies.index')
-            ->with('error', 'No se pudo enviar el correo. Revisa la configuración de correo en Configuración.');
+            ->with('error', $msg);
     }
 
     /**
      * Crear invitación, procesar plantilla y enviar correo.
+     * Si falla, $lastError se rellena con el mensaje a mostrar al usuario.
      */
-    protected function sendCompanyInviteEmail(Company $company, string $email, string $name): bool
+    protected function sendCompanyInviteEmail(Company $company, string $email, string $name, ?string &$lastError = null): bool
     {
+        $lastError = null;
+
         try {
             $invite = CompanyInvite::createForCompany($company, $email);
             $link = url('/registrarse?token=' . $invite->token);
@@ -215,18 +232,61 @@ class CompanyController extends Controller
 
             if (!$result) {
                 Log::warning('Plantilla client_invitation no encontrada');
+                $lastError = 'No existe la plantilla de invitación. Ejecuta: php artisan db:seed --class=EmailTemplateSeeder';
                 return false;
             }
 
             $mailService = app(MailService::class);
-            return $mailService->send($email, $result['subject'], $result['body']);
+            $sent = $mailService->send($email, $result['subject'], $result['body']);
+
+            if (!$sent) {
+                Log::warning('MailService::send devolvió false para invitación', [
+                    'company_id' => $company->id,
+                    'email' => $email,
+                ]);
+                $lastError = $this->getLastEmailError($email);
+                if (!$lastError) {
+                    $lastError = 'Revisa Configuración → Historial de correos para el detalle del error.';
+                }
+            }
+
+            return $sent;
         } catch (\Exception $e) {
             Log::error('Error al enviar invitación de cliente', [
                 'company_id' => $company->id,
                 'email' => $email,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
+            $lastError = strlen($e->getMessage()) > 250 ? substr($e->getMessage(), 0, 247) . '…' : $e->getMessage();
             return false;
         }
+    }
+
+    /**
+     * Obtener el último error de EmailLog para un destinatario (para mostrar al usuario).
+     */
+    protected function getLastEmailError(string $to): ?string
+    {
+        $log = EmailLog::where('to', $to)
+            ->where('status', 'failed')
+            ->where('created_at', '>=', now()->subMinutes(5))
+            ->orderByDesc('created_at')
+            ->first();
+
+        if ($log && $log->error_message) {
+            $msg = $log->error_message;
+            return strlen($msg) > 200 ? substr($msg, 0, 197) . '…' : $msg;
+        }
+
+        $fallback = EmailLog::where('status', 'failed')
+            ->where('user_id', auth()->id())
+            ->where('created_at', '>=', now()->subMinutes(10))
+            ->orderByDesc('created_at')
+            ->first();
+
+        return $fallback && $fallback->error_message
+            ? (strlen($fallback->error_message) > 200 ? substr($fallback->error_message, 0, 197) . '…' : $fallback->error_message)
+            : null;
     }
 }
