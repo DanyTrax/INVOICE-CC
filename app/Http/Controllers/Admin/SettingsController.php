@@ -346,14 +346,49 @@ class SettingsController extends Controller
     {
         $validated = $request->validate([
             'drive_service_account_json' => 'nullable|string',
+            'drive_folder_id' => 'nullable|string|max:255',
         ]);
+
+        // Validar que el JSON sea válido si se proporciona
+        if (!empty($validated['drive_service_account_json'])) {
+            $jsonData = json_decode($validated['drive_service_account_json'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return redirect()
+                    ->route('admin.settings.section', 'drive')
+                    ->withInput()
+                    ->with('error', 'El JSON proporcionado no es válido. Por favor, verifica el formato.');
+            }
+            
+            // Verificar campos requeridos en el JSON
+            $requiredFields = ['type', 'project_id', 'private_key', 'client_email'];
+            foreach ($requiredFields as $field) {
+                if (!isset($jsonData[$field])) {
+                    return redirect()
+                        ->route('admin.settings.section', 'drive')
+                        ->withInput()
+                        ->with('error', "El JSON no contiene el campo requerido: {$field}");
+                }
+            }
+            
+            // Verificar que sea una Service Account
+            if ($jsonData['type'] !== 'service_account') {
+                return redirect()
+                    ->route('admin.settings.section', 'drive')
+                    ->withInput()
+                    ->with('error', 'El JSON no corresponde a una Service Account de Google Cloud.');
+            }
+        }
 
         // Asegurar que todas las propiedades estén establecidas
         $this->ensureAllPropertiesSet($settings);
         
-        // Actualizar campo
+        // Actualizar campos
         if (isset($validated['drive_service_account_json'])) {
             $settings->drive_service_account_json = $validated['drive_service_account_json'] ?? '';
+        }
+        
+        if (isset($validated['drive_folder_id'])) {
+            $settings->drive_folder_id = $validated['drive_folder_id'] ?? '';
         }
         
         $settings->save();
