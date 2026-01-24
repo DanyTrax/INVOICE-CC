@@ -2903,12 +2903,16 @@ function loadDriveOperationsLog(page = 1) {
 
             html += '</tbody></table></div>';
 
-            // Paginación
+            // Paginación (botones, NO enlaces, para no navegar al JSON)
             if (data.operations.links && data.operations.links.length > 3) {
-                html += '<div class="mt-4 flex justify-center">';
+                html += '<div class="mt-4 flex justify-center gap-1 flex-wrap">';
                 data.operations.links.forEach(link => {
                     if (link.url) {
-                        html += '<a href="' + link.url + '" class="px-3 py-1 mx-1 border rounded ' + (link.active ? 'bg-teal-600 text-white' : 'bg-white text-gray-700') + '">' + (link.label.includes('Previous') ? '«' : link.label.includes('Next') ? '»' : link.label) + '</a>';
+                        const pageMatch = link.url.match(/page=(\d+)/);
+                        const pageNum = pageMatch ? parseInt(pageMatch[1], 10) : 1;
+                        const l = (link.label || '').toLowerCase();
+                        const label = l.includes('previous') || l === '«' ? '«' : (l.includes('next') || l === '»' ? '»' : link.label);
+                        html += '<button type="button" onclick="loadDriveOperationsLog(' + pageNum + ')" class="px-3 py-1.5 mx-1 border rounded text-sm ' + (link.active ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50') + '">' + label + '</button>';
                     }
                 });
                 html += '</div>';
