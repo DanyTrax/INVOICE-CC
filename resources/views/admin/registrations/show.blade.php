@@ -189,32 +189,40 @@
                     <ul class="space-y-3">
                         @foreach($registration->documents as $document)
                             @php
-                                $hasLocal = $document->file_path && !str_starts_with($document->file_path ?? '', 'temp/');
+                                // Verificar si el documento está almacenado localmente
+                                // Los nuevos documentos tienen path que empieza con 'registration-documents/'
+                                // Los legacy tienen 'temp/' o solo drive_id
+                                $hasLocal = $document->file_path && 
+                                            !str_starts_with($document->file_path, 'temp/') &&
+                                            str_starts_with($document->file_path, 'registration-documents/');
                             @endphp
-                            <li class="flex items-center justify-between gap-3 py-2 border-b border-gray-100 last:border-0">
+                            <li class="flex items-center justify-between gap-3 py-3 px-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 rounded-lg">
                                 <div class="flex items-center min-w-0 flex-1">
-                                    <i class="fas fa-file text-teal-500 mr-2 flex-shrink-0"></i>
-                                    <span class="text-sm text-gray-900 truncate" title="{{ $document->file_name }}">{{ $document->file_name }}</span>
+                                    <i class="fas fa-file text-teal-500 mr-3 flex-shrink-0 text-lg"></i>
+                                    <span class="text-sm font-medium text-gray-900 truncate" title="{{ $document->file_name }}">{{ $document->file_name }}</span>
                                 </div>
                                 <div class="flex items-center gap-2 flex-shrink-0">
                                     @if($hasLocal)
                                         <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
                                            target="_blank"
-                                           class="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg"
-                                           title="Ver">
-                                            <i class="fas fa-eye"></i>
+                                           class="px-3 py-1.5 text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 flex items-center gap-1.5"
+                                           title="Ver documento">
+                                            <i class="fas fa-eye text-xs"></i>
+                                            <span>Ver</span>
                                         </a>
                                         <a href="{{ route('admin.registrations.documents.download', [$registration, $document]) }}" 
-                                           class="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg"
-                                           title="Descargar">
-                                            <i class="fas fa-download"></i>
+                                           class="px-3 py-1.5 text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 flex items-center gap-1.5"
+                                           title="Descargar documento">
+                                            <i class="fas fa-download text-xs"></i>
+                                            <span>Descargar</span>
                                         </a>
                                     @elseif($document->drive_id)
                                         <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
                                            target="_blank"
-                                           class="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg"
-                                           title="Ver (Drive)">
-                                            <i class="fas fa-external-link-alt"></i>
+                                           class="px-3 py-1.5 text-sm font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 flex items-center gap-1.5"
+                                           title="Ver en Google Drive (legacy)">
+                                            <i class="fas fa-external-link-alt text-xs"></i>
+                                            <span>Ver (Drive)</span>
                                         </a>
                                     @endif
                                     <form action="{{ route('admin.registrations.documents.destroy', [$registration, $document]) }}" 
@@ -224,9 +232,10 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
-                                                class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                                                title="Eliminar">
-                                            <i class="fas fa-trash"></i>
+                                                class="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 flex items-center gap-1.5"
+                                                title="Eliminar documento">
+                                            <i class="fas fa-trash text-xs"></i>
+                                            <span>Eliminar</span>
                                         </button>
                                     </form>
                                 </div>

@@ -371,11 +371,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @foreach($registration->documents as $document)
                     @php
-                        $hasLocal = $document->file_path && !str_starts_with($document->file_path ?? '', 'temp/');
+                        $hasLocal = $document->file_path && 
+                                    !str_starts_with($document->file_path, 'temp/') &&
+                                    str_starts_with($document->file_path, 'registration-documents/');
                     @endphp
-                    <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <div class="flex items-center space-x-3 min-w-0">
-                            <i class="fas fa-file text-teal-600 flex-shrink-0"></i>
+                    <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3 hover:bg-gray-100">
+                        <div class="flex items-center space-x-3 min-w-0 flex-1">
+                            <i class="fas fa-file text-teal-600 flex-shrink-0 text-lg"></i>
                             <div class="min-w-0">
                                 <p class="text-sm font-medium text-gray-900 truncate" title="{{ $document->file_name }}">{{ $document->file_name }}</p>
                                 <p class="text-xs text-gray-500">
@@ -383,25 +385,28 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1 flex-shrink-0">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                             @if($hasLocal)
                                 <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
                                    target="_blank"
-                                   class="p-2 text-teal-600 hover:bg-teal-100 rounded-lg"
-                                   title="Ver">
+                                   class="px-3 py-1.5 text-xs font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 flex items-center gap-1.5"
+                                   title="Ver documento">
                                     <i class="fas fa-eye"></i>
+                                    <span>Ver</span>
                                 </a>
                                 <a href="{{ route('admin.registrations.documents.download', [$registration, $document]) }}" 
-                                   class="p-2 text-teal-600 hover:bg-teal-100 rounded-lg"
-                                   title="Descargar">
+                                   class="px-3 py-1.5 text-xs font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 flex items-center gap-1.5"
+                                   title="Descargar documento">
                                     <i class="fas fa-download"></i>
+                                    <span>Descargar</span>
                                 </a>
                             @elseif($document->drive_id)
                                 <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
                                    target="_blank"
-                                   class="p-2 text-teal-600 hover:bg-teal-100 rounded-lg"
-                                   title="Ver (Drive)">
+                                   class="px-3 py-1.5 text-xs font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 flex items-center gap-1.5"
+                                   title="Ver en Google Drive (legacy)">
                                     <i class="fas fa-external-link-alt"></i>
+                                    <span>Ver (Drive)</span>
                                 </a>
                             @endif
                         </div>
