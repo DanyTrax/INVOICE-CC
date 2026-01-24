@@ -31,9 +31,8 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Quill Editor - Open Source WYSIWYG -->
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <!-- TinyMCE Editor -->
+    <script src="https://cdn.tiny.cloud/1/p8c81q7d73jr9r6f8pkn3wr5d822yeinngzsiz1hxzpwxpf3/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     
     <style>
         [x-cloak] { display: none !important; }

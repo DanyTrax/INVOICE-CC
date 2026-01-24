@@ -985,12 +985,11 @@
                                 </div>
                             </div>
                             
-                            <!-- Editor Visual (Quill) -->
+                            <!-- Editor Visual (TinyMCE) -->
                             <div id="visual-editor-container" class="border border-gray-300 rounded-lg">
-                                <div id="template_body_visual" style="height: 400px;"></div>
-                                <textarea id="template_body_visual_hidden" 
+                                <textarea id="template_body_visual" 
                                           name="body_visual" 
-                                          class="hidden"></textarea>
+                                          style="height: 400px;"></textarea>
                             </div>
                             
                             <!-- Editor HTML (Textarea) -->
@@ -1571,7 +1570,7 @@ const templateVariables = {
     },
 };
 
-// Variable global para el editor Quill
+// Variable global para el editor TinyMCE
 let templateEditor = null;
 let currentEditorView = 'visual'; // 'visual' o 'html'
 
@@ -1667,7 +1666,7 @@ window.openEditTemplateModal = function(templateId) {
                 setTimeout(function() {
                     console.log('Inicializando editor visual con contenido de', bodyContent.length, 'caracteres');
                     initializeVisualEditor(bodyContent);
-                }, 300);
+                }, 500);
             } else {
                 console.error('Error en respuesta:', data);
                 alert('Error al cargar la plantilla: ' + (data.message || 'Error desconocido'));
@@ -1679,177 +1678,88 @@ window.openEditTemplateModal = function(templateId) {
         });
 };
 
-// Inicializar editor visual (Quill)
+// Inicializar editor visual (TinyMCE)
 function initializeVisualEditor(initialContent = '') {
-    const container = document.getElementById('template_body_visual');
+    const textareaId = 'template_body_visual';
+    const textarea = document.getElementById(textareaId);
     
-    if (!container) {
-        console.error('Contenedor del editor no encontrado');
+    if (!textarea) {
+        console.error('Textarea del editor no encontrado');
         return;
     }
     
-    // Si ya existe un editor, destruirlo completamente primero
+    // Si ya existe un editor, destruirlo primero
     if (templateEditor) {
         try {
-            // Quill no tiene método remove oficial, así que limpiamos manualmente
-            // Primero, desconectar todos los eventos
-            templateEditor.off('text-change');
-            templateEditor.off('selection-change');
-            
-            // Limpiar el contenedor completamente (esto elimina el toolbar también)
-            container.innerHTML = '';
-            
-            // Anular referencia
+            tinymce.remove('#' + textareaId);
             templateEditor = null;
         } catch (e) {
-            console.error('Error al destruir editor:', e);
-            // Forzar limpieza si hay error
-            container.innerHTML = '';
-            templateEditor = null;
+            console.error('Error al destruir editor previo:', e);
         }
-    } else {
-        // Asegurar que el contenedor esté limpio
-        container.innerHTML = '';
     }
     
-    // Esperar un momento para asegurar que el DOM se actualizó completamente
-    setTimeout(function() {
-        // Verificar que el contenedor aún existe y está limpio
-        if (!container || container.querySelector('.ql-toolbar')) {
-            console.warn('El contenedor ya tiene un editor, limpiando...');
-            container.innerHTML = '';
+    // Extraer solo el contenido del body si es un documento HTML completo
+    let contentToLoad = initialContent || '';
+    
+    if (contentToLoad && (contentToLoad.includes('<!DOCTYPE') || contentToLoad.includes('<html') || contentToLoad.includes('<body'))) {
+        console.log('Detectado documento HTML completo, extrayendo contenido del body...');
+        const bodyMatch = contentToLoad.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+        if (bodyMatch && bodyMatch[1]) {
+            contentToLoad = bodyMatch[1].trim();
+            console.log('✅ Contenido extraído del body, nueva longitud:', contentToLoad.length);
+        } else {
+            // Limpiar DOCTYPE y etiquetas html/head/body
+            contentToLoad = contentToLoad
+                .replace(/<!DOCTYPE[^>]*>/gi, '')
+                .replace(/<html[^>]*>/gi, '')
+                .replace(/<\/html>/gi, '')
+                .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+                .replace(/<body[^>]*>/gi, '')
+                .replace(/<\/body>/gi, '')
+                .trim();
         }
-        
-        try {
-            // Configurar Quill
-            templateEditor = new Quill(container, {
-                theme: 'snow',
-                modules: {
-                    toolbar: [
-                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ 'color': [] }, { 'background': [] }],
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        [{ 'align': [] }],
-                        ['link', 'image'],
-                        ['blockquote', 'code-block'],
-                        ['clean']
-                    ]
-                },
-                placeholder: 'Escribe el contenido del correo aquí...',
-            });
-            
-            // Establecer contenido inicial DESPUÉS de crear el editor
-            if (initialContent && initialContent.trim() !== '' && initialContent.trim() !== '<p><br></p>' && initialContent.trim() !== '<p></p>') {
-                console.log('Estableciendo contenido en Quill, longitud:', initialContent.length);
+    }
+    
+    // Establecer contenido en el textarea antes de inicializar TinyMCE
+    textarea.value = contentToLoad;
+    
+    // Inicializar TinyMCE
+    try {
+        tinymce.init({
+            selector: '#' + textareaId,
+            height: 400,
+            menubar: false,
+            promotion: false,
+            branding: false,
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | ' +
+                'bold italic forecolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | help | code',
+            content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+            setup: function(editor) {
+                templateEditor = editor;
                 
-                // Extraer solo el contenido del body si es un documento HTML completo
-                let contentToLoad = initialContent;
-                
-                // Si el contenido incluye DOCTYPE o etiquetas html/head/body, extraer solo el body
-                if (initialContent.includes('<!DOCTYPE') || initialContent.includes('<html') || initialContent.includes('<body')) {
-                    console.log('Detectado documento HTML completo, extrayendo contenido del body...');
-                    
-                    // Usar regex para extraer el contenido del body (más confiable que querySelector)
-                    const bodyMatch = initialContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-                    if (bodyMatch && bodyMatch[1]) {
-                        contentToLoad = bodyMatch[1].trim();
-                        console.log('✅ Contenido extraído del body con regex, nueva longitud:', contentToLoad.length);
-                        console.log('Preview del contenido extraído:', contentToLoad.substring(0, 300));
-                    } else {
-                        // Si no se encuentra body con regex, intentar con querySelector
-                        try {
-                            const tempDiv = document.createElement('div');
-                            tempDiv.innerHTML = initialContent;
-                            const bodyElement = tempDiv.querySelector('body');
-                            if (bodyElement) {
-                                contentToLoad = bodyElement.innerHTML;
-                                console.log('✅ Contenido extraído del body con querySelector, nueva longitud:', contentToLoad.length);
-                            } else {
-                                // Si no se encuentra body, limpiar DOCTYPE y etiquetas html/head
-                                contentToLoad = initialContent
-                                    .replace(/<!DOCTYPE[^>]*>/gi, '')
-                                    .replace(/<html[^>]*>/gi, '')
-                                    .replace(/<\/html>/gi, '')
-                                    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
-                                    .replace(/<body[^>]*>/gi, '')
-                                    .replace(/<\/body>/gi, '')
-                                    .trim();
-                                console.log('⚠️ Contenido limpiado (body no encontrado), nueva longitud:', contentToLoad.length);
-                            }
-                        } catch (e) {
-                            console.error('Error al extraer body:', e);
-                            // Fallback: usar contenido completo
-                            contentToLoad = initialContent;
-                        }
-                    }
-                }
-                
-                // Esperar un momento más para asegurar que Quill esté completamente inicializado
-                setTimeout(function() {
-                    try {
-                        // Para HTML complejo con tablas y estilos, usar directamente innerHTML
-                        // clipboard.convert() tiene problemas con HTML complejo
-                        console.log('Estableciendo contenido directamente en Quill con innerHTML...');
-                        
-                        // Deshabilitar temporalmente los eventos de Quill para evitar problemas
-                        templateEditor.off('text-change');
-                        
-                        // Establecer el contenido directamente
-                        templateEditor.root.innerHTML = contentToLoad;
-                        
-                        // Verificar que se estableció correctamente
-                        const loadedContent = templateEditor.root.innerHTML;
-                        console.log('✅ Contenido establecido en Quill, longitud:', loadedContent.length);
-                        
-                        if (loadedContent.trim() === '' || loadedContent.trim() === '<p><br></p>' || loadedContent.length < 50) {
-                            console.warn('⚠️ Contenido aún vacío después de innerHTML, intentando método alternativo');
-                            
-                            // Método alternativo: usar clipboard.convert como último recurso
-                            try {
-                                const delta = templateEditor.clipboard.convert({ html: contentToLoad });
-                                templateEditor.setContents(delta, 'silent');
-                                const altContent = templateEditor.root.innerHTML;
-                                console.log('Método clipboard.convert, contenido cargado, longitud:', altContent.length);
-                                
-                                if (altContent.length < 50) {
-                                    console.error('❌ Ambos métodos fallaron. Usando contenido completo como fallback.');
-                                    templateEditor.root.innerHTML = initialContent;
-                                }
-                            } catch (e2) {
-                                console.error('Error en método alternativo:', e2);
-                                templateEditor.root.innerHTML = contentToLoad || initialContent;
-                            }
-                        }
-                        
-                        // Re-conectar eventos después de cargar el contenido
-                        templateEditor.on('text-change', function() {
-                            syncToHtmlEditor();
-                        });
-                        
-                        // Sincronizar con textarea HTML (usar el contenido original completo)
-                        syncToHtmlEditor();
-                    } catch (e) {
-                        console.error('❌ Error al establecer contenido en Quill:', e);
-                        // Fallback: establecer HTML directamente
-                        templateEditor.root.innerHTML = contentToLoad || initialContent;
-                        syncToHtmlEditor();
-                    }
-                }, 150);
-            } else {
-                console.warn('⚠️ Contenido inicial vacío o inválido:', initialContent);
-            }
-            
-            // Sincronizar con textarea HTML cuando cambia el contenido
-            templateEditor.on('text-change', function() {
+                // Sincronizar con textarea HTML cuando cambia el contenido
+                editor.on('change keyup', function() {
+                    syncToHtmlEditor();
+                });
+            },
+            init_instance_callback: function(editor) {
+                console.log('✅ TinyMCE inicializado correctamente');
+                // El contenido ya está en el textarea, TinyMCE lo cargará automáticamente
                 syncToHtmlEditor();
-            });
-        } catch (e) {
-            console.error('Error al inicializar Quill:', e);
-            // Si falla, mostrar el contenido en el textarea HTML
-            document.getElementById('template_body').value = initialContent || '';
-        }
-    }, 150);
+            }
+        });
+    } catch (e) {
+        console.error('Error al inicializar TinyMCE:', e);
+        // Si falla, mostrar el contenido en el textarea HTML
+        document.getElementById('template_body').value = initialContent || '';
+    }
 }
 
 // Alternar entre vista visual y HTML
@@ -1940,32 +1850,38 @@ function syncToHtmlEditor() {
 function syncToVisualEditor() {
     if (templateEditor) {
         const htmlContent = document.getElementById('template_body').value;
-        templateEditor.root.innerHTML = htmlContent;
+        
+        // Extraer solo el contenido del body si es un documento HTML completo
+        let contentToLoad = htmlContent;
+        if (htmlContent && (htmlContent.includes('<!DOCTYPE') || htmlContent.includes('<html') || htmlContent.includes('<body'))) {
+            const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+            if (bodyMatch && bodyMatch[1]) {
+                contentToLoad = bodyMatch[1].trim();
+            } else {
+                contentToLoad = htmlContent
+                    .replace(/<!DOCTYPE[^>]*>/gi, '')
+                    .replace(/<html[^>]*>/gi, '')
+                    .replace(/<\/html>/gi, '')
+                    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+                    .replace(/<body[^>]*>/gi, '')
+                    .replace(/<\/body>/gi, '')
+                    .trim();
+            }
+        }
+        
+        templateEditor.setContent(contentToLoad);
     }
 }
 
 // Cerrar modal
 window.closeEditTemplateModal = function() {
-    // Destruir editor Quill si existe
+    // Destruir editor TinyMCE si existe
     if (templateEditor) {
         try {
-            // Desconectar eventos
-            templateEditor.off('text-change');
-            templateEditor.off('selection-change');
-            
-            // Limpiar contenedor completamente
-            const container = document.getElementById('template_body_visual');
-            if (container) {
-                container.innerHTML = '';
-            }
-            
+            tinymce.remove('#template_body_visual');
             templateEditor = null;
         } catch (e) {
             console.error('Error al cerrar editor:', e);
-            const container = document.getElementById('template_body_visual');
-            if (container) {
-                container.innerHTML = '';
-            }
             templateEditor = null;
         }
     }
