@@ -20,7 +20,9 @@ class GoogleDriveService
     }
 
     /**
-     * Obtener token de acceso usando Service Account
+     * Obtener token de acceso.
+     * Modo oauth_user: usa refresh_token de tu cuenta Google (Mi unidad).
+     * Modo service_account: usa JSON de Service Account (Shared Drive).
      */
     protected function getAccessToken()
     {
@@ -28,30 +30,83 @@ class GoogleDriveService
             return $this->accessToken;
         }
 
-        $serviceAccountJson = $this->settings->drive_service_account_json;
-        
+        $mode = $this->settings->drive_mode ?? 'service_account';
+
+        if ($mode === 'oauth_user') {
+            return $this->getAccessTokenOAuthUser();
+        }
+
+        return $this->getAccessTokenServiceAccount();
+    }
+
+    /**
+     * Token vía OAuth usuario (Mi unidad / cuenta personal)
+     */
+    protected function getAccessTokenOAuthUser(): string
+    {
+        $refreshToken = $this->settings->drive_oauth_refresh_token ?? '';
+        $clientId = $this->settings->drive_oauth_client_id ?? '';
+        $clientSecret = $this->settings->drive_oauth_client_secret ?? '';
+
+        if (empty($refreshToken) || empty($clientId) || empty($clientSecret)) {
+            throw new \Exception('Google Drive (OAuth) no está configurado. Configura Client ID, Client Secret y haz "Conectar con Google" en Configuración > Google Drive.');
+        }
+
+        try {
+            $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
+                'grant_type' => 'refresh_token',
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'refresh_token' => $refreshToken,
+            ]);
+
+            if (!$response->successful()) {
+                Log::error('Error al refrescar token OAuth Google Drive', [
+                    'response' => $response->body(),
+                    'status' => $response->status(),
+                ]);
+                throw new \Exception('Error al obtener token de Google Drive (OAuth). Reautoriza desde Configuración > Google Drive > Conectar con Google.');
+            }
+
+            $data = $response->json();
+            $this->accessToken = $data['access_token'] ?? null;
+
+            if (!$this->accessToken) {
+                throw new \Exception('No se pudo obtener el token de acceso (OAuth).');
+            }
+
+            return $this->accessToken;
+        } catch (\Exception $e) {
+            Log::error('Error en GoogleDriveService::getAccessTokenOAuthUser', ['message' => $e->getMessage()]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Token vía Service Account (Shared Drive)
+     */
+    protected function getAccessTokenServiceAccount(): string
+    {
+        $serviceAccountJson = $this->settings->drive_service_account_json ?? '';
+
         if (empty($serviceAccountJson)) {
-            throw new \Exception('Google Drive no está configurado. Por favor, configura el JSON de Service Account en Configuración.');
+            throw new \Exception('Google Drive no está configurado. Configura el JSON de Service Account o usa modo OAuth (Mi unidad) en Configuración.');
         }
 
         try {
             $serviceAccount = json_decode($serviceAccountJson, true);
-            
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new \Exception('El JSON de Service Account no es válido.');
             }
 
-            // Crear JWT para obtener token
             $jwt = $this->createJWT($serviceAccount);
-            
-            // Solicitar token
             $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
                 'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
                 'assertion' => $jwt,
             ]);
 
             if (!$response->successful()) {
-                Log::error('Error al obtener token de Google Drive', [
+                Log::error('Error al obtener token de Google Drive (SA)', [
                     'response' => $response->body(),
                     'status' => $response->status(),
                 ]);
@@ -60,16 +115,13 @@ class GoogleDriveService
 
             $data = $response->json();
             $this->accessToken = $data['access_token'] ?? null;
-
             if (!$this->accessToken) {
                 throw new \Exception('No se pudo obtener el token de acceso.');
             }
 
             return $this->accessToken;
         } catch (\Exception $e) {
-            Log::error('Error en GoogleDriveService::getAccessToken', [
-                'message' => $e->getMessage(),
-            ]);
+            Log::error('Error en GoogleDriveService::getAccessTokenServiceAccount', ['message' => $e->getMessage()]);
             throw $e;
         }
     }
@@ -271,22 +323,36 @@ class GoogleDriveService
                 ->post('https://www.googleapis.com/upload/drive/v3/files?' . http_build_query($queryParams));
 
             if (!$response->successful()) {
+                $body = $response->body();
                 $errorData = $response->json();
-                $errorMessage = $errorData['error']['message'] ?? $response->body();
+                $errorMessage = $errorData['error']['message'] ?? null;
                 
-                // Mensaje específico para storage quota exceeded
-                if (str_contains($errorMessage, 'storageQuotaExceeded') || 
-                    str_contains($errorMessage, 'Service Accounts do not have storage quota')) {
-                    $message = 'Las Service Accounts de Google no tienen cuota de almacenamiento propia. ' .
-                               'Debes usar una Shared Drive (Unidad Compartida) o compartir una carpeta en tu Drive personal. ' .
-                               'Por favor, crea una Shared Drive y configura su ID en la configuración de Google Drive. ' .
-                               'Ver el instructivo en Configuración > Google Drive para más detalles.';
+                if (!$errorMessage && is_array($errorData['error']['errors'] ?? null)) {
+                    $first = $errorData['error']['errors'][0] ?? [];
+                    $errorMessage = $first['message'] ?? $body;
+                }
+                if (!$errorMessage) {
+                    $errorMessage = $body;
+                }
+                
+                // Mensaje específico para storage quota / Shared Drive (nunca mostrar JSON crudo)
+                $isQuotaError = str_contains((string) $errorMessage, 'storageQuotaExceeded') ||
+                    str_contains((string) $body, 'storageQuotaExceeded') ||
+                    str_contains((string) $errorMessage, 'Service Accounts do not have storage quota') ||
+                    str_contains((string) $body, 'Service Accounts do not have storage quota');
+                
+                if ($isQuotaError) {
+                    $message = 'Google no permite subir archivos con Service Account a una carpeta compartida en "Mi unidad", ' .
+                        'aunque la compartas como Editor. Las carpetas sí se crean; los archivos, no (limitación de cuota de la cuenta de servicio). ' .
+                        'Solución: usa una Shared Drive (Unidad Compartida). Pasos: 1) Google Drive → Unidades compartidas → Nueva. ' .
+                        '2) Agrega como miembro la cuenta de servicio (email del JSON) con rol Editor o Administrador de contenido. ' .
+                        '3) Copia el ID de la unidad (desde la URL) y pégalo en "ID de Carpeta Base de Drive" en Configuración.';
                 } else {
                     $message = 'Error al subir archivo a Google Drive: ' . $errorMessage;
                 }
                 
                 Log::error('Error al subir archivo a Google Drive', [
-                    'response' => $response->body(),
+                    'response' => $body,
                     'status' => $response->status(),
                     'fileName' => $fileName,
                     'parentFolderId' => $parentFolderId,
@@ -428,41 +494,142 @@ class GoogleDriveService
     public function testConnection()
     {
         try {
-            // Verificar que el JSON esté configurado
-            $serviceAccountJson = $this->settings->drive_service_account_json;
-            
-            if (empty($serviceAccountJson)) {
-                return [
-                    'success' => false,
-                    'message' => 'Google Drive no está configurado. Por favor, configura el JSON de Service Account.',
-                ];
+            $mode = $this->settings->drive_mode ?? 'service_account';
+
+            if ($mode === 'oauth_user') {
+                $refresh = $this->settings->drive_oauth_refresh_token ?? '';
+                $cid = $this->settings->drive_oauth_client_id ?? '';
+                $csecret = $this->settings->drive_oauth_client_secret ?? '';
+                if (empty($refresh) || empty($cid) || empty($csecret)) {
+                    return [
+                        'success' => false,
+                        'message' => 'Modo OAuth: configura Client ID, Client Secret y haz "Conectar con Google".',
+                    ];
+                }
+            } else {
+                $serviceAccountJson = $this->settings->drive_service_account_json ?? '';
+                if (empty($serviceAccountJson)) {
+                    return [
+                        'success' => false,
+                        'message' => 'Google Drive no está configurado. Configura el JSON de Service Account o usa modo OAuth (Mi unidad).',
+                    ];
+                }
+                $serviceAccount = json_decode($serviceAccountJson, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    return [
+                        'success' => false,
+                        'message' => 'El JSON de Service Account no es válido: ' . json_last_error_msg(),
+                    ];
+                }
             }
 
-            // Validar JSON
-            $serviceAccount = json_decode($serviceAccountJson, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return [
-                    'success' => false,
-                    'message' => 'El JSON de Service Account no es válido: ' . json_last_error_msg(),
-                ];
-            }
-
-            // Obtener token
             $token = $this->getAccessToken();
-            
-            // Intentar listar archivos para verificar conexión
             $response = Http::withToken($token)
                 ->get($this->baseUrl . '/files', [
                     'pageSize' => 1,
                     'q' => "mimeType='application/vnd.google-apps.folder'",
+                    'supportsAllDrives' => 'true',
                 ]);
 
-            if ($response->successful()) {
+            if (!$response->successful()) {
+                $errorData = $response->json();
+                $errorMessage = $errorData['error']['message'] ?? $response->body();
+                if (str_contains((string) $errorMessage, 'API has not been used') ||
+                    str_contains((string) $errorMessage, 'API not enabled') ||
+                    str_contains((string) $errorMessage, 'API activation')) {
+                    return [
+                        'success' => false,
+                        'message' => 'La API de Google Drive no está habilitada. Habilítala en Google Cloud Console: https://console.cloud.google.com/apis/library/drive.googleapis.com',
+                    ];
+                }
+                return [
+                    'success' => false,
+                    'message' => 'Error al conectar con Google Drive: ' . $errorMessage,
+                ];
+            }
+
+            $folderId = $this->settings->drive_folder_id ?? '';
+            $folderId = is_string($folderId) ? trim($folderId) : '';
+
+            if ($mode === 'oauth_user') {
+                if ($folderId !== '') {
+                    return [
+                        'success' => true,
+                        'message' => 'Conexión OK (OAuth / Mi unidad). Carpeta base configurada. Puedes subir documentos.',
+                    ];
+                }
                 return [
                     'success' => true,
-                    'message' => 'Conexión exitosa con Google Drive API. La Service Account está configurada correctamente.',
+                    'message' => 'Conexión OK (OAuth / Mi unidad). Configura el "ID de Carpeta Base" para crear carpetas y subir documentos.',
                 ];
-            } else {
+            }
+
+            if ($folderId !== '') {
+                $folderCheck = $this->validateFolderIsSharedDrive($token, $folderId);
+                if ($folderCheck['success']) {
+                    return [
+                        'success' => true,
+                        'message' => 'Conexión OK. La carpeta base está en un Shared Drive. Puedes subir documentos.',
+                    ];
+                }
+                return [
+                    'success' => false,
+                    'message' => $folderCheck['message'],
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Conexión exitosa con Google Drive API. Configura el "ID de Carpeta Base" con un Shared Drive para poder subir documentos.',
+            ];
+        } catch (\Exception $e) {
+            $message = $e->getMessage();
+            if (str_contains($message, 'Google Drive no está configurado') || str_contains($message, 'OAuth')) {
+                return ['success' => false, 'message' => $message];
+            }
+            return ['success' => false, 'message' => 'Error al probar conexión: ' . $message];
+        }
+    }
+
+    /**
+     * Validar que la carpeta base esté en un Shared Drive.
+     * Las Service Accounts no tienen cuota en "Mi unidad"; solo en Shared Drives.
+     */
+    protected function validateFolderIsSharedDrive(string $token, string $folderId): array
+    {
+        $response = Http::withToken($token)
+            ->get($this->baseUrl . '/files/' . $folderId, [
+                'fields' => 'id, name, driveId, capabilities',
+                'supportsAllDrives' => 'true',
+            ]);
+
+        if (!$response->successful()) {
+            $err = $response->json();
+            $msg = $err['error']['message'] ?? $response->body();
+            return [
+                'success' => false,
+                'message' => 'No se pudo acceder a la carpeta base. Verifica el ID. ' . $msg,
+            ];
+        }
+
+        $data = $response->json();
+        $driveId = $data['driveId'] ?? null;
+
+        if (!empty($driveId)) {
+            return [
+                'success' => true,
+                'message' => 'La carpeta base está en un Shared Drive. Puedes subir documentos.',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'La carpeta base está en "Mi unidad", no en un Shared Drive. Las Service Accounts no pueden subir archivos ahí. ' .
+                'Crea una Unidad Compartida (Shared Drive), agrega la cuenta de servicio como miembro con rol Editor, ' .
+                'y usa el ID de la raíz de esa unidad como "ID de Carpeta Base de Drive". Ver instructivo en Configuración > Google Drive.',
+        ];
+    }
+
                 $errorData = $response->json();
                 $errorMessage = $errorData['error']['message'] ?? $response->body();
                 

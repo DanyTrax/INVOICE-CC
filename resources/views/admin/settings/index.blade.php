@@ -229,48 +229,115 @@
                             <i class="fas fa-cloud text-teal-600 mr-2"></i>
                             Configuración de Google Drive
                         </h3>
-                        <p class="text-sm text-gray-600 mb-6">
+                        <p class="text-sm text-gray-600 mb-2">
                             Configura la integración con Google Drive para almacenar documentos del sistema.
                         </p>
+                        <p class="text-sm text-teal-700 mb-6 font-medium">
+                            <i class="fas fa-info-circle mr-1"></i> Si usas <strong>cuenta básica o Google One</strong> (sin Unidades compartidas), elige <strong>OAuth (Mi unidad)</strong> más abajo y pega Client ID y Client Secret.
+                        </p>
 
-                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                        <form action="{{ route('admin.settings.update') }}" method="POST" id="drive-config-form">
                             @csrf
                             <input type="hidden" name="section" value="drive">
 
                             <div class="space-y-6">
-                                <!-- JSON de Service Account -->
-                                <div>
-                                    <label for="drive_service_account_json" class="block mb-2 text-sm font-medium text-gray-900">
-                                        JSON de Service Account <span class="text-red-500">*</span>
-                                    </label>
-                                    <textarea id="drive_service_account_json" 
-                                              name="drive_service_account_json" 
-                                              rows="12"
-                                              placeholder='{"type": "service_account", "project_id": "...", "private_key_id": "...", "private_key": "...", "client_email": "...", "client_id": "...", "auth_uri": "...", "token_uri": "...", "auth_provider_x509_cert_url": "...", "client_x509_cert_url": "..."}'
-                                              required
-                                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('drive_service_account_json', $settings->drive_service_account_json ?? '') }}</textarea>
-                                    <p class="mt-2 text-xs text-gray-500">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        Pega aquí el contenido completo del archivo JSON descargado de Google Cloud Console.
+                                <!-- Modo de conexión -->
+                                <div class="rounded-xl border-2 border-teal-200 bg-teal-50/50 p-5">
+                                    <h4 class="text-base font-semibold text-gray-900 mb-2">
+                                        <i class="fas fa-plug text-teal-600 mr-2"></i> Modo de conexión
+                                    </h4>
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        Elige cómo conectar con Google Drive. Para <strong>cuenta básica o Google One</strong> (sin Unidades compartidas), usa <strong>OAuth (Mi unidad)</strong>.
                                     </p>
-                                    @if($settings->drive_service_account_json)
-                                        @php
-                                            try {
-                                                $jsonData = json_decode($settings->drive_service_account_json, true);
-                                                $serviceEmail = $jsonData['client_email'] ?? null;
-                                            } catch (\Exception $e) {
-                                                $serviceEmail = null;
-                                            }
-                                        @endphp
-                                        @if($serviceEmail)
-                                            <div class="mt-2 bg-green-50 border border-green-200 rounded p-3">
-                                                <p class="text-xs text-green-800">
-                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                    <strong>Service Account configurado:</strong> {{ $serviceEmail }}
-                                                </p>
+                                    <div class="space-y-3">
+                                        <label class="flex items-start gap-3 p-3 rounded-lg border-2 border-gray-200 hover:border-teal-300 cursor-pointer has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50/80">
+                                            <input type="radio" name="drive_mode" value="oauth_user" {{ ($settings->drive_mode ?? 'service_account') === 'oauth_user' ? 'checked' : '' }} class="drive-mode-radio mt-1">
+                                            <div>
+                                                <span class="font-semibold text-gray-900">OAuth (Mi unidad)</span>
+                                                <span class="block text-sm text-gray-600">Cuenta personal / Google One. Sin Shared Drives. Pega aquí Client ID y Client Secret.</span>
                                             </div>
+                                        </label>
+                                        <label class="flex items-start gap-3 p-3 rounded-lg border-2 border-gray-200 hover:border-teal-300 cursor-pointer has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50/80">
+                                            <input type="radio" name="drive_mode" value="service_account" {{ ($settings->drive_mode ?? 'service_account') === 'service_account' ? 'checked' : '' }} class="drive-mode-radio mt-1">
+                                            <div>
+                                                <span class="font-semibold text-gray-900">Service Account (Shared Drive)</span>
+                                                <span class="block text-sm text-gray-600">Requiere Unidades compartidas (Google Workspace). Usa JSON de Service Account.</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Bloque OAuth (Mi unidad) -->
+                                <div id="drive-oauth-block" class="drive-mode-block rounded-xl border-2 border-teal-200 bg-white p-5 {{ ($settings->drive_mode ?? 'service_account') === 'oauth_user' ? '' : 'hidden' }}">
+                                    <h4 class="text-lg font-semibold text-gray-900 mb-3">
+                                        <i class="fas fa-key text-teal-600 mr-2"></i> OAuth (Mi unidad) – Client ID y Client Secret
+                                    </h4>
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        Pega aquí las llaves OAuth de Google. Primero créalas en Google Cloud Console → Credenciales → ID de cliente OAuth 2.0 (aplicación web). 
+                                        URI de redirección: <code class="bg-gray-100 px-1 rounded text-xs break-all">{{ route('admin.settings.drive-oauth.callback') }}</code>
+                                    </p>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label for="drive_oauth_client_id" class="block mb-2 text-sm font-medium text-gray-900">Client ID (OAuth)</label>
+                                            <input type="text" id="drive_oauth_client_id" name="drive_oauth_client_id"
+                                                   value="{{ old('drive_oauth_client_id', $settings->drive_oauth_client_id ?? '') }}"
+                                                   placeholder="xxx.apps.googleusercontent.com"
+                                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                        </div>
+                                        <div>
+                                            <label for="drive_oauth_client_secret" class="block mb-2 text-sm font-medium text-gray-900">Client Secret (OAuth)</label>
+                                            <input type="password" id="drive_oauth_client_secret" name="drive_oauth_client_secret"
+                                                   value="{{ old('drive_oauth_client_secret', $settings->drive_oauth_client_secret ?? '') }}"
+                                                   placeholder="GOCSPX-..."
+                                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                        </div>
+                                        <div class="flex items-center gap-4">
+                                            <a href="{{ route('admin.settings.drive-oauth.authorize') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 inline-flex items-center">
+                                                <i class="fas fa-link mr-2"></i> Conectar con Google
+                                            </a>
+                                            @if(!empty($settings->drive_oauth_refresh_token ?? ''))
+                                                <span class="text-sm text-green-600"><i class="fas fa-check-circle mr-1"></i> OAuth conectado</span>
+                                            @else
+                                                <span class="text-sm text-amber-600"><i class="fas fa-exclamation-circle mr-1"></i> Guarda Client ID/Secret y luego haz clic en &quot;Conectar con Google&quot;</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bloque Service Account -->
+                                <div id="drive-sa-block" class="drive-mode-block {{ ($settings->drive_mode ?? 'service_account') === 'service_account' ? '' : 'hidden' }}">
+                                    <div>
+                                        <label for="drive_service_account_json" class="block mb-2 text-sm font-medium text-gray-900">
+                                            JSON de Service Account <span class="text-red-500">*</span>
+                                        </label>
+                                        <textarea id="drive_service_account_json" 
+                                                  name="drive_service_account_json" 
+                                                  rows="10"
+                                                  placeholder='{"type": "service_account", "project_id": "...", "private_key_id": "...", "private_key": "...", "client_email": "...", ...}'
+                                                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('drive_service_account_json', $settings->drive_service_account_json ?? '') }}</textarea>
+                                        <p class="mt-2 text-xs text-gray-500">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Pega el JSON de la Service Account (Google Cloud Console). Solo para Shared Drives.
+                                        </p>
+                                        @if($settings->drive_service_account_json ?? null)
+                                            @php
+                                                try {
+                                                    $jsonData = json_decode($settings->drive_service_account_json, true);
+                                                    $serviceEmail = $jsonData['client_email'] ?? null;
+                                                } catch (\Exception $e) {
+                                                    $serviceEmail = null;
+                                                }
+                                            @endphp
+                                            @if($serviceEmail)
+                                                <div class="mt-2 bg-green-50 border border-green-200 rounded p-3">
+                                                    <p class="text-xs text-green-800">
+                                                        <i class="fas fa-check-circle mr-1"></i>
+                                                        <strong>Service Account:</strong> {{ $serviceEmail }}
+                                                    </p>
+                                                </div>
+                                            @endif
                                         @endif
-                                    @endif
+                                    </div>
                                 </div>
 
                             <!-- ID de Carpeta de Drive (Opcional) -->
@@ -467,14 +534,31 @@
                                 <div class="flex-1">
                                     <h4 class="font-semibold text-gray-900 mb-2">Configurar Shared Drive (Unidad Compartida)</h4>
                                     <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
-                                        <p class="text-sm text-yellow-800">
+                                        <p class="text-sm text-yellow-800 mb-2">
                                             <i class="fas fa-exclamation-triangle mr-1"></i>
-                                            <strong>Importante:</strong> Las Service Accounts de Google no tienen cuota de almacenamiento propia. 
-                                            Debes usar una <strong>Shared Drive (Unidad Compartida)</strong> o compartir una carpeta en tu Drive personal.
+                                            <strong>Importante:</strong> Las Service Accounts de Google <strong>no tienen cuota de almacenamiento</strong> en "Mi unidad". 
+                                            Para <strong>subir documentos</strong> solo funciona usando una <strong>Shared Drive (Unidad Compartida)</strong>.
+                                        </p>
+                                        <p class="text-sm text-yellow-800">
+                                            Si usas una <strong>carpeta compartida desde Mi unidad</strong> (aunque la compartas como Editor): 
+                                            <strong>las carpetas sí se crean</strong> (con los directorios configurados), pero 
+                                            <strong>la subida de archivos falla</strong> con 403. Es una limitación de Google, no de los archivos temporales ni de la app. 
+                                            Los documentos se guardan bien en el servidor antes de enviar a Drive; el rechazo ocurre en la API de Google.
                                         </p>
                                     </div>
+                                    <div class="mt-3 bg-gray-50 border border-gray-200 rounded p-3 mb-4">
+                                        <p class="text-sm text-gray-800 font-medium mb-2">
+                                            <i class="fas fa-key mr-1"></i> Permisos y API necesarios:
+                                        </p>
+                                        <ul class="text-sm text-gray-700 list-disc list-inside space-y-1">
+                                            <li>Google Drive API <strong>habilitada</strong> en el proyecto (Paso 2)</li>
+                                            <li>Scope <code class="bg-gray-100 px-1 rounded">https://www.googleapis.com/auth/drive</code> (ya lo usa la aplicación)</li>
+                                            <li>Service Account agregada como <strong>miembro</strong> del Shared Drive con rol <strong>Editor</strong> o <strong>Administrador de contenido</strong></li>
+                                            <li>ID de carpeta base = ID de la <strong>raíz del Shared Drive</strong> (o de una carpeta dentro de él)</li>
+                                        </ul>
+                                    </div>
                                     <ol class="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-4">
-                                        <li><strong>Opción A - Usar Shared Drive (Recomendado):</strong>
+                                        <li><strong>Usar Shared Drive (obligatorio para subir documentos):</strong>
                                             <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
                                                 <li>Ve a <a href="https://drive.google.com" target="_blank" class="text-teal-600 hover:underline">Google Drive</a></li>
                                                 <li>En el menú lateral, haz clic en <strong>"Unidades compartidas"</strong> o <strong>"Shared drives"</strong></li>
@@ -486,32 +570,15 @@
                                                 <li>Haz clic en <strong>"Enviar"</strong></li>
                                                 <li>Copia el <strong>ID de la unidad compartida</strong> desde la URL (la parte después de <code class="bg-gray-100 px-1 rounded">folders/</code>)</li>
                                                 <li>Pega este ID en el campo <strong>"ID de Carpeta Base de Drive"</strong> más arriba</li>
-                                            </ul>
-                                        </li>
-                                        <li class="mt-3"><strong>Opción B - Compartir Carpeta Personal:</strong>
-                                            <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
-                                                <li>Abre <a href="https://drive.google.com" target="_blank" class="text-teal-600 hover:underline">Google Drive</a></li>
-                                                <li>Crea una carpeta nueva (ej: "RAMS Documentos") o selecciona una existente</li>
-                                                <li>Haz clic derecho en la carpeta → <strong>"Compartir"</strong></li>
-                                                <li>En el campo de búsqueda, pega el <strong>email de la Service Account</strong>
-                                                    <ul class="list-disc list-inside ml-6 mt-1">
-                                                        <li>Este email está en el archivo JSON descargado, en el campo <code class="bg-gray-100 px-1 rounded">"client_email"</code></li>
-                                                        <li>Ejemplo: <code class="bg-gray-100 px-1 rounded">rams-drive-service@tu-proyecto.iam.gserviceaccount.com</code></li>
-                                                    </ul>
-                                                </li>
-                                                <li>Selecciona el email de la lista de sugerencias</li>
-                                                <li>Cambia el permiso a <strong>"Editor"</strong> (o "Administrador" si necesitas más control)</li>
-                                                <li>Haz clic en <strong>"Enviar"</strong> o <strong>"Listo"</strong></li>
-                                                <li>Copia el <strong>ID de la carpeta</strong> desde la URL (la parte después de <code class="bg-gray-100 px-1 rounded">folders/</code>)</li>
-                                                <li>Pega este ID en el campo <strong>"ID de Carpeta Base de Drive"</strong> más arriba</li>
+                                                <li>Haz clic en <strong>"Probar conexión"</strong>: debe indicar que la carpeta está en un Shared Drive y que puedes subir documentos</li>
                                             </ul>
                                         </li>
                                     </ol>
                                     <div class="mt-3 bg-blue-50 border border-blue-200 rounded p-3">
                                         <p class="text-xs text-blue-800">
                                             <i class="fas fa-info-circle mr-1"></i>
-                                            <strong>Nota:</strong> La <strong>Opción A (Shared Drive)</strong> es recomendada porque las unidades compartidas no tienen límite de almacenamiento 
-                                            y son más adecuadas para uso empresarial. Si usas la Opción B, asegúrate de tener suficiente espacio en tu Drive personal.
+                                            <strong>Resumen:</strong> Solo las <strong>Shared Drives</strong> permiten crear carpetas <strong>y</strong> subir archivos con Service Account. 
+                                            Carpeta compartida en "Mi unidad" → carpetas OK, subida de archivos 403.
                                         </p>
                                     </div>
                                 </div>
@@ -2547,42 +2614,44 @@ function executeGitPull(branch) {
 
 // Probar conexión con Google Drive
 function testDriveConnection() {
-    const jsonField = document.getElementById('drive_service_account_json');
-    const jsonValue = jsonField.value.trim();
+    const form = document.getElementById('drive-config-form');
+    if (!form) return;
+    const formData = new FormData(form);
+    const mode = formData.get('drive_mode') || 'service_account';
     
-    if (!jsonValue) {
-        alert('Por favor, ingresa el JSON de Service Account primero.');
-        return;
-    }
-    
-    // Validar JSON básico
-    try {
-        const jsonData = JSON.parse(jsonValue);
-        if (jsonData.type !== 'service_account') {
-            alert('El JSON no corresponde a una Service Account de Google Cloud.');
+    if (mode === 'service_account') {
+        const jsonField = document.getElementById('drive_service_account_json');
+        const jsonValue = (jsonField && jsonField.value) ? jsonField.value.trim() : '';
+        if (!jsonValue) {
+            alert('Modo Service Account: ingresa el JSON de Service Account primero.');
             return;
         }
-        if (!jsonData.client_email) {
-            alert('El JSON no contiene el campo "client_email" requerido.');
+        try {
+            const jsonData = JSON.parse(jsonValue);
+            if (jsonData.type !== 'service_account' || !jsonData.client_email) {
+                alert('El JSON no corresponde a una Service Account de Google Cloud válida.');
+                return;
+            }
+        } catch (e) {
+            alert('El JSON no es válido.\n\nError: ' + e.message);
             return;
         }
-    } catch (e) {
-        alert('El JSON proporcionado no es válido. Por favor, verifica el formato.\n\nError: ' + e.message);
-        return;
+    } else {
+        const cid = (formData.get('drive_oauth_client_id') || '').trim();
+        const csecret = (formData.get('drive_oauth_client_secret') || '').trim();
+        if (!cid || !csecret) {
+            alert('Modo OAuth: configura Client ID y Client Secret y guarda antes de probar.');
+            return;
+        }
     }
     
-    // Deshabilitar botón mientras se prueba
     const button = event.target;
     const originalText = button.innerHTML;
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Probando...';
     
-    // Guardar primero el JSON para que el servidor pueda usarlo
-    const form = jsonField.closest('form');
-    const formData = new FormData(form);
     formData.append('section', 'drive');
     
-    // Primero guardar, luego probar
     fetch('{{ route("admin.settings.update") }}', {
         method: 'POST',
         body: formData,
@@ -2591,7 +2660,6 @@ function testDriveConnection() {
         }
     })
     .then(() => {
-        // Ahora probar conexión
         return fetch('{{ route("admin.settings.test-drive-connection") }}', {
             method: 'POST',
             headers: {
@@ -2792,6 +2860,19 @@ function switchDriveTab(tab) {
     }
 }
 
+// Mostrar/ocultar bloques OAuth vs Service Account según modo Drive
+function toggleDriveModeBlocks() {
+    const form = document.getElementById('drive-config-form');
+    if (!form) return;
+    const mode = (form.querySelector('input[name="drive_mode"]:checked') || {}).value || 'service_account';
+    const oauthBlock = document.getElementById('drive-oauth-block');
+    const saBlock = document.getElementById('drive-sa-block');
+    const jsonField = document.getElementById('drive_service_account_json');
+    if (oauthBlock) oauthBlock.classList.toggle('hidden', mode !== 'oauth_user');
+    if (saBlock) saBlock.classList.toggle('hidden', mode !== 'service_account');
+    if (jsonField) jsonField.required = (mode === 'service_account');
+}
+
 // Cargar historial al entrar a la pestaña
 document.addEventListener('DOMContentLoaded', function() {
     const driveTab = document.getElementById('tab-drive');
@@ -2799,17 +2880,20 @@ document.addEventListener('DOMContentLoaded', function() {
         driveTab.addEventListener('click', function() {
             setTimeout(() => {
                 if (document.getElementById('panel-drive') && !document.getElementById('panel-drive').classList.contains('hidden')) {
-                    // Por defecto mostrar configuración
                     switchDriveTab('config');
                 }
             }, 100);
         });
     }
     
-    // Si ya estamos en la pestaña drive, mostrar configuración por defecto
     if (document.getElementById('panel-drive') && !document.getElementById('panel-drive').classList.contains('hidden')) {
         switchDriveTab('config');
     }
+    
+    toggleDriveModeBlocks();
+    document.querySelectorAll('.drive-mode-radio').forEach(function(r) {
+        r.addEventListener('change', toggleDriveModeBlocks);
+    });
 });
 </script>
 @endpush

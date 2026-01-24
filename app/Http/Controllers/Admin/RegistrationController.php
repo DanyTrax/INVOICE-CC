@@ -532,6 +532,11 @@ class RegistrationController extends Controller
                     'mime_type' => $mimeType,
                 ]);
                 
+                // Confirmar que el temporal está listo antes de llamar a la API (el 403 viene de Google, no del temporal)
+                if (!file_exists($fullPath) || filesize($fullPath) < 1) {
+                    throw new \Exception("El archivo temporal no está listo para enviar a Drive: {$originalName}");
+                }
+                
                 // Subir a Google Drive
                 $driveFile = $driveService->uploadFile(
                     $fullPath,

@@ -20,6 +20,11 @@ class GeneralSettings extends Settings
     public string $drive_folder_id = '';
     public string $drive_folder_name_no_client = 'Expedientes Sin Cliente';
     public string $drive_folder_name_with_client = 'Clientes';
+    public string $drive_mode = 'service_account'; // 'service_account' | 'oauth_user'
+    public string $drive_oauth_client_id = '';
+    public string $drive_oauth_client_secret = '';
+    public string $drive_oauth_refresh_token = '';
+    public string $drive_oauth_access_token = '';
 
     // Mail Provider
     public string $mail_provider = 'smtp'; // 'smtp' o 'zoho'

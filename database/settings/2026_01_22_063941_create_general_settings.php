@@ -35,6 +35,11 @@ return new class extends SettingsMigration
         $this->addIfNotExists('general.system_name', 'Sistema de Gestión Regulatoria');
         $this->addIfNotExists('general.drive_folder_name_no_client', 'Expedientes Sin Cliente');
         $this->addIfNotExists('general.drive_folder_name_with_client', 'Clientes');
+        $this->addIfNotExists('general.drive_mode', 'service_account');
+        $this->addIfNotExists('general.drive_oauth_client_id', '');
+        $this->addIfNotExists('general.drive_oauth_client_secret', '');
+        $this->addIfNotExists('general.drive_oauth_refresh_token', '');
+        $this->addIfNotExists('general.drive_oauth_access_token', '');
     }
 
     /**

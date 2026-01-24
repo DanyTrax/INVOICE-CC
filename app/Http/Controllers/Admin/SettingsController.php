@@ -252,6 +252,11 @@ class SettingsController extends Controller
             'drive_folder_id' => '',
             'drive_folder_name_no_client' => 'Expedientes Sin Cliente',
             'drive_folder_name_with_client' => 'Clientes',
+            'drive_mode' => 'service_account',
+            'drive_oauth_client_id' => '',
+            'drive_oauth_client_secret' => '',
+            'drive_oauth_refresh_token' => '',
+            'drive_oauth_access_token' => '',
             'mail_provider' => 'smtp',
             'mail_mailer' => 'smtp',
             'mail_host' => 'smtp.gmail.com',
@@ -330,6 +335,11 @@ class SettingsController extends Controller
             'system_name' => 'Sistema de Gestión Regulatoria',
             'drive_folder_name_no_client' => 'Expedientes Sin Cliente',
             'drive_folder_name_with_client' => 'Clientes',
+            'drive_mode' => 'service_account',
+            'drive_oauth_client_id' => '',
+            'drive_oauth_client_secret' => '',
+            'drive_oauth_refresh_token' => '',
+            'drive_oauth_access_token' => '',
         ];
         
         // Establecer todas las propiedades, usando valores existentes si están disponibles
@@ -353,10 +363,23 @@ class SettingsController extends Controller
             'drive_folder_id' => 'nullable|string|max:255',
             'drive_folder_name_no_client' => 'nullable|string|max:255',
             'drive_folder_name_with_client' => 'nullable|string|max:255',
+            'drive_mode' => 'nullable|in:service_account,oauth_user',
+            'drive_oauth_client_id' => 'nullable|string|max:255',
+            'drive_oauth_client_secret' => 'nullable|string|max:255',
         ]);
 
-        // Validar que el JSON sea válido si se proporciona
-        if (!empty($validated['drive_service_account_json'])) {
+        $driveMode = $validated['drive_mode'] ?? $settings->drive_mode ?? 'service_account';
+        $settings->drive_mode = $driveMode;
+
+        if (isset($validated['drive_oauth_client_id'])) {
+            $settings->drive_oauth_client_id = $validated['drive_oauth_client_id'] ?? '';
+        }
+        if (isset($validated['drive_oauth_client_secret'])) {
+            $settings->drive_oauth_client_secret = $validated['drive_oauth_client_secret'] ?? '';
+        }
+
+        // Validar que el JSON sea válido si se proporciona (solo en modo Service Account)
+        if ($driveMode === 'service_account' && !empty($validated['drive_service_account_json'])) {
             $jsonData = json_decode($validated['drive_service_account_json'], true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return redirect()
@@ -430,6 +453,113 @@ class SettingsController extends Controller
         }
         
         $settings->save();
+    }
+
+    /**
+     * Redirigir a Google OAuth para autorizar Drive (modo usuario / Mi unidad)
+     */
+    public function driveOauthAuthorize(Request $request)
+    {
+        $this->ensureSettingsInDatabase();
+        try {
+            $settings = app(GeneralSettings::class);
+        } catch (\Exception $e) {
+            $settings = new GeneralSettings();
+            $this->ensureAllPropertiesSet($settings);
+            $settings->save();
+        }
+
+        if (empty($settings->drive_oauth_client_id) || empty($settings->drive_oauth_client_secret)) {
+            return redirect()
+                ->route('admin.settings.section', 'drive')
+                ->with('error', 'Configura Client ID y Client Secret de Google OAuth (modo OAuth) y guarda antes de autorizar.');
+        }
+
+        $redirectUri = route('admin.settings.drive-oauth.callback');
+        $scope = 'https://www.googleapis.com/auth/drive';
+        $authUrl = sprintf(
+            'https://accounts.google.com/o/oauth2/v2/auth?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&access_type=offline&prompt=consent',
+            urlencode($settings->drive_oauth_client_id),
+            urlencode($redirectUri),
+            urlencode($scope)
+        );
+
+        return redirect($authUrl);
+    }
+
+    /**
+     * Callback de OAuth de Google Drive – recibe código y obtiene refresh_token
+     */
+    public function driveOauthCallback(Request $request)
+    {
+        $code = $request->input('code');
+        $error = $request->input('error');
+
+        if ($error) {
+            $desc = $request->input('error_description', $error);
+            return redirect()
+                ->route('admin.settings.section', 'drive')
+                ->with('error', 'Error en autorización Google: ' . $desc);
+        }
+
+        if (!$code) {
+            return redirect()
+                ->route('admin.settings.section', 'drive')
+                ->with('error', 'No se recibió el código de autorización de Google.');
+        }
+
+        $this->ensureSettingsInDatabase();
+        try {
+            $settings = app(GeneralSettings::class);
+        } catch (\Exception $e) {
+            $settings = new GeneralSettings();
+            $this->ensureAllPropertiesSet($settings);
+            $settings->save();
+        }
+
+        if (empty($settings->drive_oauth_client_id) || empty($settings->drive_oauth_client_secret)) {
+            return redirect()
+                ->route('admin.settings.section', 'drive')
+                ->with('error', 'Client ID y Client Secret de Google OAuth no configurados.');
+        }
+
+        $redirectUri = route('admin.settings.drive-oauth.callback');
+        $response = \Illuminate\Support\Facades\Http::asForm()->post('https://oauth2.googleapis.com/token', [
+            'grant_type' => 'authorization_code',
+            'client_id' => $settings->drive_oauth_client_id,
+            'client_secret' => $settings->drive_oauth_client_secret,
+            'redirect_uri' => $redirectUri,
+            'code' => $code,
+        ]);
+
+        if (!$response->successful()) {
+            $body = $response->json();
+            $msg = $body['error_description'] ?? $body['error'] ?? $response->body();
+            return redirect()
+                ->route('admin.settings.section', 'drive')
+                ->with('error', 'Error al obtener tokens: ' . $msg);
+        }
+
+        $data = $response->json();
+        $refreshToken = $data['refresh_token'] ?? null;
+        $accessToken = $data['access_token'] ?? null;
+
+        if (!$refreshToken) {
+            return redirect()
+                ->route('admin.settings.section', 'drive')
+                ->with('error', 'Google no devolvió refresh_token. Asegúrate de usar prompt=consent y autorizar de nuevo.');
+        }
+
+        $this->ensureAllPropertiesSet($settings);
+        $settings->drive_oauth_refresh_token = $refreshToken;
+        if ($accessToken) {
+            $settings->drive_oauth_access_token = $accessToken;
+        }
+        $settings->save();
+
+        return redirect()
+            ->route('admin.settings.section', 'drive')
+            ->with('success', 'Google Drive OAuth conectado. Ya puedes usar "Mi unidad" y subir documentos.');
     }
 
     private function updateMailSettings(Request $request, GeneralSettings $settings)
