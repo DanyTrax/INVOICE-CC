@@ -463,12 +463,23 @@ class GoogleDriveService
             ->get($this->baseUrl . '/files/' . $fileId . '?' . http_build_query($queryParams));
 
         if (!$response->successful()) {
+            $statusCode = $response->status();
+            $errorData = $response->json();
+            $errorMessage = $errorData['error']['message'] ?? $response->body();
+            
             Log::error('Error al obtener información de archivo de Google Drive', [
                 'response' => $response->body(),
-                'status' => $response->status(),
+                'status' => $statusCode,
                 'fileId' => $fileId,
+                'errorMessage' => $errorMessage,
             ]);
-            throw new \Exception('Error al obtener información de archivo: ' . ($response->json()['error']['message'] ?? $response->body()));
+            
+            // Detectar específicamente errores 404 (archivo no encontrado)
+            if ($statusCode === 404) {
+                throw new \Exception('Archivo no encontrado en Google Drive (404). El archivo puede haber sido eliminado.');
+            }
+            
+            throw new \Exception('Error al obtener información de archivo (' . $statusCode . '): ' . $errorMessage);
         }
 
         return $response->json();

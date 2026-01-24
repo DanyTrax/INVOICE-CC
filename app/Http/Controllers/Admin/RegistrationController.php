@@ -326,6 +326,7 @@ class RegistrationController extends Controller
 
     /**
      * Ver documento en el navegador (inline) desde Google Drive.
+     * SIEMPRE consulta Drive si tiene drive_id, sin fallbacks.
      */
     public function viewDocument(Registration $registration, Document $document): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
     {
@@ -333,39 +334,26 @@ class RegistrationController extends Controller
             abort(404);
         }
 
+        // Si tiene drive_id, SIEMPRE consultar Drive directamente
         if ($document->drive_id) {
+            $driveService = app(GoogleDriveService::class);
+            
+            // Verificar primero si el archivo existe en Drive
             try {
-                $driveService = app(GoogleDriveService::class);
-                
-                // Verificar primero si el archivo existe en Drive
-                try {
-                    $fileInfo = $driveService->getFileInfo($document->drive_id);
-                } catch (\Exception $e) {
-                    // Si el archivo no existe en Drive (404), verificar si hay copia local legacy
-                    if (str_contains($e->getMessage(), '404') || str_contains($e->getMessage(), 'not found')) {
-                        Log::warning('Archivo no encontrado en Drive, puede haber sido borrado', [
-                            'document_id' => $document->id,
-                            'drive_id' => $document->drive_id,
-                        ]);
-                        // Intentar fallback a archivo local legacy si existe
-                        if ($document->file_path && str_starts_with($document->file_path, 'registration-documents/') && Storage::disk('local')->exists($document->file_path)) {
-                            $path = Storage::disk('local')->path($document->file_path);
-                            $mime = $document->file_type ?: 'application/octet-stream';
-                            $filename = $document->file_name;
-                            $disposition = 'inline; filename="' . addcslashes($filename, '"\\') . '"';
-                            return response()->file($path, [
-                                'Content-Type' => $mime,
-                                'Content-Disposition' => $disposition,
-                            ]);
-                        }
-                        abort(404, 'El documento fue eliminado de Google Drive y no hay copia local disponible.');
-                    }
-                    throw $e;
-                }
-                
-                // Si existe, descargarlo
+                $fileInfo = $driveService->getFileInfo($document->drive_id);
+            } catch (\Exception $e) {
+                Log::warning('Archivo no encontrado en Drive al intentar ver', [
+                    'document_id' => $document->id,
+                    'drive_id' => $document->drive_id,
+                    'error' => $e->getMessage(),
+                ]);
+                abort(404, 'El documento no existe en Google Drive. Puede haber sido eliminado.');
+            }
+            
+            // Si existe, descargarlo desde Drive
+            try {
                 $fileContent = $driveService->downloadFile($document->drive_id);
-                $mime = $document->file_type ?: 'application/octet-stream';
+                $mime = $document->file_type ?: ($fileInfo['mimeType'] ?? 'application/octet-stream');
                 $filename = $document->file_name;
                 $disposition = 'inline; filename="' . addcslashes($filename, '"\\') . '"';
 
@@ -375,7 +363,7 @@ class RegistrationController extends Controller
                     'Content-Length' => strlen($fileContent),
                 ]);
             } catch (\Exception $e) {
-                Log::error('Error al obtener archivo de Drive para ver', [
+                Log::error('Error al descargar archivo de Drive para ver', [
                     'document_id' => $document->id,
                     'drive_id' => $document->drive_id,
                     'error' => $e->getMessage(),
@@ -384,7 +372,7 @@ class RegistrationController extends Controller
             }
         }
 
-        // Legacy: archivo local
+        // Solo para documentos legacy sin drive_id (muy antiguos)
         if ($document->file_path && str_starts_with($document->file_path, 'registration-documents/') && Storage::disk('local')->exists($document->file_path)) {
             $path = Storage::disk('local')->path($document->file_path);
             $mime = $document->file_type ?: 'application/octet-stream';
@@ -402,6 +390,7 @@ class RegistrationController extends Controller
 
     /**
      * Descargar documento desde Google Drive.
+     * SIEMPRE consulta Drive si tiene drive_id, sin fallbacks.
      */
     public function downloadDocument(Registration $registration, Document $document): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
     {
@@ -409,36 +398,26 @@ class RegistrationController extends Controller
             abort(404);
         }
 
+        // Si tiene drive_id, SIEMPRE consultar Drive directamente
         if ($document->drive_id) {
+            $driveService = app(GoogleDriveService::class);
+            
+            // Verificar primero si el archivo existe en Drive
             try {
-                $driveService = app(GoogleDriveService::class);
-                
-                // Verificar primero si el archivo existe en Drive
-                try {
-                    $fileInfo = $driveService->getFileInfo($document->drive_id);
-                } catch (\Exception $e) {
-                    // Si el archivo no existe en Drive (404), verificar si hay copia local legacy
-                    if (str_contains($e->getMessage(), '404') || str_contains($e->getMessage(), 'not found')) {
-                        Log::warning('Archivo no encontrado en Drive, puede haber sido borrado', [
-                            'document_id' => $document->id,
-                            'drive_id' => $document->drive_id,
-                        ]);
-                        // Intentar fallback a archivo local legacy si existe
-                        if ($document->file_path && str_starts_with($document->file_path, 'registration-documents/') && Storage::disk('local')->exists($document->file_path)) {
-                            return Storage::disk('local')->download(
-                                $document->file_path,
-                                $document->file_name,
-                                ['Content-Type' => $document->file_type ?: 'application/octet-stream']
-                            );
-                        }
-                        abort(404, 'El documento fue eliminado de Google Drive y no hay copia local disponible.');
-                    }
-                    throw $e;
-                }
-                
-                // Si existe, descargarlo
+                $fileInfo = $driveService->getFileInfo($document->drive_id);
+            } catch (\Exception $e) {
+                Log::warning('Archivo no encontrado en Drive al intentar descargar', [
+                    'document_id' => $document->id,
+                    'drive_id' => $document->drive_id,
+                    'error' => $e->getMessage(),
+                ]);
+                abort(404, 'El documento no existe en Google Drive. Puede haber sido eliminado.');
+            }
+            
+            // Si existe, descargarlo desde Drive
+            try {
                 $fileContent = $driveService->downloadFile($document->drive_id);
-                $mime = $document->file_type ?: 'application/octet-stream';
+                $mime = $document->file_type ?: ($fileInfo['mimeType'] ?? 'application/octet-stream');
                 $filename = $document->file_name;
                 $disposition = 'attachment; filename="' . addcslashes($filename, '"\\') . '"';
 
@@ -448,7 +427,7 @@ class RegistrationController extends Controller
                     'Content-Length' => strlen($fileContent),
                 ]);
             } catch (\Exception $e) {
-                Log::error('Error al obtener archivo de Drive para descargar', [
+                Log::error('Error al descargar archivo de Drive', [
                     'document_id' => $document->id,
                     'drive_id' => $document->drive_id,
                     'error' => $e->getMessage(),
@@ -457,7 +436,7 @@ class RegistrationController extends Controller
             }
         }
 
-        // Legacy: archivo local
+        // Solo para documentos legacy sin drive_id (muy antiguos)
         if ($document->file_path && str_starts_with($document->file_path, 'registration-documents/') && Storage::disk('local')->exists($document->file_path)) {
             return Storage::disk('local')->download(
                 $document->file_path,
