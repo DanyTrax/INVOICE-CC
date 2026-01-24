@@ -250,6 +250,8 @@ class SettingsController extends Controller
             'agency_logo' => '',
             'drive_service_account_json' => '',
             'drive_folder_id' => '',
+            'drive_folder_name_no_client' => 'Expedientes Sin Cliente',
+            'drive_folder_name_with_client' => 'Clientes',
             'mail_provider' => 'smtp',
             'mail_mailer' => 'smtp',
             'mail_host' => 'smtp.gmail.com',
@@ -383,7 +385,7 @@ class SettingsController extends Controller
             }
         }
 
-        // Asegurar que todas las propiedades estén establecidas
+        // Asegurar que todas las propiedades estén establecidas ANTES de actualizar
         $this->ensureAllPropertiesSet($settings);
         
         // Actualizar campos
@@ -395,11 +397,32 @@ class SettingsController extends Controller
             $settings->drive_folder_id = $validated['drive_folder_id'] ?? '';
         }
         
-        if (isset($validated['drive_folder_name_no_client'])) {
+        // Establecer valores por defecto si no están en la base de datos
+        if (!isset($validated['drive_folder_name_no_client'])) {
+            // Si no viene en el request, usar el valor existente o el por defecto
+            try {
+                $currentValue = $settings->drive_folder_name_no_client ?? null;
+                if ($currentValue === null) {
+                    $settings->drive_folder_name_no_client = 'Expedientes Sin Cliente';
+                }
+            } catch (\Exception $e) {
+                $settings->drive_folder_name_no_client = 'Expedientes Sin Cliente';
+            }
+        } else {
             $settings->drive_folder_name_no_client = $validated['drive_folder_name_no_client'] ?: 'Expedientes Sin Cliente';
         }
         
-        if (isset($validated['drive_folder_name_with_client'])) {
+        if (!isset($validated['drive_folder_name_with_client'])) {
+            // Si no viene en el request, usar el valor existente o el por defecto
+            try {
+                $currentValue = $settings->drive_folder_name_with_client ?? null;
+                if ($currentValue === null) {
+                    $settings->drive_folder_name_with_client = 'Clientes';
+                }
+            } catch (\Exception $e) {
+                $settings->drive_folder_name_with_client = 'Clientes';
+            }
+        } else {
             $settings->drive_folder_name_with_client = $validated['drive_folder_name_with_client'] ?: 'Clientes';
         }
         
