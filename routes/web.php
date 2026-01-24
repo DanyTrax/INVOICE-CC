@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\RegistrationController;
@@ -8,10 +9,14 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ClientRegisterController;
+use App\Http\Controllers\ClientPortalController;
 
-// Redirigir raíz al dashboard
+// Redirigir raíz según rol
 Route::get('/', function () {
-    return redirect()->route('admin.dashboard');
+    if (Auth::check()) {
+        return Auth::user()->hasRole('client') ? redirect()->route('portal.dashboard') : redirect()->route('admin.dashboard');
+    }
+    return redirect()->route('login');
 });
 
 // Autenticación
@@ -23,8 +28,17 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/registrarse', [ClientRegisterController::class, 'show'])->name('client.register');
 Route::post('/registrarse', [ClientRegisterController::class, 'store']);
 
-// Rutas Admin (requieren autenticación)
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+// Portal Cliente (rol client: solo informativo y descargas)
+Route::middleware(['auth', 'client'])->prefix('portal')->name('portal.')->group(function () {
+    Route::get('/', [ClientPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/registrations', [ClientPortalController::class, 'index'])->name('registrations.index');
+    Route::get('/registrations/{registration}', [ClientPortalController::class, 'show'])->name('registrations.show');
+    Route::get('/registrations/{registration}/documents/{document}/view', [ClientPortalController::class, 'viewDocument'])->name('documents.view');
+    Route::get('/registrations/{registration}/documents/{document}/download', [ClientPortalController::class, 'downloadDocument'])->name('documents.download');
+});
+
+// Rutas Admin (auth + no clientes)
+Route::middleware(['auth', 'not.client'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // Companies

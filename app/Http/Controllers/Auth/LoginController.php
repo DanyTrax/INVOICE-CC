@@ -12,7 +12,9 @@ class LoginController extends Controller
     public function showLoginForm()
     {
         if (Auth::check()) {
-            return redirect()->route('admin.dashboard');
+            return Auth::user()->hasRole('client')
+                ? redirect()->route('portal.dashboard')
+                : redirect()->route('admin.dashboard');
         }
         
         return view('auth.login-flowbite');
@@ -30,7 +32,10 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
-            return redirect()->intended(route('admin.dashboard'));
+            $default = Auth::user()->hasRole('client')
+                ? route('portal.dashboard')
+                : route('admin.dashboard');
+            return redirect()->intended($default);
         }
 
         throw ValidationException::withMessages([
