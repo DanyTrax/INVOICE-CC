@@ -1090,4 +1090,22 @@ class SettingsController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Probar conexión con Google Drive
+     */
+    public function testDriveConnection(Request $request)
+    {
+        try {
+            $driveService = app(\App\Services\GoogleDriveService::class);
+            $result = $driveService->testConnection();
+            
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al probar conexión: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

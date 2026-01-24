@@ -330,21 +330,79 @@ class GoogleDriveService
 
     /**
      * Verificar conexión con Google Drive
+     * Retorna array con 'success' y 'message'
      */
     public function testConnection()
     {
         try {
+            // Verificar que el JSON esté configurado
+            $serviceAccountJson = $this->settings->drive_service_account_json;
+            
+            if (empty($serviceAccountJson)) {
+                return [
+                    'success' => false,
+                    'message' => 'Google Drive no está configurado. Por favor, configura el JSON de Service Account.',
+                ];
+            }
+
+            // Validar JSON
+            $serviceAccount = json_decode($serviceAccountJson, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return [
+                    'success' => false,
+                    'message' => 'El JSON de Service Account no es válido: ' . json_last_error_msg(),
+                ];
+            }
+
+            // Obtener token
             $token = $this->getAccessToken();
             
             // Intentar listar archivos para verificar conexión
             $response = Http::withToken($token)
                 ->get($this->baseUrl . '/files', [
                     'pageSize' => 1,
+                    'q' => "mimeType='application/vnd.google-apps.folder'",
                 ]);
 
-            return $response->successful();
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'message' => 'Conexión exitosa con Google Drive API. La Service Account está configurada correctamente.',
+                ];
+            } else {
+                $errorData = $response->json();
+                $errorMessage = $errorData['error']['message'] ?? $response->body();
+                
+                // Mensaje específico para API no habilitada
+                if (str_contains($errorMessage, 'API has not been used') || 
+                    str_contains($errorMessage, 'API not enabled') ||
+                    str_contains($errorMessage, 'API activation')) {
+                    return [
+                        'success' => false,
+                        'message' => 'La API de Google Drive no está habilitada. Por favor, habilítala en Google Cloud Console: https://console.cloud.google.com/apis/library/drive.googleapis.com',
+                    ];
+                }
+                
+                return [
+                    'success' => false,
+                    'message' => 'Error al conectar con Google Drive: ' . $errorMessage,
+                ];
+            }
         } catch (\Exception $e) {
-            return false;
+            $message = $e->getMessage();
+            
+            // Mensaje específico para errores comunes
+            if (str_contains($message, 'Google Drive no está configurado')) {
+                return [
+                    'success' => false,
+                    'message' => $message,
+                ];
+            }
+            
+            return [
+                'success' => false,
+                'message' => 'Error al probar conexión: ' . $message,
+            ];
         }
     }
 }

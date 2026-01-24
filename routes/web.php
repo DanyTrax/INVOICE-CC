@@ -61,4 +61,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             
             // Email Templates
             Route::get('/settings/templates/{template}', [SettingsController::class, 'getTemplate'])->name('settings.templates.show');
+            
+            // Test Google Drive Connection
+            Route::post('/settings/test-drive-connection', [SettingsController::class, 'testDriveConnection'])->name('settings.test-drive-connection');
         });

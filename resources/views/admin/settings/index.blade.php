@@ -2449,14 +2449,51 @@ function testDriveConnection() {
         return;
     }
     
-    // Mostrar información
-    const jsonData = JSON.parse(jsonValue);
-    const message = '✅ JSON válido\n\n' +
-                   'Service Account: ' + (jsonData.client_email || 'No encontrado') + '\n' +
-                   'Project ID: ' + (jsonData.project_id || 'No encontrado') + '\n\n' +
-                   '⚠️ Nota: Para probar la conexión real con Google Drive, necesitarías implementar una función en el servidor que use la API de Google Drive.';
+    // Deshabilitar botón mientras se prueba
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Probando...';
     
-    alert(message);
+    // Guardar primero el JSON para que el servidor pueda usarlo
+    const form = jsonField.closest('form');
+    const formData = new FormData(form);
+    formData.append('section', 'drive');
+    
+    // Primero guardar, luego probar
+    fetch('{{ route("admin.settings.update") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(() => {
+        // Ahora probar conexión
+        return fetch('{{ route("admin.settings.test-drive-connection") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('❌ Error al probar conexión: ' + error.message);
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
 }
 
 // Ejecutar Comando Artisan
