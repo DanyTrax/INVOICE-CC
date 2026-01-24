@@ -121,7 +121,7 @@ class GoogleDriveService
     /**
      * Crear carpeta en Google Drive
      */
-    public function createFolder($folderName, $parentFolderId = null)
+    public function createFolder($folderName, $parentFolderId = null, $registrationId = null, $companyId = null)
     {
         try {
             $token = $this->getAccessToken();
