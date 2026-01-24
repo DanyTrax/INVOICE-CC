@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('email_logs')) {
+            return; // La tabla ya existe, no hacer nada
+        }
+
         Schema::create('email_logs', function (Blueprint $table) {
             $table->id();
             $table->string('to');
