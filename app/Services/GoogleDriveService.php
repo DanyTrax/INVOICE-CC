@@ -464,6 +464,11 @@ class GoogleDriveService
         ?int $companyId = null
     ): void {
         try {
+            // Solo registrar si hay un usuario autenticado
+            if (!auth()->check()) {
+                return;
+            }
+            
             \App\Models\DriveOperationLog::create([
                 'operation_type' => $operationType,
                 'resource_type' => $resourceType,

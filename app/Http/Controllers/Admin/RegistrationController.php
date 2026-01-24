@@ -121,7 +121,7 @@ class RegistrationController extends Controller
             // Si no hay carpeta padre, crear carpeta temporal (o usar la carpeta base configurada)
             // La carpeta base está en settings->drive_folder_id
             
-            $folder = $driveService->createFolder($folderName, $parentFolderId);
+            $folder = $driveService->createFolder($folderName, $parentFolderId, null, $validated['company_id'] ?? null);
             $driveFolderId = $folder['id'];
             $driveFolderUrl = $folder['webViewLink'];
             
@@ -144,6 +144,21 @@ class RegistrationController extends Controller
 
         // Crear el registro
         $registration = Registration::create($validated);
+        
+        // Actualizar el log de la carpeta creada con el ID del registro
+        if ($driveFolderId) {
+            try {
+                \App\Models\DriveOperationLog::where('drive_id', $driveFolderId)
+                    ->where('operation_type', 'create_folder')
+                    ->whereNull('registration_id')
+                    ->update(['registration_id' => $registration->id]);
+            } catch (\Exception $e) {
+                // No es crítico si falla
+                Log::warning('No se pudo actualizar el log de la carpeta con el ID del registro', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         // Procesar documentos subidos (solo si hay carpeta)
         if ($request->hasFile('documents')) {
