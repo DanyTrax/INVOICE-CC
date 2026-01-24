@@ -203,40 +203,244 @@
         </div>
 
         <!-- Tab 2: Google Drive -->
-        <div id="panel-drive" class="tab-panel hidden">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-cloud text-teal-600 mr-2"></i>
-                    Conexión con Google Drive
-                </h3>
-                <p class="text-sm text-gray-600 mb-6">
-                    Configura la integración con Google Drive para almacenar documentos. Necesitas un archivo JSON de Service Account.
-                </p>
+        <div id="panel-drive" class="tab-panel {{ $activeSection === 'drive' ? '' : 'hidden' }}">
+            <div class="space-y-6">
+                <!-- Instructivo -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-book text-teal-600 mr-2"></i>
+                        Instructivo de Configuración
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Paso 1 -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-8 h-8 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center font-bold mr-4">
+                                    1
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900 mb-2">Crear Proyecto en Google Cloud</h4>
+                                    <ol class="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-4">
+                                        <li>Ve a <a href="https://console.cloud.google.com/" target="_blank" class="text-teal-600 hover:underline">Google Cloud Console</a></li>
+                                        <li>Inicia sesión con tu cuenta de Google</li>
+                                        <li>Haz clic en el selector de proyectos (arriba a la izquierda)</li>
+                                        <li>Haz clic en <strong>"Nuevo Proyecto"</strong></li>
+                                        <li>Ingresa un nombre (ej: "RAMS Drive Integration")</li>
+                                        <li>Haz clic en <strong>"Crear"</strong></li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
 
-                <form action="{{ route('admin.settings.update') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="section" value="drive">
+                        <!-- Paso 2 -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-8 h-8 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center font-bold mr-4">
+                                    2
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900 mb-2">Habilitar API de Google Drive</h4>
+                                    <ol class="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-4">
+                                        <li>En el menú lateral, ve a <strong>"APIs y servicios"</strong> → <strong>"Biblioteca"</strong></li>
+                                        <li>Busca <strong>"Google Drive API"</strong></li>
+                                        <li>Haz clic en el resultado</li>
+                                        <li>Haz clic en el botón <strong>"Habilitar"</strong></li>
+                                        <li>Espera a que se habilite (puede tardar unos segundos)</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-4">
-                        <label for="drive_service_account_json" class="block mb-2 text-sm font-medium text-gray-900">
-                            JSON de Service Account
-                        </label>
-                        <textarea id="drive_service_account_json" 
-                                  name="drive_service_account_json" 
-                                  rows="10"
-                                  placeholder='{"type": "service_account", "project_id": "...", ...}'
-                                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('drive_service_account_json', $settings->drive_service_account_json ?? '') }}</textarea>
-                        <p class="mt-2 text-xs text-gray-500">
-                            Pega aquí el contenido completo del archivo JSON de tu Service Account de Google Cloud.
-                        </p>
+                        <!-- Paso 3 -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-8 h-8 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center font-bold mr-4">
+                                    3
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900 mb-2">Crear Service Account</h4>
+                                    <ol class="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-4">
+                                        <li>Ve a <strong>"APIs y servicios"</strong> → <strong>"Credenciales"</strong></li>
+                                        <li>Haz clic en <strong>"Crear credenciales"</strong> → <strong>"Cuenta de servicio"</strong></li>
+                                        <li>Completa los campos:
+                                            <ul class="list-disc list-inside ml-6 mt-1">
+                                                <li><strong>Nombre:</strong> "RAMS Drive Service"</li>
+                                                <li><strong>Descripción:</strong> "Service account para integración con Google Drive en RAMS"</li>
+                                            </ul>
+                                        </li>
+                                        <li>Haz clic en <strong>"Crear y continuar"</strong></li>
+                                        <li>En <strong>"Conceder a esta cuenta de servicio acceso al proyecto"</strong>:
+                                            <ul class="list-disc list-inside ml-6 mt-1">
+                                                <li>Selecciona el rol: <strong>"Editor"</strong> o <strong>"Propietario"</strong></li>
+                                            </ul>
+                                        </li>
+                                        <li>Haz clic en <strong>"Continuar"</strong> y luego en <strong>"Listo"</strong></li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 4 -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-8 h-8 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center font-bold mr-4">
+                                    4
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900 mb-2">Crear y Descargar Clave JSON</h4>
+                                    <ol class="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-4">
+                                        <li>En la lista de cuentas de servicio, haz clic en la que acabas de crear</li>
+                                        <li>Ve a la pestaña <strong>"Claves"</strong></li>
+                                        <li>Haz clic en <strong>"Agregar clave"</strong> → <strong>"Crear nueva clave"</strong></li>
+                                        <li>Selecciona el formato <strong>"JSON"</strong></li>
+                                        <li>Haz clic en <strong>"Crear"</strong></li>
+                                        <li>Se descargará automáticamente un archivo JSON (guárdalo en un lugar seguro)</li>
+                                    </ol>
+                                    <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded p-3">
+                                        <p class="text-xs text-yellow-800">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            <strong>Importante:</strong> Este archivo JSON contiene credenciales sensibles. No lo compartas públicamente ni lo subas a repositorios públicos.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 5 -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-8 h-8 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center font-bold mr-4">
+                                    5
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900 mb-2">Compartir Carpeta en Google Drive</h4>
+                                    <ol class="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-4">
+                                        <li>Abre <a href="https://drive.google.com" target="_blank" class="text-teal-600 hover:underline">Google Drive</a></li>
+                                        <li>Crea una carpeta nueva (ej: "RAMS Documentos") o selecciona una existente</li>
+                                        <li>Haz clic derecho en la carpeta → <strong>"Compartir"</strong></li>
+                                        <li>En el campo de búsqueda, pega el <strong>email de la Service Account</strong>
+                                            <ul class="list-disc list-inside ml-6 mt-1">
+                                                <li>Este email está en el archivo JSON descargado, en el campo <code class="bg-gray-100 px-1 rounded">"client_email"</code></li>
+                                                <li>Ejemplo: <code class="bg-gray-100 px-1 rounded">rams-drive-service@tu-proyecto.iam.gserviceaccount.com</code></li>
+                                            </ul>
+                                        </li>
+                                        <li>Selecciona el email de la lista de sugerencias</li>
+                                        <li>Cambia el permiso a <strong>"Editor"</strong> (o "Administrador" si necesitas más control)</li>
+                                        <li>Haz clic en <strong>"Enviar"</strong> o <strong>"Listo"</strong></li>
+                                    </ol>
+                                    <div class="mt-3 bg-blue-50 border border-blue-200 rounded p-3">
+                                        <p class="text-xs text-blue-800">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            <strong>Nota:</strong> No necesitas enviar una notificación por correo. Solo comparte la carpeta con el email de la Service Account.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 6 -->
+                        <div class="border border-gray-200 rounded-lg p-4 bg-teal-50">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold mr-4">
+                                    6
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900 mb-2">Configurar en RAMS</h4>
+                                    <ol class="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-4">
+                                        <li>Abre el archivo JSON descargado con un editor de texto</li>
+                                        <li>Copia <strong>TODO</strong> el contenido del archivo (desde <code class="bg-gray-100 px-1 rounded">{</code> hasta <code class="bg-gray-100 px-1 rounded">}</code>)</li>
+                                        <li>Pega el contenido en el campo <strong>"JSON de Service Account"</strong> más abajo</li>
+                                        <li>Si tienes el ID de la carpeta de Drive, pégalo en el campo opcional</li>
+                                        <li>Haz clic en <strong>"Guardar Configuración"</strong></li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="mt-6 flex justify-end">
-                        <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                            <i class="fas fa-save mr-2"></i> Guardar Configuración
-                        </button>
-                    </div>
-                </form>
+                <!-- Formulario de Configuración -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-cloud text-teal-600 mr-2"></i>
+                        Configuración de Google Drive
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-6">
+                        Configura la integración con Google Drive para almacenar documentos del sistema.
+                    </p>
+
+                    <form action="{{ route('admin.settings.update') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="section" value="drive">
+
+                        <div class="space-y-6">
+                            <!-- JSON de Service Account -->
+                            <div>
+                                <label for="drive_service_account_json" class="block mb-2 text-sm font-medium text-gray-900">
+                                    JSON de Service Account <span class="text-red-500">*</span>
+                                </label>
+                                <textarea id="drive_service_account_json" 
+                                          name="drive_service_account_json" 
+                                          rows="12"
+                                          placeholder='{"type": "service_account", "project_id": "...", "private_key_id": "...", "private_key": "...", "client_email": "...", "client_id": "...", "auth_uri": "...", "token_uri": "...", "auth_provider_x509_cert_url": "...", "client_x509_cert_url": "..."}'
+                                          required
+                                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('drive_service_account_json', $settings->drive_service_account_json ?? '') }}</textarea>
+                                <p class="mt-2 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Pega aquí el contenido completo del archivo JSON descargado de Google Cloud Console.
+                                </p>
+                                @if($settings->drive_service_account_json)
+                                    @php
+                                        try {
+                                            $jsonData = json_decode($settings->drive_service_account_json, true);
+                                            $serviceEmail = $jsonData['client_email'] ?? null;
+                                        } catch (\Exception $e) {
+                                            $serviceEmail = null;
+                                        }
+                                    @endphp
+                                    @if($serviceEmail)
+                                        <div class="mt-2 bg-green-50 border border-green-200 rounded p-3">
+                                            <p class="text-xs text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                <strong>Service Account configurado:</strong> {{ $serviceEmail }}
+                                            </p>
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
+
+                            <!-- ID de Carpeta de Drive (Opcional) -->
+                            <div>
+                                <label for="drive_folder_id" class="block mb-2 text-sm font-medium text-gray-900">
+                                    ID de Carpeta de Drive (Opcional)
+                                </label>
+                                <input type="text" 
+                                       id="drive_folder_id" 
+                                       name="drive_folder_id" 
+                                       value="{{ old('drive_folder_id', $settings->drive_folder_id ?? '') }}"
+                                       placeholder="1a2b3c4d5e6f7g8h9i0j"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <p class="mt-2 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Si quieres que todos los documentos se suban a una carpeta específica, ingresa el ID de la carpeta. 
+                                    Puedes obtenerlo desde la URL de la carpeta en Google Drive (la parte después de <code class="bg-gray-100 px-1 rounded">folders/</code>).
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end gap-3">
+                            <button type="button" 
+                                    onclick="testDriveConnection()"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-vial mr-2"></i> Probar Conexión
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                                <i class="fas fa-save mr-2"></i> Guardar Configuración
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
