@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Settings\GeneralSettings;
+use App\Models\DriveOperationLog;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -168,12 +169,24 @@ class GoogleDriveService
 
             $folder = $response->json();
             
-            return [
+            $result = [
                 'id' => $folder['id'],
                 'name' => $folder['name'],
                 'webViewLink' => 'https://drive.google.com/drive/folders/' . $folder['id'],
             ];
+            
+            // Registrar operación exitosa
+            $this->logOperation('create_folder', 'folder', $folderName, $result['id'], $result['webViewLink'], 'success', null, [
+                'parent_folder_id' => $parentFolderId,
+            ], null, $registrationId, $companyId);
+            
+            return $result;
         } catch (\Exception $e) {
+            // Registrar operación fallida
+            $this->logOperation('create_folder', 'folder', $folderName, null, null, 'failed', $e->getMessage(), [
+                'parent_folder_id' => $parentFolderId,
+            ], null, $registrationId, $companyId);
+            
             Log::error('Error en GoogleDriveService::createFolder', [
                 'message' => $e->getMessage(),
                 'folderName' => $folderName,
@@ -185,7 +198,7 @@ class GoogleDriveService
     /**
      * Subir archivo a Google Drive
      */
-    public function uploadFile($filePath, $fileName, $parentFolderId, $mimeType = null)
+    public function uploadFile($filePath, $fileName, $parentFolderId, $mimeType = null, $registrationId = null, $companyId = null)
     {
         try {
             $token = $this->getAccessToken();
@@ -233,13 +246,27 @@ class GoogleDriveService
 
             $file = $response->json();
             
-            return [
+            $result = [
                 'id' => $file['id'],
                 'name' => $file['name'],
                 'webViewLink' => 'https://drive.google.com/file/d/' . $file['id'] . '/view',
                 'webContentLink' => $file['webContentLink'] ?? null,
             ];
+            
+            // Registrar operación exitosa
+            $this->logOperation('upload', 'file', $fileName, $file['id'], $result['webViewLink'], 'success', null, [
+                'parent_folder_id' => $parentFolderId,
+                'mime_type' => $mimeType,
+            ], null, $registrationId, $companyId);
+            
+            return $result;
         } catch (\Exception $e) {
+            // Registrar operación fallida
+            $this->logOperation('upload', 'file', $fileName, null, null, 'failed', $e->getMessage(), [
+                'parent_folder_id' => $parentFolderId,
+                'mime_type' => $mimeType,
+            ], null, $registrationId, $companyId);
+            
             Log::error('Error en GoogleDriveService::uploadFile', [
                 'message' => $e->getMessage(),
                 'fileName' => $fileName,
@@ -417,6 +444,44 @@ class GoogleDriveService
                 'success' => false,
                 'message' => 'Error al probar conexión: ' . $message,
             ];
+        }
+    }
+
+    /**
+     * Registrar operación en el log
+     */
+    protected function logOperation(
+        string $operationType,
+        string $resourceType,
+        string $resourceName,
+        ?string $driveId = null,
+        ?string $driveUrl = null,
+        string $status = 'pending',
+        ?string $errorMessage = null,
+        array $details = [],
+        ?int $userId = null,
+        ?int $registrationId = null,
+        ?int $companyId = null
+    ): void {
+        try {
+            \App\Models\DriveOperationLog::create([
+                'operation_type' => $operationType,
+                'resource_type' => $resourceType,
+                'resource_name' => $resourceName,
+                'drive_id' => $driveId,
+                'drive_url' => $driveUrl,
+                'status' => $status,
+                'error_message' => $errorMessage,
+                'details' => $details,
+                'user_id' => $userId ?? auth()->id(),
+                'registration_id' => $registrationId,
+                'company_id' => $companyId,
+            ]);
+        } catch (\Exception $e) {
+            // No fallar si no se puede registrar el log
+            Log::warning('Error al registrar operación de Drive en log', [
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

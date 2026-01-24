@@ -1108,4 +1108,26 @@ class SettingsController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener historial de operaciones de Google Drive
+     */
+    public function getDriveOperationsLog(Request $request)
+    {
+        try {
+            $operations = \App\Models\DriveOperationLog::with(['user', 'registration', 'company'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(20);
+
+            return response()->json([
+                'success' => true,
+                'operations' => $operations,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener historial: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

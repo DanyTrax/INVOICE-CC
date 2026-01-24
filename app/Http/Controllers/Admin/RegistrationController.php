@@ -218,7 +218,7 @@ class RegistrationController extends Controller
                         
                         // Crear nueva carpeta del expediente dentro de la carpeta del cliente
                         $folderName = $validated['product_name'] . ' - ' . ($validated['registration_number'] ?? 'Sin Número');
-                        $folder = $driveService->createFolder($folderName, $newCompany->drive_folder_id);
+                        $folder = $driveService->createFolder($folderName, $newCompany->drive_folder_id, $registration->id, $validated['company_id']);
                         
                         // Mover archivos a la nueva carpeta del expediente
                         if ($movedCount > 0) {
@@ -266,10 +266,11 @@ class RegistrationController extends Controller
                 }
                 // Si no hay carpeta padre, se usará la carpeta base configurada en settings
                 
-                $folder = $driveService->createFolder($folderName, $parentFolderId);
+                $folder = $driveService->createFolder($folderName, $parentFolderId, $registration->id, $validated['company_id']);
                 $validated['drive_folder_id'] = $folder['id'];
                 $validated['drive_folder_url'] = $folder['webViewLink'];
                 
+                // El log se registra automáticamente en GoogleDriveService
                 Log::info('Carpeta creada para expediente actualizado', [
                     'registration_id' => $registration->id,
                     'folder_id' => $folder['id'],
@@ -349,7 +350,9 @@ class RegistrationController extends Controller
                         $fullPath,
                         $file->getClientOriginalName(),
                         $driveFolderId,
-                        $file->getMimeType()
+                        $file->getMimeType(),
+                        $registration->id,
+                        $registration->company_id
                     );
                     
                     // Guardar en BD

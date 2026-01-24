@@ -64,4 +64,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             
             // Test Google Drive Connection
             Route::post('/settings/test-drive-connection', [SettingsController::class, 'testDriveConnection'])->name('settings.test-drive-connection');
+            
+            // Drive Operations Log
+            Route::get('/settings/drive-operations-log', [SettingsController::class, 'getDriveOperationsLog'])->name('settings.drive-operations-log');
         });

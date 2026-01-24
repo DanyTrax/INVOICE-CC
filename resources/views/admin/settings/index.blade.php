@@ -441,6 +441,28 @@
                         </div>
                     </form>
                 </div>
+
+                <!-- Historial de Operaciones -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-history text-teal-600 mr-2"></i>
+                            Historial de Operaciones de Google Drive
+                        </h3>
+                        <button type="button" 
+                                onclick="loadDriveOperationsLog()"
+                                class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <i class="fas fa-sync-alt mr-1"></i> Actualizar
+                        </button>
+                    </div>
+
+                    <div id="drive-operations-container" class="space-y-4">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>Cargando historial...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -2540,5 +2562,105 @@ function executeArtisanCommand(command) {
         buttons.forEach(btn => btn.disabled = false);
     });
 }
+
+// Cargar historial de operaciones de Google Drive
+function loadDriveOperationsLog() {
+    const container = document.getElementById('drive-operations-container');
+    container.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>Cargando historial...</p></div>';
+
+    fetch('{{ route("admin.settings.drive-operations-log") }}', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.operations.data.length > 0) {
+            let html = '<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Operación</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Recurso</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expediente</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>';
+            html += '</tr></thead><tbody class="bg-white divide-y divide-gray-200">';
+
+            data.operations.data.forEach(op => {
+                const statusColor = op.status === 'success' ? 'green' : op.status === 'failed' ? 'red' : 'yellow';
+                const statusIcon = op.status === 'success' ? 'check-circle' : op.status === 'failed' ? 'times-circle' : 'clock';
+                const operationLabels = {
+                    'upload': 'Subir Archivo',
+                    'create_folder': 'Crear Carpeta',
+                    'move': 'Mover',
+                    'delete': 'Eliminar',
+                    'update': 'Actualizar'
+                };
+                
+                html += '<tr class="hover:bg-gray-50">';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + new Date(op.created_at).toLocaleString('es-ES') + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-900"><i class="fas fa-' + (op.operation_type === 'upload' ? 'upload' : op.operation_type === 'create_folder' ? 'folder-plus' : 'file') + ' mr-2"></i>' + (operationLabels[op.operation_type] || op.operation_type) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + op.resource_name + '</td>';
+                html += '<td class="px-4 py-3 text-sm"><span class="px-2 py-1 rounded-full text-xs font-medium bg-' + statusColor + '-100 text-' + statusColor + '-800"><i class="fas fa-' + statusIcon + ' mr-1"></i>' + (op.status === 'success' ? 'Éxito' : op.status === 'failed' ? 'Error' : 'Pendiente') + '</span></td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + (op.user ? op.user.name : '-') + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + (op.registration ? 'Expediente #' + op.registration.id : '-') + '</td>';
+                html += '<td class="px-4 py-3 text-sm">';
+                if (op.drive_url) {
+                    html += '<a href="' + op.drive_url + '" target="_blank" class="text-teal-600 hover:text-teal-800"><i class="fas fa-external-link-alt"></i></a>';
+                }
+                if (op.error_message) {
+                    html += ' <button onclick="showError(\'' + op.error_message.replace(/'/g, "\\'") + '\')" class="text-red-600 hover:text-red-800 ml-2"><i class="fas fa-exclamation-triangle"></i></button>';
+                }
+                html += '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+
+            // Paginación
+            if (data.operations.links && data.operations.links.length > 3) {
+                html += '<div class="mt-4 flex justify-center">';
+                data.operations.links.forEach(link => {
+                    if (link.url) {
+                        html += '<a href="' + link.url + '" class="px-3 py-1 mx-1 border rounded ' + (link.active ? 'bg-teal-600 text-white' : 'bg-white text-gray-700') + '">' + (link.label.includes('Previous') ? '«' : link.label.includes('Next') ? '»' : link.label) + '</a>';
+                    }
+                });
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-inbox text-3xl mb-2"></i><p>No hay operaciones registradas aún.</p></div>';
+        }
+    })
+    .catch(error => {
+        container.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><p>Error al cargar historial: ' + error.message + '</p></div>';
+    });
+}
+
+// Mostrar error en modal
+function showError(message) {
+    alert('Error: ' + message);
+}
+
+// Cargar historial al entrar a la pestaña
+document.addEventListener('DOMContentLoaded', function() {
+    const driveTab = document.getElementById('tab-drive');
+    if (driveTab) {
+        driveTab.addEventListener('click', function() {
+            setTimeout(() => {
+                if (document.getElementById('panel-drive') && !document.getElementById('panel-drive').classList.contains('hidden')) {
+                    loadDriveOperationsLog();
+                }
+            }, 100);
+        });
+    }
+    
+    // Si ya estamos en la pestaña drive, cargar inmediatamente
+    if (document.getElementById('panel-drive') && !document.getElementById('panel-drive').classList.contains('hidden')) {
+        loadDriveOperationsLog();
+    }
+});
 </script>
 @endpush
