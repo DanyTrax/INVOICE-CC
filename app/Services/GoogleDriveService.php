@@ -896,7 +896,7 @@ class GoogleDriveService
     /**
      * Registrar operación en el log
      */
-    protected function logOperation(
+    public function logOperation(
         string $operationType,
         string $resourceType,
         string $resourceName,
