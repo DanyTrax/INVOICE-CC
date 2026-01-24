@@ -431,12 +431,42 @@ class RegistrationController extends Controller
                 $filename = $document->file_name;
                 $disposition = 'inline; filename="' . addcslashes($filename, '"\\') . '"';
 
+                // Registrar operación de visualización
+                $driveService->logOperation(
+                    'view',
+                    'file',
+                    $document->file_name,
+                    $document->drive_id,
+                    'https://drive.google.com/file/d/' . $document->drive_id . '/view',
+                    'success',
+                    null,
+                    ['mime_type' => $mime],
+                    auth()->id(),
+                    $registration->id,
+                    $registration->company_id
+                );
+
                 return response($fileContent, 200, [
                     'Content-Type' => $mime,
                     'Content-Disposition' => $disposition,
                     'Content-Length' => strlen($fileContent),
                 ]);
             } catch (\Exception $e) {
+                // Registrar operación fallida
+                $driveService->logOperation(
+                    'view',
+                    'file',
+                    $document->file_name,
+                    $document->drive_id,
+                    null,
+                    'failed',
+                    $e->getMessage(),
+                    [],
+                    auth()->id(),
+                    $registration->id,
+                    $registration->company_id
+                );
+
                 Log::error('Error al descargar archivo de Drive para ver', [
                     'document_id' => $document->id,
                     'drive_id' => $document->drive_id,
@@ -495,12 +525,42 @@ class RegistrationController extends Controller
                 $filename = $document->file_name;
                 $disposition = 'attachment; filename="' . addcslashes($filename, '"\\') . '"';
 
+                // Registrar operación de descarga
+                $driveService->logOperation(
+                    'download',
+                    'file',
+                    $document->file_name,
+                    $document->drive_id,
+                    'https://drive.google.com/file/d/' . $document->drive_id . '/view',
+                    'success',
+                    null,
+                    ['mime_type' => $mime],
+                    auth()->id(),
+                    $registration->id,
+                    $registration->company_id
+                );
+
                 return response($fileContent, 200, [
                     'Content-Type' => $mime,
                     'Content-Disposition' => $disposition,
                     'Content-Length' => strlen($fileContent),
                 ]);
             } catch (\Exception $e) {
+                // Registrar operación fallida
+                $driveService->logOperation(
+                    'download',
+                    'file',
+                    $document->file_name,
+                    $document->drive_id,
+                    null,
+                    'failed',
+                    $e->getMessage(),
+                    [],
+                    auth()->id(),
+                    $registration->id,
+                    $registration->company_id
+                );
+
                 Log::error('Error al descargar archivo de Drive', [
                     'document_id' => $document->id,
                     'drive_id' => $document->drive_id,
@@ -597,17 +657,58 @@ class RegistrationController extends Controller
             abort(404);
         }
 
+        $driveService = app(GoogleDriveService::class);
+        $fileName = $document->file_name;
+        $driveId = $document->drive_id;
+
         try {
+            // Eliminar archivo local si existe (legacy)
             if ($document->file_path && !str_starts_with($document->file_path, 'temp/') && Storage::disk('local')->exists($document->file_path)) {
                 Storage::disk('local')->delete($document->file_path);
             }
+            
+            // Eliminar de Drive si tiene drive_id
             if ($document->drive_id) {
                 try {
-                    app(GoogleDriveService::class)->deleteFile($document->drive_id);
+                    $driveService->deleteFile($document->drive_id);
+                    
+                    // Registrar operación exitosa de eliminación
+                    $driveService->logOperation(
+                        'delete',
+                        'file',
+                        $fileName,
+                        $driveId,
+                        null,
+                        'success',
+                        null,
+                        [],
+                        auth()->id(),
+                        $registration->id,
+                        $registration->company_id
+                    );
                 } catch (\Exception $e) {
-                    Log::warning('No se pudo eliminar de Drive (legacy)', ['document_id' => $document->id, 'error' => $e->getMessage()]);
+                    // Registrar operación fallida
+                    $driveService->logOperation(
+                        'delete',
+                        'file',
+                        $fileName,
+                        $driveId,
+                        null,
+                        'failed',
+                        $e->getMessage(),
+                        [],
+                        auth()->id(),
+                        $registration->id,
+                        $registration->company_id
+                    );
+
+                    Log::warning('No se pudo eliminar de Drive', [
+                        'document_id' => $document->id,
+                        'error' => $e->getMessage()
+                    ]);
                 }
             }
+            
             $document->delete();
         } catch (\Exception $e) {
             Log::error('Error al eliminar documento', [

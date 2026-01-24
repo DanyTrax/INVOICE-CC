@@ -58,6 +58,8 @@ class DriveOperationLog extends Model
     {
         return match($this->operation_type) {
             'upload' => 'fa-upload',
+            'download' => 'fa-download',
+            'view' => 'fa-eye',
             'create_folder' => 'fa-folder-plus',
             'move' => 'fa-arrows-alt',
             'delete' => 'fa-trash',

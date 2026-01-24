@@ -2760,15 +2760,30 @@ function loadDriveOperationsLog() {
                 const statusIcon = op.status === 'success' ? 'check-circle' : op.status === 'failed' ? 'times-circle' : 'clock';
                 const operationLabels = {
                     'upload': 'Subir Archivo',
+                    'download': 'Descargar Archivo',
+                    'view': 'Ver Archivo',
                     'create_folder': 'Crear Carpeta',
                     'move': 'Mover',
                     'delete': 'Eliminar',
                     'update': 'Actualizar'
                 };
                 
+                const operationIcons = {
+                    'upload': 'upload',
+                    'download': 'download',
+                    'view': 'eye',
+                    'create_folder': 'folder-plus',
+                    'move': 'arrows-alt',
+                    'delete': 'trash',
+                    'update': 'edit',
+                    'default': 'file'
+                };
+                
+                const icon = operationIcons[op.operation_type] || operationIcons['default'];
+                
                 html += '<tr class="hover:bg-gray-50">';
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + new Date(op.created_at).toLocaleString('es-ES') + '</td>';
-                html += '<td class="px-4 py-3 text-sm text-gray-900"><i class="fas fa-' + (op.operation_type === 'upload' ? 'upload' : op.operation_type === 'create_folder' ? 'folder-plus' : 'file') + ' mr-2"></i>' + (operationLabels[op.operation_type] || op.operation_type) + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-900"><i class="fas fa-' + icon + ' mr-2"></i>' + (operationLabels[op.operation_type] || op.operation_type) + '</td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + op.resource_name + '</td>';
                 html += '<td class="px-4 py-3 text-sm"><span class="px-2 py-1 rounded-full text-xs font-medium bg-' + statusColor + '-100 text-' + statusColor + '-800"><i class="fas fa-' + statusIcon + ' mr-1"></i>' + (op.status === 'success' ? 'Éxito' : op.status === 'failed' ? 'Error' : 'Pendiente') + '</span></td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + (op.user ? op.user.name : '-') + '</td>';
