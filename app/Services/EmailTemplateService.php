@@ -59,6 +59,7 @@ class EmailTemplateService
             'agency_phone' => $this->settings->agency_phone ?? '',
             'agency_address' => $this->settings->agency_address ?? '',
             'agency_website' => $this->settings->agency_website ?? '',
+            'system_name' => $this->settings->system_name ?? 'Sistema de Gestión Regulatoria',
         ];
     }
 

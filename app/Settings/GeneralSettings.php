@@ -37,6 +37,10 @@ class GeneralSettings extends Settings
     public string $zoho_refresh_token = '';
     public string $zoho_access_token = '';
     public string $zoho_from_email = '';
+    
+    // Sistema y Personalización
+    public string $footer_text = 'RAMS - Regulatory Affairs Management System';
+    public string $system_name = 'Sistema de Gestión Regulatoria';
 
     public static function group(): string
     {

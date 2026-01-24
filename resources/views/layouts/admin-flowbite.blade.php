@@ -354,7 +354,7 @@
             <footer class="bg-white border-t border-gray-200 py-4 px-6">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-gray-600">
-                        <strong>RAMS</strong> - Regulatory Affairs Management System
+                        {!! app(\App\Settings\GeneralSettings::class)->footer_text ?? 'RAMS - Regulatory Affairs Management System' !!}
                     </span>
                     <span class="text-sm text-gray-600">Versión 1.0</span>
                 </div>

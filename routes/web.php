@@ -39,8 +39,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             Route::get('/settings', function() {
                 return redirect()->route('admin.settings.section', 'agency');
             })->name('settings.index');
-            Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history');
+            Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system');
             Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+            
+            // Git Pull (solo super_admin)
+            Route::post('/settings/git-pull', [SettingsController::class, 'gitPull'])->name('settings.git-pull');
             
             // API: Buscar clientes
             Route::get('/api/companies/search', [CompanyController::class, 'search'])->name('api.companies.search');

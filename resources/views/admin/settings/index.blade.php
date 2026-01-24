@@ -46,6 +46,13 @@
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'history' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-history mr-2"></i> Histórico y Pruebas
                 </a>
+                @if(auth()->user()->hasRole('super_admin'))
+                <a href="{{ route('admin.settings.section', 'system') }}" 
+                        id="tab-system"
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'system' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i class="fas fa-cog mr-2"></i> Sistema
+                </a>
+                @endif
             </nav>
         </div>
 
@@ -894,6 +901,117 @@
                 @endif
             </div>
         </div>
+
+        @if(auth()->user()->hasRole('super_admin'))
+        <!-- Tab 6: Sistema (Solo Super Admin) -->
+        <div id="panel-system" class="tab-panel {{ $activeSection === 'system' ? '' : 'hidden' }}">
+            <div class="space-y-6">
+                <!-- Git Pull -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-code-branch text-teal-600 mr-2"></i>
+                        Actualización del Sistema (Git)
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-6">
+                        Ejecuta <code class="bg-gray-100 px-2 py-1 rounded">git pull</code> para actualizar el código desde el repositorio remoto.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <div class="flex">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mr-2 mt-0.5"></i>
+                                <div class="text-sm text-yellow-800">
+                                    <strong>Advertencia:</strong> Esta acción actualizará el código del sistema desde el repositorio remoto. 
+                                    Asegúrate de tener una copia de seguridad antes de continuar.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button type="button" 
+                                    onclick="executeGitPull('main')"
+                                    class="px-6 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300">
+                                <i class="fas fa-download mr-2"></i> Git Pull (main)
+                            </button>
+                            <button type="button" 
+                                    onclick="executeGitPull('origin main')"
+                                    class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300">
+                                <i class="fas fa-download mr-2"></i> Git Pull (origin main)
+                            </button>
+                        </div>
+
+                        <div id="git-pull-output" class="hidden mt-4 bg-gray-900 text-green-400 font-mono text-sm rounded-lg p-4 max-h-96 overflow-y-auto">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-white font-semibold">Salida del comando:</span>
+                                <button type="button" onclick="document.getElementById('git-pull-output').classList.add('hidden')" class="text-gray-400 hover:text-white">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <pre id="git-pull-result" class="whitespace-pre-wrap"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personalización del Sistema -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-paint-brush text-teal-600 mr-2"></i>
+                        Personalización del Sistema
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-6">
+                        Personaliza los textos que aparecen en el sistema.
+                    </p>
+
+                    <form action="{{ route('admin.settings.update') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="section" value="system">
+
+                        <div class="space-y-6">
+                            <!-- Texto del Footer -->
+                            <div>
+                                <label for="footer_text" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Texto del Footer <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" 
+                                       id="footer_text" 
+                                       name="footer_text" 
+                                       value="{{ old('footer_text', $settings->footer_text ?? 'RAMS - Regulatory Affairs Management System') }}"
+                                       required
+                                       placeholder="RAMS - Regulatory Affairs Management System"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Este texto aparecerá en el footer de todas las páginas del sistema.
+                                </p>
+                            </div>
+
+                            <!-- Nombre del Sistema (para plantillas) -->
+                            <div>
+                                <label for="system_name" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Nombre del Sistema (para plantillas) <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" 
+                                       id="system_name" 
+                                       name="system_name" 
+                                       value="{{ old('system_name', $settings->system_name ?? 'Sistema de Gestión Regulatoria') }}"
+                                       required
+                                       placeholder="Sistema de Gestión Regulatoria"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Este nombre aparecerá en las plantillas de correo electrónico donde se mencione "Sistema de Gestión Regulatoria".
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300">
+                                <i class="fas fa-save mr-2"></i> Guardar Configuración
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        @endif
 
         <!-- Modal de Edición de Plantilla -->
         <div id="edit-template-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -2017,5 +2135,50 @@ document.getElementById('edit-template-modal')?.addEventListener('click', functi
         closeEditTemplateModal();
     }
 });
+
+// Ejecutar Git Pull
+function executeGitPull(branch) {
+    const outputDiv = document.getElementById('git-pull-output');
+    const resultPre = document.getElementById('git-pull-result');
+    
+    // Mostrar contenedor de salida
+    outputDiv.classList.remove('hidden');
+    resultPre.textContent = 'Ejecutando git pull...\n';
+    
+    // Deshabilitar botones mientras se ejecuta
+    const buttons = document.querySelectorAll('button[onclick*="executeGitPull"]');
+    buttons.forEach(btn => btn.disabled = true);
+    
+    fetch('{{ route("admin.settings.git-pull") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ branch: branch })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultPre.textContent = '✅ ' + data.message + '\n\n' + data.output;
+            resultPre.classList.remove('text-red-400');
+            resultPre.classList.add('text-green-400');
+        } else {
+            resultPre.textContent = '❌ ' + data.message + '\n\n' + (data.output || '');
+            resultPre.classList.remove('text-green-400');
+            resultPre.classList.add('text-red-400');
+        }
+    })
+    .catch(error => {
+        resultPre.textContent = '❌ Error: ' + error.message;
+        resultPre.classList.remove('text-green-400');
+        resultPre.classList.add('text-red-400');
+    })
+    .finally(() => {
+        // Rehabilitar botones
+        buttons.forEach(btn => btn.disabled = false);
+    });
+}
 </script>
 @endpush

@@ -16,9 +16,15 @@ class SettingsController extends Controller
     public function index(Request $request, $section = 'agency')
     {
         // Validar que la sección sea válida
-        $validSections = ['agency', 'drive', 'mail', 'templates', 'history'];
+        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system'];
         if (!in_array($section, $validSections)) {
             $section = 'agency';
+        }
+        
+        // Verificar si el usuario es super_admin para acceder a la sección 'system'
+        if ($section === 'system' && !auth()->user()->hasRole('super_admin')) {
+            return redirect()->route('admin.settings.section', 'agency')
+                ->with('error', 'No tienes permisos para acceder a esta sección.');
         }
         
         $emailTemplates = EmailTemplate::all();
@@ -85,6 +91,14 @@ class SettingsController extends Controller
                 break;
             case 'mail':
                 $this->updateMailSettings($request, $settings);
+                break;
+            case 'system':
+                // Solo super_admin puede actualizar configuración del sistema
+                if (!auth()->user()->hasRole('super_admin')) {
+                    return redirect()->route('admin.settings.section', 'agency')
+                        ->with('error', 'No tienes permisos para realizar esta acción.');
+                }
+                $this->updateSystemSettings($request, $settings);
                 break;
             case 'email_template':
                 $this->updateEmailTemplate($request);
@@ -240,6 +254,8 @@ class SettingsController extends Controller
             'zoho_refresh_token' => '',
             'zoho_access_token' => '',
             'zoho_from_email' => '',
+            'footer_text' => 'RAMS - Regulatory Affairs Management System',
+            'system_name' => 'Sistema de Gestión Regulatoria',
         ];
         
         $existingSettings = DB::table('settings')
@@ -297,6 +313,8 @@ class SettingsController extends Controller
             'zoho_refresh_token' => '',
             'zoho_access_token' => '',
             'zoho_from_email' => '',
+            'footer_text' => 'RAMS - Regulatory Affairs Management System',
+            'system_name' => 'Sistema de Gestión Regulatoria',
         ];
         
         // Establecer todas las propiedades, usando valores existentes si están disponibles
@@ -768,6 +786,77 @@ class SettingsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar el correo: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+    
+    /**
+     * Actualizar configuración del sistema
+     */
+    private function updateSystemSettings(Request $request, GeneralSettings $settings)
+    {
+        $request->validate([
+            'footer_text' => 'nullable|string|max:255',
+            'system_name' => 'nullable|string|max:255',
+        ]);
+        
+        if ($request->has('footer_text')) {
+            $settings->footer_text = $request->input('footer_text');
+        }
+        
+        if ($request->has('system_name')) {
+            $settings->system_name = $request->input('system_name');
+        }
+        
+        $this->ensureAllPropertiesSet($settings);
+        $settings->save();
+    }
+    
+    /**
+     * Ejecutar git pull
+     */
+    public function gitPull(Request $request)
+    {
+        // Solo super_admin puede ejecutar git pull
+        if (!auth()->user()->hasRole('super_admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción.',
+            ], 403);
+        }
+        
+        $branch = $request->input('branch', 'main');
+        $command = "git pull origin {$branch} 2>&1";
+        
+        try {
+            // Cambiar al directorio del proyecto
+            $projectPath = base_path();
+            chdir($projectPath);
+            
+            // Ejecutar git pull
+            $output = [];
+            $returnCode = 0;
+            exec($command, $output, $returnCode);
+            
+            $outputText = implode("\n", $output);
+            
+            if ($returnCode === 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Git pull ejecutado exitosamente',
+                    'output' => $outputText,
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al ejecutar git pull',
+                    'output' => $outputText,
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
             ], 500);
         }
     }
