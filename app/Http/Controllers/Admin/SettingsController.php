@@ -326,6 +326,8 @@ class SettingsController extends Controller
             'zoho_from_email' => '',
             'footer_text' => 'RAMS - Regulatory Affairs Management System',
             'system_name' => 'Sistema de Gestión Regulatoria',
+            'drive_folder_name_no_client' => 'Expedientes Sin Cliente',
+            'drive_folder_name_with_client' => 'Clientes',
         ];
         
         // Establecer todas las propiedades, usando valores existentes si están disponibles
@@ -347,6 +349,8 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'drive_service_account_json' => 'nullable|string',
             'drive_folder_id' => 'nullable|string|max:255',
+            'drive_folder_name_no_client' => 'nullable|string|max:255',
+            'drive_folder_name_with_client' => 'nullable|string|max:255',
         ]);
 
         // Validar que el JSON sea válido si se proporciona
@@ -389,6 +393,14 @@ class SettingsController extends Controller
         
         if (isset($validated['drive_folder_id'])) {
             $settings->drive_folder_id = $validated['drive_folder_id'] ?? '';
+        }
+        
+        if (isset($validated['drive_folder_name_no_client'])) {
+            $settings->drive_folder_name_no_client = $validated['drive_folder_name_no_client'] ?: 'Expedientes Sin Cliente';
+        }
+        
+        if (isset($validated['drive_folder_name_with_client'])) {
+            $settings->drive_folder_name_with_client = $validated['drive_folder_name_with_client'] ?: 'Clientes';
         }
         
         $settings->save();

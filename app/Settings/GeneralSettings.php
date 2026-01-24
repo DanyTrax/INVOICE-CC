@@ -18,6 +18,8 @@ class GeneralSettings extends Settings
     // Google Drive
     public string $drive_service_account_json = '';
     public string $drive_folder_id = '';
+    public string $drive_folder_name_no_client = 'Expedientes Sin Cliente';
+    public string $drive_folder_name_with_client = 'Clientes';
 
     // Mail Provider
     public string $mail_provider = 'smtp'; // 'smtp' o 'zoho'

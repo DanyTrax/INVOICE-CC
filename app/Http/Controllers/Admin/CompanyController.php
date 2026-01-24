@@ -55,7 +55,9 @@ class CompanyController extends Controller
                 $driveService = app(GoogleDriveService::class);
                 $folderName = $validated['name'] . ' - ' . ($validated['nit_rut'] ?? 'Sin NIT');
                 
-                $folder = $driveService->createFolder($folderName);
+                // Crear dentro de la carpeta base de clientes
+                $clientsFolderId = $driveService->getOrCreateClientsFolder();
+                $folder = $driveService->createFolder($folderName, $clientsFolderId);
                 $validated['drive_folder_id'] = $folder['id'];
                 
                 Log::info('Carpeta de Google Drive creada para cliente', [

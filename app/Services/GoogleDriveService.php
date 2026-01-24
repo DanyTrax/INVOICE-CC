@@ -448,6 +448,88 @@ class GoogleDriveService
     }
 
     /**
+     * Obtener o crear carpeta base para expedientes sin cliente
+     */
+    public function getOrCreateNoClientFolder()
+    {
+        $folderName = $this->settings->drive_folder_name_no_client ?: 'Expedientes Sin Cliente';
+        $baseFolderId = $this->settings->drive_folder_id;
+        
+        // Buscar si ya existe una carpeta con ese nombre en la carpeta base
+        try {
+            $token = $this->getAccessToken();
+            
+            $query = "name='{$folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+            if ($baseFolderId) {
+                $query .= " and '{$baseFolderId}' in parents";
+            }
+            
+            $response = Http::withToken($token)
+                ->get($this->baseUrl . '/files', [
+                    'q' => $query,
+                    'fields' => 'files(id, name)',
+                ]);
+            
+            if ($response->successful()) {
+                $files = $response->json()['files'] ?? [];
+                if (!empty($files)) {
+                    return $files[0]['id'];
+                }
+            }
+            
+            // Si no existe, crearla
+            $folder = $this->createFolder($folderName, $baseFolderId);
+            return $folder['id'];
+        } catch (\Exception $e) {
+            Log::error('Error al obtener/crear carpeta de expedientes sin cliente', [
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Obtener o crear carpeta base para clientes
+     */
+    public function getOrCreateClientsFolder()
+    {
+        $folderName = $this->settings->drive_folder_name_with_client ?: 'Clientes';
+        $baseFolderId = $this->settings->drive_folder_id;
+        
+        // Buscar si ya existe una carpeta con ese nombre en la carpeta base
+        try {
+            $token = $this->getAccessToken();
+            
+            $query = "name='{$folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+            if ($baseFolderId) {
+                $query .= " and '{$baseFolderId}' in parents";
+            }
+            
+            $response = Http::withToken($token)
+                ->get($this->baseUrl . '/files', [
+                    'q' => $query,
+                    'fields' => 'files(id, name)',
+                ]);
+            
+            if ($response->successful()) {
+                $files = $response->json()['files'] ?? [];
+                if (!empty($files)) {
+                    return $files[0]['id'];
+                }
+            }
+            
+            // Si no existe, crearla
+            $folder = $this->createFolder($folderName, $baseFolderId);
+            return $folder['id'];
+        } catch (\Exception $e) {
+            Log::error('Error al obtener/crear carpeta de clientes', [
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Registrar operación en el log
      */
     protected function logOperation(

@@ -100,94 +100,77 @@ class RegistrationController extends Controller
             'documents.*' => 'file|max:10240', // 10MB máximo
         ]);
 
-        // Crear carpeta en Google Drive para el expediente
+        // Crear el registro primero
+        $registration = Registration::create($validated);
+
+        // Solo crear carpeta si hay documentos para subir
         $driveFolderId = null;
         $driveFolderUrl = null;
 
-        try {
-            $driveService = app(GoogleDriveService::class);
-            
-            // Nombre de la carpeta del expediente
-            $folderName = $validated['product_name'] . ' - ' . ($validated['registration_number'] ?? 'Sin Número');
-            
-            // Determinar carpeta padre
-            $parentFolderId = null;
-            if (!empty($validated['company_id'])) {
-                $company = Company::find($validated['company_id']);
-                if ($company && $company->drive_folder_id) {
-                    // Si tiene cliente con carpeta, crear dentro de ella
-                    $parentFolderId = $company->drive_folder_id;
-                }
-            }
-            
-            // Si no hay carpeta padre, crear carpeta temporal (o usar la carpeta base configurada)
-            // La carpeta base está en settings->drive_folder_id
-            
-            $folder = $driveService->createFolder($folderName, $parentFolderId, null, $validated['company_id'] ?? null);
-            $driveFolderId = $folder['id'];
-            $driveFolderUrl = $folder['webViewLink'];
-            
-            $validated['drive_folder_id'] = $driveFolderId;
-            $validated['drive_folder_url'] = $driveFolderUrl;
-            
-            Log::info('Carpeta de Google Drive creada para expediente', [
-                'registration_name' => $validated['product_name'],
-                'folder_id' => $driveFolderId,
-                'company_id' => $validated['company_id'] ?? null,
-                'is_temporary' => empty($validated['company_id']),
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error al crear carpeta en Google Drive para expediente', [
-                'registration_name' => $validated['product_name'],
-                'error' => $e->getMessage(),
-            ]);
-            // Continuar sin carpeta si hay error
-        }
-
-        // Crear el registro
-        $registration = Registration::create($validated);
-        
-        // Actualizar el log de la carpeta creada con el ID del registro
-        if ($driveFolderId) {
-            try {
-                \App\Models\DriveOperationLog::where('drive_id', $driveFolderId)
-                    ->where('operation_type', 'create_folder')
-                    ->whereNull('registration_id')
-                    ->update(['registration_id' => $registration->id]);
-            } catch (\Exception $e) {
-                // No es crítico si falla
-                Log::warning('No se pudo actualizar el log de la carpeta con el ID del registro', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        // Procesar documentos subidos (solo si hay carpeta)
         if ($request->hasFile('documents')) {
-            $driveFolderIdToUse = $registration->drive_folder_id ?? $driveFolderId;
-            
-            if ($driveFolderIdToUse) {
-                try {
-                    $this->uploadDocuments($registration, $request->file('documents'), $driveFolderIdToUse);
-                } catch (\Exception $e) {
-                    Log::error('Error al subir documentos al crear expediente', [
-                        'registration_id' => $registration->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    
-                    return redirect()
-                        ->route('admin.registrations.edit', $registration)
-                        ->with('error', 'El expediente se creó, pero hubo un error al subir los documentos: ' . $e->getMessage())
-                        ->withInput();
+            try {
+                $driveService = app(GoogleDriveService::class);
+                
+                // Nombre de la carpeta del expediente
+                $folderName = $validated['product_name'] . ' - ' . ($validated['registration_number'] ?? 'Sin Número');
+                
+                // Determinar carpeta padre según si tiene cliente o no
+                $parentFolderId = null;
+                if (!empty($validated['company_id'])) {
+                    $company = Company::find($validated['company_id']);
+                    if ($company && $company->drive_folder_id) {
+                        // Si tiene cliente con carpeta, crear dentro de ella
+                        $parentFolderId = $company->drive_folder_id;
+                    } else {
+                        // Si tiene cliente pero no tiene carpeta, usar carpeta base de clientes
+                        $parentFolderId = $driveService->getOrCreateClientsFolder();
+                    }
+                } else {
+                    // Si no tiene cliente, usar carpeta base de expedientes sin cliente
+                    $parentFolderId = $driveService->getOrCreateNoClientFolder();
                 }
-            } else {
-                Log::warning('No se pueden subir documentos: el expediente no tiene carpeta en Drive', [
+                
+                $folder = $driveService->createFolder($folderName, $parentFolderId, $registration->id, $validated['company_id'] ?? null);
+                $driveFolderId = $folder['id'];
+                $driveFolderUrl = $folder['webViewLink'];
+                
+                // Actualizar el registro con la carpeta creada
+                $registration->update([
+                    'drive_folder_id' => $driveFolderId,
+                    'drive_folder_url' => $driveFolderUrl,
+                ]);
+                
+                Log::info('Carpeta de Google Drive creada para expediente', [
                     'registration_id' => $registration->id,
+                    'folder_id' => $driveFolderId,
+                    'company_id' => $validated['company_id'] ?? null,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error al crear carpeta en Google Drive para expediente', [
+                    'registration_id' => $registration->id,
+                    'error' => $e->getMessage(),
                 ]);
                 
                 return redirect()
                     ->route('admin.registrations.edit', $registration)
-                    ->with('error', 'El expediente se creó, pero no se pudo crear la carpeta en Google Drive. Por favor, verifica la configuración de Google Drive.')
+                    ->with('error', 'El expediente se creó, pero no se pudo crear la carpeta en Google Drive. Error: ' . $e->getMessage())
+                    ->withInput();
+            }
+        }
+
+        // Procesar documentos subidos (solo si hay carpeta)
+        if ($request->hasFile('documents') && $driveFolderId) {
+            try {
+                $this->uploadDocuments($registration, $request->file('documents'), $driveFolderId);
+            } catch (\Exception $e) {
+                Log::error('Error al subir documentos al crear expediente', [
+                    'registration_id' => $registration->id,
+                    'error' => $e->getMessage(),
+                ]);
+                
+                return redirect()
+                    ->route('admin.registrations.edit', $registration)
+                    ->with('error', 'El expediente se creó, pero hubo un error al subir los documentos: ' . $e->getMessage())
                     ->withInput();
             }
         }
@@ -292,31 +275,41 @@ class RegistrationController extends Controller
             }
         }
 
-        // Si no tiene carpeta, crear una (independientemente de si tiene cliente o no)
-        $folderCreated = false;
-        if (!$registration->drive_folder_id) {
+        $registration->update($validated);
+        
+        // Refrescar el modelo
+        $registration->refresh();
+
+        // Solo crear carpeta si hay documentos para subir y no tiene carpeta
+        if ($request->hasFile('documents') && !$registration->drive_folder_id) {
             try {
                 $driveService = app(GoogleDriveService::class);
                 
                 $folderName = $validated['product_name'] . ' - ' . ($validated['registration_number'] ?? 'Sin Número');
                 
-                // Determinar carpeta padre
+                // Determinar carpeta padre según si tiene cliente o no
                 $parentFolderId = null;
                 if (!empty($validated['company_id'])) {
                     $company = Company::find($validated['company_id']);
                     if ($company && $company->drive_folder_id) {
                         // Si tiene cliente con carpeta, crear dentro de ella
                         $parentFolderId = $company->drive_folder_id;
+                    } else {
+                        // Si tiene cliente pero no tiene carpeta, usar carpeta base de clientes
+                        $parentFolderId = $driveService->getOrCreateClientsFolder();
                     }
+                } else {
+                    // Si no tiene cliente, usar carpeta base de expedientes sin cliente
+                    $parentFolderId = $driveService->getOrCreateNoClientFolder();
                 }
-                // Si no hay carpeta padre, se usará la carpeta base configurada en settings
                 
-                $folder = $driveService->createFolder($folderName, $parentFolderId, $registration->id, $validated['company_id']);
-                $validated['drive_folder_id'] = $folder['id'];
-                $validated['drive_folder_url'] = $folder['webViewLink'];
-                $folderCreated = true;
+                $folder = $driveService->createFolder($folderName, $parentFolderId, $registration->id, $validated['company_id'] ?? null);
                 
-                // El log se registra automáticamente en GoogleDriveService
+                $registration->update([
+                    'drive_folder_id' => $folder['id'],
+                    'drive_folder_url' => $folder['webViewLink'],
+                ]);
+                
                 Log::info('Carpeta creada para expediente actualizado', [
                     'registration_id' => $registration->id,
                     'folder_id' => $folder['id'],
@@ -326,23 +319,14 @@ class RegistrationController extends Controller
                 Log::error('Error al crear carpeta para expediente actualizado', [
                     'registration_id' => $registration->id,
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
                 ]);
                 
-                // Si hay archivos para subir pero no se pudo crear la carpeta, mostrar error
-                if ($request->hasFile('documents')) {
-                    return redirect()
-                        ->route('admin.registrations.edit', $registration)
-                        ->with('error', 'No se pudo crear la carpeta en Google Drive. Error: ' . $e->getMessage() . ' Por favor, verifica la configuración de Google Drive en Configuración.')
-                        ->withInput();
-                }
+                return redirect()
+                    ->route('admin.registrations.edit', $registration)
+                    ->with('error', 'No se pudo crear la carpeta en Google Drive. Error: ' . $e->getMessage() . ' Por favor, verifica la configuración de Google Drive en Configuración.')
+                    ->withInput();
             }
         }
-
-        $registration->update($validated);
-        
-        // Refrescar el modelo para obtener el drive_folder_id actualizado
-        $registration->refresh();
 
         // Procesar documentos subidos (solo si hay carpeta)
         if ($request->hasFile('documents')) {
@@ -378,11 +362,6 @@ class RegistrationController extends Controller
                     ->with('error', 'No se puede subir documentos porque el expediente no tiene carpeta en Google Drive. Por favor, verifica la configuración de Google Drive.')
                     ->withInput();
             }
-        } else {
-            Log::info('No se detectaron archivos para subir', [
-                'registration_id' => $registration->id,
-                'has_documents_key' => $request->has('documents'),
-            ]);
         }
 
         return redirect()

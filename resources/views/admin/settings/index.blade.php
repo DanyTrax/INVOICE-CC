@@ -273,24 +273,70 @@
                                     @endif
                                 </div>
 
-                                <!-- ID de Carpeta de Drive (Opcional) -->
-                                <div>
-                                    <label for="drive_folder_id" class="block mb-2 text-sm font-medium text-gray-900">
-                                        ID de Carpeta de Drive (Opcional)
-                                    </label>
-                                    <input type="text" 
-                                           id="drive_folder_id" 
-                                           name="drive_folder_id" 
-                                           value="{{ old('drive_folder_id', $settings->drive_folder_id ?? '') }}"
-                                           placeholder="1a2b3c4d5e6f7g8h9i0j"
-                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                                    <p class="mt-2 text-xs text-gray-500">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        Si quieres que todos los documentos se suban a una carpeta específica, ingresa el ID de la carpeta. 
-                                        Puedes obtenerlo desde la URL de la carpeta en Google Drive (la parte después de <code class="bg-gray-100 px-1 rounded">folders/</code>).
-                                    </p>
+                            <!-- ID de Carpeta de Drive (Opcional) -->
+                            <div>
+                                <label for="drive_folder_id" class="block mb-2 text-sm font-medium text-gray-900">
+                                    ID de Carpeta Base de Drive (Opcional)
+                                </label>
+                                <input type="text" 
+                                       id="drive_folder_id" 
+                                       name="drive_folder_id" 
+                                       value="{{ old('drive_folder_id', $settings->drive_folder_id ?? '') }}"
+                                       placeholder="1a2b3c4d5e6f7g8h9i0j"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <p class="mt-2 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Carpeta raíz donde se crearán las carpetas principales. Puedes obtenerlo desde la URL de la carpeta en Google Drive (la parte después de <code class="bg-gray-100 px-1 rounded">folders/</code>).
+                                </p>
+                            </div>
+
+                            <!-- Nombres de Carpetas Principales -->
+                            <div class="border-t border-gray-200 pt-6 mt-6">
+                                <h4 class="text-md font-semibold text-gray-900 mb-4">
+                                    <i class="fas fa-folder-tree text-teal-600 mr-2"></i>
+                                    Nombres de Directorios Principales
+                                </h4>
+                                <p class="text-sm text-gray-600 mb-4">
+                                    Configura los nombres de las carpetas principales que se crearán automáticamente en Google Drive.
+                                </p>
+                                
+                                <div class="space-y-4">
+                                    <!-- Carpeta para Expedientes Sin Cliente -->
+                                    <div>
+                                        <label for="drive_folder_name_no_client" class="block mb-2 text-sm font-medium text-gray-900">
+                                            Nombre de Carpeta para Expedientes Sin Cliente
+                                        </label>
+                                        <input type="text" 
+                                               id="drive_folder_name_no_client" 
+                                               name="drive_folder_name_no_client" 
+                                               value="{{ old('drive_folder_name_no_client', $settings->drive_folder_name_no_client ?? 'Expedientes Sin Cliente') }}"
+                                               placeholder="Expedientes Sin Cliente"
+                                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                        <p class="mt-2 text-xs text-gray-500">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Esta carpeta contendrá todos los expedientes que no tengan un cliente asignado. Ejemplo: <code class="bg-gray-100 px-1 rounded">Expedientes Sin Cliente\Nombre del Expediente</code>
+                                        </p>
+                                    </div>
+
+                                    <!-- Carpeta para Clientess -->
+                                    <div>
+                                        <label for="drive_folder_name_with_client" class="block mb-2 text-sm font-medium text-gray-900">
+                                            Nombre de Carpeta para Clientes
+                                        </label>
+                                        <input type="text" 
+                                               id="drive_folder_name_with_client" 
+                                               name="drive_folder_name_with_client" 
+                                               value="{{ old('drive_folder_name_with_client', $settings->drive_folder_name_with_client ?? 'Clientes') }}"
+                                               placeholder="Clientes"
+                                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                        <p class="mt-2 text-xs text-gray-500">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Esta carpeta contendrá todas las carpetas de clientes. Ejemplo: <code class="bg-gray-100 px-1 rounded">Clientes\Nombre del Cliente\Nombre del Expediente</code>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
 
                             <div class="mt-6 flex justify-end gap-3">
                                 <button type="button" 

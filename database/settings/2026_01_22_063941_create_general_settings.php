@@ -33,6 +33,8 @@ return new class extends SettingsMigration
         $this->addIfNotExists('general.zoho_from_email', '');
         $this->addIfNotExists('general.footer_text', 'RAMS - Regulatory Affairs Management System');
         $this->addIfNotExists('general.system_name', 'Sistema de Gestión Regulatoria');
+        $this->addIfNotExists('general.drive_folder_name_no_client', 'Expedientes Sin Cliente');
+        $this->addIfNotExists('general.drive_folder_name_with_client', 'Clientes');
     }
 
     /**
