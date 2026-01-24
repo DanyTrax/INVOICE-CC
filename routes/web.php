@@ -76,4 +76,5 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             
             // Drive Operations Log
             Route::get('/settings/drive-operations-log', [SettingsController::class, 'getDriveOperationsLog'])->name('settings.drive-operations-log');
+            Route::delete('/settings/drive-operations-log', [SettingsController::class, 'deleteDriveOperationsLog'])->name('settings.drive-operations-log.delete');
         });

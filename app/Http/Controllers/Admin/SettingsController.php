@@ -1278,14 +1278,48 @@ class SettingsController extends Controller
     }
 
     /**
-     * Obtener historial de operaciones de Google Drive
+     * Obtener historial de operaciones de Google Drive con filtros
      */
     public function getDriveOperationsLog(Request $request)
     {
         try {
-            $operations = \App\Models\DriveOperationLog::with(['user', 'registration', 'company'])
-                ->orderBy('created_at', 'desc')
-                ->paginate(20);
+            $query = \App\Models\DriveOperationLog::with(['user', 'registration', 'company']);
+
+            // Filtro por tipo de operación
+            if ($request->has('operation_type') && $request->operation_type !== '' && $request->operation_type !== 'all') {
+                $query->where('operation_type', $request->operation_type);
+            }
+
+            // Filtro por fecha desde
+            if ($request->has('date_from') && $request->date_from) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+
+            // Filtro por fecha hasta
+            if ($request->has('date_to') && $request->date_to) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            // Buscador (por nombre de recurso, usuario, expediente)
+            if ($request->has('search') && $request->search) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('resource_name', 'like', "%{$search}%")
+                      ->orWhereHas('user', function($userQuery) use ($search) {
+                          $userQuery->where('name', 'like', "%{$search}%")
+                                    ->orWhere('email', 'like', "%{$search}%");
+                      })
+                      ->orWhereHas('registration', function($regQuery) use ($search) {
+                          $regQuery->where('product_name', 'like', "%{$search}%")
+                                   ->orWhere('registration_number', 'like', "%{$search}%");
+                      })
+                      ->orWhereHas('company', function($compQuery) use ($search) {
+                          $compQuery->where('name', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            $operations = $query->orderBy('created_at', 'desc')->paginate(20);
 
             return response()->json([
                 'success' => true,
@@ -1295,6 +1329,36 @@ class SettingsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener historial: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar registros del historial de operaciones de Google Drive
+     */
+    public function deleteDriveOperationsLog(Request $request)
+    {
+        try {
+            $ids = $request->input('ids', []);
+            
+            if (empty($ids) || !is_array($ids)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se proporcionaron IDs para eliminar',
+                ], 400);
+            }
+
+            $deleted = \App\Models\DriveOperationLog::whereIn('id', $ids)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Se eliminaron {$deleted} registro(s) del historial",
+                'deleted_count' => $deleted,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar registros: ' . $e->getMessage(),
             ], 500);
         }
     }
