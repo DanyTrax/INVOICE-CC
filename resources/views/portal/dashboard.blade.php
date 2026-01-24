@@ -224,10 +224,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         },
-        dayCellClassNames: function(date) {
-            var day = date.getDay();
-            return (day === 0 || day === 6) ? ['weekend-day'] : [];
-        }
     });
     
     calendar.render();

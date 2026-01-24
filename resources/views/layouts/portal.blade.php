@@ -25,6 +25,10 @@
         .fc-day-sat, .fc-day-sun {
             background-color: #fef2f2;
         }
+        .fc-daygrid-day.fc-day-sat,
+        .fc-daygrid-day.fc-day-sun {
+            background-color: #fef2f2;
+        }
         .fc-button {
             background-color: #0f766e !important;
             border-color: #0f766e !important;
