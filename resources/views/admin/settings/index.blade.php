@@ -2219,6 +2219,42 @@ function executeGitPull(branch) {
     });
 }
 
+// Probar conexión con Google Drive
+function testDriveConnection() {
+    const jsonField = document.getElementById('drive_service_account_json');
+    const jsonValue = jsonField.value.trim();
+    
+    if (!jsonValue) {
+        alert('Por favor, ingresa el JSON de Service Account primero.');
+        return;
+    }
+    
+    // Validar JSON básico
+    try {
+        const jsonData = JSON.parse(jsonValue);
+        if (jsonData.type !== 'service_account') {
+            alert('El JSON no corresponde a una Service Account de Google Cloud.');
+            return;
+        }
+        if (!jsonData.client_email) {
+            alert('El JSON no contiene el campo "client_email" requerido.');
+            return;
+        }
+    } catch (e) {
+        alert('El JSON proporcionado no es válido. Por favor, verifica el formato.\n\nError: ' + e.message);
+        return;
+    }
+    
+    // Mostrar información
+    const jsonData = JSON.parse(jsonValue);
+    const message = '✅ JSON válido\n\n' +
+                   'Service Account: ' + (jsonData.client_email || 'No encontrado') + '\n' +
+                   'Project ID: ' + (jsonData.project_id || 'No encontrado') + '\n\n' +
+                   '⚠️ Nota: Para probar la conexión real con Google Drive, necesitarías implementar una función en el servidor que use la API de Google Drive.';
+    
+    alert(message);
+}
+
 // Ejecutar Comando Artisan
 function executeArtisanCommand(command) {
     const outputDiv = document.getElementById('git-pull-output');
