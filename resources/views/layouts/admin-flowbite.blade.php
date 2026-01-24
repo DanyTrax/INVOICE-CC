@@ -375,8 +375,8 @@
     <style>
         /* Asegurar que los botones de SweetAlert2 sean siempre visibles y opacos */
         .swal2-styled.swal2-confirm {
-            background-color: #d33 !important;
-            background: #d33 !important;
+            background-color: #dc2626 !important;
+            background: #dc2626 !important;
             color: #ffffff !important;
             border: none !important;
             border: 0 !important;
@@ -384,15 +384,25 @@
             visibility: visible !important;
             font-weight: 600 !important;
             padding: 10px 24px !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4) !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
         }
         .swal2-styled.swal2-confirm:hover {
             background-color: #b91c1c !important;
             background: #b91c1c !important;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.6) !important;
+            transform: translateY(-1px) !important;
+        }
+        .swal2-styled.swal2-confirm:active {
+            background-color: #991b1b !important;
+            background: #991b1b !important;
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.4) !important;
         }
         .swal2-styled.swal2-cancel {
-            background-color: #6b7280 !important;
-            background: #6b7280 !important;
+            background-color: #4b5563 !important;
+            background: #4b5563 !important;
             color: #ffffff !important;
             border: none !important;
             border: 0 !important;
@@ -400,11 +410,21 @@
             visibility: visible !important;
             font-weight: 600 !important;
             padding: 10px 24px !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+            box-shadow: 0 2px 6px rgba(75, 85, 99, 0.4) !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
         }
         .swal2-styled.swal2-cancel:hover {
-            background-color: #4b5563 !important;
-            background: #4b5563 !important;
+            background-color: #374151 !important;
+            background: #374151 !important;
+            box-shadow: 0 4px 12px rgba(75, 85, 99, 0.6) !important;
+            transform: translateY(-1px) !important;
+        }
+        .swal2-styled.swal2-cancel:active {
+            background-color: #1f2937 !important;
+            background: #1f2937 !important;
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 4px rgba(75, 85, 99, 0.4) !important;
         }
         .swal2-styled.swal2-deny {
             background-color: #6b7280 !important;
@@ -434,14 +454,22 @@
         }
         /* Forzar colores en todos los estados */
         .swal2-popup .swal2-actions .swal2-styled {
-            background-color: #6b7280 !important;
-            background: #6b7280 !important;
+            background-color: #4b5563 !important;
+            background: #4b5563 !important;
             color: #ffffff !important;
         }
         .swal2-popup .swal2-actions .swal2-confirm {
-            background-color: #d33 !important;
-            background: #d33 !important;
+            background-color: #dc2626 !important;
+            background: #dc2626 !important;
             color: #ffffff !important;
+        }
+        .swal2-popup .swal2-actions .swal2-confirm:hover {
+            background-color: #b91c1c !important;
+            background: #b91c1c !important;
+        }
+        .swal2-popup .swal2-actions .swal2-cancel:hover {
+            background-color: #374151 !important;
+            background: #374151 !important;
         }
         /* Ocultar botón deny (No) si no se necesita */
         .swal2-styled.swal2-deny {
