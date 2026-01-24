@@ -269,6 +269,7 @@
                 html: `¿Estás seguro de eliminar el documento <strong>${fileName}</strong>?<br><br>Esta acción no se puede deshacer.`,
                 icon: 'warning',
                 showCancelButton: true,
+                showDenyButton: false,
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Sí, eliminar',

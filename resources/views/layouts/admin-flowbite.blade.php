@@ -443,6 +443,10 @@
             background: #d33 !important;
             color: #ffffff !important;
         }
+        /* Ocultar botón deny (No) si no se necesita */
+        .swal2-styled.swal2-deny {
+            display: none !important;
+        }
     </style>
 
     @stack('scripts')
