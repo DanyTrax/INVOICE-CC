@@ -205,8 +205,26 @@
         <!-- Tab 2: Google Drive -->
         <div id="panel-drive" class="tab-panel {{ $activeSection === 'drive' ? '' : 'hidden' }}">
             <div class="space-y-6">
-                <!-- Instructivo -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <!-- Submenú de Google Drive -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex space-x-4 border-b border-gray-200">
+                        <button onclick="switchDriveTab('config')" 
+                                id="drive-tab-config"
+                                class="drive-subtab px-6 py-3 text-sm font-medium border-b-2 border-teal-600 text-teal-600 focus:outline-none">
+                            <i class="fas fa-cog mr-2"></i> Configuración
+                        </button>
+                        <button onclick="switchDriveTab('history')" 
+                                id="drive-tab-history"
+                                class="drive-subtab px-6 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-history mr-2"></i> Historial de Operaciones
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panel de Configuración -->
+                <div id="drive-panel-config" class="drive-subpanel">
+                    <!-- Instructivo -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
                         <i class="fas fa-book text-teal-600 mr-2"></i>
                         Instructivo de Configuración
@@ -441,25 +459,28 @@
                         </div>
                     </form>
                 </div>
+                </div>
 
-                <!-- Historial de Operaciones -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">
-                            <i class="fas fa-history text-teal-600 mr-2"></i>
-                            Historial de Operaciones de Google Drive
-                        </h3>
-                        <button type="button" 
-                                onclick="loadDriveOperationsLog()"
-                                class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                            <i class="fas fa-sync-alt mr-1"></i> Actualizar
-                        </button>
-                    </div>
+                <!-- Panel de Historial -->
+                <div id="drive-panel-history" class="drive-subpanel hidden">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <i class="fas fa-history text-teal-600 mr-2"></i>
+                                Historial de Operaciones de Google Drive
+                            </h3>
+                            <button type="button" 
+                                    onclick="loadDriveOperationsLog()"
+                                    class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                <i class="fas fa-sync-alt mr-1"></i> Actualizar
+                            </button>
+                        </div>
 
-                    <div id="drive-operations-container" class="space-y-4">
-                        <div class="text-center py-8 text-gray-500">
-                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                            <p>Cargando historial...</p>
+                        <div id="drive-operations-container" class="space-y-4">
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>Cargando historial...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2644,6 +2665,38 @@ function showError(message) {
     alert('Error: ' + message);
 }
 
+// Cambiar entre tabs de Google Drive
+function switchDriveTab(tab) {
+    // Ocultar todos los paneles
+    document.querySelectorAll('.drive-subpanel').forEach(panel => {
+        panel.classList.add('hidden');
+    });
+    
+    // Desactivar todos los tabs
+    document.querySelectorAll('.drive-subtab').forEach(btn => {
+        btn.classList.remove('border-teal-600', 'text-teal-600');
+        btn.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Mostrar panel seleccionado
+    const panel = document.getElementById('drive-panel-' + tab);
+    if (panel) {
+        panel.classList.remove('hidden');
+    }
+    
+    // Activar tab seleccionado
+    const tabBtn = document.getElementById('drive-tab-' + tab);
+    if (tabBtn) {
+        tabBtn.classList.remove('border-transparent', 'text-gray-500');
+        tabBtn.classList.add('border-teal-600', 'text-teal-600');
+    }
+    
+    // Si se cambia al historial, cargarlo
+    if (tab === 'history') {
+        loadDriveOperationsLog();
+    }
+}
+
 // Cargar historial al entrar a la pestaña
 document.addEventListener('DOMContentLoaded', function() {
     const driveTab = document.getElementById('tab-drive');
@@ -2651,15 +2704,16 @@ document.addEventListener('DOMContentLoaded', function() {
         driveTab.addEventListener('click', function() {
             setTimeout(() => {
                 if (document.getElementById('panel-drive') && !document.getElementById('panel-drive').classList.contains('hidden')) {
-                    loadDriveOperationsLog();
+                    // Por defecto mostrar configuración
+                    switchDriveTab('config');
                 }
             }, 100);
         });
     }
     
-    // Si ya estamos en la pestaña drive, cargar inmediatamente
+    // Si ya estamos en la pestaña drive, mostrar configuración por defecto
     if (document.getElementById('panel-drive') && !document.getElementById('panel-drive').classList.contains('hidden')) {
-        loadDriveOperationsLog();
+        switchDriveTab('config');
     }
 });
 </script>
