@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\User;
 
 class Company extends Model
 {
@@ -33,5 +34,19 @@ class Company extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
+    }
+
+    /**
+     * Usuario registrado con el email de contacto (activo) para este cliente, si existe.
+     */
+    public function contactRegisteredUser(): ?User
+    {
+        if (!$this->contact_person_email) {
+            return null;
+        }
+        return $this->users()
+            ->where('email', $this->contact_person_email)
+            ->where('is_active', true)
+            ->first();
     }
 }

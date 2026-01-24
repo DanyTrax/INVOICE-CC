@@ -115,13 +115,13 @@ class EmailTemplateSeeder extends Seeder
                             </div>
                             
                             <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 30px 0 20px 0;">
-                                Para acceder al sistema y comenzar a gestionar tus expedientes, haz clic en el siguiente botón:
+                                Para <strong>registrarte</strong> y crear tu cuenta, haz clic en el siguiente botón. Este enlace es de <strong>un solo uso</strong> y expira en 7 días.
                             </p>
                             
                             <table width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td align="center" style="padding: 20px 0;">
-                                        <a href="{link}" style="display: inline-block; background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 16px;">Acceder al Sistema</a>
+                                        <a href="{link}" style="display: inline-block; background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 16px;">Registrarme</a>
                                     </td>
                                 </tr>
                             </table>
@@ -133,7 +133,7 @@ class EmailTemplateSeeder extends Seeder
                             
                             <div style="background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 15px; margin: 30px 0; border-radius: 4px;">
                                 <p style="color: #92400e; font-size: 13px; margin: 0;">
-                                    <strong>⚠️ Importante:</strong> Si no solicitaste esta cuenta, puedes ignorar este correo.
+                                    <strong>⚠️ Importante:</strong> Este enlace es de único uso. Si no solicitaste esta cuenta, puedes ignorar este correo.
                                 </p>
                             </div>
                         </td>

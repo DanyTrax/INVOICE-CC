@@ -78,7 +78,28 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <div class="flex items-center justify-end gap-2">
+                                <div class="flex items-center justify-end gap-2 flex-wrap">
+                                    @if($company->contact_person_email)
+                                        @php $contactUser = $company->contactRegisteredUser(); @endphp
+                                        @if($contactUser)
+                                            <a href="{{ route('login') }}?email={{ urlencode($company->contact_person_email) }}" 
+                                               class="text-green-600 hover:text-green-800" 
+                                               title="Acceder (ya registrado)">
+                                                <i class="fas fa-sign-in-alt"></i>
+                                            </a>
+                                        @else
+                                            <form action="{{ route('admin.companies.send-invite', $company) }}" 
+                                                  method="POST" 
+                                                  class="inline">
+                                                @csrf
+                                                <button type="submit" 
+                                                        class="text-amber-600 hover:text-amber-800" 
+                                                        title="Enviar invitación para registro">
+                                                    <i class="fas fa-envelope"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endif
                                     <a href="{{ route('admin.companies.show', $company) }}" 
                                        class="text-blue-600 hover:text-blue-800" 
                                        title="Ver">

@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Models\CompanyInvite;
 use App\Services\GoogleDriveService;
+use App\Services\MailService;
+use App\Services\EmailTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -73,7 +76,16 @@ class CompanyController extends Controller
             }
         }
 
-        Company::create($validated);
+        $company = Company::create($validated);
+
+        if ($sendInvite && !empty($validated['contact_person_email'])) {
+            $sent = $this->sendCompanyInviteEmail($company, $validated['contact_person_email'], $validated['contact_person_name'] ?? $validated['name']);
+            if ($sent) {
+                return redirect()
+                    ->route('admin.companies.index')
+                    ->with('success', 'Cliente creado exitosamente. Se envió correo de invitación para registro.');
+            }
+        }
 
         return redirect()
             ->route('admin.companies.index')
@@ -154,5 +166,67 @@ class CompanyController extends Controller
         return redirect()
             ->route('admin.companies.index')
             ->with('success', 'Cliente eliminado exitosamente.');
+    }
+
+    /**
+     * Enviar correo de invitación para registro (link de unico uso).
+     */
+    public function sendInvite(Company $company)
+    {
+        if (!$company->contact_person_email) {
+            return redirect()
+                ->route('admin.companies.index')
+                ->with('error', 'El cliente no tiene email de contacto. Edítalo y añade uno.');
+        }
+
+        $sent = $this->sendCompanyInviteEmail(
+            $company,
+            $company->contact_person_email,
+            $company->contact_person_name ?? $company->name
+        );
+
+        if ($sent) {
+            return redirect()
+                ->route('admin.companies.index')
+                ->with('success', 'Correo de invitación enviado a ' . $company->contact_person_email);
+        }
+
+        return redirect()
+            ->route('admin.companies.index')
+            ->with('error', 'No se pudo enviar el correo. Revisa la configuración de correo en Configuración.');
+    }
+
+    /**
+     * Crear invitación, procesar plantilla y enviar correo.
+     */
+    protected function sendCompanyInviteEmail(Company $company, string $email, string $name): bool
+    {
+        try {
+            $invite = CompanyInvite::createForCompany($company, $email);
+            $link = url('/registrarse?token=' . $invite->token);
+
+            $templateService = app(EmailTemplateService::class);
+            $result = $templateService->processTemplate('client_invitation', [
+                'name' => $name,
+                'email' => $email,
+                'company_name' => $company->name,
+                'link' => $link,
+            ]);
+
+            if (!$result) {
+                Log::warning('Plantilla client_invitation no encontrada');
+                return false;
+            }
+
+            $mailService = app(MailService::class);
+            return $mailService->send($email, $result['subject'], $result['body']);
+        } catch (\Exception $e) {
+            Log::error('Error al enviar invitación de cliente', [
+                'company_id' => $company->id,
+                'email' => $email,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 }

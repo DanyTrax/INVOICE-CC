@@ -1,4 +1,4 @@
-# RAMS - Regulatory Affairs Management System
+pul# RAMS - Regulatory Affairs Management System
 
 Sistema SAAS para gestión de expedientes regulatorios sanitarios construido con **Laravel 12** y **FilamentPHP v5**.
 

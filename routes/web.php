@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ClientRegisterController;
 
 // Redirigir raíz al dashboard
 Route::get('/', function () {
@@ -18,11 +19,16 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+// Registro por invitación (link de único uso, guest)
+Route::get('/registrarse', [ClientRegisterController::class, 'show'])->name('client.register');
+Route::post('/registrarse', [ClientRegisterController::class, 'store']);
+
 // Rutas Admin (requieren autenticación)
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // Companies
+    Route::post('companies/{company}/send-invite', [CompanyController::class, 'sendInvite'])->name('companies.send-invite');
     Route::resource('companies', CompanyController::class);
     
     // Registrations

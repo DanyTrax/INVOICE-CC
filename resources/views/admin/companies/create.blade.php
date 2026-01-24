@@ -120,6 +120,22 @@
                            placeholder="Opcional: ID de la carpeta en Google Drive"
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                 </div>
+
+                <!-- Enviar correo de invitación -->
+                <div class="md:col-span-2">
+                    <div class="flex items-start">
+                        <input type="checkbox" 
+                               id="send_invite_email" 
+                               name="send_invite_email" 
+                               value="1"
+                               {{ old('send_invite_email') ? 'checked' : '' }}
+                               class="mt-1 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="send_invite_email" class="ml-2 block text-sm text-gray-900">
+                            <span class="font-medium">Enviar correo de invitación para registro</span>
+                            <span class="block text-gray-500 mt-0.5">Se enviará un enlace de un solo uso al <strong>email de contacto</strong> para que el cliente se registre y acceda al sistema. Debe tener email de contacto.</span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Botones -->

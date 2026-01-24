@@ -142,6 +142,18 @@
                 <p class="text-gray-600 mt-2">Inicia sesión para continuar</p>
             </div>
 
+            <!-- Flash success / error (p. ej. tras registro por invitación) -->
+            @if (session('success'))
+                <div class="mb-4 p-4 text-sm text-green-800 bg-green-50 border border-green-200 rounded-lg">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="mb-4 p-4 text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <!-- Errors -->
             @if ($errors->any())
                 <div class="mb-4 p-4 text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg">
@@ -166,7 +178,7 @@
                         <input type="email" id="email" name="email" 
                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full pl-10 p-2.5" 
                                placeholder="tu@email.com" 
-                               value="{{ old('email') }}" 
+                               value="{{ old('email', request('email')) }}" 
                                required autofocus>
                     </div>
                 </div>
