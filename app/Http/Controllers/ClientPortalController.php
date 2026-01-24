@@ -42,7 +42,27 @@ class ClientPortalController extends Controller
 
     public function dashboard(Request $request)
     {
+        // Obtener IDs de empresas del cliente autenticado
         $companyIds = auth()->user()->companies()->pluck('companies.id');
+        
+        // Si el cliente no tiene empresas asignadas, no mostrar nada
+        if ($companyIds->isEmpty()) {
+            $vigentes = 0;
+            $enTramite = 0;
+            $requerimiento = 0;
+            $vencidos = 0;
+            $proximosVencer = 0;
+            $registrations = collect();
+            $calendarRegistrations = collect();
+            $calendarEvents = [];
+            
+            return view('portal.dashboard', compact(
+                'vigentes', 'enTramite', 'requerimiento', 'vencidos', 'proximosVencer',
+                'registrations', 'calendarRegistrations', 'calendarEvents'
+            ));
+        }
+        
+        // Query base filtrado por empresas del cliente
         $base = Registration::whereIn('company_id', $companyIds);
 
         $vigentes = (clone $base)->where('status', 'vigente')->count();
@@ -67,8 +87,8 @@ class ClientPortalController extends Controller
             ->orderByRaw('COALESCE(expiration_date, response_limit_date) ASC')
             ->get();
 
-        // Eventos para FullCalendar (formato JSON)
-        $calendarEvents = $this->getCalendarEvents($base);
+        // Eventos para FullCalendar (formato JSON) - solo del cliente
+        $calendarEvents = $this->getCalendarEvents($base, $companyIds);
 
         return view('portal.dashboard', compact(
             'vigentes', 'enTramite', 'requerimiento', 'vencidos', 'proximosVencer',
@@ -128,17 +148,26 @@ class ClientPortalController extends Controller
     /**
      * Generar eventos para FullCalendar (solo expedientes del cliente).
      */
-    protected function getCalendarEvents($baseQuery)
+    protected function getCalendarEvents($baseQuery, $companyIds)
     {
         $events = [];
+
+        // Asegurar que el query base esté filtrado por las empresas del cliente
+        // (por si acaso el clone no mantiene el filtro)
+        $baseQuery = Registration::whereIn('company_id', $companyIds);
 
         // Vencimientos (rojo)
         $expirations = (clone $baseQuery)
             ->whereNotNull('expiration_date')
-            ->select('id', 'product_name', 'expiration_date')
+            ->select('id', 'product_name', 'expiration_date', 'company_id')
             ->get();
 
         foreach ($expirations as $reg) {
+            // Verificación adicional: asegurar que pertenece a una empresa del cliente
+            if (!$companyIds->contains($reg->company_id)) {
+                continue;
+            }
+            
             $events[] = [
                 'id' => 'exp-' . $reg->id,
                 'title' => 'Vence: ' . \Str::limit($reg->product_name, 30),
@@ -157,10 +186,15 @@ class ClientPortalController extends Controller
         $requerimientos = (clone $baseQuery)
             ->where('status', 'requerimiento')
             ->whereNotNull('response_limit_date')
-            ->select('id', 'product_name', 'response_limit_date')
+            ->select('id', 'product_name', 'response_limit_date', 'company_id')
             ->get();
 
         foreach ($requerimientos as $reg) {
+            // Verificación adicional: asegurar que pertenece a una empresa del cliente
+            if (!$companyIds->contains($reg->company_id)) {
+                continue;
+            }
+            
             $events[] = [
                 'id' => 'req-' . $reg->id,
                 'title' => 'Requerimiento: ' . \Str::limit($reg->product_name, 25),
@@ -182,10 +216,15 @@ class ClientPortalController extends Controller
                 $q->where('status', '!=', 'requerimiento')
                   ->orWhereNull('status');
             })
-            ->select('id', 'product_name', 'response_limit_date')
+            ->select('id', 'product_name', 'response_limit_date', 'company_id')
             ->get();
 
         foreach ($responseLimits as $reg) {
+            // Verificación adicional: asegurar que pertenece a una empresa del cliente
+            if (!$companyIds->contains($reg->company_id)) {
+                continue;
+            }
+            
             $events[] = [
                 'id' => 'resp-' . $reg->id,
                 'title' => 'Límite respuesta: ' . \Str::limit($reg->product_name, 25),
