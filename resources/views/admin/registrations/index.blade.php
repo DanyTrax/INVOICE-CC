@@ -96,7 +96,7 @@
                                 {{ $registration->product_name }}
                             </td>
                             <td class="px-6 py-4">
-                                {{ $registration->company->name ?? '-' }}
+                                {{ $registration->company?->name ?? 'Sin asignar' }}
                             </td>
                             <td class="px-6 py-4">
                                 @php

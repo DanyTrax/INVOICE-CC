@@ -43,9 +43,13 @@
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Cliente</dt>
                         <dd class="mt-1 text-sm text-gray-900">
-                            <a href="{{ route('admin.companies.show', $registration->company) }}" class="text-teal-600 hover:text-teal-700">
-                                {{ $registration->company->name ?? '-' }}
-                            </a>
+                            @if($registration->company)
+                                <a href="{{ route('admin.companies.show', $registration->company) }}" class="text-teal-600 hover:text-teal-700">
+                                    {{ $registration->company->name }}
+                                </a>
+                            @else
+                                <span class="text-gray-500">Sin asignar</span>
+                            @endif
                         </dd>
                     </div>
                     <div>
