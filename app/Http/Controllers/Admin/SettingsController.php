@@ -108,8 +108,17 @@ class SettingsController extends Controller
                 break;
         }
 
+        // Redirigir a la misma sección donde se guardó
+        $redirectSection = $section;
+        
+        // Para casos especiales, mantener la sección actual
+        if ($section === 'email_template' || $section === 'test_email') {
+            // Estos casos ya manejan su propia redirección
+            $redirectSection = $request->input('current_section', 'agency');
+        }
+        
         $redirect = redirect()
-            ->route('admin.settings.index')
+            ->route('admin.settings.section', $redirectSection)
             ->with('success', 'Configuración actualizada exitosamente.');
         
         // Si hay un tab específico, agregarlo a la URL
