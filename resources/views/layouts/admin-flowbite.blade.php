@@ -376,34 +376,45 @@
         /* Asegurar que los botones de SweetAlert2 sean siempre visibles y opacos */
         .swal2-styled.swal2-confirm {
             background-color: #d33 !important;
+            background: #d33 !important;
             color: #ffffff !important;
             border: none !important;
+            border: 0 !important;
             opacity: 1 !important;
             visibility: visible !important;
             font-weight: 600 !important;
             padding: 10px 24px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
         }
         .swal2-styled.swal2-confirm:hover {
             background-color: #b91c1c !important;
+            background: #b91c1c !important;
         }
         .swal2-styled.swal2-cancel {
             background-color: #6b7280 !important;
+            background: #6b7280 !important;
             color: #ffffff !important;
             border: none !important;
+            border: 0 !important;
             opacity: 1 !important;
             visibility: visible !important;
             font-weight: 600 !important;
             padding: 10px 24px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
         }
         .swal2-styled.swal2-cancel:hover {
             background-color: #4b5563 !important;
+            background: #4b5563 !important;
         }
         .swal2-styled.swal2-deny {
             background-color: #6b7280 !important;
+            background: #6b7280 !important;
             color: #ffffff !important;
             border: none !important;
+            border: 0 !important;
             opacity: 1 !important;
             visibility: visible !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
         }
         .swal2-actions {
             display: flex !important;
@@ -415,10 +426,22 @@
             visibility: visible !important;
             display: inline-block !important;
         }
-        /* Asegurar que los botones no sean transparentes */
+        /* Asegurar que los botones no sean transparentes ni blancos */
         .swal2-popup .swal2-actions button {
             opacity: 1 !important;
             background-color: inherit !important;
+            color: #ffffff !important;
+        }
+        /* Forzar colores en todos los estados */
+        .swal2-popup .swal2-actions .swal2-styled {
+            background-color: #6b7280 !important;
+            background: #6b7280 !important;
+            color: #ffffff !important;
+        }
+        .swal2-popup .swal2-actions .swal2-confirm {
+            background-color: #d33 !important;
+            background: #d33 !important;
+            color: #ffffff !important;
         }
     </style>
 
