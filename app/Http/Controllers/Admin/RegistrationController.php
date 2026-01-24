@@ -257,7 +257,7 @@ class RegistrationController extends Controller
     /**
      * Ver documento en el navegador (inline).
      */
-    public function viewDocument(Registration $registration, Document $document): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+    public function viewDocument(Registration $registration, Document $document): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
     {
         if ($document->registration_id !== $registration->id) {
             abort(404);

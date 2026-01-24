@@ -389,24 +389,21 @@
                             @if($hasLocal)
                                 <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
                                    target="_blank"
-                                   class="px-3 py-1.5 text-xs font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 flex items-center gap-1.5"
+                                   class="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                                    title="Ver documento">
                                     <i class="fas fa-eye"></i>
-                                    <span>Ver</span>
                                 </a>
                                 <a href="{{ route('admin.registrations.documents.download', [$registration, $document]) }}" 
-                                   class="px-3 py-1.5 text-xs font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 flex items-center gap-1.5"
+                                   class="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                                    title="Descargar documento">
                                     <i class="fas fa-download"></i>
-                                    <span>Descargar</span>
                                 </a>
                             @elseif($document->drive_id)
                                 <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
                                    target="_blank"
-                                   class="px-3 py-1.5 text-xs font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 flex items-center gap-1.5"
+                                   class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                                    title="Ver en Google Drive (legacy)">
                                     <i class="fas fa-external-link-alt"></i>
-                                    <span>Ver (Drive)</span>
                                 </a>
                             @endif
                         </div>

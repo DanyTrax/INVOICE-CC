@@ -205,38 +205,35 @@
                                     @if($hasLocal)
                                         <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
                                            target="_blank"
-                                           class="px-3 py-1.5 text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 flex items-center gap-1.5"
+                                           class="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                                            title="Ver documento">
-                                            <i class="fas fa-eye text-xs"></i>
-                                            <span>Ver</span>
+                                            <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="{{ route('admin.registrations.documents.download', [$registration, $document]) }}" 
-                                           class="px-3 py-1.5 text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 flex items-center gap-1.5"
+                                           class="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                                            title="Descargar documento">
-                                            <i class="fas fa-download text-xs"></i>
-                                            <span>Descargar</span>
+                                            <i class="fas fa-download"></i>
                                         </a>
                                     @elseif($document->drive_id)
                                         <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
                                            target="_blank"
-                                           class="px-3 py-1.5 text-sm font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 flex items-center gap-1.5"
+                                           class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                                            title="Ver en Google Drive (legacy)">
-                                            <i class="fas fa-external-link-alt text-xs"></i>
-                                            <span>Ver (Drive)</span>
+                                            <i class="fas fa-external-link-alt"></i>
                                         </a>
                                     @endif
-                                    <form action="{{ route('admin.registrations.documents.destroy', [$registration, $document]) }}" 
+                                    <button type="button" 
+                                            onclick="confirmDeleteDocument({{ $document->id }}, '{{ addslashes($document->file_name) }}')"
+                                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Eliminar documento">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <form id="delete-document-form-{{ $document->id }}" 
+                                          action="{{ route('admin.registrations.documents.destroy', [$registration, $document]) }}" 
                                           method="POST" 
-                                          class="inline"
-                                          onsubmit="return confirm('¿Eliminar este documento?');">
+                                          class="hidden">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" 
-                                                class="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 flex items-center gap-1.5"
-                                                title="Eliminar documento">
-                                            <i class="fas fa-trash text-xs"></i>
-                                            <span>Eliminar</span>
-                                        </button>
                                     </form>
                                 </div>
                             </li>
@@ -264,4 +261,24 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function confirmDeleteDocument(documentId, fileName) {
+            Swal.fire({
+                title: '¿Eliminar documento?',
+                html: `¿Estás seguro de eliminar el documento <strong>${fileName}</strong>?<br><br>Esta acción no se puede deshacer.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-document-form-' + documentId).submit();
+                }
+            });
+        }
+    </script>
 @endsection
