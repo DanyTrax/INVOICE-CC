@@ -370,6 +370,57 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Estilos para botones de SweetAlert2 - asegurar visibilidad -->
+    <style>
+        /* Asegurar que los botones de SweetAlert2 sean siempre visibles y opacos */
+        .swal2-styled.swal2-confirm {
+            background-color: #d33 !important;
+            color: #ffffff !important;
+            border: none !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            font-weight: 600 !important;
+            padding: 10px 24px !important;
+        }
+        .swal2-styled.swal2-confirm:hover {
+            background-color: #b91c1c !important;
+        }
+        .swal2-styled.swal2-cancel {
+            background-color: #6b7280 !important;
+            color: #ffffff !important;
+            border: none !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            font-weight: 600 !important;
+            padding: 10px 24px !important;
+        }
+        .swal2-styled.swal2-cancel:hover {
+            background-color: #4b5563 !important;
+        }
+        .swal2-styled.swal2-deny {
+            background-color: #6b7280 !important;
+            color: #ffffff !important;
+            border: none !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        .swal2-actions {
+            display: flex !important;
+            gap: 10px !important;
+            margin-top: 20px !important;
+        }
+        .swal2-styled {
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-block !important;
+        }
+        /* Asegurar que los botones no sean transparentes */
+        .swal2-popup .swal2-actions button {
+            opacity: 1 !important;
+            background-color: inherit !important;
+        }
+    </style>
 
     @stack('scripts')
     

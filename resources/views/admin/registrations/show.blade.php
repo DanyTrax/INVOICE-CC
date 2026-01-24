@@ -273,7 +273,8 @@
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar',
-                reverseButtons: true
+                reverseButtons: true,
+                buttonsStyling: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     document.getElementById('delete-document-form-' + documentId).submit();
