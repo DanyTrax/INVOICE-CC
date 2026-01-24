@@ -21,7 +21,7 @@
 
 @section('content')
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <form action="{{ route('admin.registrations.store') }}" method="POST" id="registration-form">
+        <form action="{{ route('admin.registrations.store') }}" method="POST" id="registration-form" enctype="multipart/form-data">
             @csrf
 
             <!-- Sección 1: Información del Cliente -->
@@ -400,4 +400,48 @@
             </div>
         </form>
     </div>
+
+    @push('scripts')
+    <script>
+        function updateFileList(input) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            
+            if (input.files && input.files.length > 0) {
+                Array.from(input.files).forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3';
+                    fileItem.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-file text-teal-600"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">${file.name}</p>
+                                <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="removeFile(${index})" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    fileList.appendChild(fileItem);
+                });
+            }
+        }
+
+        function removeFile(index) {
+            const input = document.getElementById('documents');
+            const dt = new DataTransfer();
+            const files = Array.from(input.files);
+            
+            files.forEach((file, i) => {
+                if (i !== index) {
+                    dt.items.add(file);
+                }
+            });
+            
+            input.files = dt.files;
+            updateFileList(input);
+        }
+    </script>
+    @endpush
 @endsection

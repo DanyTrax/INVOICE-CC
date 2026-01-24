@@ -91,9 +91,51 @@ class RegistrationController extends Controller
             'key_code' => 'nullable|string|max:100',
             'resolution_number' => 'nullable|string|max:100',
             'drive_folder_url' => 'nullable|string|max:500',
+            'documents' => 'nullable|array',
+            'documents.*' => 'file|max:10240', // 10MB máximo
         ]);
 
-        Registration::create($validated);
+        // Crear carpeta en Google Drive para el expediente
+        $company = Company::find($validated['company_id']);
+        $driveFolderId = null;
+        $driveFolderUrl = null;
+
+        try {
+            $driveService = app(GoogleDriveService::class);
+            
+            // Nombre de la carpeta del expediente
+            $folderName = $validated['product_name'] . ' - ' . ($validated['registration_number'] ?? 'Sin Número');
+            
+            // Si el cliente tiene carpeta, crear dentro de ella, sino crear temporal
+            $parentFolderId = $company->drive_folder_id;
+            
+            $folder = $driveService->createFolder($folderName, $parentFolderId);
+            $driveFolderId = $folder['id'];
+            $driveFolderUrl = $folder['webViewLink'];
+            
+            $validated['drive_folder_id'] = $driveFolderId;
+            $validated['drive_folder_url'] = $driveFolderUrl;
+            
+            Log::info('Carpeta de Google Drive creada para expediente', [
+                'registration_name' => $validated['product_name'],
+                'folder_id' => $driveFolderId,
+                'company_id' => $company->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al crear carpeta en Google Drive para expediente', [
+                'registration_name' => $validated['product_name'],
+                'error' => $e->getMessage(),
+            ]);
+            // Continuar sin carpeta si hay error
+        }
+
+        // Crear el registro
+        $registration = Registration::create($validated);
+
+        // Procesar documentos subidos
+        if ($request->hasFile('documents')) {
+            $this->uploadDocuments($registration, $request->file('documents'), $driveFolderId);
+        }
 
         return redirect()
             ->route('admin.registrations.index')
@@ -111,7 +153,7 @@ class RegistrationController extends Controller
     {
         $companies = Company::orderBy('name')->get();
         $specialists = User::where('is_active', true)->orderBy('name')->get();
-        $registration->load(['company', 'assignedSpecialist']);
+        $registration->load(['company', 'assignedSpecialist', 'documents']);
         
         return view('admin.registrations.edit', compact('registration', 'companies', 'specialists'));
     }
@@ -141,13 +183,149 @@ class RegistrationController extends Controller
             'key_code' => 'nullable|string|max:100',
             'resolution_number' => 'nullable|string|max:100',
             'drive_folder_url' => 'nullable|string|max:500',
+            'documents' => 'nullable|array',
+            'documents.*' => 'file|max:10240', // 10MB máximo
         ]);
 
+        $oldCompanyId = $registration->company_id;
+        $oldDriveFolderId = $registration->drive_folder_id;
+
+        // Si cambió el cliente, transferir documentos
+        if ($validated['company_id'] != $oldCompanyId) {
+            try {
+                $newCompany = Company::find($validated['company_id']);
+                $oldCompany = Company::find($oldCompanyId);
+                
+                if ($newCompany && $newCompany->drive_folder_id && $oldDriveFolderId) {
+                    $driveService = app(GoogleDriveService::class);
+                    
+                    // Si el nuevo cliente tiene carpeta, mover el contenido
+                    if ($newCompany->drive_folder_id) {
+                        // Renombrar carpeta del expediente si es necesario
+                        $folderName = $validated['product_name'] . ' - ' . ($validated['registration_number'] ?? 'Sin Número');
+                        
+                        // Mover todos los archivos de la carpeta temporal a la carpeta del cliente
+                        $driveService->moveFolderContents($oldDriveFolderId, $newCompany->drive_folder_id);
+                        
+                        // Actualizar la carpeta del expediente para que esté dentro de la carpeta del cliente
+                        // (Esto requiere actualizar el parent de la carpeta, lo cual es más complejo)
+                        // Por ahora, los archivos se moverán a la carpeta del cliente directamente
+                        
+                        Log::info('Documentos transferidos a nuevo cliente', [
+                            'registration_id' => $registration->id,
+                            'old_company_id' => $oldCompanyId,
+                            'new_company_id' => $validated['company_id'],
+                        ]);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Error al transferir documentos a nuevo cliente', [
+                    'registration_id' => $registration->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Continuar sin transferir si hay error
+            }
+        }
+
+        // Si no tiene carpeta y ahora tiene cliente, crear carpeta
+        if (!$registration->drive_folder_id && $validated['company_id']) {
+            try {
+                $company = Company::find($validated['company_id']);
+                $driveService = app(GoogleDriveService::class);
+                
+                $folderName = $validated['product_name'] . ' - ' . ($validated['registration_number'] ?? 'Sin Número');
+                $parentFolderId = $company->drive_folder_id;
+                
+                $folder = $driveService->createFolder($folderName, $parentFolderId);
+                $validated['drive_folder_id'] = $folder['id'];
+                $validated['drive_folder_url'] = $folder['webViewLink'];
+            } catch (\Exception $e) {
+                Log::error('Error al crear carpeta para expediente actualizado', [
+                    'registration_id' => $registration->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         $registration->update($validated);
+
+        // Procesar documentos subidos
+        if ($request->hasFile('documents')) {
+            $this->uploadDocuments($registration, $request->file('documents'), $registration->drive_folder_id);
+        }
 
         return redirect()
             ->route('admin.registrations.index')
             ->with('success', 'Expediente actualizado exitosamente.');
+    }
+
+    /**
+     * Subir documentos a Google Drive y guardar en BD
+     */
+    protected function uploadDocuments(Registration $registration, array $files, $driveFolderId = null)
+    {
+        if (!$driveFolderId) {
+            $driveFolderId = $registration->drive_folder_id;
+        }
+
+        if (!$driveFolderId) {
+            Log::warning('No se puede subir documentos: el expediente no tiene carpeta en Drive', [
+                'registration_id' => $registration->id,
+            ]);
+            return;
+        }
+
+        try {
+            $driveService = app(GoogleDriveService::class);
+            
+            foreach ($files as $file) {
+                // Guardar archivo temporalmente
+                $tempPath = $file->store('temp', 'local');
+                $fullPath = storage_path('app/' . $tempPath);
+                
+                try {
+                    // Subir a Google Drive
+                    $driveFile = $driveService->uploadFile(
+                        $fullPath,
+                        $file->getClientOriginalName(),
+                        $driveFolderId,
+                        $file->getMimeType()
+                    );
+                    
+                    // Guardar en BD
+                    Document::create([
+                        'registration_id' => $registration->id,
+                        'uploaded_by_id' => auth()->id(),
+                        'file_path' => $tempPath, // Mantener referencia local
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_type' => $file->getMimeType(),
+                        'drive_id' => $driveFile['id'],
+                    ]);
+                    
+                    Log::info('Documento subido a Google Drive', [
+                        'registration_id' => $registration->id,
+                        'file_name' => $file->getClientOriginalName(),
+                        'drive_id' => $driveFile['id'],
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Error al subir documento a Google Drive', [
+                        'registration_id' => $registration->id,
+                        'file_name' => $file->getClientOriginalName(),
+                        'error' => $e->getMessage(),
+                    ]);
+                } finally {
+                    // Eliminar archivo temporal
+                    if (file_exists($fullPath)) {
+                        unlink($fullPath);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error en uploadDocuments', [
+                'registration_id' => $registration->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function destroy(Registration $registration)

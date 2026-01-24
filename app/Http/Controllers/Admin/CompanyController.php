@@ -47,6 +47,28 @@ class CompanyController extends Controller
             'drive_folder_id' => 'nullable|string|max:255',
         ]);
 
+        // Crear carpeta en Google Drive si está configurado
+        if (empty($validated['drive_folder_id'])) {
+            try {
+                $driveService = app(GoogleDriveService::class);
+                $folderName = $validated['name'] . ' - ' . ($validated['nit_rut'] ?? 'Sin NIT');
+                
+                $folder = $driveService->createFolder($folderName);
+                $validated['drive_folder_id'] = $folder['id'];
+                
+                Log::info('Carpeta de Google Drive creada para cliente', [
+                    'company_name' => $validated['name'],
+                    'folder_id' => $folder['id'],
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error al crear carpeta en Google Drive para cliente', [
+                    'company_name' => $validated['name'],
+                    'error' => $e->getMessage(),
+                ]);
+                // Continuar sin carpeta si hay error
+            }
+        }
+
         Company::create($validated);
 
         return redirect()

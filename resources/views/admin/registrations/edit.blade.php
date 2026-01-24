@@ -21,7 +21,7 @@
 
 @section('content')
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <form action="{{ route('admin.registrations.update', $registration) }}" method="POST">
+        <form action="{{ route('admin.registrations.update', $registration) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -362,24 +362,104 @@
                 </div>
             </div>
 
-            <!-- Sección 5: Google Drive -->
+            <!-- Sección 5: Documentos Existentes -->
+            @if($registration->documents && $registration->documents->count() > 0)
             <div class="mb-8">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
-                    <span class="text-teal-600">5.</span> Documentos en Google Drive
+                    <span class="text-teal-600">5.</span> Documentos Existentes
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @foreach($registration->documents as $document)
+                    <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-file text-teal-600"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $document->file_name }}</p>
+                                <p class="text-xs text-gray-500">
+                                    Subido: {{ $document->created_at->format('d/m/Y H:i') }}
+                                </p>
+                            </div>
+                        </div>
+                        @if($document->drive_id)
+                        <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
+                           target="_blank"
+                           class="text-teal-600 hover:text-teal-800">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <!-- Sección 6: Agregar Documentos -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                    <span class="text-teal-600">{{ $registration->documents && $registration->documents->count() > 0 ? '6' : '5' }}.</span> Agregar Documentos
                 </h3>
                 <div>
-                    <label for="drive_folder_url" class="block mb-2 text-sm font-medium text-gray-900">
-                        URL de Carpeta en Drive
+                    <label for="documents" class="block mb-2 text-sm font-medium text-gray-900">
+                        Subir Documentos <span class="text-gray-500">(Opcional)</span>
                     </label>
-                    <input type="url" 
-                           id="drive_folder_url" 
-                           name="drive_folder_url" 
-                           value="{{ old('drive_folder_url', $registration->drive_folder_url) }}"
-                           placeholder="https://drive.google.com/drive/folders/..."
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                    <p class="mt-1 text-xs text-gray-500">
-                        La carpeta se creará automáticamente en: /RAMS/{Cliente}/{Expediente}/
+                    <div class="flex items-center justify-center w-full">
+                        <label for="documents" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                                <p class="mb-2 text-sm text-gray-500">
+                                    <span class="font-semibold">Clic para seleccionar</span> o arrastra archivos aquí
+                                </p>
+                                <p class="text-xs text-gray-500">PDF, DOC, DOCX, XLS, XLSX, imágenes (Máx. 10MB por archivo)</p>
+                            </div>
+                            <input type="file" 
+                                   id="documents" 
+                                   name="documents[]" 
+                                   multiple
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                                   class="hidden"
+                                   onchange="updateFileList(this)">
+                        </label>
+                    </div>
+                    <div id="file-list" class="mt-4 space-y-2"></div>
+                    <p class="mt-2 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Los documentos se subirán automáticamente a Google Drive en la carpeta del expediente.
                     </p>
+                </div>
+            </div>
+
+            <!-- Sección 7: Google Drive Info -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                    <span class="text-teal-600">{{ $registration->documents && $registration->documents->count() > 0 ? '7' : '6' }}.</span> Información de Google Drive
+                </h3>
+                <div class="space-y-3">
+                    @if($registration->drive_folder_url)
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p class="text-sm text-green-800 mb-2">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <strong>Carpeta creada:</strong>
+                        </p>
+                        <a href="{{ $registration->drive_folder_url }}" 
+                           target="_blank"
+                           class="text-sm text-green-700 hover:underline break-all">
+                            {{ $registration->drive_folder_url }}
+                        </a>
+                    </div>
+                    @else
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p class="text-sm text-yellow-800">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            <strong>Nota:</strong> La carpeta en Google Drive se creará automáticamente cuando guardes el expediente.
+                        </p>
+                    </div>
+                    @endif
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Si cambias el cliente, los documentos se transferirán automáticamente a la carpeta del nuevo cliente.
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -396,4 +476,48 @@
             </div>
         </form>
     </div>
+
+    @push('scripts')
+    <script>
+        function updateFileList(input) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            
+            if (input.files && input.files.length > 0) {
+                Array.from(input.files).forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3';
+                    fileItem.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-file text-teal-600"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">${file.name}</p>
+                                <p class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="removeFile(${index})" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    fileList.appendChild(fileItem);
+                });
+            }
+        }
+
+        function removeFile(index) {
+            const input = document.getElementById('documents');
+            const dt = new DataTransfer();
+            const files = Array.from(input.files);
+            
+            files.forEach((file, i) => {
+                if (i !== index) {
+                    dt.items.add(file);
+                }
+            });
+            
+            input.files = dt.files;
+            updateFileList(input);
+        }
+    </script>
+    @endpush
 @endsection

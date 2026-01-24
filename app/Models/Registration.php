@@ -35,6 +35,7 @@ class Registration extends Model implements AuditableContract
         'key_code',
         'resolution_number',
         'drive_folder_url',
+        'drive_folder_id',
     ];
 
     protected function casts(): array
