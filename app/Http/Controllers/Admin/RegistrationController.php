@@ -432,8 +432,23 @@ class RegistrationController extends Controller
                     }
                 }
                 
-                // Generar nombre único para el archivo temporal
+                // Obtener información del archivo ANTES de moverlo
                 $originalName = $file->getClientOriginalName();
+                $originalMimeType = $file->getMimeType();
+                $originalSize = null;
+                
+                // Intentar obtener el tamaño antes de mover
+                try {
+                    $originalSize = $file->getSize();
+                } catch (\Exception $e) {
+                    // Si falla, intentar desde el path real
+                    $realPath = $file->getRealPath();
+                    if ($realPath && file_exists($realPath)) {
+                        $originalSize = filesize($realPath);
+                    }
+                }
+                
+                // Generar nombre único para el archivo temporal
                 $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
                 $baseName = pathinfo($originalName, PATHINFO_FILENAME);
                 $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $baseName);
@@ -444,12 +459,33 @@ class RegistrationController extends Controller
                 
                 // Intentar mover el archivo subido
                 if ($file->isValid()) {
+                    // Obtener el path real antes de mover
+                    $realPath = $file->getRealPath();
+                    
                     // Usar el método move() de Laravel que es más confiable
                     $moved = $file->move($tempDir, $uniqueName);
                     
                     if (!$moved || !file_exists($fullPath)) {
-                        // Si move() falla, intentar copiar el contenido
-                        $fileContent = file_get_contents($file->getRealPath());
+                        // Si move() falla, intentar copiar el contenido desde el path real
+                        if ($realPath && file_exists($realPath)) {
+                            $fileContent = file_get_contents($realPath);
+                            if ($fileContent === false) {
+                                throw new \Exception("No se pudo leer el contenido del archivo: {$originalName}");
+                            }
+                            
+                            $written = file_put_contents($fullPath, $fileContent);
+                            if ($written === false) {
+                                throw new \Exception("No se pudo escribir el archivo temporal: {$originalName}");
+                            }
+                        } else {
+                            throw new \Exception("No se pudo acceder al archivo subido: {$originalName}");
+                        }
+                    }
+                } else {
+                    // Si el archivo no es válido, intentar copiar directamente desde el path real
+                    $realPath = $file->getRealPath();
+                    if ($realPath && file_exists($realPath)) {
+                        $fileContent = file_get_contents($realPath);
                         if ($fileContent === false) {
                             throw new \Exception("No se pudo leer el contenido del archivo: {$originalName}");
                         }
@@ -458,17 +494,8 @@ class RegistrationController extends Controller
                         if ($written === false) {
                             throw new \Exception("No se pudo escribir el archivo temporal: {$originalName}");
                         }
-                    }
-                } else {
-                    // Si el archivo no es válido, intentar copiar directamente
-                    $fileContent = file_get_contents($file->getRealPath());
-                    if ($fileContent === false) {
-                        throw new \Exception("No se pudo leer el contenido del archivo: {$originalName}");
-                    }
-                    
-                    $written = file_put_contents($fullPath, $fileContent);
-                    if ($written === false) {
-                        throw new \Exception("No se pudo escribir el archivo temporal: {$originalName}");
+                    } else {
+                        throw new \Exception("El archivo subido no es válido o no se puede acceder: {$originalName}");
                     }
                 }
                 
@@ -484,19 +511,33 @@ class RegistrationController extends Controller
                 // Guardar la ruta relativa para limpiar después
                 $tempPath = 'temp/' . $uniqueName;
                 
+                // Obtener el tamaño del archivo desde el archivo guardado
+                $fileSize = filesize($fullPath);
+                if (!$fileSize) {
+                    $fileSize = $originalSize ?? 0;
+                }
+                
+                // Obtener MIME type
+                $mimeType = $originalMimeType;
+                if (!$mimeType) {
+                    $mimeType = mime_content_type($fullPath) ?: 'application/octet-stream';
+                }
+                
                 Log::info('Subiendo archivo a Google Drive', [
                     'registration_id' => $registration->id,
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_size' => $file->getSize(),
+                    'file_name' => $originalName,
+                    'file_size' => $fileSize,
                     'folder_id' => $driveFolderId,
+                    'temp_path' => $fullPath,
+                    'mime_type' => $mimeType,
                 ]);
                 
                 // Subir a Google Drive
                 $driveFile = $driveService->uploadFile(
                     $fullPath,
-                    $file->getClientOriginalName(),
+                    $originalName,
                     $driveFolderId,
-                    $file->getMimeType(),
+                    $mimeType,
                     $registration->id,
                     $registration->company_id
                 );
@@ -506,9 +547,9 @@ class RegistrationController extends Controller
                     'registration_id' => $registration->id,
                     'uploaded_by_id' => auth()->id(),
                     'file_path' => $tempPath, // Mantener referencia local
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_type' => $file->getMimeType(),
-                    'file_size' => $file->getSize(),
+                    'file_name' => $originalName,
+                    'file_type' => $mimeType,
+                    'file_size' => $fileSize,
                     'drive_id' => $driveFile['id'],
                     'drive_url' => $driveFile['webViewLink'] ?? null,
                 ]);
