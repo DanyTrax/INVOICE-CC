@@ -205,26 +205,26 @@
                                     @if($hasLocal)
                                         <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
                                            target="_blank"
-                                           class="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                                           class="p-2 text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200"
                                            title="Ver documento">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="{{ route('admin.registrations.documents.download', [$registration, $document]) }}" 
-                                           class="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                                           class="p-2 text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200"
                                            title="Descargar documento">
                                             <i class="fas fa-download"></i>
                                         </a>
                                     @elseif($document->drive_id)
                                         <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
                                            target="_blank"
-                                           class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                           class="p-2 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors border border-orange-200"
                                            title="Ver en Google Drive (legacy)">
                                             <i class="fas fa-external-link-alt"></i>
                                         </a>
                                     @endif
                                     <button type="button" 
                                             onclick="confirmDeleteDocument({{ $document->id }}, '{{ addslashes($document->file_name) }}')"
-                                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            class="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200"
                                             title="Eliminar documento">
                                         <i class="fas fa-trash"></i>
                                     </button>

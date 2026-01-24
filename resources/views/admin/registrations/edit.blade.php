@@ -389,19 +389,19 @@
                             @if($hasLocal)
                                 <a href="{{ route('admin.registrations.documents.view', [$registration, $document]) }}" 
                                    target="_blank"
-                                   class="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                                   class="p-2 text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200"
                                    title="Ver documento">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 <a href="{{ route('admin.registrations.documents.download', [$registration, $document]) }}" 
-                                   class="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                                   class="p-2 text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200"
                                    title="Descargar documento">
                                     <i class="fas fa-download"></i>
                                 </a>
                             @elseif($document->drive_id)
                                 <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
                                    target="_blank"
-                                   class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                   class="p-2 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors border border-orange-200"
                                    title="Ver en Google Drive (legacy)">
                                     <i class="fas fa-external-link-alt"></i>
                                 </a>
