@@ -26,6 +26,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::resource('companies', CompanyController::class);
     
     // Registrations
+    Route::delete('/registrations/{registration}/documents/{document}', [RegistrationController::class, 'destroyDocument'])
+        ->name('registrations.documents.destroy');
     Route::resource('registrations', RegistrationController::class);
     
     // Users

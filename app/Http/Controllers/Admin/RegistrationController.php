@@ -52,7 +52,8 @@ class RegistrationController extends Controller
             $query->where('assigned_specialist_id', $request->specialist);
         }
 
-        $registrations = $query->orderBy('created_at', 'desc')
+        $registrations = $query->withCount('documents')
+            ->orderBy('created_at', 'desc')
             ->paginate(15);
 
         $companies = Company::orderBy('name')->get();
@@ -610,5 +611,35 @@ class RegistrationController extends Controller
         return redirect()
             ->route('admin.registrations.index')
             ->with('success', 'Expediente eliminado exitosamente.');
+    }
+
+    /**
+     * Eliminar un documento del expediente (BD y Google Drive).
+     */
+    public function destroyDocument(Registration $registration, Document $document)
+    {
+        if ($document->registration_id !== $registration->id) {
+            abort(404);
+        }
+
+        try {
+            if ($document->drive_id) {
+                app(GoogleDriveService::class)->deleteFile($document->drive_id);
+            }
+            $document->delete();
+        } catch (\Exception $e) {
+            Log::error('Error al eliminar documento', [
+                'document_id' => $document->id,
+                'registration_id' => $registration->id,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()
+                ->route('admin.registrations.show', $registration)
+                ->with('error', 'No se pudo eliminar el documento: ' . $e->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.registrations.show', $registration)
+            ->with('success', 'Documento eliminado correctamente.');
     }
 }

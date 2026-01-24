@@ -182,18 +182,62 @@
                 </dl>
             </div>
 
-            <!-- Google Drive -->
-            @if($registration->drive_folder_url)
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Google Drive</h3>
-                    <a href="{{ $registration->drive_folder_url }}" 
-                       target="_blank"
-                       class="inline-flex items-center text-teal-600 hover:text-teal-700">
-                        <i class="fas fa-external-link-alt mr-2"></i>
-                        Abrir carpeta en Drive
-                    </a>
-                </div>
-            @endif
+            <!-- Documentos -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Documentos</h3>
+                @if($registration->documents && $registration->documents->count() > 0)
+                    <ul class="space-y-3">
+                        @foreach($registration->documents as $document)
+                            <li class="flex items-center justify-between gap-3 py-2 border-b border-gray-100 last:border-0">
+                                <div class="flex items-center min-w-0 flex-1">
+                                    <i class="fas fa-file text-teal-500 mr-2 flex-shrink-0"></i>
+                                    <span class="text-sm text-gray-900 truncate" title="{{ $document->file_name }}">{{ $document->file_name }}</span>
+                                </div>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    @if($document->drive_id)
+                                        <a href="https://drive.google.com/file/d/{{ $document->drive_id }}/view" 
+                                           target="_blank"
+                                           class="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg"
+                                           title="Ver">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    @endif
+                                    <form action="{{ route('admin.registrations.documents.destroy', [$registration, $document]) }}" 
+                                          method="POST" 
+                                          class="inline"
+                                          onsubmit="return confirm('¿Eliminar este documento? Se borrará también de Google Drive.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
+                                                title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                    @if($registration->drive_folder_url)
+                        <p class="mt-4 pt-3 border-t border-gray-100">
+                            <a href="{{ $registration->drive_folder_url }}" 
+                               target="_blank"
+                               class="text-sm text-teal-600 hover:text-teal-700">
+                                <i class="fas fa-folder-open mr-1"></i> Abrir carpeta en Drive
+                            </a>
+                        </p>
+                    @endif
+                @else
+                    <p class="text-sm text-gray-500">No hay documentos cargados en este expediente.</p>
+                    @if($registration->drive_folder_url)
+                        <a href="{{ $registration->drive_folder_url }}" 
+                           target="_blank"
+                           class="inline-flex items-center text-sm text-teal-600 hover:text-teal-700 mt-2">
+                            <i class="fas fa-folder-open mr-1"></i> Abrir carpeta en Drive
+                        </a>
+                    @endif
+                @endif
+            </div>
         </div>
     </div>
 @endsection

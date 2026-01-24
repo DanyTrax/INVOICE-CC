@@ -86,6 +86,7 @@
                         <th scope="col" class="px-6 py-3">N° Registro</th>
                         <th scope="col" class="px-6 py-3">Vencimiento</th>
                         <th scope="col" class="px-6 py-3">Especialista</th>
+                        <th scope="col" class="px-6 py-3 text-center" title="Documentos"><i class="fas fa-paperclip text-gray-500"></i></th>
                         <th scope="col" class="px-6 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
@@ -137,6 +138,15 @@
                             <td class="px-6 py-4">
                                 {{ $registration->assignedSpecialist->name ?? '-' }}
                             </td>
+                            <td class="px-6 py-4 text-center">
+                                @if($registration->documents_count > 0)
+                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 text-teal-600" title="{{ $registration->documents_count }} documento(s)">
+                                        <i class="fas fa-paperclip text-sm"></i>
+                                    </span>
+                                @else
+                                    <span class="text-gray-300" title="Sin documentos"><i class="fas fa-paperclip"></i></span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('admin.registrations.show', $registration) }}" 
@@ -166,7 +176,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
                                 <p>No se encontraron expedientes</p>
                                 @if(request()->anyFilled(['search', 'company', 'status', 'specialist']))

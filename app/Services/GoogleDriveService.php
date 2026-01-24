@@ -395,6 +395,25 @@ class GoogleDriveService
     }
 
     /**
+     * Eliminar archivo de Google Drive
+     */
+    public function deleteFile(string $fileId): void
+    {
+        $token = $this->getAccessToken();
+        $response = Http::withToken($token)
+            ->delete($this->baseUrl . '/files/' . $fileId . '?supportsAllDrives=true');
+
+        if (!$response->successful() && $response->status() !== 404) {
+            Log::error('Error al eliminar archivo de Google Drive', [
+                'response' => $response->body(),
+                'status' => $response->status(),
+                'fileId' => $fileId,
+            ]);
+            throw new \Exception('Error al eliminar archivo de Google Drive: ' . ($response->json()['error']['message'] ?? $response->body()));
+        }
+    }
+
+    /**
      * Mover archivo de una carpeta a otra
      */
     public function moveFile($fileId, $newParentFolderId, $oldParentFolderId = null)
