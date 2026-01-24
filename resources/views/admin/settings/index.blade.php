@@ -927,17 +927,55 @@
                             </div>
                         </div>
 
-                        <div class="flex gap-4">
-                            <button type="button" 
-                                    onclick="executeGitPull('main')"
-                                    class="px-6 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300">
-                                <i class="fas fa-download mr-2"></i> Git Pull (main)
-                            </button>
-                            <button type="button" 
-                                    onclick="executeGitPull('origin main')"
-                                    class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300">
-                                <i class="fas fa-download mr-2"></i> Git Pull (origin main)
-                            </button>
+                        <div class="space-y-4">
+                            <div class="flex gap-4">
+                                <button type="button" 
+                                        onclick="executeGitPull('main')"
+                                        class="px-6 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300">
+                                    <i class="fas fa-download mr-2"></i> Git Pull (main)
+                                </button>
+                                <button type="button" 
+                                        onclick="executeGitPull('origin main')"
+                                        class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300">
+                                    <i class="fas fa-download mr-2"></i> Git Pull (origin main)
+                                </button>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 pt-4">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-3">Comandos Laravel</h4>
+                                <div class="flex flex-wrap gap-3">
+                                    <button type="button" 
+                                            onclick="executeArtisanCommand('php artisan view:clear')"
+                                            class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:ring-4 focus:outline-none focus:ring-purple-300">
+                                        <i class="fas fa-broom mr-2"></i> View:Clear
+                                    </button>
+                                    <button type="button" 
+                                            onclick="executeArtisanCommand('php artisan cache:clear')"
+                                            class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:ring-4 focus:outline-none focus:ring-indigo-300">
+                                        <i class="fas fa-trash-alt mr-2"></i> Cache:Clear
+                                    </button>
+                                    <button type="button" 
+                                            onclick="executeArtisanCommand('php artisan view:clear && php artisan cache:clear')"
+                                            class="px-4 py-2 bg-pink-600 text-white text-sm font-medium rounded-lg hover:bg-pink-700 focus:ring-4 focus:outline-none focus:ring-pink-300">
+                                        <i class="fas fa-sync mr-2"></i> View:Clear + Cache:Clear
+                                    </button>
+                                    <button type="button" 
+                                            onclick="executeArtisanCommand('php artisan config:clear')"
+                                            class="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 focus:ring-4 focus:outline-none focus:ring-yellow-300">
+                                        <i class="fas fa-cog mr-2"></i> Config:Clear
+                                    </button>
+                                    <button type="button" 
+                                            onclick="executeArtisanCommand('php artisan route:clear')"
+                                            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300">
+                                        <i class="fas fa-route mr-2"></i> Route:Clear
+                                    </button>
+                                    <button type="button" 
+                                            onclick="executeArtisanCommand('php artisan optimize:clear')"
+                                            class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300">
+                                        <i class="fas fa-broom mr-2"></i> Optimize:Clear
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="git-pull-output" class="hidden mt-4 bg-gray-900 text-green-400 font-mono text-sm rounded-lg p-4 max-h-96 overflow-y-auto">
@@ -2157,6 +2195,51 @@ function executeGitPull(branch) {
             'X-Requested-With': 'XMLHttpRequest',
         },
         body: JSON.stringify({ branch: branch })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultPre.textContent = '✅ ' + data.message + '\n\n' + data.output;
+            resultPre.classList.remove('text-red-400');
+            resultPre.classList.add('text-green-400');
+        } else {
+            resultPre.textContent = '❌ ' + data.message + '\n\n' + (data.output || '');
+            resultPre.classList.remove('text-green-400');
+            resultPre.classList.add('text-red-400');
+        }
+    })
+    .catch(error => {
+        resultPre.textContent = '❌ Error: ' + error.message;
+        resultPre.classList.remove('text-green-400');
+        resultPre.classList.add('text-red-400');
+    })
+    .finally(() => {
+        // Rehabilitar botones
+        buttons.forEach(btn => btn.disabled = false);
+    });
+}
+
+// Ejecutar Comando Artisan
+function executeArtisanCommand(command) {
+    const outputDiv = document.getElementById('git-pull-output');
+    const resultPre = document.getElementById('git-pull-result');
+    
+    // Mostrar contenedor de salida
+    outputDiv.classList.remove('hidden');
+    resultPre.textContent = 'Ejecutando: ' + command + '\n';
+    
+    // Deshabilitar botones mientras se ejecuta
+    const buttons = document.querySelectorAll('button[onclick*="executeArtisanCommand"]');
+    buttons.forEach(btn => btn.disabled = true);
+    
+    fetch('{{ route("admin.settings.artisan") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ command: command })
     })
     .then(response => response.json())
     .then(data => {
