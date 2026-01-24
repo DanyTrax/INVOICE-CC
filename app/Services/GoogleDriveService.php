@@ -140,12 +140,8 @@ class GoogleDriveService
             }
 
             $response = Http::withToken($token)
-                ->post($this->baseUrl . '/files', [
-                    'json' => $metadata,
-                    'headers' => [
-                        'Content-Type' => 'application/json',
-                    ],
-                ]);
+                ->asJson()
+                ->post($this->baseUrl . '/files', $metadata);
 
             if (!$response->successful()) {
                 Log::error('Error al crear carpeta en Google Drive', [
@@ -191,15 +187,26 @@ class GoogleDriveService
                 'parents' => [$parentFolderId],
             ];
 
-            // Subir archivo
+            // Subir archivo usando multipart upload
+            $boundary = '----WebKitFormBoundary' . uniqid();
+            $delimiter = "\r\n--{$boundary}\r\n";
+            $closeDelimiter = "\r\n--{$boundary}--\r\n";
+            
+            $body = '';
+            $body .= $delimiter;
+            $body .= 'Content-Type: application/json; charset=UTF-8' . "\r\n\r\n";
+            $body .= json_encode($metadata);
+            $body .= $delimiter;
+            $body .= 'Content-Type: ' . $mimeType . "\r\n\r\n";
+            $body .= file_get_contents($filePath);
+            $body .= $closeDelimiter;
+            
             $response = Http::withToken($token)
-                ->attach('metadata', json_encode($metadata), 'application/json')
-                ->attach('file', file_get_contents($filePath), $fileName)
-                ->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', [
-                    'headers' => [
-                        'Content-Type' => 'multipart/related',
-                    ],
-                ]);
+                ->withHeaders([
+                    'Content-Type' => 'multipart/related; boundary=' . $boundary,
+                ])
+                ->withBody($body, 'multipart/related; boundary=' . $boundary)
+                ->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart');
 
             if (!$response->successful()) {
                 Log::error('Error al subir archivo a Google Drive', [
