@@ -140,12 +140,15 @@ class GoogleDriveService
                 $metadata['parents'] = [$parentFolderId];
             }
 
+            // Agregar parámetros para soportar Shared Drives
+            $queryParams = [
+                'supportsAllDrives' => 'true',
+                'fields' => 'id, name, webViewLink',
+            ];
+            
             $response = Http::withToken($token)
                 ->asJson()
-                ->post($this->baseUrl . '/files', $metadata, [
-                    'supportsAllDrives' => 'true',
-                    'fields' => 'id, name, webViewLink',
-                ]);
+                ->post($this->baseUrl . '/files?' . http_build_query($queryParams), $metadata);
 
             if (!$response->successful()) {
                 $errorData = $response->json();
