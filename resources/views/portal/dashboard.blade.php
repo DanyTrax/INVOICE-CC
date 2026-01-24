@@ -110,6 +110,61 @@
         @endif
     </div>
 
+    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-bold text-gray-800">Mi Calendario Regulatorio</h3>
+        </div>
+        @php
+            $firstDay = \Carbon\Carbon::create($currentYear, $currentMonth, 1);
+            $lastDay = $firstDay->copy()->endOfMonth();
+            $startDate = $firstDay->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
+            $endDate = $lastDay->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+            $daysInMonth = $lastDay->day;
+            $monthName = $firstDay->locale('es')->monthName;
+        @endphp
+        <div class="grid grid-cols-7 gap-px border border-gray-200 bg-gray-200 rounded-lg overflow-hidden">
+            <div class="calendar-header">Lun</div>
+            <div class="calendar-header">Mar</div>
+            <div class="calendar-header">Mié</div>
+            <div class="calendar-header">Jue</div>
+            <div class="calendar-header">Vie</div>
+            <div class="calendar-header text-red-500">Sáb</div>
+            <div class="calendar-header text-red-500">Dom</div>
+            
+            @php
+                $currentDate = $startDate->copy();
+                $totalDays = $startDate->diffInDays($endDate) + 1;
+            @endphp
+            @for($i = 0; $i < $totalDays; $i++)
+                @php
+                    $date = $currentDate->copy()->addDays($i);
+                    $day = $date->day;
+                    $isCurrentMonth = $date->month == $currentMonth;
+                    $isToday = $date->isToday();
+                    $dayEvents = $isCurrentMonth && isset($calendarEvents[$day]) ? $calendarEvents[$day] : [];
+                @endphp
+                <div class="calendar-day bg-white hover:bg-gray-50 {{ !$isCurrentMonth ? 'opacity-40' : '' }} {{ $isToday ? 'ring-2 ring-teal-500' : '' }}">
+                    <span class="text-[10px] text-gray-400 ml-1">{{ $day }}</span>
+                    @foreach($dayEvents as $event)
+                        @php
+                            $colorClasses = match($event['color']) {
+                                'red' => 'bg-red-100 text-red-700 border-red-500 hover:bg-red-200',
+                                'amber' => 'bg-amber-100 text-amber-700 border-amber-500 hover:bg-amber-200',
+                                'blue' => 'bg-blue-100 text-blue-700 border-blue-500 hover:bg-blue-200',
+                                default => 'bg-gray-100 text-gray-700 border-gray-500 hover:bg-gray-200',
+                            };
+                        @endphp
+                        <a href="{{ route('portal.registrations.show', $event['registration']) }}" 
+                           class="block {{ $colorClasses }} text-[10px] px-1.5 py-0.5 rounded border-l-2 font-medium truncate transition-colors"
+                           title="{{ $event['text'] }}">
+                            {{ Str::limit($event['text'], 20) }}
+                        </a>
+                    @endforeach
+                </div>
+            @endfor
+        </div>
+    </div>
+
     @if($calendarRegistrations->isNotEmpty())
     <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <h3 class="font-bold text-gray-800 mb-4">Próximas Fechas Importantes</h3>

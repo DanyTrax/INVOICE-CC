@@ -67,9 +67,50 @@ class ClientPortalController extends Controller
             ->orderByRaw('COALESCE(expiration_date, response_limit_date) ASC')
             ->get();
 
+        // Preparar eventos para el calendario visual (mes actual)
+        $calendarEvents = [];
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+        
+        foreach ($calendarRegistrations as $reg) {
+            $isRequerimiento = $reg->status === 'requerimiento';
+            $useResponseLimit = $isRequerimiento && $reg->response_limit_date;
+            $fecha = $useResponseLimit ? $reg->response_limit_date : ($reg->expiration_date ?? $reg->response_limit_date);
+            
+            if ($fecha && $fecha->month == $currentMonth && $fecha->year == $currentYear) {
+                $day = $fecha->day;
+                if (!isset($calendarEvents[$day])) {
+                    $calendarEvents[$day] = [];
+                }
+                
+                if ($isRequerimiento && $reg->response_limit_date) {
+                    $calendarEvents[$day][] = [
+                        'type' => 'requerimiento',
+                        'text' => 'Requerimiento: ' . $reg->product_name,
+                        'color' => 'amber',
+                        'registration' => $reg,
+                    ];
+                } elseif ($reg->expiration_date) {
+                    $calendarEvents[$day][] = [
+                        'type' => 'vencimiento',
+                        'text' => 'Vence: ' . $reg->product_name,
+                        'color' => 'red',
+                        'registration' => $reg,
+                    ];
+                } else {
+                    $calendarEvents[$day][] = [
+                        'type' => 'limite',
+                        'text' => 'Límite respuesta: ' . $reg->product_name,
+                        'color' => 'blue',
+                        'registration' => $reg,
+                    ];
+                }
+            }
+        }
+
         return view('portal.dashboard', compact(
             'vigentes', 'enTramite', 'requerimiento', 'vencidos', 'proximosVencer',
-            'registrations', 'calendarRegistrations'
+            'registrations', 'calendarRegistrations', 'calendarEvents', 'currentMonth', 'currentYear'
         ));
     }
 

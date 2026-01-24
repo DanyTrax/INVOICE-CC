@@ -11,7 +11,15 @@
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>[x-cloak] { display: none !important; }</style>
+    <style>
+        [x-cloak] { display: none !important; }
+        .calendar-header { 
+            @apply bg-gray-50 text-center text-xs font-bold text-gray-500 py-2 border border-gray-100; 
+        }
+        .calendar-day { 
+            @apply h-24 border border-gray-100 bg-white p-1 relative flex flex-col gap-1 overflow-hidden; 
+        }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-900" x-data="{ sidebarOpen: true, userMenuOpen: false }">
 
