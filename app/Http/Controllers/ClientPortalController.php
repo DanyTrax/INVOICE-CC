@@ -67,17 +67,21 @@ class ClientPortalController extends Controller
             ->orderByRaw('COALESCE(expiration_date, response_limit_date) ASC')
             ->get();
 
-        // Preparar eventos para el calendario visual (mes actual)
+        // Preparar eventos para el calendario visual (mes seleccionado o actual)
         $calendarEvents = [];
-        $currentMonth = now()->month;
-        $currentYear = now()->year;
+        $selectedMonth = $request->input('month', now()->month);
+        $selectedYear = $request->input('year', now()->year);
+        
+        // Validar mes/año
+        $selectedMonth = max(1, min(12, (int)$selectedMonth));
+        $selectedYear = max(2020, min(2100, (int)$selectedYear));
         
         foreach ($calendarRegistrations as $reg) {
             $isRequerimiento = $reg->status === 'requerimiento';
             $useResponseLimit = $isRequerimiento && $reg->response_limit_date;
             $fecha = $useResponseLimit ? $reg->response_limit_date : ($reg->expiration_date ?? $reg->response_limit_date);
             
-            if ($fecha && $fecha->month == $currentMonth && $fecha->year == $currentYear) {
+            if ($fecha && $fecha->month == $selectedMonth && $fecha->year == $selectedYear) {
                 $day = $fecha->day;
                 if (!isset($calendarEvents[$day])) {
                     $calendarEvents[$day] = [];
@@ -110,7 +114,8 @@ class ClientPortalController extends Controller
 
         return view('portal.dashboard', compact(
             'vigentes', 'enTramite', 'requerimiento', 'vencidos', 'proximosVencer',
-            'registrations', 'calendarRegistrations', 'calendarEvents', 'currentMonth', 'currentYear'
+            'registrations', 'calendarRegistrations', 'calendarEvents', 
+            'selectedMonth', 'selectedYear'
         ));
     }
 

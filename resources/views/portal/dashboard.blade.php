@@ -111,16 +111,40 @@
     </div>
 
     <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h3 class="font-bold text-gray-800">Mi Calendario Regulatorio</h3>
+            <div class="flex items-center gap-2">
+                @php
+                    $firstDay = \Carbon\Carbon::create($selectedYear, $selectedMonth, 1);
+                    $prevMonth = $firstDay->copy()->subMonth();
+                    $nextMonth = $firstDay->copy()->addMonth();
+                    $isCurrentMonth = $selectedMonth == now()->month && $selectedYear == now()->year;
+                    $monthName = $firstDay->locale('es')->monthName;
+                @endphp
+                <a href="{{ route('portal.dashboard', ['month' => $prevMonth->month, 'year' => $prevMonth->year]) }}"
+                   class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-chevron-left mr-1"></i> Mes Anterior
+                </a>
+                @if(!$isCurrentMonth)
+                <a href="{{ route('portal.dashboard') }}"
+                   class="px-3 py-1.5 text-sm font-medium text-white bg-teal-600 border border-teal-600 rounded-lg hover:bg-teal-700 transition-colors">
+                    Hoy
+                </a>
+                @endif
+                <a href="{{ route('portal.dashboard', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}"
+                   class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Mes Siguiente <i class="fas fa-chevron-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+        <div class="mb-4 text-center">
+            <h4 class="text-lg font-semibold text-gray-800 capitalize">{{ $monthName }} {{ $selectedYear }}</h4>
         </div>
         @php
-            $firstDay = \Carbon\Carbon::create($currentYear, $currentMonth, 1);
             $lastDay = $firstDay->copy()->endOfMonth();
             $startDate = $firstDay->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
             $endDate = $lastDay->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
             $daysInMonth = $lastDay->day;
-            $monthName = $firstDay->locale('es')->monthName;
         @endphp
         <div class="grid grid-cols-7 gap-px border border-gray-200 bg-gray-200 rounded-lg overflow-hidden">
             <div class="calendar-header">Lun</div>
@@ -139,7 +163,7 @@
                 @php
                     $date = $currentDate->copy()->addDays($i);
                     $day = $date->day;
-                    $isCurrentMonth = $date->month == $currentMonth;
+                    $isCurrentMonth = $date->month == $selectedMonth;
                     $isToday = $date->isToday();
                     $dayEvents = $isCurrentMonth && isset($calendarEvents[$day]) ? $calendarEvents[$day] : [];
                 @endphp
