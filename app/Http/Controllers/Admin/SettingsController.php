@@ -907,4 +907,141 @@ class SettingsController extends Controller
             ], 500);
         }
     }
+    
+    /**
+     * Ejecutar comando artisan
+     */
+    public function artisanCommand(Request $request)
+    {
+        // Solo super_admin puede ejecutar comandos artisan
+        if (!auth()->user()->hasRole('super_admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción.',
+            ], 403);
+        }
+        
+        $command = $request->input('command');
+        
+        // Validar que el comando esté permitido (seguridad)
+        $allowedCommands = [
+            'view:clear',
+            'cache:clear',
+            'config:clear',
+            'route:clear',
+            'optimize:clear',
+        ];
+        
+        // Si el comando contiene &&, dividirlo en múltiples comandos
+        $commands = [];
+        if (strpos($command, '&&') !== false) {
+            $commandParts = explode('&&', $command);
+            foreach ($commandParts as $part) {
+                $part = trim($part);
+                if (preg_match('/php\s+artisan\s+(\w+:\w+)/', $part, $matches)) {
+                    $cmd = $matches[1];
+                    if (in_array($cmd, $allowedCommands)) {
+                        $commands[] = $cmd;
+                    }
+                }
+            }
+        } else {
+            // Comando simple
+            if (preg_match('/php\s+artisan\s+(\w+:\w+)/', $command, $matches)) {
+                $cmd = $matches[1];
+                if (in_array($cmd, $allowedCommands)) {
+                    $commands[] = $cmd;
+                }
+            }
+        }
+        
+        if (empty($commands)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Comando no permitido o formato inválido.',
+            ], 400);
+        }
+        
+        try {
+            $projectPath = base_path();
+            $allOutput = [];
+            $hasError = false;
+            
+            foreach ($commands as $cmd) {
+                $fullCommand = "cd {$projectPath} && php artisan {$cmd} 2>&1";
+                
+                $output = '';
+                $returnCode = 0;
+                
+                // Intentar con exec() primero
+                if (function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')))) {
+                    $outputArray = [];
+                    \exec($fullCommand, $outputArray, $returnCode);
+                    $output = implode("\n", $outputArray);
+                }
+                // Si exec() no está disponible, intentar con shell_exec()
+                elseif (function_exists('shell_exec') && !in_array('shell_exec', explode(',', ini_get('disable_functions')))) {
+                    $output = \shell_exec($fullCommand);
+                    $returnCode = $output !== null ? 0 : 1;
+                }
+                // Si ninguna está disponible, usar passthru con output buffering
+                elseif (function_exists('passthru') && !in_array('passthru', explode(',', ini_get('disable_functions')))) {
+                    \ob_start();
+                    \passthru($fullCommand, $returnCode);
+                    $output = \ob_get_clean();
+                }
+                // Último recurso: usar proc_open
+                elseif (function_exists('proc_open')) {
+                    $descriptorspec = [
+                        0 => ['pipe', 'r'],
+                        1 => ['pipe', 'w'],
+                        2 => ['pipe', 'w'],
+                    ];
+                    
+                    $process = \proc_open($fullCommand, $descriptorspec, $pipes);
+                    
+                    if (is_resource($process)) {
+                        \fclose($pipes[0]);
+                        $output = \stream_get_contents($pipes[1]);
+                        \fclose($pipes[1]);
+                        \fclose($pipes[2]);
+                        $returnCode = \proc_close($process);
+                    } else {
+                        throw new \Exception('No se pudo ejecutar el comando.');
+                    }
+                } else {
+                    throw new \Exception('Las funciones de ejecución de comandos están deshabilitadas en este servidor.');
+                }
+                
+                $allOutput[] = "=== php artisan {$cmd} ===";
+                $allOutput[] = $output ?: 'Comando ejecutado (sin salida)';
+                
+                if ($returnCode !== 0) {
+                    $hasError = true;
+                }
+            }
+            
+            $outputText = implode("\n\n", $allOutput);
+            
+            if (!$hasError) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Comando(s) ejecutado(s) exitosamente',
+                    'output' => $outputText,
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al ejecutar comando(s)',
+                    'output' => $outputText,
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'output' => 'Las funciones de ejecución pueden estar deshabilitadas. Verifica la configuración de PHP (disable_functions).',
+            ], 500);
+        }
+    }
 }
