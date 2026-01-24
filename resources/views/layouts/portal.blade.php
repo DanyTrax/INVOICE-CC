@@ -67,7 +67,7 @@
             @if($portalAgent ?? null)
             <div class="flex items-center gap-2 md:gap-3 min-w-0 flex-1 flex-wrap">
                 <div class="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-blue-50 border border-blue-100">
-                    <span class="text-[10px] md:text-xs font-medium text-blue-600">Agente:</span>
+                    <span class="text-[10px] md:text-xs font-medium text-blue-600">Especialista:</span>
                     <span class="text-xs md:text-sm font-semibold text-gray-800 truncate max-w-[120px] md:max-w-none">{{ $portalAgent->name }}</span>
                 </div>
                 <a href="mailto:{{ $portalAgent->email }}" class="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-teal-600 text-white text-xs md:text-sm font-medium hover:bg-teal-700 shrink-0" title="Contactar a {{ $portalAgent->name }}">
