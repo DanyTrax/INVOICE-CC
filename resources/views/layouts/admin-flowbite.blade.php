@@ -38,6 +38,59 @@
     <style>
         [x-cloak] { display: none !important; }
     </style>
+    
+    <!-- Suprimir errores de Cloudflare beacon ANTES de que se carguen otros scripts -->
+    <script>
+        (function() {
+            // Suprimir errores de Cloudflare Insights beacon (se inyecta automáticamente por Cloudflare)
+            const originalError = window.console.error;
+            const originalWarn = window.console.warn;
+            
+            window.console.error = function(...args) {
+                const message = args.join(' ');
+                if (message.includes('cloudflareinsights.com') || 
+                    message.includes('beacon.min.js') ||
+                    (message.includes('integrity') && message.includes('sha512') && message.includes('cloudflare')) ||
+                    message.includes('Solicitud de origen cruzado bloqueada') && message.includes('cloudflare')) {
+                    return; // Suprimir estos errores específicos
+                }
+                originalError.apply(console, args);
+            };
+            
+            window.console.warn = function(...args) {
+                const message = args.join(' ');
+                if (message.includes('cloudflareinsights.com') || 
+                    message.includes('beacon.min.js') ||
+                    message.includes('cdn.tailwindcss.com should not be used in production')) {
+                    return; // Suprimir estas advertencias específicas
+                }
+                originalWarn.apply(console, args);
+            };
+            
+            // Capturar errores de red antes de que se muestren
+            window.addEventListener('error', function(e) {
+                if (e.message && (
+                    e.message.includes('cloudflareinsights.com') ||
+                    e.message.includes('beacon.min.js') ||
+                    e.message.includes('CORS') && e.message.includes('cloudflare')
+                )) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+            }
+            }, true);
+            
+            // Capturar errores de recursos
+            window.addEventListener('error', function(e) {
+                if (e.target && e.target.src && e.target.src.includes('cloudflareinsights.com')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
+        })();
+    </script>
+    
     @stack('styles')
 </head>
 <body class="h-full" x-data="{ 
@@ -295,26 +348,6 @@
     
     <!-- Asegurar que todos los scripts estén cargados antes de inicializar componentes -->
     <script>
-        // Suprimir errores de Cloudflare Insights beacon (se inyecta automáticamente por Cloudflare)
-        window.addEventListener('error', function(e) {
-            if (e.message && e.message.includes('cloudflareinsights.com')) {
-                e.preventDefault();
-                return false;
-            }
-        }, true);
-        
-        // Suprimir errores de integrity hash para Cloudflare beacon
-        const originalError = console.error;
-        console.error = function(...args) {
-            const message = args.join(' ');
-            if (message.includes('cloudflareinsights.com') || 
-                message.includes('beacon.min.js') ||
-                (message.includes('integrity') && message.includes('sha512'))) {
-                return; // Suprimir estos errores específicos
-            }
-            originalError.apply(console, args);
-        };
-        
         // Evento global para notificar que todos los scripts están listos
         window.addEventListener('load', function() {
             window.allScriptsLoaded = true;
