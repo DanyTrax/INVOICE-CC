@@ -96,7 +96,6 @@ class RegistrationController extends Controller
         ]);
 
         // Crear carpeta en Google Drive para el expediente
-        $company = Company::find($validated['company_id']);
         $driveFolderId = null;
         $driveFolderUrl = null;
 
@@ -106,8 +105,18 @@ class RegistrationController extends Controller
             // Nombre de la carpeta del expediente
             $folderName = $validated['product_name'] . ' - ' . ($validated['registration_number'] ?? 'Sin Número');
             
-            // Si el cliente tiene carpeta, crear dentro de ella, sino crear temporal
-            $parentFolderId = $company->drive_folder_id;
+            // Determinar carpeta padre
+            $parentFolderId = null;
+            if (!empty($validated['company_id'])) {
+                $company = Company::find($validated['company_id']);
+                if ($company && $company->drive_folder_id) {
+                    // Si tiene cliente con carpeta, crear dentro de ella
+                    $parentFolderId = $company->drive_folder_id;
+                }
+            }
+            
+            // Si no hay carpeta padre, crear carpeta temporal (o usar la carpeta base configurada)
+            // La carpeta base está en settings->drive_folder_id
             
             $folder = $driveService->createFolder($folderName, $parentFolderId);
             $driveFolderId = $folder['id'];
@@ -119,7 +128,8 @@ class RegistrationController extends Controller
             Log::info('Carpeta de Google Drive creada para expediente', [
                 'registration_name' => $validated['product_name'],
                 'folder_id' => $driveFolderId,
-                'company_id' => $company->id,
+                'company_id' => $validated['company_id'] ?? null,
+                'is_temporary' => empty($validated['company_id']),
             ]);
         } catch (\Exception $e) {
             Log::error('Error al crear carpeta en Google Drive para expediente', [
@@ -190,33 +200,41 @@ class RegistrationController extends Controller
         $oldCompanyId = $registration->company_id;
         $oldDriveFolderId = $registration->drive_folder_id;
 
-        // Si cambió el cliente, transferir documentos
+        // Si cambió el cliente (de null a cliente o de un cliente a otro), transferir documentos
         if ($validated['company_id'] != $oldCompanyId) {
             try {
-                $newCompany = Company::find($validated['company_id']);
-                $oldCompany = Company::find($oldCompanyId);
+                $driveService = app(GoogleDriveService::class);
                 
-                if ($newCompany && $newCompany->drive_folder_id && $oldDriveFolderId) {
-                    $driveService = app(GoogleDriveService::class);
+                // Si ahora tiene cliente y antes no tenía (o tenía otro)
+                if (!empty($validated['company_id']) && $oldDriveFolderId) {
+                    $newCompany = Company::find($validated['company_id']);
                     
-                    // Si el nuevo cliente tiene carpeta, mover el contenido
-                    if ($newCompany->drive_folder_id) {
-                        // Renombrar carpeta del expediente si es necesario
+                    if ($newCompany && $newCompany->drive_folder_id) {
+                        // Mover todos los archivos de la carpeta temporal/antigua a la carpeta del nuevo cliente
+                        $movedCount = $driveService->moveFolderContents($oldDriveFolderId, $newCompany->drive_folder_id);
+                        
+                        // Crear nueva carpeta del expediente dentro de la carpeta del cliente
                         $folderName = $validated['product_name'] . ' - ' . ($validated['registration_number'] ?? 'Sin Número');
+                        $folder = $driveService->createFolder($folderName, $newCompany->drive_folder_id);
                         
-                        // Mover todos los archivos de la carpeta temporal a la carpeta del cliente
-                        $driveService->moveFolderContents($oldDriveFolderId, $newCompany->drive_folder_id);
+                        // Mover archivos a la nueva carpeta del expediente
+                        if ($movedCount > 0) {
+                            $driveService->moveFolderContents($newCompany->drive_folder_id, $folder['id']);
+                        }
                         
-                        // Actualizar la carpeta del expediente para que esté dentro de la carpeta del cliente
-                        // (Esto requiere actualizar el parent de la carpeta, lo cual es más complejo)
-                        // Por ahora, los archivos se moverán a la carpeta del cliente directamente
+                        $validated['drive_folder_id'] = $folder['id'];
+                        $validated['drive_folder_url'] = $folder['webViewLink'];
                         
                         Log::info('Documentos transferidos a nuevo cliente', [
                             'registration_id' => $registration->id,
                             'old_company_id' => $oldCompanyId,
                             'new_company_id' => $validated['company_id'],
+                            'files_moved' => $movedCount,
                         ]);
                     }
+                } elseif (empty($validated['company_id']) && $oldCompanyId) {
+                    // Si se removió el cliente, mantener la carpeta pero marcar como temporal
+                    // (No hacemos nada, la carpeta queda donde está)
                 }
             } catch (\Exception $e) {
                 Log::error('Error al transferir documentos a nuevo cliente', [
@@ -228,7 +246,7 @@ class RegistrationController extends Controller
         }
 
         // Si no tiene carpeta y ahora tiene cliente, crear carpeta
-        if (!$registration->drive_folder_id && $validated['company_id']) {
+        if (!$registration->drive_folder_id && !empty($validated['company_id'])) {
             try {
                 $company = Company::find($validated['company_id']);
                 $driveService = app(GoogleDriveService::class);
