@@ -205,7 +205,23 @@ class GoogleDriveService
 
             // Detectar MIME type si no se proporciona
             if (!$mimeType) {
-                $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+                // Intentar usar finfo si está disponible
+                if (function_exists('finfo_open')) {
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $filePath);
+                    finfo_close($finfo);
+                }
+                
+                // Si aún no tenemos MIME type, intentar por extensión
+                if (!$mimeType || $mimeType === 'application/octet-stream') {
+                    $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                    $mimeType = $this->getMimeTypeByExtension($extension);
+                }
+                
+                // Fallback final
+                if (!$mimeType) {
+                    $mimeType = 'application/octet-stream';
+                }
             }
 
             // Primero crear metadata del archivo
@@ -527,6 +543,58 @@ class GoogleDriveService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Obtener MIME type por extensión de archivo
+     */
+    protected function getMimeTypeByExtension($extension)
+    {
+        $mimeTypes = [
+            // Documentos
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'odt' => 'application/vnd.oasis.opendocument.text',
+            'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
+            'odp' => 'application/vnd.oasis.opendocument.presentation',
+            
+            // Imágenes
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'bmp' => 'image/bmp',
+            'svg' => 'image/svg+xml',
+            'webp' => 'image/webp',
+            'ico' => 'image/x-icon',
+            
+            // Texto
+            'txt' => 'text/plain',
+            'csv' => 'text/csv',
+            'html' => 'text/html',
+            'css' => 'text/css',
+            'js' => 'application/javascript',
+            'json' => 'application/json',
+            'xml' => 'application/xml',
+            
+            // Archivos comprimidos
+            'zip' => 'application/zip',
+            'rar' => 'application/x-rar-compressed',
+            '7z' => 'application/x-7z-compressed',
+            'tar' => 'application/x-tar',
+            'gz' => 'application/gzip',
+            
+            // Otros
+            'rtf' => 'application/rtf',
+            'xps' => 'application/vnd.ms-xpsdocument',
+        ];
+        
+        return $mimeTypes[strtolower($extension)] ?? 'application/octet-stream';
     }
 
     /**
