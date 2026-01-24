@@ -432,31 +432,57 @@ class RegistrationController extends Controller
                     }
                 }
                 
-                // Guardar archivo temporalmente
-                // Usar un nombre único para evitar conflictos
+                // Generar nombre único para el archivo temporal
                 $originalName = $file->getClientOriginalName();
-                $extension = $file->getClientOriginalExtension();
+                $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
                 $baseName = pathinfo($originalName, PATHINFO_FILENAME);
                 $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $baseName);
-                $uniqueName = $safeName . '_' . time() . '_' . uniqid() . '.' . $extension;
+                $uniqueName = $safeName . '_' . time() . '_' . uniqid() . ($extension ? '.' . $extension : '');
                 
-                // Intentar guardar el archivo
-                $tempPath = $file->storeAs('temp', $uniqueName, 'local');
+                // Guardar archivo usando move_uploaded_file o copy directamente
+                $fullPath = $tempDir . '/' . $uniqueName;
                 
-                if (!$tempPath) {
-                    throw new \Exception("No se pudo guardar el archivo temporal: {$originalName}");
+                // Intentar mover el archivo subido
+                if ($file->isValid()) {
+                    // Usar el método move() de Laravel que es más confiable
+                    $moved = $file->move($tempDir, $uniqueName);
+                    
+                    if (!$moved || !file_exists($fullPath)) {
+                        // Si move() falla, intentar copiar el contenido
+                        $fileContent = file_get_contents($file->getRealPath());
+                        if ($fileContent === false) {
+                            throw new \Exception("No se pudo leer el contenido del archivo: {$originalName}");
+                        }
+                        
+                        $written = file_put_contents($fullPath, $fileContent);
+                        if ($written === false) {
+                            throw new \Exception("No se pudo escribir el archivo temporal: {$originalName}");
+                        }
+                    }
+                } else {
+                    // Si el archivo no es válido, intentar copiar directamente
+                    $fileContent = file_get_contents($file->getRealPath());
+                    if ($fileContent === false) {
+                        throw new \Exception("No se pudo leer el contenido del archivo: {$originalName}");
+                    }
+                    
+                    $written = file_put_contents($fullPath, $fileContent);
+                    if ($written === false) {
+                        throw new \Exception("No se pudo escribir el archivo temporal: {$originalName}");
+                    }
                 }
                 
-                $fullPath = storage_path('app/' . $tempPath);
-                
+                // Verificar que el archivo existe y tiene contenido
                 if (!file_exists($fullPath)) {
                     throw new \Exception("El archivo temporal no existe después de guardarlo: {$originalName}");
                 }
                 
-                // Verificar que el archivo tiene contenido
                 if (filesize($fullPath) === 0) {
                     throw new \Exception("El archivo temporal está vacío: {$originalName}");
                 }
+                
+                // Guardar la ruta relativa para limpiar después
+                $tempPath = 'temp/' . $uniqueName;
                 
                 Log::info('Subiendo archivo a Google Drive', [
                     'registration_id' => $registration->id,
