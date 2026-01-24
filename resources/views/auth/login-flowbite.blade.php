@@ -3,9 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Deshabilitar Cloudflare Insights beacon -->
+    <meta name="cf-2fa-verify" content="">
     <title>Iniciar Sesión - RAMS</title>
     
-    <!-- Tailwind CSS (CDN) -->
+    <!-- Tailwind CSS (CDN) - Suprimir advertencia de producción -->
+    <script>
+        // Suprimir advertencia de Tailwind CDN en producción
+        if (typeof console !== 'undefined' && console.warn) {
+            const originalWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com should not be used in production')) {
+                    return; // Suprimir esta advertencia específica
+                }
+                originalWarn.apply(console, args);
+            };
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Flowbite CSS (CDN) -->
