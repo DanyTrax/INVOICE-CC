@@ -43,29 +43,6 @@
                 <span x-show="sidebarOpen" class="ml-3 text-sm">Soporte / Ayuda</span>
             </a>
         </nav>
-
-        @php
-            $specialist = null;
-            $firstCompany = auth()->user()->companies()->first();
-            if ($firstCompany) {
-                $reg = \App\Models\Registration::where('company_id', $firstCompany->id)->whereNotNull('assigned_specialist_id')->with('assignedSpecialist')->first();
-                $specialist = $reg?->assignedSpecialist;
-            }
-        @endphp
-        @if($specialist)
-        <div x-show="sidebarOpen" class="p-4 bg-blue-50 border-t border-blue-100 m-2 rounded-lg">
-            <p class="text-[10px] uppercase font-bold text-blue-500 mb-2">Tu Especialista Asignado</p>
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-white text-blue-600 flex items-center justify-center font-bold border border-blue-200 text-xs">
-                    {{ strtoupper(substr($specialist->name ?? '?', 0, 2)) }}
-                </div>
-                <div>
-                    <p class="text-xs font-bold text-gray-800">{{ $specialist->name }}</p>
-                    <a href="mailto:{{ $specialist->email }}" class="text-[10px] text-blue-600 underline">Contactar</a>
-                </div>
-            </div>
-        </div>
-        @endif
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden">

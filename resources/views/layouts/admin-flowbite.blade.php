@@ -201,12 +201,37 @@
                     <li class="pt-4">
                         <span class="text-gray-400 text-xs font-semibold uppercase px-2">OPERACIÓN</span>
                     </li>
-                    <li>
-                        <a href="{{ route('admin.companies.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.companies.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-building w-5 h-5"></i>
-                            <span class="ms-3">Directorio Clientes</span>
-                        </a>
+                    <li x-data="{ directorioOpen: {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
+                        <button @click="directorioOpen = !directorioOpen"
+                                type="button"
+                                class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-address-book w-5 h-5"></i>
+                            <span class="ms-3 text-left flex-1">Directorio</span>
+                            <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': directorioOpen }"></i>
+                        </button>
+                        <ul x-show="directorioOpen" x-cloak
+                            x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 -translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
+                            <li>
+                                <a href="{{ route('admin.companies.index') }}"
+                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.companies.*') ? 'bg-teal-700/50 text-white' : '' }}">
+                                    <i class="fas fa-building w-4 h-4"></i>
+                                    <span class="ms-2 text-sm">Clientes</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('admin.users.index') }}"
+                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.users.*') ? 'bg-teal-700/50 text-white' : '' }}">
+                                    <i class="fas fa-user-tie w-4 h-4"></i>
+                                    <span class="ms-2 text-sm">Agentes</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     <li>
                         <a href="{{ route('admin.registrations.index') }}" 
@@ -219,13 +244,6 @@
                     <!-- SISTEMA -->
                     <li class="pt-4">
                         <span class="text-gray-400 text-xs font-semibold uppercase px-2">SISTEMA</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.users.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-users w-5 h-5"></i>
-                            <span class="ms-3">Agentes / Usuarios</span>
-                        </a>
                     </li>
                     <li>
                         <a href="{{ route('admin.settings.index') }}" 

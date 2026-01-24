@@ -107,20 +107,6 @@
                     </div>
                 @endif
             </div>
-
-            @if($registration->assignedSpecialist)
-            <div class="bg-blue-50 rounded-xl border border-blue-100 p-6 text-center">
-                <div class="w-12 h-12 rounded-full bg-white text-blue-600 flex items-center justify-center font-bold border border-blue-200 mx-auto mb-3 shadow-sm text-sm">
-                    {{ strtoupper(substr($registration->assignedSpecialist->name, 0, 2)) }}
-                </div>
-                <h4 class="font-bold text-gray-800">¿Necesitas Ayuda?</h4>
-                <p class="text-xs text-gray-500 mb-4">Tu especialista asignado es <b>{{ $registration->assignedSpecialist->name }}</b>.</p>
-                <a href="mailto:{{ $registration->assignedSpecialist->email }}"
-                   class="block w-full bg-white border border-blue-200 text-blue-600 py-2 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition-colors text-center">
-                    Enviar Mensaje
-                </a>
-            </div>
-            @endif
         </div>
     </div>
 </div>
