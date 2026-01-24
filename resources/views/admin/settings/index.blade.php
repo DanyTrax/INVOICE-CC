@@ -622,6 +622,89 @@
                             </button>
                         </div>
 
+                        <!-- Filtros y Buscador -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                                <!-- Buscador -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                                    <input type="text" 
+                                           id="drive-log-search" 
+                                           placeholder="Buscar por nombre, usuario, expediente..."
+                                           onkeyup="if(event.key === 'Enter') loadDriveOperationsLog()"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-teal-500 focus:border-teal-500">
+                                </div>
+
+                                <!-- Filtro por Operación -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Operación</label>
+                                    <select id="drive-log-operation" 
+                                            onchange="loadDriveOperationsLog()"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-teal-500 focus:border-teal-500">
+                                        <option value="all">Todas</option>
+                                        <option value="upload">Subir Archivo</option>
+                                        <option value="download">Descargar Archivo</option>
+                                        <option value="view">Ver Archivo</option>
+                                        <option value="delete">Eliminar</option>
+                                        <option value="create_folder">Crear Carpeta</option>
+                                        <option value="move">Mover</option>
+                                        <option value="update">Actualizar</option>
+                                    </select>
+                                </div>
+
+                                <!-- Botón Buscar -->
+                                <div class="flex items-end">
+                                    <button type="button" 
+                                            onclick="loadDriveOperationsLog()"
+                                            class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium">
+                                        <i class="fas fa-search mr-1"></i> Buscar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Filtros por Fecha -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Desde</label>
+                                    <input type="date" 
+                                           id="drive-log-date-from" 
+                                           onchange="loadDriveOperationsLog()"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-teal-500 focus:border-teal-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Hasta</label>
+                                    <input type="date" 
+                                           id="drive-log-date-to" 
+                                           onchange="loadDriveOperationsLog()"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-teal-500 focus:border-teal-500">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" 
+                                            onclick="clearDriveLogFilters()"
+                                            class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium">
+                                        <i class="fas fa-times mr-1"></i> Limpiar Filtros
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción Múltiple -->
+                        <div id="drive-log-bulk-actions" class="mb-4 hidden">
+                            <div class="flex items-center gap-2 p-3 bg-teal-50 border border-teal-200 rounded-lg">
+                                <span id="drive-log-selected-count" class="text-sm font-medium text-teal-700">0 seleccionados</span>
+                                <button type="button" 
+                                        onclick="deleteSelectedDriveLogs()"
+                                        class="ml-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+                                    <i class="fas fa-trash mr-1"></i> Eliminar Seleccionados
+                                </button>
+                                <button type="button" 
+                                        onclick="clearDriveLogSelection()"
+                                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium">
+                                    <i class="fas fa-times mr-1"></i> Deseleccionar
+                                </button>
+                            </div>
+                        </div>
+
                         <div id="drive-operations-container" class="space-y-4">
                             <div class="text-center py-8 text-gray-500">
                                 <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
@@ -2732,11 +2815,27 @@ function executeArtisanCommand(command) {
 }
 
 // Cargar historial de operaciones de Google Drive
-function loadDriveOperationsLog() {
+function loadDriveOperationsLog(page = 1) {
     const container = document.getElementById('drive-operations-container');
     container.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>Cargando historial...</p></div>';
 
-    fetch('{{ route("admin.settings.drive-operations-log") }}', {
+    // Obtener valores de filtros
+    const search = document.getElementById('drive-log-search')?.value || '';
+    const operationType = document.getElementById('drive-log-operation')?.value || 'all';
+    const dateFrom = document.getElementById('drive-log-date-from')?.value || '';
+    const dateTo = document.getElementById('drive-log-date-to')?.value || '';
+
+    // Construir URL con parámetros
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (operationType && operationType !== 'all') params.append('operation_type', operationType);
+    if (dateFrom) params.append('date_from', dateFrom);
+    if (dateTo) params.append('date_to', dateTo);
+    if (page > 1) params.append('page', page);
+
+    const url = '{{ route("admin.settings.drive-operations-log") }}' + (params.toString() ? '?' + params.toString() : '');
+
+    fetch(url, {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -2746,6 +2845,7 @@ function loadDriveOperationsLog() {
     .then(data => {
         if (data.success && data.operations.data.length > 0) {
             let html = '<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"><input type="checkbox" id="drive-log-select-all" onchange="toggleAllDriveLogs(this)" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500"></th>';
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>';
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Operación</th>';
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Recurso</th>';
@@ -2782,6 +2882,7 @@ function loadDriveOperationsLog() {
                 const icon = operationIcons[op.operation_type] || operationIcons['default'];
                 
                 html += '<tr class="hover:bg-gray-50">';
+                html += '<td class="px-4 py-3 text-sm"><input type="checkbox" class="drive-log-checkbox rounded border-gray-300 text-teal-600 focus:ring-teal-500" value="' + op.id + '" onchange="updateDriveLogSelection()"></td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + new Date(op.created_at).toLocaleString('es-ES') + '</td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-900"><i class="fas fa-' + icon + ' mr-2"></i>' + (operationLabels[op.operation_type] || op.operation_type) + '</td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + op.resource_name + '</td>';
@@ -2790,11 +2891,12 @@ function loadDriveOperationsLog() {
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + (op.registration ? 'Expediente #' + op.registration.id : '-') + '</td>';
                 html += '<td class="px-4 py-3 text-sm">';
                 if (op.drive_url) {
-                    html += '<a href="' + op.drive_url + '" target="_blank" class="text-teal-600 hover:text-teal-800"><i class="fas fa-external-link-alt"></i></a>';
+                    html += '<a href="' + op.drive_url + '" target="_blank" class="text-teal-600 hover:text-teal-800 mr-2" title="Abrir en Drive"><i class="fas fa-external-link-alt"></i></a>';
                 }
                 if (op.error_message) {
-                    html += ' <button onclick="showError(\'' + op.error_message.replace(/'/g, "\\'") + '\')" class="text-red-600 hover:text-red-800 ml-2"><i class="fas fa-exclamation-triangle"></i></button>';
+                    html += '<button onclick="showError(\'' + op.error_message.replace(/'/g, "\\'") + '\')" class="text-red-600 hover:text-red-800 mr-2" title="Ver error"><i class="fas fa-exclamation-triangle"></i></button>';
                 }
+                html += '<button onclick="deleteDriveLog(' + op.id + ')" class="text-red-600 hover:text-red-800" title="Eliminar"><i class="fas fa-trash"></i></button>';
                 html += '</td>';
                 html += '</tr>';
             });
@@ -2825,6 +2927,99 @@ function loadDriveOperationsLog() {
 // Mostrar error en modal
 function showError(message) {
     alert('Error: ' + message);
+}
+
+// Limpiar filtros
+function clearDriveLogFilters() {
+    document.getElementById('drive-log-search').value = '';
+    document.getElementById('drive-log-operation').value = 'all';
+    document.getElementById('drive-log-date-from').value = '';
+    document.getElementById('drive-log-date-to').value = '';
+    loadDriveOperationsLog();
+}
+
+// Toggle seleccionar todos
+function toggleAllDriveLogs(checkbox) {
+    const checkboxes = document.querySelectorAll('.drive-log-checkbox');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    updateDriveLogSelection();
+}
+
+// Actualizar contador de seleccionados
+function updateDriveLogSelection() {
+    const checkboxes = document.querySelectorAll('.drive-log-checkbox:checked');
+    const count = checkboxes.length;
+    const bulkActions = document.getElementById('drive-log-bulk-actions');
+    const selectedCount = document.getElementById('drive-log-selected-count');
+    
+    if (count > 0) {
+        bulkActions.classList.remove('hidden');
+        selectedCount.textContent = count + ' seleccionado(s)';
+    } else {
+        bulkActions.classList.add('hidden');
+    }
+    
+    // Actualizar checkbox "seleccionar todos"
+    const selectAll = document.getElementById('drive-log-select-all');
+    if (selectAll) {
+        const allCheckboxes = document.querySelectorAll('.drive-log-checkbox');
+        selectAll.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+    }
+}
+
+// Deseleccionar todos
+function clearDriveLogSelection() {
+    const checkboxes = document.querySelectorAll('.drive-log-checkbox');
+    checkboxes.forEach(cb => cb.checked = false);
+    const selectAll = document.getElementById('drive-log-select-all');
+    if (selectAll) selectAll.checked = false;
+    updateDriveLogSelection();
+}
+
+// Eliminar registro individual
+function deleteDriveLog(id) {
+    if (!confirm('¿Estás seguro de eliminar este registro del historial?')) {
+        return;
+    }
+    
+    deleteSelectedDriveLogs([id]);
+}
+
+// Eliminar registros seleccionados
+function deleteSelectedDriveLogs(ids = null) {
+    const selectedIds = ids || Array.from(document.querySelectorAll('.drive-log-checkbox:checked')).map(cb => cb.value);
+    
+    if (selectedIds.length === 0) {
+        alert('Por favor selecciona al menos un registro para eliminar.');
+        return;
+    }
+    
+    if (!confirm('¿Estás seguro de eliminar ' + selectedIds.length + ' registro(s) del historial?')) {
+        return;
+    }
+    
+    fetch('{{ route("admin.settings.drive-operations-log.delete") }}', {
+        method: 'DELETE',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ ids: selectedIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Se eliminaron ' + data.deleted_count + ' registro(s) exitosamente.');
+            clearDriveLogSelection();
+            loadDriveOperationsLog();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error al eliminar registros: ' + error.message);
+    });
 }
 
 // Toggle instructivo de Google Drive
