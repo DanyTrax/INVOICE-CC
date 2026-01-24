@@ -174,7 +174,7 @@ class RegistrationController extends Controller
     public function update(Request $request, Registration $registration)
     {
         $validated = $request->validate([
-            'company_id' => 'required|exists:companies,id',
+            'company_id' => 'nullable|exists:companies,id',
             'assigned_specialist_id' => 'nullable|exists:users,id',
             'product_name' => 'required|string|max:255',
             'registration_number' => 'nullable|string|max:100',
