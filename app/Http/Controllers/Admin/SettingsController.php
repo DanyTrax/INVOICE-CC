@@ -826,17 +826,23 @@ class SettingsController extends Controller
         }
         
         $branch = $request->input('branch', 'main');
-        $command = "git pull origin {$branch} 2>&1";
+        
+        // Construir comando según el branch
+        if ($branch === 'origin main') {
+            $command = 'git pull origin main 2>&1';
+        } else {
+            $command = "git pull {$branch} 2>&1";
+        }
         
         try {
             // Cambiar al directorio del proyecto
             $projectPath = base_path();
             chdir($projectPath);
             
-            // Ejecutar git pull
+            // Ejecutar git pull usando la función global de PHP
             $output = [];
             $returnCode = 0;
-            exec($command, $output, $returnCode);
+            \exec($command, $output, $returnCode);
             
             $outputText = implode("\n", $output);
             
