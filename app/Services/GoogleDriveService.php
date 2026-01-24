@@ -260,6 +260,7 @@ class GoogleDriveService
     {
         try {
             $token = $this->getAccessToken();
+            $isSharedDrive = ($this->settings->drive_mode ?? 'service_account') !== 'oauth_user';
 
             // Detectar MIME type si no se proporciona
             if (!$mimeType) {
