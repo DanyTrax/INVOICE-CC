@@ -286,10 +286,19 @@ class RegistrationController extends Controller
         }
 
         $registration->update($validated);
+        
+        // Refrescar el modelo para obtener el drive_folder_id actualizado
+        $registration->refresh();
 
         // Procesar documentos subidos (solo si hay carpeta)
         if ($request->hasFile('documents')) {
-            $driveFolderId = $registration->drive_folder_id ?? $validated['drive_folder_id'] ?? null;
+            $driveFolderId = $registration->drive_folder_id;
+            
+            Log::info('Intentando subir documentos', [
+                'registration_id' => $registration->id,
+                'drive_folder_id' => $driveFolderId,
+                'files_count' => count($request->file('documents')),
+            ]);
             
             if ($driveFolderId) {
                 $this->uploadDocuments($registration, $request->file('documents'), $driveFolderId);
@@ -298,6 +307,11 @@ class RegistrationController extends Controller
                     'registration_id' => $registration->id,
                 ]);
             }
+        } else {
+            Log::info('No se detectaron archivos para subir', [
+                'registration_id' => $registration->id,
+                'has_documents_key' => $request->has('documents'),
+            ]);
         }
 
         return redirect()
