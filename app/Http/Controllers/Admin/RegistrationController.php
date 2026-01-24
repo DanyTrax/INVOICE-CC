@@ -424,12 +424,38 @@ class RegistrationController extends Controller
             $fullPath = null;
             
             try {
+                // Asegurar que el directorio temporal existe
+                $tempDir = storage_path('app/temp');
+                if (!is_dir($tempDir)) {
+                    if (!mkdir($tempDir, 0755, true)) {
+                        throw new \Exception("No se pudo crear el directorio temporal: {$tempDir}");
+                    }
+                }
+                
                 // Guardar archivo temporalmente
-                $tempPath = $file->store('temp', 'local');
+                // Usar un nombre único para evitar conflictos
+                $originalName = $file->getClientOriginalName();
+                $extension = $file->getClientOriginalExtension();
+                $baseName = pathinfo($originalName, PATHINFO_FILENAME);
+                $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $baseName);
+                $uniqueName = $safeName . '_' . time() . '_' . uniqid() . '.' . $extension;
+                
+                // Intentar guardar el archivo
+                $tempPath = $file->storeAs('temp', $uniqueName, 'local');
+                
+                if (!$tempPath) {
+                    throw new \Exception("No se pudo guardar el archivo temporal: {$originalName}");
+                }
+                
                 $fullPath = storage_path('app/' . $tempPath);
                 
                 if (!file_exists($fullPath)) {
-                    throw new \Exception("No se pudo guardar el archivo temporal: {$file->getClientOriginalName()}");
+                    throw new \Exception("El archivo temporal no existe después de guardarlo: {$originalName}");
+                }
+                
+                // Verificar que el archivo tiene contenido
+                if (filesize($fullPath) === 0) {
+                    throw new \Exception("El archivo temporal está vacío: {$originalName}");
                 }
                 
                 Log::info('Subiendo archivo a Google Drive', [
