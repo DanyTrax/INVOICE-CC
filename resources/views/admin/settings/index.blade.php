@@ -223,14 +223,101 @@
 
                 <!-- Panel de Configuración -->
                 <div id="drive-panel-config" class="drive-subpanel">
-                    <!-- Instructivo -->
+                    <!-- Formulario de Configuración -->
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-book text-teal-600 mr-2"></i>
-                        Instructivo de Configuración
-                    </h3>
-                    
-                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-cloud text-teal-600 mr-2"></i>
+                            Configuración de Google Drive
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-6">
+                            Configura la integración con Google Drive para almacenar documentos del sistema.
+                        </p>
+
+                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="section" value="drive">
+
+                            <div class="space-y-6">
+                                <!-- JSON de Service Account -->
+                                <div>
+                                    <label for="drive_service_account_json" class="block mb-2 text-sm font-medium text-gray-900">
+                                        JSON de Service Account <span class="text-red-500">*</span>
+                                    </label>
+                                    <textarea id="drive_service_account_json" 
+                                              name="drive_service_account_json" 
+                                              rows="12"
+                                              placeholder='{"type": "service_account", "project_id": "...", "private_key_id": "...", "private_key": "...", "client_email": "...", "client_id": "...", "auth_uri": "...", "token_uri": "...", "auth_provider_x509_cert_url": "...", "client_x509_cert_url": "..."}'
+                                              required
+                                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('drive_service_account_json', $settings->drive_service_account_json ?? '') }}</textarea>
+                                    <p class="mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Pega aquí el contenido completo del archivo JSON descargado de Google Cloud Console.
+                                    </p>
+                                    @if($settings->drive_service_account_json)
+                                        @php
+                                            try {
+                                                $jsonData = json_decode($settings->drive_service_account_json, true);
+                                                $serviceEmail = $jsonData['client_email'] ?? null;
+                                            } catch (\Exception $e) {
+                                                $serviceEmail = null;
+                                            }
+                                        @endphp
+                                        @if($serviceEmail)
+                                            <div class="mt-2 bg-green-50 border border-green-200 rounded p-3">
+                                                <p class="text-xs text-green-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    <strong>Service Account configurado:</strong> {{ $serviceEmail }}
+                                                </p>
+                                            </div>
+                                        @endif
+                                    @endif
+                                </div>
+
+                                <!-- ID de Carpeta de Drive (Opcional) -->
+                                <div>
+                                    <label for="drive_folder_id" class="block mb-2 text-sm font-medium text-gray-900">
+                                        ID de Carpeta de Drive (Opcional)
+                                    </label>
+                                    <input type="text" 
+                                           id="drive_folder_id" 
+                                           name="drive_folder_id" 
+                                           value="{{ old('drive_folder_id', $settings->drive_folder_id ?? '') }}"
+                                           placeholder="1a2b3c4d5e6f7g8h9i0j"
+                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                    <p class="mt-2 text-xs text-gray-500">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Si quieres que todos los documentos se suban a una carpeta específica, ingresa el ID de la carpeta. 
+                                        Puedes obtenerlo desde la URL de la carpeta en Google Drive (la parte después de <code class="bg-gray-100 px-1 rounded">folders/</code>).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end gap-3">
+                                <button type="button" 
+                                        onclick="testDriveConnection()"
+                                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    <i class="fas fa-vial mr-2"></i> Probar Conexión
+                                </button>
+                                <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                                    <i class="fas fa-save mr-2"></i> Guardar Configuración
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Instructivo (Colapsable) -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
+                        <button type="button" 
+                                onclick="toggleDriveInstructions()"
+                                class="w-full flex items-center justify-between text-left focus:outline-none">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <i class="fas fa-book text-teal-600 mr-2"></i>
+                                Instructivo de Configuración
+                            </h3>
+                            <i id="drive-instructions-icon" class="fas fa-chevron-down text-gray-500 transition-transform"></i>
+                        </button>
+                        
+                        <div id="drive-instructions-content" class="mt-4 space-y-4 hidden">
                         <!-- Paso 1 -->
                         <div class="border border-gray-200 rounded-lg p-4">
                             <div class="flex items-start">
@@ -375,90 +462,8 @@
                                 </div>
                             </div>
                         </div>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Formulario de Configuración -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-cloud text-teal-600 mr-2"></i>
-                        Configuración de Google Drive
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-6">
-                        Configura la integración con Google Drive para almacenar documentos del sistema.
-                    </p>
-
-                    <form action="{{ route('admin.settings.update') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="section" value="drive">
-
-                        <div class="space-y-6">
-                            <!-- JSON de Service Account -->
-                            <div>
-                                <label for="drive_service_account_json" class="block mb-2 text-sm font-medium text-gray-900">
-                                    JSON de Service Account <span class="text-red-500">*</span>
-                                </label>
-                                <textarea id="drive_service_account_json" 
-                                          name="drive_service_account_json" 
-                                          rows="12"
-                                          placeholder='{"type": "service_account", "project_id": "...", "private_key_id": "...", "private_key": "...", "client_email": "...", "client_id": "...", "auth_uri": "...", "token_uri": "...", "auth_provider_x509_cert_url": "...", "client_x509_cert_url": "..."}'
-                                          required
-                                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('drive_service_account_json', $settings->drive_service_account_json ?? '') }}</textarea>
-                                <p class="mt-2 text-xs text-gray-500">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    Pega aquí el contenido completo del archivo JSON descargado de Google Cloud Console.
-                                </p>
-                                @if($settings->drive_service_account_json)
-                                    @php
-                                        try {
-                                            $jsonData = json_decode($settings->drive_service_account_json, true);
-                                            $serviceEmail = $jsonData['client_email'] ?? null;
-                                        } catch (\Exception $e) {
-                                            $serviceEmail = null;
-                                        }
-                                    @endphp
-                                    @if($serviceEmail)
-                                        <div class="mt-2 bg-green-50 border border-green-200 rounded p-3">
-                                            <p class="text-xs text-green-800">
-                                                <i class="fas fa-check-circle mr-1"></i>
-                                                <strong>Service Account configurado:</strong> {{ $serviceEmail }}
-                                            </p>
-                                        </div>
-                                    @endif
-                                @endif
-                            </div>
-
-                            <!-- ID de Carpeta de Drive (Opcional) -->
-                            <div>
-                                <label for="drive_folder_id" class="block mb-2 text-sm font-medium text-gray-900">
-                                    ID de Carpeta de Drive (Opcional)
-                                </label>
-                                <input type="text" 
-                                       id="drive_folder_id" 
-                                       name="drive_folder_id" 
-                                       value="{{ old('drive_folder_id', $settings->drive_folder_id ?? '') }}"
-                                       placeholder="1a2b3c4d5e6f7g8h9i0j"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                                <p class="mt-2 text-xs text-gray-500">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    Si quieres que todos los documentos se suban a una carpeta específica, ingresa el ID de la carpeta. 
-                                    Puedes obtenerlo desde la URL de la carpeta en Google Drive (la parte después de <code class="bg-gray-100 px-1 rounded">folders/</code>).
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 flex justify-end gap-3">
-                            <button type="button" 
-                                    onclick="testDriveConnection()"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                <i class="fas fa-vial mr-2"></i> Probar Conexión
-                            </button>
-                            <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                                <i class="fas fa-save mr-2"></i> Guardar Configuración
-                            </button>
-                        </div>
-                    </form>
-                </div>
                 </div>
 
                 <!-- Panel de Historial -->
@@ -2663,6 +2668,22 @@ function loadDriveOperationsLog() {
 // Mostrar error en modal
 function showError(message) {
     alert('Error: ' + message);
+}
+
+// Toggle instructivo de Google Drive
+function toggleDriveInstructions() {
+    const content = document.getElementById('drive-instructions-content');
+    const icon = document.getElementById('drive-instructions-icon');
+    
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        content.classList.add('hidden');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    }
 }
 
 // Cambiar entre tabs de Google Drive
