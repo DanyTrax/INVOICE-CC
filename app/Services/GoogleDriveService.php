@@ -257,6 +257,12 @@ class GoogleDriveService
                 'fields' => 'id, name, webViewLink, webContentLink',
             ];
             
+            // Si es Shared Drive, agregar parámetros adicionales
+            if ($isSharedDrive) {
+                $queryParams['includeItemsFromAllDrives'] = 'true';
+                $queryParams['corpora'] = 'allDrives';
+            }
+            
             $response = Http::withToken($token)
                 ->withHeaders([
                     'Content-Type' => 'multipart/related; boundary=' . $boundary,
@@ -265,12 +271,29 @@ class GoogleDriveService
                 ->post('https://www.googleapis.com/upload/drive/v3/files?' . http_build_query($queryParams));
 
             if (!$response->successful()) {
+                $errorData = $response->json();
+                $errorMessage = $errorData['error']['message'] ?? $response->body();
+                
+                // Mensaje específico para storage quota exceeded
+                if (str_contains($errorMessage, 'storageQuotaExceeded') || 
+                    str_contains($errorMessage, 'Service Accounts do not have storage quota')) {
+                    $message = 'Las Service Accounts de Google no tienen cuota de almacenamiento propia. ' .
+                               'Debes usar una Shared Drive (Unidad Compartida) o compartir una carpeta en tu Drive personal. ' .
+                               'Por favor, crea una Shared Drive y configura su ID en la configuración de Google Drive. ' .
+                               'Ver el instructivo en Configuración > Google Drive para más detalles.';
+                } else {
+                    $message = 'Error al subir archivo a Google Drive: ' . $errorMessage;
+                }
+                
                 Log::error('Error al subir archivo a Google Drive', [
                     'response' => $response->body(),
                     'status' => $response->status(),
                     'fileName' => $fileName,
+                    'parentFolderId' => $parentFolderId,
+                    'errorMessage' => $errorMessage,
                 ]);
-                throw new \Exception('Error al subir archivo a Google Drive: ' . $response->body());
+                
+                throw new \Exception($message);
             }
 
             $file = $response->json();
