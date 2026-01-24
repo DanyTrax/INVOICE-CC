@@ -144,7 +144,7 @@ class RegistrationController extends Controller
 
         // Procesar documentos subidos
         if ($request->hasFile('documents')) {
-            $this->uploadDocuments($registration, $request->file('documents'), $driveFolderId);
+            $this->uploadDocuments($registration, $request->file('documents'), $registration->drive_folder_id ?? $driveFolderId);
         }
 
         return redirect()

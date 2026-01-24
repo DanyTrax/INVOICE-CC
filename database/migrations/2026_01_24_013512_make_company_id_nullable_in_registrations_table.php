@@ -12,7 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('registrations', function (Blueprint $table) {
-            //
+            // Primero eliminar la foreign key
+            $table->dropForeign(['company_id']);
+            // Hacer la columna nullable
+            $table->unsignedBigInteger('company_id')->nullable()->change();
+            // Recrear la foreign key
+            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
         });
     }
 
@@ -22,7 +27,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('registrations', function (Blueprint $table) {
-            //
+            // Eliminar foreign key
+            $table->dropForeign(['company_id']);
+            // Hacer la columna NOT NULL
+            $table->unsignedBigInteger('company_id')->nullable(false)->change();
+            // Recrear la foreign key
+            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
         });
     }
 };
