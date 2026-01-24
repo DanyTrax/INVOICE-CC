@@ -11,15 +11,35 @@
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         [x-cloak] { display: none !important; }
-        .calendar-header { 
-            @apply bg-gray-50 text-center text-xs font-bold text-gray-500 py-2 border border-gray-100; 
+        .fc-event {
+            cursor: pointer;
+            border-radius: 0.375rem;
+            padding: 0.125rem 0.25rem;
         }
-        .calendar-day { 
-            @apply h-24 border border-gray-100 bg-white p-1 relative flex flex-col gap-1 overflow-hidden; 
+        .fc-day-sat, .fc-day-sun {
+            background-color: #fef2f2;
+        }
+        .fc-button {
+            background-color: #0f766e !important;
+            border-color: #0f766e !important;
+            color: white !important;
+        }
+        .fc-button:hover {
+            background-color: #0d9488 !important;
+            border-color: #0d9488 !important;
+        }
+        .fc-today-button {
+            background-color: #64748b !important;
+            border-color: #64748b !important;
         }
     </style>
+    @stack('styles')
 </head>
 <body class="bg-gray-50 font-sans text-gray-900" x-data="{ sidebarOpen: true, userMenuOpen: false }">
 
@@ -121,5 +141,6 @@
         </main>
     </div>
 </div>
+@stack('scripts')
 </body>
 </html>

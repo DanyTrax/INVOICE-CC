@@ -67,55 +67,12 @@ class ClientPortalController extends Controller
             ->orderByRaw('COALESCE(expiration_date, response_limit_date) ASC')
             ->get();
 
-        // Preparar eventos para el calendario visual (mes seleccionado o actual)
-        $calendarEvents = [];
-        $selectedMonth = $request->input('month', now()->month);
-        $selectedYear = $request->input('year', now()->year);
-        
-        // Validar mes/año
-        $selectedMonth = max(1, min(12, (int)$selectedMonth));
-        $selectedYear = max(2020, min(2100, (int)$selectedYear));
-        
-        foreach ($calendarRegistrations as $reg) {
-            $isRequerimiento = $reg->status === 'requerimiento';
-            $useResponseLimit = $isRequerimiento && $reg->response_limit_date;
-            $fecha = $useResponseLimit ? $reg->response_limit_date : ($reg->expiration_date ?? $reg->response_limit_date);
-            
-            if ($fecha && $fecha->month == $selectedMonth && $fecha->year == $selectedYear) {
-                $day = $fecha->day;
-                if (!isset($calendarEvents[$day])) {
-                    $calendarEvents[$day] = [];
-                }
-                
-                if ($isRequerimiento && $reg->response_limit_date) {
-                    $calendarEvents[$day][] = [
-                        'type' => 'requerimiento',
-                        'text' => 'Requerimiento: ' . $reg->product_name,
-                        'color' => 'amber',
-                        'registration' => $reg,
-                    ];
-                } elseif ($reg->expiration_date) {
-                    $calendarEvents[$day][] = [
-                        'type' => 'vencimiento',
-                        'text' => 'Vence: ' . $reg->product_name,
-                        'color' => 'red',
-                        'registration' => $reg,
-                    ];
-                } else {
-                    $calendarEvents[$day][] = [
-                        'type' => 'limite',
-                        'text' => 'Límite respuesta: ' . $reg->product_name,
-                        'color' => 'blue',
-                        'registration' => $reg,
-                    ];
-                }
-            }
-        }
+        // Eventos para FullCalendar (formato JSON)
+        $calendarEvents = $this->getCalendarEvents($base);
 
         return view('portal.dashboard', compact(
             'vigentes', 'enTramite', 'requerimiento', 'vencidos', 'proximosVencer',
-            'registrations', 'calendarRegistrations', 'calendarEvents', 
-            'selectedMonth', 'selectedYear'
+            'registrations', 'calendarRegistrations', 'calendarEvents'
         ));
     }
 
@@ -166,5 +123,83 @@ class ClientPortalController extends Controller
         }
         return app(\App\Http\Controllers\Admin\RegistrationController::class)
             ->downloadDocument($registration, $document);
+    }
+
+    /**
+     * Generar eventos para FullCalendar (solo expedientes del cliente).
+     */
+    protected function getCalendarEvents($baseQuery)
+    {
+        $events = [];
+
+        // Vencimientos (rojo)
+        $expirations = (clone $baseQuery)
+            ->whereNotNull('expiration_date')
+            ->select('id', 'product_name', 'expiration_date')
+            ->get();
+
+        foreach ($expirations as $reg) {
+            $events[] = [
+                'id' => 'exp-' . $reg->id,
+                'title' => 'Vence: ' . \Str::limit($reg->product_name, 30),
+                'start' => $reg->expiration_date->format('Y-m-d'),
+                'backgroundColor' => '#ef4444',
+                'borderColor' => '#dc2626',
+                'textColor' => '#ffffff',
+                'extendedProps' => [
+                    'type' => 'expiration',
+                    'registration_id' => $reg->id,
+                ],
+            ];
+        }
+
+        // Requerimientos (ámbar) - cuando hay response_limit_date y status es requerimiento
+        $requerimientos = (clone $baseQuery)
+            ->where('status', 'requerimiento')
+            ->whereNotNull('response_limit_date')
+            ->select('id', 'product_name', 'response_limit_date')
+            ->get();
+
+        foreach ($requerimientos as $reg) {
+            $events[] = [
+                'id' => 'req-' . $reg->id,
+                'title' => 'Requerimiento: ' . \Str::limit($reg->product_name, 25),
+                'start' => $reg->response_limit_date->format('Y-m-d'),
+                'backgroundColor' => '#f59e0b',
+                'borderColor' => '#d97706',
+                'textColor' => '#ffffff',
+                'extendedProps' => [
+                    'type' => 'requerimiento',
+                    'registration_id' => $reg->id,
+                ],
+            ];
+        }
+
+        // Límites de respuesta (azul) - cuando hay response_limit_date pero NO es requerimiento
+        $responseLimits = (clone $baseQuery)
+            ->whereNotNull('response_limit_date')
+            ->where(function ($q) {
+                $q->where('status', '!=', 'requerimiento')
+                  ->orWhereNull('status');
+            })
+            ->select('id', 'product_name', 'response_limit_date')
+            ->get();
+
+        foreach ($responseLimits as $reg) {
+            $events[] = [
+                'id' => 'resp-' . $reg->id,
+                'title' => 'Límite respuesta: ' . \Str::limit($reg->product_name, 25),
+                'start' => $reg->response_limit_date->format('Y-m-d'),
+                'backgroundColor' => '#3b82f6',
+                'borderColor' => '#2563eb',
+                'textColor' => '#ffffff',
+                'extendedProps' => [
+                    'type' => 'response_limit',
+                    'registration_id' => $reg->id,
+                ],
+            ];
+        }
+
+        return $events;
     }
 }

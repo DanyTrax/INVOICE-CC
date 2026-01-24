@@ -111,82 +111,29 @@
     </div>
 
     <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h3 class="font-bold text-gray-800">Mi Calendario Regulatorio</h3>
-            <div class="flex items-center gap-2">
-                @php
-                    $firstDay = \Carbon\Carbon::create($selectedYear, $selectedMonth, 1);
-                    $prevMonth = $firstDay->copy()->subMonth();
-                    $nextMonth = $firstDay->copy()->addMonth();
-                    $isCurrentMonth = $selectedMonth == now()->month && $selectedYear == now()->year;
-                    $monthName = $firstDay->locale('es')->monthName;
-                @endphp
-                <a href="{{ route('portal.dashboard', ['month' => $prevMonth->month, 'year' => $prevMonth->year]) }}"
-                   class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class="fas fa-chevron-left mr-1"></i> Mes Anterior
-                </a>
-                @if(!$isCurrentMonth)
-                <a href="{{ route('portal.dashboard') }}"
-                   class="px-3 py-1.5 text-sm font-medium text-white bg-teal-600 border border-teal-600 rounded-lg hover:bg-teal-700 transition-colors">
-                    Hoy
-                </a>
-                @endif
-                <a href="{{ route('portal.dashboard', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}"
-                   class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    Mes Siguiente <i class="fas fa-chevron-right ml-1"></i>
-                </a>
-            </div>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">
+                <i class="fas fa-calendar-alt mr-2 text-teal-600"></i>
+                Mi Calendario Regulatorio
+            </h3>
         </div>
-        <div class="mb-4 text-center">
-            <h4 class="text-lg font-semibold text-gray-800 capitalize">{{ $monthName }} {{ $selectedYear }}</h4>
+        
+        <div class="mb-4 flex items-center space-x-4">
+            <span class="inline-flex items-center text-sm text-gray-600">
+                <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                Vencimientos
+            </span>
+            <span class="inline-flex items-center text-sm text-gray-600">
+                <span class="w-3 h-3 bg-amber-500 rounded-full mr-2"></span>
+                Requerimientos
+            </span>
+            <span class="inline-flex items-center text-sm text-gray-600">
+                <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                Límites de Respuesta
+            </span>
         </div>
-        @php
-            $lastDay = $firstDay->copy()->endOfMonth();
-            $startDate = $firstDay->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
-            $endDate = $lastDay->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
-            $daysInMonth = $lastDay->day;
-        @endphp
-        <div class="grid grid-cols-7 gap-px border border-gray-200 bg-gray-200 rounded-lg overflow-hidden">
-            <div class="calendar-header">Lun</div>
-            <div class="calendar-header">Mar</div>
-            <div class="calendar-header">Mié</div>
-            <div class="calendar-header">Jue</div>
-            <div class="calendar-header">Vie</div>
-            <div class="calendar-header text-red-500">Sáb</div>
-            <div class="calendar-header text-red-500">Dom</div>
-            
-            @php
-                $currentDate = $startDate->copy();
-                $totalDays = $startDate->diffInDays($endDate) + 1;
-            @endphp
-            @for($i = 0; $i < $totalDays; $i++)
-                @php
-                    $date = $currentDate->copy()->addDays($i);
-                    $day = $date->day;
-                    $isCurrentMonth = $date->month == $selectedMonth;
-                    $isToday = $date->isToday();
-                    $dayEvents = $isCurrentMonth && isset($calendarEvents[$day]) ? $calendarEvents[$day] : [];
-                @endphp
-                <div class="calendar-day bg-white hover:bg-gray-50 {{ !$isCurrentMonth ? 'opacity-40' : '' }} {{ $isToday ? 'ring-2 ring-teal-500' : '' }}">
-                    <span class="text-[10px] text-gray-400 ml-1">{{ $day }}</span>
-                    @foreach($dayEvents as $event)
-                        @php
-                            $colorClasses = match($event['color']) {
-                                'red' => 'bg-red-100 text-red-700 border-red-500 hover:bg-red-200',
-                                'amber' => 'bg-amber-100 text-amber-700 border-amber-500 hover:bg-amber-200',
-                                'blue' => 'bg-blue-100 text-blue-700 border-blue-500 hover:bg-blue-200',
-                                default => 'bg-gray-100 text-gray-700 border-gray-500 hover:bg-gray-200',
-                            };
-                        @endphp
-                        <a href="{{ route('portal.registrations.show', $event['registration']) }}" 
-                           class="block {{ $colorClasses }} text-[10px] px-1.5 py-0.5 rounded border-l-2 font-medium truncate transition-colors"
-                           title="{{ $event['text'] }}">
-                            {{ Str::limit($event['text'], 20) }}
-                        </a>
-                    @endforeach
-                </div>
-            @endfor
-        </div>
+        
+        <div id="calendar" class="w-full"></div>
     </div>
 
     @if($calendarRegistrations->isNotEmpty())
@@ -219,4 +166,72 @@
     </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var events = @json($calendarEvents);
+    
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        firstDay: 1,
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: ''
+        },
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            day: 'Día'
+        },
+        events: events,
+        eventClick: function(info) {
+            var type = '';
+            var message = '';
+            
+            if (info.event.extendedProps.type === 'expiration') {
+                type = 'Vencimiento';
+                message = '<strong>Vencimiento</strong><br>' +
+                         'Producto: ' + info.event.title.replace('Vence: ', '') + '<br>' +
+                         'Fecha: ' + info.event.start.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+            } else if (info.event.extendedProps.type === 'requerimiento') {
+                type = 'Requerimiento';
+                message = '<strong>Requerimiento</strong><br>' +
+                         'Producto: ' + info.event.title.replace('Requerimiento: ', '') + '<br>' +
+                         'Fecha límite: ' + info.event.start.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+            } else {
+                type = 'Límite de Respuesta';
+                message = '<strong>Límite de Respuesta</strong><br>' +
+                         'Producto: ' + info.event.title.replace('Límite respuesta: ', '') + '<br>' +
+                         'Fecha: ' + info.event.start.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+            }
+            
+            Swal.fire({
+                title: 'Detalles del Evento',
+                html: message,
+                icon: 'info',
+                confirmButtonText: 'Ver Expediente',
+                showCancelButton: true,
+                cancelButtonText: 'Cerrar',
+                confirmButtonColor: '#0f766e'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/portal/registrations/' + info.event.extendedProps.registration_id;
+                }
+            });
+        },
+        dayCellClassNames: function(date) {
+            var day = date.getDay();
+            return (day === 0 || day === 6) ? ['weekend-day'] : [];
+        }
+    });
+    
+    calendar.render();
+});
+</script>
+@endpush
 @endsection
