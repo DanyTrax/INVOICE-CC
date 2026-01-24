@@ -1,6 +1,6 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Ver Cliente - RAMS')
+@section('title', 'Ver Empresa - RAMS')
 
 @section('page-title', $company->name)
 
@@ -8,7 +8,7 @@
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.companies.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Clientes</a>
+            <a href="{{ route('admin.companies.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Empresas</a>
         </div>
     </li>
     <li>
@@ -25,7 +25,7 @@
         <div class="lg:col-span-2">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-bold text-gray-900">Información del Cliente</h2>
+                    <h2 class="text-xl font-bold text-gray-900">Información de la Empresa</h2>
                     <div class="flex gap-2">
                         <a href="{{ route('admin.companies.edit', $company) }}" 
                            class="px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm">

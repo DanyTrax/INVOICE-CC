@@ -13,19 +13,55 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::query();
+        return redirect()->route('admin.agents.index');
+    }
 
-        // Búsqueda
+    /**
+     * Lista solo usuarios con rol client (usuarios que consultan desde el portal).
+     */
+    public function clients(Request $request)
+    {
+        $query = User::role('client');
+
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
-        // Filtro por rol
+        $users = $query->with('roles')
+            ->withCount('companies')
+            ->orderBy('name')
+            ->paginate(15)
+            ->withQueryString();
+
+        $roles = collect();
+        return view('admin.users.listing', [
+            'users' => $users,
+            'roles' => $roles,
+            'listingType' => 'clients',
+        ]);
+    }
+
+    /**
+     * Lista solo usuarios que no son clientes (agentes, panel_user, super_admin).
+     */
+    public function agents(Request $request)
+    {
+        $query = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'client'));
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->filled('role')) {
             $query->role($request->role);
         }
@@ -33,11 +69,16 @@ class UserController extends Controller
         $users = $query->with('roles')
             ->withCount('companies')
             ->orderBy('name')
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
-        $roles = Role::all();
+        $roles = Role::where('name', '!=', 'client')->get();
 
-        return view('admin.users.index', compact('users', 'roles'));
+        return view('admin.users.listing', [
+            'users' => $users,
+            'roles' => $roles,
+            'listingType' => 'agents',
+        ]);
     }
 
     public function create()
@@ -74,7 +115,7 @@ class UserController extends Controller
         }
 
         return redirect()
-            ->route('admin.users.index')
+            ->route('admin.agents.index')
             ->with('success', 'Usuario creado exitosamente.');
     }
 
@@ -133,7 +174,7 @@ class UserController extends Controller
         }
 
         return redirect()
-            ->route('admin.users.index')
+            ->route('admin.agents.index')
             ->with('success', 'Usuario actualizado exitosamente.');
     }
 
@@ -142,21 +183,21 @@ class UserController extends Controller
         // No permitir eliminar el usuario actual
         if ($user->id === auth()->id()) {
             return redirect()
-                ->route('admin.users.index')
+                ->route('admin.agents.index')
                 ->with('error', 'No puedes eliminar tu propio usuario.');
         }
 
         // Verificar si tiene registros asignados
         if ($user->assignedRegistrations()->count() > 0) {
             return redirect()
-                ->route('admin.users.index')
+                ->route('admin.agents.index')
                 ->with('error', 'No se puede eliminar el usuario porque tiene expedientes asignados.');
         }
 
         $user->delete();
 
         return redirect()
-            ->route('admin.users.index')
+            ->route('admin.agents.index')
             ->with('success', 'Usuario eliminado exitosamente.');
     }
 

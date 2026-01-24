@@ -142,7 +142,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Estadísticas</h3>
                 <dl class="space-y-3">
                     <div class="flex justify-between items-center">
-                        <dt class="text-sm text-gray-600">Clientes Asignados</dt>
+                        <dt class="text-sm text-gray-600">Empresas Asignadas</dt>
                         <dd class="text-sm font-semibold text-gray-900">{{ $user->companies_count }}</dd>
                     </div>
                     <div class="flex justify-between items-center">

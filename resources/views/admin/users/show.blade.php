@@ -8,7 +8,11 @@
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.users.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Usuarios</a>
+            @if($user->hasRole('client'))
+                <a href="{{ route('admin.clients.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Clientes</a>
+            @else
+                <a href="{{ route('admin.agents.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Agentes</a>
+            @endif
         </div>
     </li>
     <li>
@@ -95,7 +99,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Estadísticas</h3>
                 <div class="space-y-4">
                     <div>
-                        <p class="text-sm text-gray-500">Clientes Asignados</p>
+                        <p class="text-sm text-gray-500">Empresas Asignadas</p>
                         <p class="text-2xl font-bold text-gray-900">{{ $user->companies_count }}</p>
                     </div>
                     <div>
@@ -107,10 +111,10 @@
         </div>
     </div>
 
-    <!-- Clientes Asignados -->
+    <!-- Empresas Asignadas -->
     @if($user->companies->count() > 0)
         <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Clientes Asignados</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Empresas Asignadas</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($user->companies as $company)
                     <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">

@@ -85,7 +85,7 @@ class CompanyController extends Controller
             if ($sent) {
                 return redirect()
                     ->route('admin.companies.index')
-                    ->with('success', 'Cliente creado exitosamente. Se envió correo de invitación para registro.');
+                    ->with('success', 'Empresa creada exitosamente. Se envió correo de invitación para registro.');
             }
             return redirect()
                 ->route('admin.companies.index')
@@ -95,7 +95,7 @@ class CompanyController extends Controller
 
         return redirect()
             ->route('admin.companies.index')
-            ->with('success', 'Cliente creado exitosamente.');
+            ->with('success', 'Empresa creada exitosamente.');
     }
 
     public function show(Company $company)
@@ -164,7 +164,7 @@ class CompanyController extends Controller
         if ($company->registrations()->count() > 0) {
             return redirect()
                 ->route('admin.companies.index')
-                ->with('error', 'No se puede eliminar el cliente porque tiene expedientes asociados.');
+                ->with('error', 'No se puede eliminar la empresa porque tiene expedientes asociados.');
         }
 
         $company->delete();
@@ -182,7 +182,7 @@ class CompanyController extends Controller
         if (!$company->contact_person_email) {
             return redirect()
                 ->route('admin.companies.index')
-                ->with('error', 'El cliente no tiene email de contacto. Edítalo y añade uno.');
+                ->with('error', 'La empresa no tiene email de contacto. Edítala y añade uno.');
         }
 
         $lastError = null;

@@ -139,10 +139,10 @@
                     @enderror
                 </div>
 
-                <!-- Clientes Asignados -->
+                <!-- Empresas Asignadas -->
                 <div class="md:col-span-2">
                     <label class="block mb-2 text-sm font-medium text-gray-900">
-                        Clientes Asignados
+                        Empresas Asignadas
                     </label>
                     <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 max-h-64 overflow-y-auto">
                         @if($companies->count() > 0)
@@ -165,10 +165,10 @@
                                 @endforeach
                             </div>
                         @else
-                            <p class="text-sm text-gray-500 text-center py-4">No hay clientes registrados</p>
+                            <p class="text-sm text-gray-500 text-center py-4">No hay empresas registradas</p>
                         @endif
                     </div>
-                    <p class="mt-2 text-xs text-gray-500">Selecciona los clientes que estarán asignados a este usuario</p>
+                    <p class="mt-2 text-xs text-gray-500">Selecciona las empresas que estarán asignadas a este usuario</p>
                     @error('companies')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -177,7 +177,7 @@
 
             <!-- Botones -->
             <div class="mt-6 flex justify-end gap-3">
-                <a href="{{ route('admin.users.index') }}" 
+                <a href="{{ route('admin.agents.index') }}" 
                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
                     Cancelar
                 </a>

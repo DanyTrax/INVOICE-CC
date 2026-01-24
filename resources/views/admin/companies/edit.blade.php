@@ -1,8 +1,8 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Editar Cliente - RAMS')
+@section('title', 'Editar Empresa - RAMS')
 
-@section('page-title', 'Editar Cliente')
+@section('page-title', 'Editar Empresa')
 
 @section('breadcrumb')
     <li>
@@ -131,7 +131,7 @@
                 </a>
                 <button type="submit" 
                         class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                    <i class="fas fa-save mr-2"></i> Actualizar Cliente
+                    <i class="fas fa-save mr-2"></i> Actualizar Empresa
                 </button>
             </div>
         </form>

@@ -1,14 +1,14 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Nuevo Cliente - RAMS')
+@section('title', 'Nueva Empresa - RAMS')
 
-@section('page-title', 'Nuevo Cliente')
+@section('page-title', 'Nueva Empresa')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.companies.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Clientes</a>
+            <a href="{{ route('admin.companies.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Empresas</a>
         </div>
     </li>
     <li>
@@ -146,7 +146,7 @@
                 </a>
                 <button type="submit" 
                         class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                    <i class="fas fa-save mr-2"></i> Guardar Cliente
+                    <i class="fas fa-save mr-2"></i> Guardar Empresa
                 </button>
             </div>
         </form>

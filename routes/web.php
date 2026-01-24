@@ -41,9 +41,13 @@ Route::middleware(['auth', 'client'])->prefix('portal')->name('portal.')->group(
 Route::middleware(['auth', 'not.client'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
-    // Companies
+    // Companies (Empresas)
     Route::post('companies/{company}/send-invite', [CompanyController::class, 'sendInvite'])->name('companies.send-invite');
     Route::resource('companies', CompanyController::class);
+    
+    // Listas separadas: Clientes (rol client) y Agentes (no client)
+    Route::get('clients', [UserController::class, 'clients'])->name('clients.index');
+    Route::get('agents', [UserController::class, 'agents'])->name('agents.index');
     
     // Registrations
     Route::get('/registrations/{registration}/documents/{document}/view', [RegistrationController::class, 'viewDocument'])

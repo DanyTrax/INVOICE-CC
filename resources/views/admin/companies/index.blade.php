@@ -1,14 +1,14 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Directorio Clientes - RAMS')
+@section('title', 'Directorio Empresas - RAMS')
 
-@section('page-title', 'Directorio Clientes')
+@section('page-title', 'Directorio Empresas')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Clientes</span>
+            <span class="text-sm font-medium text-gray-500">Empresas</span>
         </div>
     </li>
 @endsection
@@ -39,7 +39,7 @@
             </form>
         </div>
         <a href="{{ route('admin.companies.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-            <i class="fas fa-plus mr-2"></i> Nuevo Cliente
+            <i class="fas fa-plus mr-2"></i> Nueva Empresa
         </a>
     </div>
 
@@ -113,7 +113,7 @@
                                     <form action="{{ route('admin.companies.destroy', $company) }}" 
                                           method="POST" 
                                           class="inline"
-                                          onsubmit="return confirm('¿Estás seguro de eliminar este cliente?');">
+                                          onsubmit="return confirm('¿Estás seguro de eliminar esta empresa?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
@@ -129,10 +129,10 @@
                         <tr>
                             <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
-                                <p>No se encontraron clientes</p>
+                                <p>No se encontraron empresas</p>
                                 @if(request('search'))
                                     <a href="{{ route('admin.companies.index') }}" class="text-teal-600 hover:text-teal-700 mt-2 inline-block">
-                                        Ver todos los clientes
+                                        Ver todas las empresas
                                     </a>
                                 @endif
                             </td>

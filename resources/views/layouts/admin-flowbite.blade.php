@@ -201,10 +201,10 @@
                     <li class="pt-4">
                         <span class="text-gray-400 text-xs font-semibold uppercase px-2">OPERACIÓN</span>
                     </li>
-                    <li x-data="{ directorioOpen: {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
+                    <li x-data="{ directorioOpen: {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
                         <button @click="directorioOpen = !directorioOpen"
                                 type="button"
-                                class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}">
+                                class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}">
                             <i class="fas fa-address-book w-5 h-5"></i>
                             <span class="ms-3 text-left flex-1">Directorio</span>
                             <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': directorioOpen }"></i>
@@ -221,12 +221,19 @@
                                 <a href="{{ route('admin.companies.index') }}"
                                    class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.companies.*') ? 'bg-teal-700/50 text-white' : '' }}">
                                     <i class="fas fa-building w-4 h-4"></i>
+                                    <span class="ms-2 text-sm">Empresas</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('admin.clients.index') }}"
+                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.clients.*') ? 'bg-teal-700/50 text-white' : '' }}">
+                                    <i class="fas fa-user-friends w-4 h-4"></i>
                                     <span class="ms-2 text-sm">Clientes</span>
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('admin.users.index') }}"
-                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.users.*') ? 'bg-teal-700/50 text-white' : '' }}">
+                                <a href="{{ route('admin.agents.index') }}"
+                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700/50 text-white' : '' }}">
                                     <i class="fas fa-user-tie w-4 h-4"></i>
                                     <span class="ms-2 text-sm">Agentes</span>
                                 </a>
