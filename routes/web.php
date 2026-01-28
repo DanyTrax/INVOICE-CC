@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserController;
@@ -40,6 +41,13 @@ Route::middleware(['auth', 'client'])->prefix('portal')->name('portal.')->group(
 // Rutas Admin (auth + no clientes)
 Route::middleware(['auth', 'not.client'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+            // Backups de sistema (solo super_admin dentro del controlador)
+            Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
+            Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
+            Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
+            Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
+            Route::post('/backups/wipe', [BackupController::class, 'wipe'])->name('backups.wipe');
     
     // Companies (Empresas)
     Route::post('companies/{company}/send-invite', [CompanyController::class, 'sendInvite'])->name('companies.send-invite');
