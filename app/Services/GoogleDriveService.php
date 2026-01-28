@@ -488,6 +488,39 @@ class GoogleDriveService
     /**
      * Obtener o crear carpeta del expediente en Google Drive
      */
+    /**
+     * Obtener o crear carpeta de backups en Google Drive.
+     */
+    public function getOrCreateBackupsFolder(): string
+    {
+        $folderName = 'Backups RAMS';
+        $parentFolderId = $this->settings->drive_folder_id ?? null;
+        
+        // Buscar carpeta existente
+        $token = $this->getAccessToken();
+        $queryParams = [
+            'q' => "name='{$folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false" . 
+                   ($parentFolderId ? " and '{$parentFolderId}' in parents" : ""),
+            'fields' => 'files(id, name)',
+            'supportsAllDrives' => 'true',
+            'includeItemsFromAllDrives' => 'true',
+        ];
+        
+        $response = Http::withToken($token)
+            ->get($this->baseUrl . '/files?' . http_build_query($queryParams));
+        
+        if ($response->successful()) {
+            $files = $response->json();
+            if (!empty($files['files'])) {
+                return $files['files'][0]['id'];
+            }
+        }
+        
+        // Crear carpeta si no existe
+        $result = $this->createFolder($folderName, $parentFolderId);
+        return $result['id'];
+    }
+
     public function getOrCreateRegistrationFolder(Registration $registration): string
     {
         // Si ya tiene carpeta, retornarla

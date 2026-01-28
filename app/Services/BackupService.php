@@ -64,8 +64,9 @@ class BackupService
         $drive = app(GoogleDriveService::class);
 
         // Crear/cargar carpeta "Backups RAMS" en el Drive raíz configurado
-        $folderId = $drive->getOrCreateFolder('Backups RAMS', null);
-        $driveFileId = $drive->uploadFileFromPath($localPath, $fileName, $folderId);
+        $folderId = $drive->getOrCreateBackupsFolder();
+        $uploadResult = $drive->uploadFile($localPath, $fileName, $folderId, 'application/json');
+        $driveFileId = $uploadResult['id'];
 
         @unlink($localPath);
 

@@ -259,6 +259,15 @@
                             <span class="ms-3">Configuración</span>
                         </a>
                     </li>
+                    @if(auth()->user()->hasRole('super_admin'))
+                    <li>
+                        <a href="{{ route('admin.backups.index') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.backups.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-database w-5 h-5"></i>
+                            <span class="ms-3">Backups</span>
+                        </a>
+                    </li>
+                    @endif
                 </ul>
             </div>
         </aside>
