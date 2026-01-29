@@ -23,7 +23,10 @@ class PermissionController extends Controller
     {
         $this->ensureSuperAdmin();
 
-        $roles = Role::orderBy('name')->get();
+        // No incluimos el rol client porque usa otro panel (portal) y no requiere permisos aquí
+        $roles = Role::where('name', '!=', 'client')
+            ->orderBy('name')
+            ->get();
         $modules = PermissionService::getModules();
         $actions = PermissionService::getActions();
 
@@ -56,10 +59,12 @@ class PermissionController extends Controller
             'permissions.*.role_id' => 'required|exists:roles,id',
             'permissions.*.module' => 'required|string',
             'permissions.*.action' => 'required|string',
-            'permissions.*.enabled' => 'boolean',
+            'permissions.*.enabled' => 'nullable|boolean',
         ]);
 
         foreach ($request->permissions as $perm) {
+            $enabled = !empty($perm['enabled']) && (int)$perm['enabled'] === 1;
+
             RolePermission::updateOrCreate(
                 [
                     'role_id' => $perm['role_id'],
@@ -67,7 +72,7 @@ class PermissionController extends Controller
                     'action' => $perm['action'],
                 ],
                 [
-                    'enabled' => $perm['enabled'] ?? true,
+                    'enabled' => $enabled,
                 ]
             );
         }

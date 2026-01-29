@@ -186,79 +186,100 @@
                     @endif
                 </a>
                 
+                @php
+                    $permService = app(\App\Services\PermissionService::class);
+                @endphp
                 <!-- Menu -->
                 <ul class="space-y-2 font-medium">
                     <!-- PRINCIPAL -->
-                    <li>
-                        <a href="{{ route('admin.dashboard') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.dashboard') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-home w-5 h-5"></i>
-                            <span class="ms-3">Inicio</span>
-                        </a>
-                    </li>
+                    @if($permService->userHasPermission('dashboard', 'view'))
+                        <li>
+                            <a href="{{ route('admin.dashboard') }}" 
+                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.dashboard') ? 'bg-teal-700' : '' }}">
+                                <i class="fas fa-home w-5 h-5"></i>
+                                <span class="ms-3">Inicio</span>
+                            </a>
+                        </li>
+                    @endif
                     
                     <!-- OPERACIÓN -->
-                    <li class="pt-4">
-                        <span class="text-gray-400 text-xs font-semibold uppercase px-2">OPERACIÓN</span>
-                    </li>
-                    <li x-data="{ directorioOpen: {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
-                        <button @click="directorioOpen = !directorioOpen"
-                                type="button"
-                                class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-address-book w-5 h-5"></i>
-                            <span class="ms-3 text-left flex-1">Directorio</span>
-                            <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': directorioOpen }"></i>
-                        </button>
-                        <ul x-show="directorioOpen" x-cloak
-                            x-transition:enter="transition ease-out duration-150"
-                            x-transition:enter-start="opacity-0 -translate-y-1"
-                            x-transition:enter-end="opacity-100 translate-y-0"
-                            x-transition:leave="transition ease-in duration-100"
-                            x-transition:leave-start="opacity-100"
-                            x-transition:leave-end="opacity-0"
-                            class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
-                            <li>
-                                <a href="{{ route('admin.companies.index') }}"
-                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.companies.*') ? 'bg-teal-700/50 text-white' : '' }}">
-                                    <i class="fas fa-building w-4 h-4"></i>
-                                    <span class="ms-2 text-sm">Empresas</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('admin.clients.index') }}"
-                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.clients.*') ? 'bg-teal-700/50 text-white' : '' }}">
-                                    <i class="fas fa-user-friends w-4 h-4"></i>
-                                    <span class="ms-2 text-sm">Clientes</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('admin.agents.index') }}"
-                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700/50 text-white' : '' }}">
-                                    <i class="fas fa-user-tie w-4 h-4"></i>
-                                    <span class="ms-2 text-sm">Agentes</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.registrations.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.registrations.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-clipboard-list w-5 h-5"></i>
-                            <span class="ms-3">Registros (Expedientes)</span>
-                        </a>
-                    </li>
+                    @if($permService->userHasPermission('companies', 'view') || $permService->userHasPermission('users', 'view'))
+                        <li class="pt-4">
+                            <span class="text-gray-400 text-xs font-semibold uppercase px-2">OPERACIÓN</span>
+                        </li>
+                        <li x-data="{ directorioOpen: {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
+                            <button @click="directorioOpen = !directorioOpen"
+                                    type="button"
+                                    class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.companies.*') || request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}">
+                                <i class="fas fa-address-book w-5 h-5"></i>
+                                <span class="ms-3 text-left flex-1">Directorio</span>
+                                <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': directorioOpen }"></i>
+                            </button>
+                            <ul x-show="directorioOpen" x-cloak
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 -translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
+                                @if($permService->userHasPermission('companies', 'view'))
+                                    <li>
+                                        <a href="{{ route('admin.companies.index') }}"
+                                           class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.companies.*') ? 'bg-teal-700/50 text-white' : '' }}">
+                                            <i class="fas fa-building w-4 h-4"></i>
+                                            <span class="ms-2 text-sm">Empresas</span>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if($permService->userHasPermission('users', 'view'))
+                                    <li>
+                                        <a href="{{ route('admin.clients.index') }}"
+                                           class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.clients.*') ? 'bg-teal-700/50 text-white' : '' }}">
+                                            <i class="fas fa-user-friends w-4 h-4"></i>
+                                            <span class="ms-2 text-sm">Clientes</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('admin.agents.index') }}"
+                                           class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700/50 text-white' : '' }}">
+                                            <i class="fas fa-user-tie w-4 h-4"></i>
+                                            <span class="ms-2 text-sm">Agentes</span>
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
+                        </li>
+                    @endif
+
+                    @if($permService->userHasPermission('registrations', 'view'))
+                        <li>
+                            <a href="{{ route('admin.registrations.index') }}" 
+                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.registrations.*') ? 'bg-teal-700' : '' }}">
+                                <i class="fas fa-clipboard-list w-5 h-5"></i>
+                                <span class="ms-3">Registros (Expedientes)</span>
+                            </a>
+                        </li>
+                    @endif
                     
                     <!-- SISTEMA -->
-                    <li class="pt-4">
-                        <span class="text-gray-400 text-xs font-semibold uppercase px-2">SISTEMA</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.settings.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.settings.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-cog w-5 h-5"></i>
-                            <span class="ms-3">Configuración</span>
-                        </a>
-                    </li>
+                    @if($permService->userHasPermission('settings_agency', 'view') 
+                        || $permService->userHasPermission('settings_drive', 'view')
+                        || $permService->userHasPermission('settings_mail', 'view')
+                        || $permService->userHasPermission('settings_templates', 'view')
+                        || $permService->userHasPermission('settings_history', 'view')
+                        || $permService->userHasPermission('settings_system', 'view'))
+                        <li class="pt-4">
+                            <span class="text-gray-400 text-xs font-semibold uppercase px-2">SISTEMA</span>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.settings.index') }}" 
+                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.settings.*') ? 'bg-teal-700' : '' }}">
+                                <i class="fas fa-cog w-5 h-5"></i>
+                                <span class="ms-3">Configuración</span>
+                            </a>
+                        </li>
+                    @endif
                     @if(auth()->user()->hasRole('super_admin'))
                     <li>
                         <a href="{{ route('admin.backups.index') }}" 
