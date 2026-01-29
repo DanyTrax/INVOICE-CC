@@ -25,10 +25,12 @@ class PermissionController extends Controller
     {
         $this->ensureCanManagePermissions();
 
-        // No incluimos el rol client porque usa otro panel (portal) y no requiere permisos aquí
+        // Roles para Permisos por Módulo: sin client (usa portal, no requiere permisos de admin)
         $roles = Role::where('name', '!=', 'client')
             ->orderBy('name')
             ->get();
+        // Roles destino en Jerarquía: incluye client para poder crear/ver usuarios del portal
+        $targetRolesForHierarchy = Role::orderBy('name')->get();
         $modules = PermissionService::getModules();
         $actions = PermissionService::getActions();
 
@@ -45,6 +47,7 @@ class PermissionController extends Controller
 
         return view('admin.permissions.index', compact(
             'roles',
+            'targetRolesForHierarchy',
             'modules',
             'actions',
             'permissions',

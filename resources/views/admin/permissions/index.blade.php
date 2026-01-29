@@ -120,7 +120,7 @@
                 Jerarquía de Roles
             </h2>
             <p class="text-sm text-gray-600 mb-4">
-                Define qué roles puede crear y ver cada rol en el sistema.
+                Define qué roles puede crear y ver cada rol. El rol <strong>client</strong> es de portal (no usa permisos de módulo de administración).
             </p>
 
             <form id="hierarchyForm" method="POST" action="{{ route('admin.permissions.hierarchy') }}">
@@ -180,7 +180,7 @@
                                                name="hierarchy[{{ $role->id }}_{{ $noRole }}][can_create_role]" 
                                                value="{{ $noRole }}">
                                     </div>
-                                    @foreach($roles as $targetRole)
+                                    @foreach($targetRolesForHierarchy ?? $roles as $targetRole)
                                         @if($targetRole->id !== $role->id)
                                             @php
                                                 $existing = $hierarchy->get($role->id)?->firstWhere('can_create_role', $targetRole->name);
@@ -196,6 +196,9 @@
                                                            onchange="toggleViewCheckbox(this, '{{ $role->id }}_{{ $targetRole->name }}')"
                                                            class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-2">
                                                     <span class="text-gray-700">{{ $targetRole->name }}</span>
+                                                    @if($targetRole->name === 'client')
+                                                        <span class="text-xs text-gray-400 ml-1">(portal)</span>
+                                                    @endif
                                                 </label>
                                                 <label class="flex items-center text-xs text-gray-500">
                                                     <input type="checkbox" 
