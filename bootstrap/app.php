@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'client' => \App\Http\Middleware\EnsureUserIsClient::class,
             'not.client' => \App\Http\Middleware\EnsureUserIsNotClient::class,
+            'module.permission' => \App\Http\Middleware\CheckModulePermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

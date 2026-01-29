@@ -39,8 +39,8 @@ Route::middleware(['auth', 'client'])->prefix('portal')->name('portal.')->group(
     Route::get('/registrations/{registration}/documents/{document}/download', [ClientPortalController::class, 'downloadDocument'])->name('documents.download');
 });
 
-// Rutas Admin (auth + no clientes)
-Route::middleware(['auth', 'not.client'])->prefix('admin')->name('admin.')->group(function () {
+// Rutas Admin (auth + no clientes + permisos granulares por módulo)
+Route::middleware(['auth', 'not.client', 'module.permission'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
             // Backups de sistema (solo super_admin dentro del controlador)

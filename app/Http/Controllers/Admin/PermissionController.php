@@ -54,27 +54,34 @@ class PermissionController extends Controller
     {
         $this->ensureSuperAdmin();
 
-        $request->validate([
-            'permissions' => 'required|array',
-            'permissions.*.role_id' => 'required|exists:roles,id',
-            'permissions.*.module' => 'required|string',
-            'permissions.*.action' => 'required|string',
-            'permissions.*.enabled' => 'nullable|boolean',
-        ]);
+        // Los checkboxes desmarcados NO se envían en el POST. Hay que procesar TODAS las
+        // combinaciones rol+módulo+acción y marcar enabled=false para las que no vengan.
+        $roles = Role::where('name', '!=', 'client')
+            ->where('name', '!=', 'super_admin')
+            ->orderBy('name')
+            ->get();
+        $modules = PermissionService::getModules();
+        $actions = PermissionService::getActions();
 
-        foreach ($request->permissions as $perm) {
-            $enabled = !empty($perm['enabled']) && (int)$perm['enabled'] === 1;
+        foreach ($roles as $role) {
+            foreach ($modules as $moduleKey => $moduleLabel) {
+                foreach ($actions as $actionKey => $actionLabel) {
+                    $key = "{$role->id}_{$moduleKey}_{$actionKey}";
+                    $enabled = isset($request->permissions[$key]['enabled'])
+                        && (string) $request->permissions[$key]['enabled'] === '1';
 
-            RolePermission::updateOrCreate(
-                [
-                    'role_id' => $perm['role_id'],
-                    'module' => $perm['module'],
-                    'action' => $perm['action'],
-                ],
-                [
-                    'enabled' => $enabled,
-                ]
-            );
+                    RolePermission::updateOrCreate(
+                        [
+                            'role_id' => $role->id,
+                            'module' => $moduleKey,
+                            'action' => $actionKey,
+                        ],
+                        [
+                            'enabled' => $enabled,
+                        ]
+                    );
+                }
+            }
         }
 
         // Limpiar caché
