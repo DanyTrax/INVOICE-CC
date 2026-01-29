@@ -111,10 +111,15 @@ class PermissionService
             return Role::pluck('name')->toArray();
         }
 
-        return RoleHierarchy::where('role_id', $role->id)
+        $fromHierarchy = RoleHierarchy::where('role_id', $role->id)
             ->where('can_create_role', '!=', null)
             ->pluck('can_create_role')
             ->toArray();
+        // Un rol siempre puede crear usuarios de su mismo tipo (p. ej. panel_user crea panel_user)
+        if (!in_array($roleName, $fromHierarchy, true)) {
+            $fromHierarchy[] = $roleName;
+        }
+        return $fromHierarchy;
     }
 
     /**
@@ -133,10 +138,15 @@ class PermissionService
             return Role::pluck('name')->toArray();
         }
 
-        return RoleHierarchy::where('role_id', $role->id)
+        $fromHierarchy = RoleHierarchy::where('role_id', $role->id)
             ->where('can_view', true)
             ->pluck('can_create_role')
             ->toArray();
+        // Un rol siempre puede ver usuarios de su mismo tipo (p. ej. panel_user ve panel_user)
+        if (!in_array($roleName, $fromHierarchy, true)) {
+            $fromHierarchy[] = $roleName;
+        }
+        return $fromHierarchy;
     }
 
     /**

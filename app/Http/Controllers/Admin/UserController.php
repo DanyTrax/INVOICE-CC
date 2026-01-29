@@ -176,6 +176,15 @@ class UserController extends Controller
     {
         $query = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'client'));
 
+        // Solo mostrar usuarios que el actual puede ver (según jerarquía)
+        $allowedToView = $this->getAllowedRolesToView();
+        $query->where(function ($q) use ($allowedToView) {
+            $q->whereHas('roles', fn ($r) => $r->whereIn('name', $allowedToView));
+            if (in_array(PermissionService::NO_ROLE, $allowedToView, true)) {
+                $q->orWhereDoesntHave('roles');
+            }
+        });
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
