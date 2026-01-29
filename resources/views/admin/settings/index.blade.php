@@ -1785,9 +1785,7 @@ window.showEmailDetails = function(logId) {
                                     ` : ''}
                                     <div class="border-t pt-4 mt-4">
                                         <strong class="text-gray-700 block mb-2">Cuerpo del Mensaje:</strong>
-                                        <div class="mt-2 p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto text-xs">
-                                            ${escapeHtml(log.body)}
-                                        </div>
+                                        <div id="email-detail-body" class="mt-2 p-3 bg-gray-50 rounded border max-h-64 overflow-y-auto text-sm" style="max-height: 16rem;"></div>
                                     </div>
                                 </div>
                                 <div class="mt-6 flex justify-end border-t pt-4">
@@ -1806,6 +1804,11 @@ window.showEmailDetails = function(logId) {
                     existingModal.outerHTML = modal;
                 } else {
                     document.body.insertAdjacentHTML('beforeend', modal);
+                }
+                // Mostrar cuerpo del mensaje como HTML renderizado (contenido propio del sistema)
+                const bodyEl = document.getElementById('email-detail-body');
+                if (bodyEl && log.body) {
+                    bodyEl.innerHTML = log.body;
                 }
             } else {
                 throw new Error('No se recibieron los datos del correo correctamente');
