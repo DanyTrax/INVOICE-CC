@@ -36,10 +36,8 @@ class PermissionService
     public static function getActions(): array
     {
         return [
+            // Por ahora solo usamos 'view' para mostrar/ocultar módulos.
             'view' => 'Ver',
-            'create' => 'Crear',
-            'update' => 'Editar',
-            'delete' => 'Eliminar',
         ];
     }
 

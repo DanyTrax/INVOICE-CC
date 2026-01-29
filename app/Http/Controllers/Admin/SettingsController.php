@@ -103,28 +103,14 @@ class SettingsController extends Controller
             $settings->save();
         }
 
-        $permissionService = app(PermissionService::class);
-
         switch ($section) {
             case 'agency':
-                if (!$permissionService->userHasPermission('settings_agency', 'update')) {
-                    return redirect()->route('admin.settings.section', 'agency')
-                        ->with('error', 'No tienes permisos para actualizar esta sección.');
-                }
                 $this->updateAgencySettings($request, $settings);
                 break;
             case 'drive':
-                if (!$permissionService->userHasPermission('settings_drive', 'update')) {
-                    return redirect()->route('admin.settings.section', 'drive')
-                        ->with('error', 'No tienes permisos para actualizar esta sección.');
-                }
                 $this->updateDriveSettings($request, $settings);
                 break;
             case 'mail':
-                if (!$permissionService->userHasPermission('settings_mail', 'update')) {
-                    return redirect()->route('admin.settings.section', 'mail')
-                        ->with('error', 'No tienes permisos para actualizar esta sección.');
-                }
                 $this->updateMailSettings($request, $settings);
                 break;
             case 'system':
@@ -132,10 +118,6 @@ class SettingsController extends Controller
                 if (!auth()->user()->hasRole('super_admin')) {
                     return redirect()->route('admin.settings.section', 'agency')
                         ->with('error', 'No tienes permisos para realizar esta acción.');
-                }
-                if (!$permissionService->userHasPermission('settings_system', 'update')) {
-                    return redirect()->route('admin.settings.section', 'system')
-                        ->with('error', 'No tienes permisos para actualizar esta sección.');
                 }
                 $this->updateSystemSettings($request, $settings);
                 break;
