@@ -614,6 +614,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Panel de Historial (solo si tiene permiso) -->
                 @if($permService->userHasPermission('settings_drive_operations_log', 'view'))
