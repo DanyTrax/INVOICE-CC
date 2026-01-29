@@ -8,6 +8,10 @@ use Spatie\Permission\Models\Role;
 
 class RoleHierarchy extends Model
 {
+    // La migración creó la tabla 'role_hierarchy' (sin plural),
+    // así que necesitamos indicarlo explícitamente al modelo.
+    protected $table = 'role_hierarchy';
+
     protected $fillable = [
         'role_id',
         'can_create_role',
