@@ -24,11 +24,13 @@
                 @php
                     $activeSection = $activeSection ?? 'agency';
                 @endphp
+                @if($permService->userHasPermission('settings_agency', 'view'))
                 <a href="{{ route('admin.settings.section', 'agency') }}" 
                         id="tab-agency"
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'agency' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-building mr-2"></i> Datos de la Empresa
                 </a>
+                @endif
                 @if($permService->userHasPermission('settings_drive', 'view') || $permService->userHasPermission('settings_drive_operations_log', 'view'))
                 <a href="{{ route('admin.settings.section', 'drive') }}" 
                         id="tab-drive"
@@ -36,21 +38,27 @@
                     <i class="fas fa-cloud mr-2"></i> Conexión Google Drive
                 </a>
                 @endif
+                @if($permService->userHasPermission('settings_mail', 'view'))
                 <a href="{{ route('admin.settings.section', 'mail') }}" 
                         id="tab-mail"
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'mail' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-envelope mr-2"></i> Correo & SMTP
                 </a>
+                @endif
+                @if($permService->userHasPermission('settings_templates', 'view'))
                 <a href="{{ route('admin.settings.section', 'templates') }}" 
                         id="tab-templates"
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'templates' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-file-alt mr-2"></i> Plantillas de Email
                 </a>
+                @endif
+                @if($permService->userHasPermission('settings_history', 'view'))
                 <a href="{{ route('admin.settings.section', 'history') }}" 
                         id="tab-history"
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'history' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-history mr-2"></i> Histórico y Pruebas
                 </a>
+                @endif
                 @if(auth()->user()->hasRole('super_admin'))
                 <a href="{{ route('admin.settings.section', 'system') }}" 
                         id="tab-system"
@@ -61,7 +69,8 @@
             </nav>
         </div>
 
-        <!-- Tab 1: Datos de la Empresa -->
+        <!-- Tab 1: Datos de la Empresa (solo si tiene permiso) -->
+        @if($permService->userHasPermission('settings_agency', 'view'))
         <div id="panel-agency" class="tab-panel {{ $activeSection === 'agency' ? '' : 'hidden' }}">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -206,8 +215,9 @@
                 </form>
             </div>
         </div>
+        @endif
 
-        <!-- Tab 2: Google Drive -->
+        <!-- Tab 2: Google Drive (tabs ya filtrados por permiso) -->
         <div id="panel-drive" class="tab-panel {{ $activeSection === 'drive' ? '' : 'hidden' }}">
             <div class="space-y-6">
                 <!-- Submenú de Google Drive (solo si tiene ambos permisos) -->
@@ -727,7 +737,8 @@
             </div>
         </div>
 
-        <!-- Tab 3: Correo & SMTP -->
+        <!-- Tab 3: Correo & SMTP (solo si tiene permiso) -->
+        @if($permService->userHasPermission('settings_mail', 'view'))
         <div id="panel-mail" class="tab-panel {{ $activeSection === 'mail' ? '' : 'hidden' }}">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -1140,8 +1151,10 @@
                 </form>
             </div>
         </div>
+        @endif
 
-        <!-- Tab 5: Histórico y Pruebas -->
+        <!-- Tab 5: Histórico y Pruebas (solo si tiene permiso) -->
+        @if($permService->userHasPermission('settings_history', 'view'))
         <div id="panel-history" class="tab-panel {{ $activeSection === 'history' ? '' : 'hidden' }}">
             <div class="space-y-6">
                 <!-- Enviar Correo de Prueba -->
@@ -1315,8 +1328,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
-        <!-- Tab 4: Plantillas de Email -->
+        <!-- Tab 4: Plantillas de Email (solo si tiene permiso) -->
+        @if($permService->userHasPermission('settings_templates', 'view'))
         <div id="panel-templates" class="tab-panel {{ $activeSection === 'templates' ? '' : 'hidden' }}">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -1388,6 +1403,7 @@
                 @endif
             </div>
         </div>
+        @endif
 
         @if(auth()->user()->hasRole('super_admin'))
         <!-- Tab 6: Sistema (Solo Super Admin) -->

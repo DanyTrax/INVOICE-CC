@@ -44,31 +44,26 @@ class PermissionService
 
     /**
      * Verificar si un rol tiene permiso para una acción en un módulo.
-     * Caché corta (60s) para que al desmarcar en permisos el menú se actualice pronto.
+     * Sin caché: marcar/desmarcar en Permisos se refleja de inmediato en sidebar y tabs.
      */
     public function hasPermission(string $roleName, string $module, string $action): bool
     {
-        $cacheKey = 'permission.' . $roleName . '.' . $module . '.' . $action;
+        $role = Role::where('name', $roleName)->first();
 
-        return Cache::remember($cacheKey, 60, function () use ($roleName, $module, $action) {
-            $role = Role::where('name', $roleName)->first();
+        if (!$role) {
+            return false;
+        }
 
-            if (!$role) {
-                return false;
-            }
+        if ($roleName === 'super_admin') {
+            return true;
+        }
 
-            // Super admin tiene todos los permisos
-            if ($roleName === 'super_admin') {
-                return true;
-            }
+        $permission = RolePermission::where('role_id', $role->id)
+            ->where('module', $module)
+            ->where('action', $action)
+            ->first();
 
-            $permission = RolePermission::where('role_id', $role->id)
-                ->where('module', $module)
-                ->where('action', $action)
-                ->first();
-
-            return $permission && $permission->enabled;
-        });
+        return $permission && $permission->enabled;
     }
 
     /**

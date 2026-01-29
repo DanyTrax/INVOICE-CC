@@ -46,14 +46,16 @@ class SettingsController extends Controller
                 }
             }
             if (!$hasAny) {
-                return redirect()->route('admin.settings.section', 'agency')
+                $firstAllowed = $this->getFirstAllowedSection($permissionService);
+                return redirect()->route('admin.settings.section', $firstAllowed)
                     ->with('error', 'No tienes permisos para acceder a esta sección.');
             }
         }
 
         // Refuerzo adicional: sección system sigue limitada a super_admin
         if ($section === 'system' && !auth()->user()->hasRole('super_admin')) {
-            return redirect()->route('admin.settings.section', 'agency')
+            $firstAllowed = $this->getFirstAllowedSection($permissionService);
+            return redirect()->route('admin.settings.section', $firstAllowed)
                 ->with('error', 'No tienes permisos para acceder a esta sección.');
         }
         
@@ -93,6 +95,48 @@ class SettingsController extends Controller
             'emailLogs' => $emailLogs,
             'activeSection' => $section,
         ]);
+    }
+
+    /**
+     * Primera sección de configuración a la que el usuario tiene permiso (unificación sidebar/tabs).
+     */
+    protected function getFirstAllowedSection(PermissionService $permissionService): string
+    {
+        if (auth()->user()->hasRole('super_admin')) {
+            return 'agency';
+        }
+        $order = [
+            'agency' => ['settings_agency'],
+            'drive' => ['settings_drive', 'settings_drive_operations_log'],
+            'mail' => ['settings_mail'],
+            'templates' => ['settings_templates'],
+            'history' => ['settings_history'],
+            'system' => ['settings_system'],
+        ];
+        foreach ($order as $section => $modules) {
+            if ($section === 'system') {
+                if (auth()->user()->hasRole('super_admin')) {
+                    return $section;
+                }
+                continue;
+            }
+            foreach ($modules as $module) {
+                if ($permissionService->userHasPermission($module, 'view')) {
+                    return $section;
+                }
+            }
+        }
+        return 'agency';
+    }
+
+    /**
+     * Redirigir a la primera sección de configuración permitida (unificación con sidebar/tabs).
+     */
+    public function redirectToFirstSection()
+    {
+        $permissionService = app(PermissionService::class);
+        $section = $this->getFirstAllowedSection($permissionService);
+        return redirect()->route('admin.settings.section', $section);
     }
 
     public function update(Request $request)
