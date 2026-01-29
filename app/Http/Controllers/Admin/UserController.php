@@ -108,30 +108,30 @@ class UserController extends Controller
     }
 
     /**
-     * Validar que los roles a asignar sean permitidos. 'no_role' permite dejar sin rol.
+     * Validar que el rol seleccionado (único) sea permitido. null o no_role = sin rol.
      */
-    protected function validateRoles(array $roles): void
+    protected function validateRole(?string $role): void
     {
         $allowedRoles = $this->getAllowedRolesToCreate();
         $noRole = PermissionService::NO_ROLE;
-        // Quitar no_role para validar solo roles reales; [] o [no_role] es válido si no_role está permitido
-        $rolesToCheck = array_values(array_filter($roles, fn ($r) => $r !== $noRole));
-        if (empty($rolesToCheck)) {
+        if (empty($role) || $role === $noRole) {
             if (!in_array($noRole, $allowedRoles, true)) {
                 abort(403, 'No tienes permiso para asignar "Sin roles".');
             }
             return;
         }
-        $invalidRoles = array_diff($rolesToCheck, $allowedRoles);
-        if (!empty($invalidRoles)) {
-            abort(403, 'No tienes permiso para asignar los roles: ' . implode(', ', $invalidRoles));
+        if (!in_array($role, $allowedRoles, true)) {
+            abort(403, 'No tienes permiso para asignar el rol: ' . $role);
         }
     }
 
-    /** Roles a sincronizar: quitar no_role (dejar sin rol = sync vacío). */
-    protected function rolesToSync(array $roles): array
+    /** Convierte el rol seleccionado (único) a array para syncRoles. */
+    protected function roleToSync(?string $role): array
     {
-        return array_values(array_filter($roles, fn ($r) => $r !== PermissionService::NO_ROLE));
+        if (empty($role) || $role === PermissionService::NO_ROLE) {
+            return [];
+        }
+        return [$role];
     }
 
     public function index(Request $request)
@@ -228,18 +228,18 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
-            'roles' => 'array',
+            'role' => 'nullable|string|max:255',
         ]);
 
-        $rolesInput = $request->input('roles', []);
-        $this->validateRoles(is_array($rolesInput) ? $rolesInput : []);
+        $roleInput = $request->input('role');
+        $this->validateRole($roleInput);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
 
         $user = User::create($validated);
 
-        $user->syncRoles($this->rolesToSync(is_array($rolesInput) ? $rolesInput : []));
+        $user->syncRoles($this->roleToSync($roleInput));
 
         // Asignar empresas (clientes)
         if ($request->filled('companies')) {
@@ -288,13 +288,13 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
-            'roles' => 'array',
+            'role' => 'nullable|string|max:255',
             'companies' => 'array',
             'companies.*' => 'exists:companies,id',
         ]);
 
-        $rolesInput = $request->input('roles', []);
-        $this->validateRoles(is_array($rolesInput) ? $rolesInput : []);
+        $roleInput = $request->input('role');
+        $this->validateRole($roleInput);
 
         // Solo actualizar password si se proporciona
         if (empty($validated['password'])) {
@@ -307,7 +307,7 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        $user->syncRoles($this->rolesToSync(is_array($rolesInput) ? $rolesInput : []));
+        $user->syncRoles($this->roleToSync($roleInput));
 
         // Sincronizar empresas (clientes)
         if ($request->filled('companies')) {

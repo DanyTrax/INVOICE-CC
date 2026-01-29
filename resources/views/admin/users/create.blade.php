@@ -115,38 +115,39 @@
                     </div>
                 </div>
 
-                <!-- Roles -->
+                <!-- Roles (solo uno) -->
                 <div class="md:col-span-2">
                     <label class="block mb-2 text-sm font-medium text-gray-900">
-                        Roles
+                        Rol <span class="text-gray-500 font-normal">(seleccione solo uno)</span>
                     </label>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        @php $selectedRole = old('role', null); @endphp
                         @if($canAssignNoRole ?? false)
                             <div class="flex items-center">
-                                <input type="checkbox" 
+                                <input type="radio" 
                                        id="role_no_role" 
-                                       name="roles[]" 
+                                       name="role" 
                                        value="{{ \App\Services\PermissionService::NO_ROLE }}"
-                                       {{ in_array(\App\Services\PermissionService::NO_ROLE, old('roles', [])) ? 'checked' : '' }}
-                                       class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
+                                       {{ $selectedRole === \App\Services\PermissionService::NO_ROLE ? 'checked' : '' }}
+                                       class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500">
                                 <label for="role_no_role" class="ml-2 text-sm text-gray-900">Sin roles</label>
                             </div>
                         @endif
                         @foreach($roles as $role)
                             <div class="flex items-center">
-                                <input type="checkbox" 
+                                <input type="radio" 
                                        id="role_{{ $role->id }}" 
-                                       name="roles[]" 
+                                       name="role" 
                                        value="{{ $role->name }}"
-                                       {{ in_array($role->name, old('roles', [])) ? 'checked' : '' }}
-                                       class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
+                                       {{ $selectedRole === $role->name ? 'checked' : '' }}
+                                       class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500">
                                 <label for="role_{{ $role->id }}" class="ml-2 text-sm text-gray-900">
                                     {{ $role->name }}
                                 </label>
                             </div>
                         @endforeach
                     </div>
-                    @error('roles')
+                    @error('role')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
