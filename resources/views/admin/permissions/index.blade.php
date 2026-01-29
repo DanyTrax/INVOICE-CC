@@ -73,8 +73,13 @@
                                             </td>
                                             @foreach($actions as $actionKey => $actionLabel)
                                                 @php
-                                                    $existing = $permissions->get($role->id)?->firstWhere('module', $moduleKey)?->firstWhere('action', $actionKey);
-                                                    $enabled = $existing ? $existing->enabled : false;
+                                                    // Colección de permisos para este rol
+                                                    $rolePerms = $permissions->get($role->id) ?? collect();
+                                                    // Buscar permiso específico por módulo + acción
+                                                    $existing = $rolePerms->first(function ($perm) use ($moduleKey, $actionKey) {
+                                                        return $perm->module === $moduleKey && $perm->action === $actionKey;
+                                                    });
+                                                    $enabled = $existing ? (bool) $existing->enabled : false;
                                                 @endphp
                                                 <td class="px-2 py-1 text-center">
                                                     <input type="hidden" 
