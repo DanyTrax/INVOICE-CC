@@ -28,6 +28,7 @@ class PermissionService
             'settings_history' => 'Config: Históricos',
             'settings_system' => 'Config: Sistema',
             'backups' => 'Backups',
+            'permissions' => 'Gestión de Permisos',
         ];
     }
 

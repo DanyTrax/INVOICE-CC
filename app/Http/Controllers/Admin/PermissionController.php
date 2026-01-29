@@ -12,16 +12,18 @@ use Spatie\Permission\Models\Role;
 
 class PermissionController extends Controller
 {
-    protected function ensureSuperAdmin(): void
+    /** Solo quien tiene permiso "Gestión de Permisos" puede acceder (super_admin lo tiene por defecto). */
+    protected function ensureCanManagePermissions(): void
     {
-        if (!Auth::user() || !Auth::user()->hasRole('super_admin')) {
-            abort(403);
+        $user = Auth::user();
+        if (!$user || !app(PermissionService::class)->userHasPermission('permissions', 'view')) {
+            abort(403, 'No tienes permiso para gestionar permisos.');
         }
     }
 
     public function index()
     {
-        $this->ensureSuperAdmin();
+        $this->ensureCanManagePermissions();
 
         // No incluimos el rol client porque usa otro panel (portal) y no requiere permisos aquí
         $roles = Role::where('name', '!=', 'client')
@@ -52,7 +54,7 @@ class PermissionController extends Controller
 
     public function updatePermissions(Request $request)
     {
-        $this->ensureSuperAdmin();
+        $this->ensureCanManagePermissions();
 
         // Los checkboxes desmarcados NO se envían en el POST. Hay que procesar TODAS las
         // combinaciones rol+módulo+acción y marcar enabled=false para las que no vengan.
@@ -95,7 +97,7 @@ class PermissionController extends Controller
 
     public function updateHierarchy(Request $request)
     {
-        $this->ensureSuperAdmin();
+        $this->ensureCanManagePermissions();
 
         // Limpiar jerarquía existente (excepto super_admin)
         RoleHierarchy::whereHas('role', function ($q) {
@@ -180,10 +182,10 @@ class PermissionController extends Controller
             }
         };
 
-        // panel_user: acceso completo excepto Backups
+        // panel_user: acceso completo excepto Backups y Gestión de Permisos
         if ($roleByName->has('panel_user')) {
             $panelUser = $roleByName->get('panel_user');
-            $createModulePermissions($panelUser, [], ['backups']);
+            $createModulePermissions($panelUser, [], ['backups', 'permissions']);
 
             // Jerarquía: puede crear/ver panel_user, agent, client
             foreach (['panel_user', 'agent', 'client'] as $targetRole) {
@@ -196,12 +198,10 @@ class PermissionController extends Controller
             }
         }
 
-        // agent: acceso completo a módulos principales; no Backups
+        // agent: acceso completo a módulos principales; no Backups ni Gestión de Permisos
         if ($roleByName->has('agent')) {
             $agent = $roleByName->get('agent');
-
-            // Módulos principales sin backups
-            $createModulePermissions($agent, [], ['backups']);
+            $createModulePermissions($agent, [], ['backups', 'permissions']);
 
             // Jerarquía: puede crear/ver solo client (regla actual)
             RoleHierarchy::firstOrCreate([

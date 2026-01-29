@@ -43,9 +43,11 @@ class CheckModulePermission
             $module = $moduleMap[$section] ?? 'settings_agency';
             return [$module, 'view'];
         }
-        if (str_starts_with($routeName, 'admin.backups') || str_starts_with($routeName, 'admin.permissions')) {
-            // Solo super_admin; el controlador ya lo hace
-            return null;
+        if (str_starts_with($routeName, 'admin.backups')) {
+            return ['backups', 'view'];
+        }
+        if (str_starts_with($routeName, 'admin.permissions')) {
+            return ['permissions', 'view'];
         }
         // profile y otras: permitir
         return null;

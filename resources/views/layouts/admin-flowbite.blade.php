@@ -281,7 +281,7 @@
                             </a>
                         </li>
                     @endif
-                    @if(auth()->user()->hasRole('super_admin'))
+                    @if($permService->userHasPermission('backups', 'view'))
                     <li>
                         <a href="{{ route('admin.backups.index') }}" 
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.backups.*') ? 'bg-teal-700' : '' }}">
@@ -289,6 +289,8 @@
                             <span class="ms-3">Backups</span>
                         </a>
                     </li>
+                    @endif
+                    @if($permService->userHasPermission('permissions', 'view'))
                     <li>
                         <a href="{{ route('admin.permissions.index') }}" 
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.permissions.*') ? 'bg-teal-700' : '' }}">

@@ -59,7 +59,7 @@
                     <i class="fas fa-history mr-2"></i> Histórico y Pruebas
                 </a>
                 @endif
-                @if(auth()->user()->hasRole('super_admin'))
+                @if($permService->userHasPermission('settings_system', 'view'))
                 <a href="{{ route('admin.settings.section', 'system') }}" 
                         id="tab-system"
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'system' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
@@ -1405,8 +1405,8 @@
         </div>
         @endif
 
-        @if(auth()->user()->hasRole('super_admin'))
-        <!-- Tab 6: Sistema (Solo Super Admin) -->
+        @if($permService->userHasPermission('settings_system', 'view'))
+        <!-- Tab 6: Sistema (según permiso Config: Sistema) -->
         <div id="panel-system" class="tab-panel {{ $activeSection === 'system' ? '' : 'hidden' }}">
             <div class="space-y-6">
                 <!-- Git Pull -->

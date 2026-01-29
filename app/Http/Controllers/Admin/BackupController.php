@@ -6,23 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\SystemBackup;
 use App\Services\BackupService;
 use App\Services\GoogleDriveService;
+use App\Services\PermissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BackupController extends Controller
 {
-    protected function ensureSuperAdmin(): void
+    /** Solo quien tiene permiso "Backups" puede acceder (controlado desde Gestión de Permisos). */
+    protected function ensureCanAccessBackups(): void
     {
-        if (!Auth::user() || !Auth::user()->hasRole('super_admin')) {
-            abort(403);
+        if (!app(PermissionService::class)->userHasPermission('backups', 'view')) {
+            abort(403, 'No tienes permiso para acceder a Backups.');
         }
     }
 
     public function index()
     {
-        $this->ensureSuperAdmin();
+        $this->ensureCanAccessBackups();
 
         $backups = SystemBackup::with('user')
             ->orderByDesc('created_at')
@@ -33,7 +34,7 @@ class BackupController extends Controller
 
     public function store(BackupService $service): RedirectResponse
     {
-        $this->ensureSuperAdmin();
+        $this->ensureCanAccessBackups();
 
         $service->createBackup();
 
@@ -44,7 +45,7 @@ class BackupController extends Controller
 
     public function download(SystemBackup $backup, GoogleDriveService $drive): StreamedResponse
     {
-        $this->ensureSuperAdmin();
+        $this->ensureCanAccessBackups();
 
         $content = $drive->downloadFile($backup->drive_file_id);
 
@@ -57,7 +58,7 @@ class BackupController extends Controller
 
     public function destroy(SystemBackup $backup, GoogleDriveService $drive): RedirectResponse
     {
-        $this->ensureSuperAdmin();
+        $this->ensureCanAccessBackups();
 
         if ($backup->drive_file_id) {
             try {
@@ -76,7 +77,7 @@ class BackupController extends Controller
 
     public function wipe(BackupService $service): RedirectResponse
     {
-        $this->ensureSuperAdmin();
+        $this->ensureCanAccessBackups();
 
         $service->wipeDataExceptSuperAdmin();
 

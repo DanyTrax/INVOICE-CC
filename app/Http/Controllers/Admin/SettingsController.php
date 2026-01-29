@@ -52,8 +52,8 @@ class SettingsController extends Controller
             }
         }
 
-        // Refuerzo adicional: sección system sigue limitada a super_admin
-        if ($section === 'system' && !auth()->user()->hasRole('super_admin')) {
+        // Sección system: controlada por permiso Config: Sistema (Gestión de Permisos)
+        if ($section === 'system' && !$permissionService->userHasPermission('settings_system', 'view')) {
             $firstAllowed = $this->getFirstAllowedSection($permissionService);
             return redirect()->route('admin.settings.section', $firstAllowed)
                 ->with('error', 'No tienes permisos para acceder a esta sección.');
