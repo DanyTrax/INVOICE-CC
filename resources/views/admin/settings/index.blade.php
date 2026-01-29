@@ -3114,22 +3114,30 @@ function toggleDriveModeBlocks() {
     if (jsonField) jsonField.required = (mode === 'service_account');
 }
 
-// Cargar historial al entrar a la pestaña
+// Cargar historial al entrar a la pestaña; mostrar el panel que corresponda según permisos
 document.addEventListener('DOMContentLoaded', function() {
+    const panelDrive = document.getElementById('panel-drive');
+    const panelConfig = document.getElementById('drive-panel-config');
+    const panelHistory = document.getElementById('drive-panel-history');
+    
+    function initDrivePanel() {
+        if (!panelDrive || panelDrive.classList.contains('hidden')) return;
+        // Si solo tiene historial, mostrar historial; si solo config o ambos, mostrar config
+        if (panelHistory && !panelConfig) {
+            switchDriveTab('history');
+        } else {
+            switchDriveTab('config');
+        }
+    }
+    
     const driveTab = document.getElementById('tab-drive');
     if (driveTab) {
         driveTab.addEventListener('click', function() {
-            setTimeout(() => {
-                if (document.getElementById('panel-drive') && !document.getElementById('panel-drive').classList.contains('hidden')) {
-                    switchDriveTab('config');
-                }
-            }, 100);
+            setTimeout(initDrivePanel, 100);
         });
     }
     
-    if (document.getElementById('panel-drive') && !document.getElementById('panel-drive').classList.contains('hidden')) {
-        switchDriveTab('config');
-    }
+    initDrivePanel();
     
     toggleDriveModeBlocks();
     document.querySelectorAll('.drive-mode-radio').forEach(function(r) {
