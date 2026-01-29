@@ -19,7 +19,13 @@ class PermissionService
             'companies' => 'Empresas',
             'registrations' => 'Expedientes',
             'users' => 'Usuarios',
-            'settings' => 'Configuración',
+            // Configuración por secciones
+            'settings_agency' => 'Config: Datos Empresa',
+            'settings_drive' => 'Config: Conexión Drive',
+            'settings_mail' => 'Config: Correo',
+            'settings_templates' => 'Config: Plantillas',
+            'settings_history' => 'Config: Históricos',
+            'settings_system' => 'Config: Sistema',
             'backups' => 'Backups',
         ];
     }
