@@ -26,11 +26,15 @@ class CheckModulePermission
         if (str_starts_with($routeName, 'admin.clients') || str_starts_with($routeName, 'admin.agents') || str_starts_with($routeName, 'admin.users')) {
             return ['users', 'view'];
         }
+        // Historial de operaciones Drive: permiso específico
+        if ($routeName === 'admin.settings.drive-operations-log' || $routeName === 'admin.settings.drive-operations-log.delete') {
+            return ['settings_drive_operations_log', 'view'];
+        }
         if (str_starts_with($routeName, 'admin.settings')) {
             $section = $request->route('section', 'agency');
             $moduleMap = [
                 'agency' => 'settings_agency',
-                'drive' => 'settings_drive',
+                'drive' => 'settings_drive|settings_drive_operations_log', // ver sección si tiene uno u otro
                 'mail' => 'settings_mail',
                 'templates' => 'settings_templates',
                 'history' => 'settings_history',
@@ -71,7 +75,16 @@ class CheckModulePermission
 
         [$module, $action] = $permission;
         $service = app(PermissionService::class);
-        if (!$service->userHasPermission($module, $action)) {
+        // Módulos alternativos (ej. drive = settings_drive|settings_drive_operations_log)
+        $modules = str_contains($module, '|') ? explode('|', $module) : [$module];
+        $hasAny = false;
+        foreach ($modules as $m) {
+            if ($service->userHasPermission($m, $action)) {
+                $hasAny = true;
+                break;
+            }
+        }
+        if (!$hasAny) {
             abort(403, 'No tienes permiso para acceder a este módulo.');
         }
 

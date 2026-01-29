@@ -22,6 +22,7 @@ class PermissionService
             // Configuración por secciones
             'settings_agency' => 'Config: Datos Empresa',
             'settings_drive' => 'Config: Conexión Drive',
+            'settings_drive_operations_log' => 'Config: Historial Operaciones Drive',
             'settings_mail' => 'Config: Correo',
             'settings_templates' => 'Config: Plantillas',
             'settings_history' => 'Config: Históricos',

@@ -265,6 +265,7 @@
                     <!-- SISTEMA -->
                     @if($permService->userHasPermission('settings_agency', 'view') 
                         || $permService->userHasPermission('settings_drive', 'view')
+                        || $permService->userHasPermission('settings_drive_operations_log', 'view')
                         || $permService->userHasPermission('settings_mail', 'view')
                         || $permService->userHasPermission('settings_templates', 'view')
                         || $permService->userHasPermission('settings_history', 'view')

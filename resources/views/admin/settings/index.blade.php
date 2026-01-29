@@ -14,6 +14,9 @@
 @endsection
 
 @section('content')
+    @php
+        $permService = app(\App\Services\PermissionService::class);
+    @endphp
     <div class="space-y-6">
         <!-- Tabs Navigation -->
         <div class="border-b border-gray-200">
@@ -26,11 +29,13 @@
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'agency' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-building mr-2"></i> Datos de la Empresa
                 </a>
+                @if($permService->userHasPermission('settings_drive', 'view') || $permService->userHasPermission('settings_drive_operations_log', 'view'))
                 <a href="{{ route('admin.settings.section', 'drive') }}" 
                         id="tab-drive"
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'drive' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-cloud mr-2"></i> Conexión Google Drive
                 </a>
+                @endif
                 <a href="{{ route('admin.settings.section', 'mail') }}" 
                         id="tab-mail"
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'mail' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
@@ -205,7 +210,8 @@
         <!-- Tab 2: Google Drive -->
         <div id="panel-drive" class="tab-panel {{ $activeSection === 'drive' ? '' : 'hidden' }}">
             <div class="space-y-6">
-                <!-- Submenú de Google Drive -->
+                <!-- Submenú de Google Drive (solo si tiene ambos permisos) -->
+                @if($permService->userHasPermission('settings_drive', 'view') && $permService->userHasPermission('settings_drive_operations_log', 'view'))
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                     <div class="flex space-x-4 border-b border-gray-200">
                         <button onclick="switchDriveTab('config')" 
@@ -220,8 +226,10 @@
                         </button>
                     </div>
                 </div>
+                @endif
 
-                <!-- Panel de Configuración -->
+                <!-- Panel de Configuración (solo si tiene permiso) -->
+                @if($permService->userHasPermission('settings_drive', 'view'))
                 <div id="drive-panel-config" class="drive-subpanel">
                     <!-- Formulario de Configuración -->
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -607,8 +615,9 @@
                     </div>
                 </div>
 
-                <!-- Panel de Historial -->
-                <div id="drive-panel-history" class="drive-subpanel hidden">
+                <!-- Panel de Historial (solo si tiene permiso) -->
+                @if($permService->userHasPermission('settings_drive_operations_log', 'view'))
+                <div id="drive-panel-history" class="drive-subpanel {{ $permService->userHasPermission('settings_drive', 'view') ? 'hidden' : '' }}">
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-900">
@@ -713,6 +722,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
 

@@ -24,22 +24,31 @@ class SettingsController extends Controller
         
         $permissionService = app(PermissionService::class);
 
-        // Mapear secciones a módulos de permisos
+        // Mapear secciones a módulos de permisos (drive: acceso si tiene configuración O historial)
         $sectionModuleMap = [
-            'agency' => 'settings_agency',
-            'drive' => 'settings_drive',
-            'mail' => 'settings_mail',
-            'templates' => 'settings_templates',
-            'history' => 'settings_history',
-            'system' => 'settings_system',
+            'agency' => ['settings_agency'],
+            'drive' => ['settings_drive', 'settings_drive_operations_log'],
+            'mail' => ['settings_mail'],
+            'templates' => ['settings_templates'],
+            'history' => ['settings_history'],
+            'system' => ['settings_system'],
         ];
 
-        $module = $sectionModuleMap[$section] ?? null;
+        $modules = $sectionModuleMap[$section] ?? null;
 
-        // Verificar permisos de vista por sección
-        if ($module && !$permissionService->userHasPermission($module, 'view')) {
-            return redirect()->route('admin.settings.section', 'agency')
-                ->with('error', 'No tienes permisos para acceder a esta sección.');
+        // Verificar permisos de vista por sección (drive: basta con uno de los dos)
+        if ($modules) {
+            $hasAny = false;
+            foreach ((array) $modules as $module) {
+                if ($permissionService->userHasPermission($module, 'view')) {
+                    $hasAny = true;
+                    break;
+                }
+            }
+            if (!$hasAny) {
+                return redirect()->route('admin.settings.section', 'agency')
+                    ->with('error', 'No tienes permisos para acceder a esta sección.');
+            }
         }
 
         // Refuerzo adicional: sección system sigue limitada a super_admin
@@ -1299,10 +1308,14 @@ class SettingsController extends Controller
     }
 
     /**
-     * Obtener historial de operaciones de Google Drive con filtros
+     * Obtener historial de operaciones de Google Drive con filtros (requiere permiso settings_drive_operations_log)
      */
     public function getDriveOperationsLog(Request $request)
     {
+        $permissionService = app(PermissionService::class);
+        if (!$permissionService->userHasPermission('settings_drive_operations_log', 'view')) {
+            return response()->json(['success' => false, 'message' => 'No tienes permiso para ver el historial de operaciones.'], 403);
+        }
         try {
             $query = \App\Models\DriveOperationLog::with(['user', 'registration', 'company']);
 
@@ -1355,10 +1368,14 @@ class SettingsController extends Controller
     }
 
     /**
-     * Eliminar registros del historial de operaciones de Google Drive
+     * Eliminar registros del historial de operaciones de Google Drive (requiere permiso settings_drive_operations_log)
      */
     public function deleteDriveOperationsLog(Request $request)
     {
+        $permissionService = app(PermissionService::class);
+        if (!$permissionService->userHasPermission('settings_drive_operations_log', 'view')) {
+            return response()->json(['success' => false, 'message' => 'No tienes permiso.'], 403);
+        }
         try {
             $ids = $request->input('ids', []);
             
