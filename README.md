@@ -91,7 +91,7 @@ ACRegulatory/
 
 ### Admin Panel (`/admin`)
 - Color: Teal (#0f766e)
-- Roles: super_admin, panel_user
+- Roles: super_admin, admin
 - Gestión completa del sistema
 
 ### Client Panel (`/portal`)

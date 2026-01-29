@@ -21,7 +21,7 @@ php artisan db:seed --force
 ```
 
 Esto creará:
-- Roles: `super_admin`, `panel_user`, `agent`, `client`
+- Roles: `super_admin`, `admin`, `agent`, `client`
 - Usuario: `admin@rams.com` / `password` con rol `super_admin`
 
 ### 3. Verificar y Asignar Rol al Usuario Actual

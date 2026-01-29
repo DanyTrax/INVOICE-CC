@@ -115,7 +115,7 @@ class PermissionService
             ->where('can_create_role', '!=', null)
             ->pluck('can_create_role')
             ->toArray();
-        // Un rol siempre puede crear usuarios de su mismo tipo (p. ej. panel_user crea panel_user)
+        // Un rol siempre puede crear usuarios de su mismo tipo (p. ej. admin crea admin)
         if (!in_array($roleName, $fromHierarchy, true)) {
             $fromHierarchy[] = $roleName;
         }
@@ -142,7 +142,7 @@ class PermissionService
             ->where('can_view', true)
             ->pluck('can_create_role')
             ->toArray();
-        // Un rol siempre puede ver usuarios de su mismo tipo (p. ej. panel_user ve panel_user)
+        // Un rol siempre puede ver usuarios de su mismo tipo (p. ej. admin ve admin)
         if (!in_array($roleName, $fromHierarchy, true)) {
             $fromHierarchy[] = $roleName;
         }

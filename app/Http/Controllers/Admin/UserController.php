@@ -40,11 +40,11 @@ class UserController extends Controller
         
         // Lógica hardcodeada como fallback
         if ($user->hasRole('super_admin')) {
-            return ['super_admin', 'panel_user', 'agent', 'client'];
+            return ['super_admin', 'admin', 'agent', 'client'];
         }
         
-        if ($user->hasRole('panel_user')) {
-            return ['panel_user', 'agent', 'client'];
+        if ($user->hasRole('admin')) {
+            return ['admin', 'agent', 'client'];
         }
         
         if ($user->hasRole('agent')) {
@@ -77,11 +77,11 @@ class UserController extends Controller
         
         // Lógica hardcodeada como fallback
         if ($user->hasRole('super_admin')) {
-            return ['super_admin', 'panel_user', 'agent', 'client'];
+            return ['super_admin', 'admin', 'agent', 'client'];
         }
         
-        if ($user->hasRole('panel_user')) {
-            return ['panel_user', 'agent', 'client'];
+        if ($user->hasRole('admin')) {
+            return ['admin', 'agent', 'client'];
         }
         
         if ($user->hasRole('agent')) {
@@ -175,7 +175,7 @@ class UserController extends Controller
     }
 
     /**
-     * Lista solo usuarios que no son clientes (agentes, panel_user, super_admin).
+     * Lista solo usuarios que no son clientes (agentes, admin, super_admin).
      */
     public function agents(Request $request)
     {

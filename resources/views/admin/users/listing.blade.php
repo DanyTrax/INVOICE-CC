@@ -60,11 +60,11 @@
             @php
                 // Solo mostrar botón si el usuario puede crear agentes (no solo clientes)
                 $allowedRolesToCreate = auth()->user()->hasRole('super_admin') 
-                    ? ['super_admin', 'panel_user', 'agent', 'client']
-                    : (auth()->user()->hasRole('panel_user') 
-                        ? ['panel_user', 'agent', 'client']
+                    ? ['super_admin', 'admin', 'agent', 'client']
+                    : (auth()->user()->hasRole('admin') 
+                        ? ['admin', 'agent', 'client']
                         : []);
-                $canCreateAgents = !empty(array_intersect(['super_admin', 'panel_user', 'agent'], $allowedRolesToCreate));
+                $canCreateAgents = !empty(array_intersect(['super_admin', 'admin', 'agent'], $allowedRolesToCreate));
             @endphp
             @if($canCreateAgents)
                 <a href="{{ route('admin.users.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">

@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Crear roles de Shield
-        $roles = ['super_admin', 'panel_user', 'agent', 'client'];
+        $roles = ['super_admin', 'admin', 'agent', 'client'];
         
         foreach ($roles as $roleName) {
             Role::firstOrCreate(['name' => $roleName]);

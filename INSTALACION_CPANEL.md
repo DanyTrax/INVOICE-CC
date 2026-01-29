@@ -145,7 +145,7 @@ php artisan db:seed --force
 
 Esto creará:
 - Todas las tablas necesarias
-- Roles del sistema (super_admin, panel_user, agent, client)
+- Roles del sistema (super_admin, admin, agent, client)
 - Usuario administrador por defecto
 
 ## 🔐 Paso 8: Configurar Shield (Permisos)

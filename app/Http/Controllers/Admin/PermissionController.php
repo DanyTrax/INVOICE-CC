@@ -117,7 +117,7 @@ class PermissionController extends Controller
             if (!is_array($data) || empty($data['can_create']) || (string) $data['can_create'] !== '1') {
                 continue;
             }
-            // Prefijo = "roleId_roleName" (ej. 1_panel_user, 2_no_role)
+            // Prefijo = "roleId_roleName" (ej. 1_admin, 2_no_role)
             if (preg_match('/^(\d+)_(.+)$/', $prefix, $matches)) {
                 $roleId = (int) $matches[1];
                 $canCreateRole = $matches[2];
@@ -143,11 +143,11 @@ class PermissionController extends Controller
      * Rellenar permisos y jerarquía con la configuración actual por defecto.
      *
      * - super_admin: tiene todos los permisos de forma implícita (no se crean filas).
-     * - panel_user: acceso completo a todos los módulos excepto Backups.
+     * - admin: acceso completo a todos los módulos excepto Backups.
      * - agent: acceso completo a módulos principales; no a Backups.
      * - Jerarquía de roles según reglas actuales:
      *   * super_admin: puede crear/ver todos (implícito).
-     *   * panel_user: puede crear/ver panel_user, agent, client.
+     *   * admin: puede crear/ver admin, agent, client.
      *   * agent: puede crear/ver solo client.
      */
     protected function seedDefaultPermissions($roles, $modules, $actions): void
@@ -181,15 +181,15 @@ class PermissionController extends Controller
             }
         };
 
-        // panel_user: acceso completo excepto Backups y Gestión de Permisos
-        if ($roleByName->has('panel_user')) {
-            $panelUser = $roleByName->get('panel_user');
-            $createModulePermissions($panelUser, [], ['backups', 'permissions']);
+        // admin: acceso completo excepto Backups y Gestión de Permisos
+        if ($roleByName->has('admin')) {
+            $adminRole = $roleByName->get('admin');
+            $createModulePermissions($adminRole, [], ['backups', 'permissions']);
 
-            // Jerarquía: puede crear/ver panel_user, agent, client
-            foreach (['panel_user', 'agent', 'client'] as $targetRole) {
+            // Jerarquía: puede crear/ver admin, agent, client
+            foreach (['admin', 'agent', 'client'] as $targetRole) {
                 RoleHierarchy::firstOrCreate([
-                    'role_id' => $panelUser->id,
+                    'role_id' => $adminRole->id,
                     'can_create_role' => $targetRole,
                 ], [
                     'can_view' => true,
