@@ -11,6 +11,80 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    /**
+     * Obtener roles que el usuario autenticado puede crear según su rol.
+     */
+    protected function getAllowedRolesToCreate(): array
+    {
+        $user = auth()->user();
+        
+        if ($user->hasRole('super_admin')) {
+            return ['super_admin', 'panel_user', 'agent', 'client'];
+        }
+        
+        if ($user->hasRole('panel_user')) {
+            return ['panel_user', 'agent', 'client'];
+        }
+        
+        if ($user->hasRole('agent')) {
+            return ['client'];
+        }
+        
+        return [];
+    }
+
+    /**
+     * Obtener roles que el usuario autenticado puede ver según su rol.
+     */
+    protected function getAllowedRolesToView(): array
+    {
+        $user = auth()->user();
+        
+        if ($user->hasRole('super_admin')) {
+            return ['super_admin', 'panel_user', 'agent', 'client'];
+        }
+        
+        if ($user->hasRole('panel_user')) {
+            return ['panel_user', 'agent', 'client'];
+        }
+        
+        if ($user->hasRole('agent')) {
+            return ['agent', 'client'];
+        }
+        
+        return [];
+    }
+
+    /**
+     * Verificar si el usuario autenticado puede ver/editar otro usuario.
+     */
+    protected function canViewUser(User $targetUser): bool
+    {
+        $allowedRoles = $this->getAllowedRolesToView();
+        
+        // Si el usuario objetivo tiene algún rol permitido, se puede ver
+        foreach ($targetUser->roles as $role) {
+            if (in_array($role->name, $allowedRoles)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Validar que los roles a asignar sean permitidos.
+     */
+    protected function validateRoles(array $roles): void
+    {
+        $allowedRoles = $this->getAllowedRolesToCreate();
+        $invalidRoles = array_diff($roles, $allowedRoles);
+        
+        if (!empty($invalidRoles)) {
+            abort(403, 'No tienes permiso para asignar los roles: ' . implode(', ', $invalidRoles));
+        }
+    }
+
     public function index(Request $request)
     {
         return redirect()->route('admin.agents.index');
@@ -83,7 +157,8 @@ class UserController extends Controller
 
     public function create()
     {
-        $roles = Role::all();
+        $allowedRoles = $this->getAllowedRolesToCreate();
+        $roles = Role::whereIn('name', $allowedRoles)->get();
         $companies = Company::orderBy('name')->get();
         return view('admin.users.create', compact('roles', 'companies'));
     }
@@ -98,6 +173,11 @@ class UserController extends Controller
             'is_active' => 'boolean',
             'roles' => 'array',
         ]);
+
+        // Validar que los roles sean permitidos
+        if ($request->filled('roles')) {
+            $this->validateRoles($request->roles);
+        }
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
@@ -129,7 +209,13 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        $roles = Role::all();
+        // Verificar que se puede ver/editar este usuario
+        if (!$this->canViewUser($user)) {
+            abort(403, 'No tienes permiso para editar este usuario.');
+        }
+
+        $allowedRoles = $this->getAllowedRolesToCreate();
+        $roles = Role::whereIn('name', $allowedRoles)->get();
         $companies = Company::orderBy('name')->get();
         $user->load('roles', 'companies');
         return view('admin.users.edit', compact('user', 'roles', 'companies'));
@@ -137,6 +223,11 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        // Verificar que se puede editar este usuario
+        if (!$this->canViewUser($user)) {
+            abort(403, 'No tienes permiso para editar este usuario.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
@@ -147,6 +238,11 @@ class UserController extends Controller
             'companies' => 'array',
             'companies.*' => 'exists:companies,id',
         ]);
+
+        // Validar que los roles sean permitidos
+        if ($request->filled('roles')) {
+            $this->validateRoles($request->roles);
+        }
 
         // Solo actualizar password si se proporciona
         if (empty($validated['password'])) {
@@ -180,6 +276,11 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        // Verificar que se puede eliminar este usuario
+        if (!$this->canViewUser($user)) {
+            abort(403, 'No tienes permiso para eliminar este usuario.');
+        }
+
         // No permitir eliminar el usuario actual
         if ($user->id === auth()->id()) {
             return redirect()

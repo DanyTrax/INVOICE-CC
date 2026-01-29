@@ -52,9 +52,20 @@
             </form>
         </div>
         @if($listingType === 'agents')
-            <a href="{{ route('admin.users.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                <i class="fas fa-plus mr-2"></i> Nuevo Agente
-            </a>
+            @php
+                // Solo mostrar botón si el usuario puede crear agentes (no solo clientes)
+                $allowedRolesToCreate = auth()->user()->hasRole('super_admin') 
+                    ? ['super_admin', 'panel_user', 'agent', 'client']
+                    : (auth()->user()->hasRole('panel_user') 
+                        ? ['panel_user', 'agent', 'client']
+                        : []);
+                $canCreateAgents = !empty(array_intersect(['super_admin', 'panel_user', 'agent'], $allowedRolesToCreate));
+            @endphp
+            @if($canCreateAgents)
+                <a href="{{ route('admin.users.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                    <i class="fas fa-plus mr-2"></i> Nuevo Agente
+                </a>
+            @endif
         @endif
     </div>
 
