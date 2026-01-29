@@ -104,30 +104,26 @@ class PermissionController extends Controller
             $q->where('name', '!=', 'super_admin');
         })->delete();
 
-        // Procesar datos del formulario
+        // Procesar datos del formulario (Laravel agrupa como hierarchy[prefix][campo])
         $hierarchyData = [];
-        foreach ($request->all() as $key => $value) {
-            if (str_starts_with($key, 'hierarchy[') && str_ends_with($key, '][can_create]')) {
-                // Extraer el prefijo: "hierarchy[1_panel_user][can_create]" -> "1_panel_user"
-                $prefix = str_replace(['hierarchy[', '][can_create]'], '', $key);
-                
-                // Separar role_id y can_create_role
-                // El formato es "roleId_roleName", pero el roleName puede tener guiones bajos
-                // Necesitamos encontrar el primer número (role_id) y el resto es el nombre del rol
-                if (preg_match('/^(\d+)_(.+)$/', $prefix, $matches)) {
-                    $roleId = $matches[1];
-                    $canCreateRole = $matches[2];
-                    
-                    $canView = $request->input("hierarchy[{$prefix}][can_view]", false);
-                    
-                    if ($value == '1') {
-                        $hierarchyData[] = [
-                            'role_id' => $roleId,
-                            'can_create_role' => $canCreateRole,
-                            'can_view' => $canView == '1',
-                        ];
-                    }
-                }
+        $hierarchyInput = $request->input('hierarchy', []);
+        if (!is_array($hierarchyInput)) {
+            $hierarchyInput = [];
+        }
+        foreach ($hierarchyInput as $prefix => $data) {
+            if (!is_array($data) || empty($data['can_create']) || (string) $data['can_create'] !== '1') {
+                continue;
+            }
+            // Prefijo = "roleId_roleName" (ej. 1_panel_user, 2_no_role)
+            if (preg_match('/^(\d+)_(.+)$/', $prefix, $matches)) {
+                $roleId = (int) $matches[1];
+                $canCreateRole = $matches[2];
+                $canView = !empty($data['can_view']) && (string) $data['can_view'] === '1';
+                $hierarchyData[] = [
+                    'role_id' => $roleId,
+                    'can_create_role' => $canCreateRole,
+                    'can_view' => $canView,
+                ];
             }
         }
 
