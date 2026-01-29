@@ -27,6 +27,11 @@ class PermissionController extends Controller
         $modules = PermissionService::getModules();
         $actions = PermissionService::getActions();
 
+        // Si no hay registros aún, rellenar con los permisos actuales por defecto
+        if (RolePermission::count() === 0 && RoleHierarchy::count() === 0) {
+            $this->seedDefaultPermissions($roles, $modules, $actions);
+        }
+
         // Obtener permisos existentes
         $permissions = RolePermission::with('role')->get()->groupBy('role_id');
         
@@ -118,5 +123,82 @@ class PermissionController extends Controller
         return redirect()
             ->route('admin.permissions.index')
             ->with('success', 'Jerarquía de roles actualizada correctamente.');
+    }
+
+    /**
+     * Rellenar permisos y jerarquía con la configuración actual por defecto.
+     *
+     * - super_admin: tiene todos los permisos de forma implícita (no se crean filas).
+     * - panel_user: acceso completo a todos los módulos excepto Backups.
+     * - agent: acceso completo a módulos principales; no a Backups.
+     * - Jerarquía de roles según reglas actuales:
+     *   * super_admin: puede crear/ver todos (implícito).
+     *   * panel_user: puede crear/ver panel_user, agent, client.
+     *   * agent: puede crear/ver solo client.
+     */
+    protected function seedDefaultPermissions($roles, $modules, $actions): void
+    {
+        $roleByName = $roles->keyBy('name');
+
+        // Helper para crear permisos por módulo/acción para un rol
+        $createModulePermissions = function (Role $role, array $allowedModules, array $deniedModules = []) use ($modules, $actions) {
+            foreach ($modules as $moduleKey => $moduleLabel) {
+                // Si el módulo está explícitamente denegado, saltar
+                if (in_array($moduleKey, $deniedModules, true)) {
+                    continue;
+                }
+                // Si se pasó una lista de permitidos y este no está, saltar
+                if (!empty($allowedModules) && !in_array($moduleKey, $allowedModules, true)) {
+                    continue;
+                }
+
+                foreach ($actions as $actionKey => $actionLabel) {
+                    RolePermission::updateOrCreate(
+                        [
+                            'role_id' => $role->id,
+                            'module' => $moduleKey,
+                            'action' => $actionKey,
+                        ],
+                        [
+                            'enabled' => true,
+                        ]
+                    );
+                }
+            }
+        };
+
+        // panel_user: acceso completo excepto Backups
+        if ($roleByName->has('panel_user')) {
+            $panelUser = $roleByName->get('panel_user');
+            $createModulePermissions($panelUser, [], ['backups']);
+
+            // Jerarquía: puede crear/ver panel_user, agent, client
+            foreach (['panel_user', 'agent', 'client'] as $targetRole) {
+                RoleHierarchy::firstOrCreate([
+                    'role_id' => $panelUser->id,
+                    'can_create_role' => $targetRole,
+                ], [
+                    'can_view' => true,
+                ]);
+            }
+        }
+
+        // agent: acceso completo a módulos principales; no Backups
+        if ($roleByName->has('agent')) {
+            $agent = $roleByName->get('agent');
+
+            // Módulos principales sin backups
+            $createModulePermissions($agent, [], ['backups']);
+
+            // Jerarquía: puede crear/ver solo client (regla actual)
+            RoleHierarchy::firstOrCreate([
+                'role_id' => $agent->id,
+                'can_create_role' => 'client',
+            ], [
+                'can_view' => true,
+            ]);
+        }
+
+        // client: normalmente no accede al panel admin, no se configuran permisos aquí.
     }
 }
