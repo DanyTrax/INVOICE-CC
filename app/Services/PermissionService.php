@@ -43,14 +43,15 @@ class PermissionService
 
     /**
      * Verificar si un rol tiene permiso para una acción en un módulo.
+     * Caché corta (60s) para que al desmarcar en permisos el menú se actualice pronto.
      */
     public function hasPermission(string $roleName, string $module, string $action): bool
     {
-        $cacheKey = "permission.{$roleName}.{$module}.{$action}";
-        
-        return Cache::remember($cacheKey, 3600, function () use ($roleName, $module, $action) {
+        $cacheKey = 'permission.' . $roleName . '.' . $module . '.' . $action;
+
+        return Cache::remember($cacheKey, 60, function () use ($roleName, $module, $action) {
             $role = Role::where('name', $roleName)->first();
-            
+
             if (!$role) {
                 return false;
             }
@@ -139,7 +140,7 @@ class PermissionService
     }
 
     /**
-     * Limpiar caché de permisos.
+     * Limpiar caché de permisos para que el menú refleje al desmarcar.
      */
     public function clearCache(): void
     {

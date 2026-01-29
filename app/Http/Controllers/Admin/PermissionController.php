@@ -84,12 +84,13 @@ class PermissionController extends Controller
             }
         }
 
-        // Limpiar caché
+        // Limpiar caché para que el menú refleje los desmarcados de inmediato
         app(PermissionService::class)->clearCache();
 
         return redirect()
             ->route('admin.permissions.index')
-            ->with('success', 'Permisos actualizados correctamente.');
+            ->with('success', 'Permisos actualizados correctamente.')
+            ->withHeaders(['Cache-Control' => 'no-store, no-cache, must-revalidate']);
     }
 
     public function updateHierarchy(Request $request)

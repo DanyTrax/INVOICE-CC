@@ -40,7 +40,7 @@ Route::middleware(['auth', 'client'])->prefix('portal')->name('portal.')->group(
 });
 
 // Rutas Admin (auth + no clientes + permisos granulares por módulo)
-Route::middleware(['auth', 'not.client', 'module.permission'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
             // Backups de sistema (solo super_admin dentro del controlador)
