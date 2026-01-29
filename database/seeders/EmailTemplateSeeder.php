@@ -61,6 +61,12 @@ class EmailTemplateSeeder extends Seeder
                 'subject' => 'Nuevo Requerimiento: {product_name}',
                 'body' => $this->getRequirementNotificationTemplate(),
             ],
+            [
+                'name' => 'Correo de Acceso (establecer/restablecer contraseña)',
+                'type' => 'access_email',
+                'subject' => 'Acceso a {agency_name} - Establecer contraseña',
+                'body' => $this->getAccessEmailTemplate(),
+            ],
         ];
 
         foreach ($templates as $template) {
@@ -726,6 +732,90 @@ HTML;
                             <div style="background-color: #f0fdfa; border-left: 4px solid #14b8a6; padding: 15px; margin: 20px 0; border-radius: 4px;">
                                 <p style="color: #0f766e; font-size: 13px; margin: 0;">
                                     <strong>💡 Tip:</strong> Puedes acceder al sistema para ver más detalles y gestionar este requerimiento.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="color: #6b7280; font-size: 12px; margin: 0 0 10px 0;">
+                                <strong>{agency_name}</strong><br>
+                                {system_name}
+                            </p>
+                            <p style="color: #9ca3af; font-size: 11px; margin: 10px 0 0 0;">
+                                Este es un correo automático. Por favor, no respondas a este mensaje.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    private function getAccessEmailTemplate(): string
+    {
+        return <<<'HTML'
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso a {agency_name}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Acceso a {agency_name}</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                                Hola <strong>{name}</strong>,
+                            </p>
+                            
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                                Se ha generado un enlace para que puedas <strong>establecer o restablecer tu contraseña</strong> y acceder al sistema.
+                            </p>
+                            
+                            <div style="background-color: #f0fdfa; border-left: 4px solid #14b8a6; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                                <p style="color: #0f766e; font-size: 14px; margin: 0; font-weight: bold; margin-bottom: 10px;">📋 Tu cuenta:</p>
+                                <p style="color: #333333; font-size: 14px; margin: 5px 0;"><strong>Email:</strong> {email}</p>
+                            </div>
+                            
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 30px 0 20px 0;">
+                                Haz clic en el siguiente botón para establecer o restablecer tu contraseña. El enlace caduca en <strong>60 minutos</strong>.
+                            </p>
+                            
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding: 20px 0;">
+                                        <a href="{link}" style="display: inline-block; background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: bold; font-size: 16px;">Establecer contraseña</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0;">
+                                O copia y pega este enlace en tu navegador:<br>
+                                <a href="{link}" style="color: #0d9488; word-break: break-all;">{link}</a>
+                            </p>
+                            
+                            <div style="background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 15px; margin: 30px 0; border-radius: 4px;">
+                                <p style="color: #92400e; font-size: 13px; margin: 0;">
+                                    <strong>⚠️ Importante:</strong> Si no solicitaste este correo, puedes ignorarlo. El enlace caduca en 60 minutos.
                                 </p>
                             </div>
                         </td>

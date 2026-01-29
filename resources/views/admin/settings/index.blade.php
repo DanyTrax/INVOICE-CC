@@ -56,7 +56,7 @@
                 <a href="{{ route('admin.settings.section', 'history') }}" 
                         id="tab-history"
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'history' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                    <i class="fas fa-history mr-2"></i> Histórico y Pruebas
+                    <i class="fas fa-history mr-2"></i> Correos Enviados
                 </a>
                 @endif
                 @if($permService->userHasPermission('settings_system', 'view'))
@@ -1157,174 +1157,196 @@
         @if($permService->userHasPermission('settings_history', 'view'))
         <div id="panel-history" class="tab-panel {{ $activeSection === 'history' ? '' : 'hidden' }}">
             <div class="space-y-6">
-                <!-- Enviar Correo de Prueba -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-paper-plane text-teal-600 mr-2"></i>
-                        Enviar Correo de Prueba
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-6">
-                        Envía un correo de prueba para verificar que la configuración de correo esté funcionando correctamente.
-                    </p>
-
-                    <form action="{{ route('admin.settings.update') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="section" value="test_email">
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Email Destinatario -->
-                            <div class="md:col-span-2">
-                                <label for="test_email_to" class="block mb-2 text-sm font-medium text-gray-900">
-                                    Email Destinatario <span class="text-red-500">*</span>
-                                </label>
-                                <input type="email" 
-                                       id="test_email_to" 
-                                       name="test_email_to" 
-                                       value="{{ old('test_email_to', auth()->user()->email) }}"
-                                       required
-                                       placeholder="destinatario@example.com"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                                <p class="mt-1 text-xs text-gray-500">
-                                    El correo se enviará a esta dirección usando el proveedor configurado ({{ $settings->mail_provider === 'zoho' ? 'Zoho Mail API' : 'SMTP' }})
-                                </p>
-                            </div>
-
-                            <!-- Asunto -->
-                            <div>
-                                <label for="test_email_subject" class="block mb-2 text-sm font-medium text-gray-900">
-                                    Asunto
-                                </label>
-                                <input type="text" 
-                                       id="test_email_subject" 
-                                       name="test_email_subject" 
-                                       value="{{ old('test_email_subject', 'Correo de Prueba - RAMS') }}"
-                                       placeholder="Correo de Prueba - RAMS"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                            </div>
-
-                            <!-- Cuerpo del Mensaje -->
-                            <div class="md:col-span-2">
-                                <label for="test_email_body" class="block mb-2 text-sm font-medium text-gray-900">
-                                    Cuerpo del Mensaje (HTML)
-                                </label>
-                                <textarea id="test_email_body" 
-                                          name="test_email_body" 
-                                          rows="6"
-                                          placeholder="<h1>Correo de Prueba</h1><p>Este es un correo de prueba...</p>"
-                                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('test_email_body', '<h1>Correo de Prueba</h1><p>Este es un correo de prueba enviado desde el sistema RAMS.</p><p>Si recibes este correo, la configuración de correo está funcionando correctamente.</p>') }}</textarea>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    Puedes usar HTML para formatear el correo
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 flex justify-end">
-                            <button type="submit" class="px-6 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300">
-                                <i class="fas fa-paper-plane mr-2"></i> Enviar Correo de Prueba
-                            </button>
-                        </div>
-                    </form>
+                <!-- Submenú Histórico y Pruebas -->
+                <div class="border-b border-gray-200">
+                    <nav class="flex -mb-px gap-1" aria-label="Submenú Correos Enviados">
+                        <button type="button"
+                                id="history-submenu-log"
+                                data-history-sub="log"
+                                class="history-submenu-btn px-4 py-2.5 text-sm font-medium border-b-2 rounded-t-lg transition-colors border-teal-600 text-teal-600 bg-white">
+                            <i class="fas fa-history mr-2"></i> Histórico de Correos Enviados
+                        </button>
+                        <button type="button"
+                                id="history-submenu-test"
+                                data-history-sub="test"
+                                class="history-submenu-btn px-4 py-2.5 text-sm font-medium border-b-2 rounded-t-lg transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            <i class="fas fa-paper-plane mr-2"></i> Enviar Correo de Prueba
+                        </button>
+                    </nav>
                 </div>
 
-                <!-- Histórico de Correos -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-history text-teal-600 mr-2"></i>
-                        Histórico de Correos Enviados
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-6">
-                        Registro de todos los correos enviados desde el sistema.
-                    </p>
+                <!-- Sub-panel 1: Histórico de Correos Enviados (primero, visible por defecto) -->
+                <div id="history-sub-log" class="history-sub-panel">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-history text-teal-600 mr-2"></i>
+                            Histórico de Correos Enviados
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-6">
+                            Registro de todos los correos enviados desde el sistema.
+                        </p>
 
-                    @if($emailLogs->count() > 0)
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left text-gray-500">
-                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                    <tr>
-                                        <th class="px-4 py-3">Fecha</th>
-                                        <th class="px-4 py-3">Destinatario</th>
-                                        <th class="px-4 py-3">Asunto</th>
-                                        <th class="px-4 py-3">Proveedor</th>
-                                        <th class="px-4 py-3">Estado</th>
-                                        <th class="px-4 py-3">Tipo</th>
-                                        <th class="px-4 py-3">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($emailLogs as $log)
-                                        <tr class="bg-white border-b hover:bg-gray-50" data-log-id="{{ $log->id }}">
-                                            <td class="px-4 py-3">
-                                                {{ $log->created_at->format('d/m/Y H:i') }}
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <span class="font-medium text-gray-900">{{ $log->to }}</span>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <span class="text-gray-900">{{ strlen($log->subject) > 50 ? substr($log->subject, 0, 50) . '...' : $log->subject }}</span>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $log->provider === 'zoho' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}" title="{{ strtoupper($log->provider) }}">
-                                                    <i class="fas {{ $log->provider === 'zoho' ? 'fa-envelope-circle-check' : 'fa-server' }}"></i>
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                @if($log->status === 'sent')
-                                                    <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full" title="Enviado">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </span>
-                                                @elseif($log->status === 'failed')
-                                                    <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full" title="Fallido">
-                                                        <i class="fas fa-times-circle"></i>
-                                                    </span>
-                                                @else
-                                                    <span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full" title="Pendiente">
-                                                        <i class="fas fa-clock"></i>
-                                                    </span>
-                                                @endif
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                @if($log->is_test)
-                                                    <span class="px-2 py-1 text-xs font-medium bg-teal-100 text-teal-800 rounded-full" title="Correo de Prueba">
-                                                        <i class="fas fa-flask"></i>
-                                                    </span>
-                                                @else
-                                                    <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full" title="Correo Normal">
-                                                        <i class="fas fa-envelope"></i>
-                                                    </span>
-                                                @endif
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <div class="flex items-center space-x-2">
-                                                    <button type="button" 
-                                                            onclick="if(typeof window.showEmailDetails === 'function') { window.showEmailDetails({{ $log->id }}); } else { console.error('showEmailDetails no disponible'); }"
-                                                            class="text-teal-600 hover:text-teal-700 p-2 rounded-lg hover:bg-teal-50 transition-colors"
-                                                            title="Ver Detalles">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button type="button" 
-                                                            onclick="if(typeof window.deleteEmailLog === 'function') { window.deleteEmailLog({{ $log->id }}); } else { console.error('deleteEmailLog no disponible'); }"
-                                                            class="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                                                            title="Eliminar">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
+                        @if($emailLogs->count() > 0)
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-500">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3">Fecha</th>
+                                            <th class="px-4 py-3">Destinatario</th>
+                                            <th class="px-4 py-3">Asunto</th>
+                                            <th class="px-4 py-3">Proveedor</th>
+                                            <th class="px-4 py-3">Estado</th>
+                                            <th class="px-4 py-3">Tipo</th>
+                                            <th class="px-4 py-3">Acciones</th>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($emailLogs as $log)
+                                            <tr class="bg-white border-b hover:bg-gray-50" data-log-id="{{ $log->id }}">
+                                                <td class="px-4 py-3">
+                                                    {{ $log->created_at->format('d/m/Y H:i') }}
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="font-medium text-gray-900">{{ $log->to }}</span>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="text-gray-900">{{ strlen($log->subject) > 50 ? substr($log->subject, 0, 50) . '...' : $log->subject }}</span>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full {{ $log->provider === 'zoho' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}" title="{{ strtoupper($log->provider) }}">
+                                                        <i class="fas {{ $log->provider === 'zoho' ? 'fa-envelope-circle-check' : 'fa-server' }}"></i>
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    @if($log->status === 'sent')
+                                                        <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full" title="Enviado">
+                                                            <i class="fas fa-check-circle"></i>
+                                                        </span>
+                                                    @elseif($log->status === 'failed')
+                                                        <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full" title="Fallido">
+                                                            <i class="fas fa-times-circle"></i>
+                                                        </span>
+                                                    @else
+                                                        <span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full" title="Pendiente">
+                                                            <i class="fas fa-clock"></i>
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    @if($log->is_test)
+                                                        <span class="px-2 py-1 text-xs font-medium bg-teal-100 text-teal-800 rounded-full" title="Correo de Prueba">
+                                                            <i class="fas fa-flask"></i>
+                                                        </span>
+                                                    @else
+                                                        <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full" title="Correo Normal">
+                                                            <i class="fas fa-envelope"></i>
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div class="flex items-center space-x-2">
+                                                        <button type="button" 
+                                                                onclick="if(typeof window.showEmailDetails === 'function') { window.showEmailDetails({{ $log->id }}); } else { console.error('showEmailDetails no disponible'); }"
+                                                                class="text-teal-600 hover:text-teal-700 p-2 rounded-lg hover:bg-teal-50 transition-colors"
+                                                                title="Ver Detalles">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                        <button type="button" 
+                                                                onclick="if(typeof window.deleteEmailLog === 'function') { window.deleteEmailLog({{ $log->id }}); } else { console.error('deleteEmailLog no disponible'); }"
+                                                                class="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                                                                title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
 
-                        <!-- Paginación -->
-                        <div class="mt-4">
-                            {{ $emailLogs->links() }}
-                        </div>
-                    @else
-                        <div class="text-center py-8 text-gray-500">
-                            <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
-                            <p>No hay correos en el historial</p>
-                        </div>
-                    @endif
+                            <!-- Paginación -->
+                            <div class="mt-4">
+                                {{ $emailLogs->links() }}
+                            </div>
+                        @else
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                                <p>No hay correos en el historial</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Sub-panel 2: Enviar Correo de Prueba (oculto por defecto) -->
+                <div id="history-sub-test" class="history-sub-panel hidden">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-paper-plane text-teal-600 mr-2"></i>
+                            Enviar Correo de Prueba
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-6">
+                            Envía un correo de prueba para verificar que la configuración de correo esté funcionando correctamente.
+                        </p>
+
+                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="section" value="test_email">
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Email Destinatario -->
+                                <div class="md:col-span-2">
+                                    <label for="test_email_to" class="block mb-2 text-sm font-medium text-gray-900">
+                                        Email Destinatario <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="email" 
+                                           id="test_email_to" 
+                                           name="test_email_to" 
+                                           value="{{ old('test_email_to', auth()->user()->email) }}"
+                                           required
+                                           placeholder="destinatario@example.com"
+                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        El correo se enviará a esta dirección usando el proveedor configurado ({{ $settings->mail_provider === 'zoho' ? 'Zoho Mail API' : 'SMTP' }})
+                                    </p>
+                                </div>
+
+                                <!-- Asunto -->
+                                <div>
+                                    <label for="test_email_subject" class="block mb-2 text-sm font-medium text-gray-900">
+                                        Asunto
+                                    </label>
+                                    <input type="text" 
+                                           id="test_email_subject" 
+                                           name="test_email_subject" 
+                                           value="{{ old('test_email_subject', 'Correo de Prueba - RAMS') }}"
+                                           placeholder="Correo de Prueba - RAMS"
+                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                </div>
+
+                                <!-- Cuerpo del Mensaje -->
+                                <div class="md:col-span-2">
+                                    <label for="test_email_body" class="block mb-2 text-sm font-medium text-gray-900">
+                                        Cuerpo del Mensaje (HTML)
+                                    </label>
+                                    <textarea id="test_email_body" 
+                                              name="test_email_body" 
+                                              rows="6"
+                                              placeholder="<h1>Correo de Prueba</h1><p>Este es un correo de prueba...</p>"
+                                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('test_email_body', '<h1>Correo de Prueba</h1><p>Este es un correo de prueba enviado desde el sistema RAMS.</p><p>Si recibes este correo, la configuración de correo está funcionando correctamente.</p>') }}</textarea>
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        Puedes usar HTML para formatear el correo
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end">
+                                <button type="submit" class="px-6 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300">
+                                    <i class="fas fa-paper-plane mr-2"></i> Enviar Correo de Prueba
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1943,6 +1965,26 @@ function updateUrl(section) {
     url.pathname = '/admin/settings/' + section;
     window.history.pushState({}, '', url);
 }
+
+// Submenú Histórico y Pruebas: alternar entre Histórico de Correos y Enviar Correo de Prueba
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.history-submenu-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const sub = this.getAttribute('data-history-sub');
+            document.querySelectorAll('.history-submenu-btn').forEach(function(b) {
+                b.classList.remove('border-teal-600', 'text-teal-600');
+                b.classList.add('border-transparent', 'text-gray-500');
+            });
+            this.classList.add('border-teal-600', 'text-teal-600');
+            this.classList.remove('border-transparent', 'text-gray-500');
+            document.querySelectorAll('.history-sub-panel').forEach(function(panel) {
+                panel.classList.add('hidden');
+            });
+            const target = document.getElementById('history-sub-' + sub);
+            if (target) target.classList.remove('hidden');
+        });
+    });
+});
 
 // Mostrar el tab activo basado en la URL actual
 document.addEventListener('DOMContentLoaded', function() {

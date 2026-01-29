@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Company;
 use App\Services\MailService;
+use App\Services\EmailTemplateService;
 use App\Services\PermissionService;
 use App\Settings\GeneralSettings;
 use Illuminate\Http\RedirectResponse;
@@ -378,29 +379,23 @@ class UserController extends Controller
         $token = Password::broker()->createToken($user);
         $link = route('password.reset', ['token' => $token, 'email' => $user->email]);
 
-        $settings = app(GeneralSettings::class);
-        $agencyName = $settings->agency_name ?? 'RAMS';
-        $body = '
-        <!DOCTYPE html>
-        <html lang="es">
-        <head><meta charset="UTF-8"><title>Acceso al sistema</title></head>
-        <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f4f4f4;">
-        <div style="max-width:600px;margin:20px auto;background:#fff;padding:24px;border-radius:8px;">
-        <h1 style="color:#0f766e;">Acceso a ' . htmlspecialchars($agencyName) . '</h1>
-        <p>Hola <strong>' . htmlspecialchars($user->name) . '</strong>,</p>
-        <p>Se ha generado un enlace para que puedas <strong>establecer o restablecer tu contraseña</strong> y acceder al sistema.</p>
-        <p><a href="' . htmlspecialchars($link) . '" style="display:inline-block;padding:12px 24px;background:#0f766e;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Establecer contraseña</a></p>
-        <p style="color:#666;font-size:12px;">Si no solicitaste este correo, puedes ignorarlo. El enlace caduca en 60 minutos.</p>
-        <p>Saludos,<br>' . htmlspecialchars($agencyName) . '</p>
-        </div>
-        </body>
-        </html>';
+        $templateService = app(EmailTemplateService::class);
+        $processed = $templateService->processTemplate('access_email', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'link' => $link,
+        ]);
+
+        if (!$processed) {
+            return redirect()->route('admin.agents.index')
+                ->with('error', 'No existe la plantilla de correo de acceso. Ejecuta: php artisan db:seed --class=EmailTemplateSeeder');
+        }
 
         $mailService = app(MailService::class);
         $sent = $mailService->send(
             $user->email,
-            'Acceso al sistema - Establecer contraseña',
-            $body
+            $processed['subject'],
+            $processed['body']
         );
 
         if (!$sent) {
