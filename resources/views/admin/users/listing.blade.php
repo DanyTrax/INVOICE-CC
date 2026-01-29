@@ -31,9 +31,14 @@
                            placeholder="Buscar por nombre, email o teléfono..."
                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500">
                 </div>
-                @if($listingType === 'agents' && $roles->isNotEmpty())
+                @if($listingType === 'agents' && ($roles->isNotEmpty() || ($canFilterNoRole ?? false)))
                     <select name="role" class="border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 px-3 py-2">
                         <option value="">Todos los roles</option>
+                        @if($canFilterNoRole ?? false)
+                            <option value="{{ \App\Services\PermissionService::NO_ROLE }}" {{ request('role') === \App\Services\PermissionService::NO_ROLE ? 'selected' : '' }}>
+                                Sin roles
+                            </option>
+                        @endif
                         @foreach($roles as $role)
                             <option value="{{ $role->name }}" {{ request('role') === $role->name ? 'selected' : '' }}>
                                 {{ $role->name }}

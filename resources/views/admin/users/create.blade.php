@@ -121,6 +121,17 @@
                         Roles
                     </label>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        @if($canAssignNoRole ?? false)
+                            <div class="flex items-center">
+                                <input type="checkbox" 
+                                       id="role_no_role" 
+                                       name="roles[]" 
+                                       value="{{ \App\Services\PermissionService::NO_ROLE }}"
+                                       {{ in_array(\App\Services\PermissionService::NO_ROLE, old('roles', [])) ? 'checked' : '' }}
+                                       class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
+                                <label for="role_no_role" class="ml-2 text-sm text-gray-900">Sin roles</label>
+                            </div>
+                        @endif
                         @foreach($roles as $role)
                             <div class="flex items-center">
                                 <input type="checkbox" 

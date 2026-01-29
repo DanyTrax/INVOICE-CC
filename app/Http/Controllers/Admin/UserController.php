@@ -93,7 +93,11 @@ class UserController extends Controller
     {
         $allowedRoles = $this->getAllowedRolesToView();
         
-        // Si el usuario objetivo tiene algún rol permitido, se puede ver
+        // Usuarios sin rol: permitir si la jerarquía incluye "Sin roles" (no_role)
+        if ($targetUser->roles->isEmpty()) {
+            return in_array(PermissionService::NO_ROLE, $allowedRoles, true);
+        }
+        
         foreach ($targetUser->roles as $role) {
             if (in_array($role->name, $allowedRoles)) {
                 return true;
@@ -104,16 +108,30 @@ class UserController extends Controller
     }
 
     /**
-     * Validar que los roles a asignar sean permitidos.
+     * Validar que los roles a asignar sean permitidos. 'no_role' permite dejar sin rol.
      */
     protected function validateRoles(array $roles): void
     {
         $allowedRoles = $this->getAllowedRolesToCreate();
-        $invalidRoles = array_diff($roles, $allowedRoles);
-        
+        $noRole = PermissionService::NO_ROLE;
+        // Quitar no_role para validar solo roles reales; [] o [no_role] es válido si no_role está permitido
+        $rolesToCheck = array_values(array_filter($roles, fn ($r) => $r !== $noRole));
+        if (empty($rolesToCheck)) {
+            if (!in_array($noRole, $allowedRoles, true)) {
+                abort(403, 'No tienes permiso para asignar "Sin roles".');
+            }
+            return;
+        }
+        $invalidRoles = array_diff($rolesToCheck, $allowedRoles);
         if (!empty($invalidRoles)) {
             abort(403, 'No tienes permiso para asignar los roles: ' . implode(', ', $invalidRoles));
         }
+    }
+
+    /** Roles a sincronizar: quitar no_role (dejar sin rol = sync vacío). */
+    protected function rolesToSync(array $roles): array
+    {
+        return array_values(array_filter($roles, fn ($r) => $r !== PermissionService::NO_ROLE));
     }
 
     public function index(Request $request)
@@ -168,7 +186,11 @@ class UserController extends Controller
         }
 
         if ($request->filled('role')) {
-            $query->role($request->role);
+            if ($request->role === PermissionService::NO_ROLE) {
+                $query->whereDoesntHave('roles');
+            } else {
+                $query->role($request->role);
+            }
         }
 
         $users = $query->with('roles')
@@ -178,20 +200,24 @@ class UserController extends Controller
             ->withQueryString();
 
         $roles = Role::where('name', '!=', 'client')->get();
+        $canFilterNoRole = in_array(PermissionService::NO_ROLE, $this->getAllowedRolesToView(), true);
 
         return view('admin.users.listing', [
             'users' => $users,
             'roles' => $roles,
             'listingType' => 'agents',
+            'canFilterNoRole' => $canFilterNoRole,
         ]);
     }
 
     public function create()
     {
         $allowedRoles = $this->getAllowedRolesToCreate();
-        $roles = Role::whereIn('name', $allowedRoles)->get();
+        $noRole = PermissionService::NO_ROLE;
+        $canAssignNoRole = in_array($noRole, $allowedRoles, true);
+        $roles = Role::whereIn('name', array_filter($allowedRoles, fn ($n) => $n !== $noRole))->get();
         $companies = Company::orderBy('name')->get();
-        return view('admin.users.create', compact('roles', 'companies'));
+        return view('admin.users.create', compact('roles', 'companies', 'canAssignNoRole'));
     }
 
     public function store(Request $request)
@@ -205,20 +231,15 @@ class UserController extends Controller
             'roles' => 'array',
         ]);
 
-        // Validar que los roles sean permitidos
-        if ($request->filled('roles')) {
-            $this->validateRoles($request->roles);
-        }
+        $rolesInput = $request->input('roles', []);
+        $this->validateRoles(is_array($rolesInput) ? $rolesInput : []);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
 
         $user = User::create($validated);
 
-        // Asignar roles
-        if ($request->filled('roles')) {
-            $user->syncRoles($request->roles);
-        }
+        $user->syncRoles($this->rolesToSync(is_array($rolesInput) ? $rolesInput : []));
 
         // Asignar empresas (clientes)
         if ($request->filled('companies')) {
@@ -246,10 +267,12 @@ class UserController extends Controller
         }
 
         $allowedRoles = $this->getAllowedRolesToCreate();
-        $roles = Role::whereIn('name', $allowedRoles)->get();
+        $noRole = PermissionService::NO_ROLE;
+        $canAssignNoRole = in_array($noRole, $allowedRoles, true);
+        $roles = Role::whereIn('name', array_filter($allowedRoles, fn ($n) => $n !== $noRole))->get();
         $companies = Company::orderBy('name')->get();
         $user->load('roles', 'companies');
-        return view('admin.users.edit', compact('user', 'roles', 'companies'));
+        return view('admin.users.edit', compact('user', 'roles', 'companies', 'canAssignNoRole'));
     }
 
     public function update(Request $request, User $user)
@@ -270,10 +293,8 @@ class UserController extends Controller
             'companies.*' => 'exists:companies,id',
         ]);
 
-        // Validar que los roles sean permitidos
-        if ($request->filled('roles')) {
-            $this->validateRoles($request->roles);
-        }
+        $rolesInput = $request->input('roles', []);
+        $this->validateRoles(is_array($rolesInput) ? $rolesInput : []);
 
         // Solo actualizar password si se proporciona
         if (empty($validated['password'])) {
@@ -286,12 +307,7 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        // Sincronizar roles
-        if ($request->filled('roles')) {
-            $user->syncRoles($request->roles);
-        } else {
-            $user->syncRoles([]);
-        }
+        $user->syncRoles($this->rolesToSync(is_array($rolesInput) ? $rolesInput : []));
 
         // Sincronizar empresas (clientes)
         if ($request->filled('companies')) {

@@ -9,6 +9,9 @@ use Spatie\Permission\Models\Role;
 
 class PermissionService
 {
+    /** Valor especial en jerarquía: usuarios sin rol asignado (crear/ver/editar). */
+    public const NO_ROLE = 'no_role';
+
     /**
      * Módulos disponibles en el sistema.
      */

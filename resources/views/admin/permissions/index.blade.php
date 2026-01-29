@@ -146,6 +146,40 @@
                                     </span>
                                 </div>
                                 <div class="space-y-2">
+                                    {{-- Opción "Sin roles" para permitir crear/ver/editar usuarios sin rol --}}
+                                    @php
+                                        $noRole = \App\Services\PermissionService::NO_ROLE;
+                                        $existingNoRole = $hierarchy->get($role->id)?->firstWhere('can_create_role', $noRole);
+                                        $canCreateNoRole = $existingNoRole !== null;
+                                        $canViewNoRole = $existingNoRole ? $existingNoRole->can_view : false;
+                                    @endphp
+                                    <div class="flex items-center justify-between text-sm border-b border-gray-100 pb-2">
+                                        <label class="flex items-center">
+                                            <input type="checkbox" 
+                                                   name="hierarchy[{{ $role->id }}_{{ $noRole }}][can_create]"
+                                                   value="1"
+                                                   {{ $canCreateNoRole ? 'checked' : '' }}
+                                                   onchange="toggleViewCheckbox(this, '{{ $role->id }}_{{ $noRole }}')"
+                                                   class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-2">
+                                            <span class="text-gray-700 font-medium">Sin roles</span>
+                                        </label>
+                                        <label class="flex items-center text-xs text-gray-500">
+                                            <input type="checkbox" 
+                                                   name="hierarchy[{{ $role->id }}_{{ $noRole }}][can_view]"
+                                                   value="1"
+                                                   id="view_{{ $role->id }}_{{ $noRole }}"
+                                                   {{ $canViewNoRole ? 'checked' : '' }}
+                                                   {{ !$canCreateNoRole ? 'disabled' : '' }}
+                                                   class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-1">
+                                            Ver
+                                        </label>
+                                        <input type="hidden" 
+                                               name="hierarchy[{{ $role->id }}_{{ $noRole }}][role_id]" 
+                                               value="{{ $role->id }}">
+                                        <input type="hidden" 
+                                               name="hierarchy[{{ $role->id }}_{{ $noRole }}][can_create_role]" 
+                                               value="{{ $noRole }}">
+                                    </div>
                                     @foreach($roles as $targetRole)
                                         @if($targetRole->id !== $role->id)
                                             @php

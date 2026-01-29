@@ -120,13 +120,29 @@
                         Roles
                     </label>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        @php
+                            $selectedRoles = old('roles', $user->roles->pluck('name')->toArray());
+                            $noRole = \App\Services\PermissionService::NO_ROLE;
+                            $checkNoRole = ($canAssignNoRole ?? false) && (empty($selectedRoles) || in_array($noRole, $selectedRoles));
+                        @endphp
+                        @if($canAssignNoRole ?? false)
+                            <div class="flex items-center">
+                                <input type="checkbox" 
+                                       id="role_no_role" 
+                                       name="roles[]" 
+                                       value="{{ $noRole }}"
+                                       {{ $checkNoRole ? 'checked' : '' }}
+                                       class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
+                                <label for="role_no_role" class="ml-2 text-sm text-gray-900">Sin roles</label>
+                            </div>
+                        @endif
                         @foreach($roles as $role)
                             <div class="flex items-center">
                                 <input type="checkbox" 
                                        id="role_{{ $role->id }}" 
                                        name="roles[]" 
                                        value="{{ $role->name }}"
-                                       {{ in_array($role->name, old('roles', $user->roles->pluck('name')->toArray())) ? 'checked' : '' }}
+                                       {{ in_array($role->name, $selectedRoles) ? 'checked' : '' }}
                                        class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
                                 <label for="role_{{ $role->id }}" class="ml-2 text-sm text-gray-900">
                                     {{ $role->name }}
