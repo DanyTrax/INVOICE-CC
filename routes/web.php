@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ClientRegisterController;
 use App\Http\Controllers\ClientPortalController;
@@ -48,6 +49,11 @@ Route::middleware(['auth', 'not.client'])->prefix('admin')->name('admin.')->grou
             Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
             Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
             Route::post('/backups/wipe', [BackupController::class, 'wipe'])->name('backups.wipe');
+
+            // Permisos (solo super_admin)
+            Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+            Route::post('/permissions/update', [PermissionController::class, 'updatePermissions'])->name('permissions.update');
+            Route::post('/permissions/hierarchy', [PermissionController::class, 'updateHierarchy'])->name('permissions.hierarchy');
     
     // Companies (Empresas)
     Route::post('companies/{company}/send-invite', [CompanyController::class, 'sendInvite'])->name('companies.send-invite');

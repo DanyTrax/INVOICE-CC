@@ -267,6 +267,13 @@
                             <span class="ms-3">Backups</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('admin.permissions.index') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.permissions.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-shield-alt w-5 h-5"></i>
+                            <span class="ms-3">Permisos</span>
+                        </a>
+                    </li>
                     @endif
                 </ul>
             </div>

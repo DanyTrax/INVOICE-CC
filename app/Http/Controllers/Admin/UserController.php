@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Company;
+use App\Services\PermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -13,11 +14,26 @@ class UserController extends Controller
 {
     /**
      * Obtener roles que el usuario autenticado puede crear según su rol.
+     * Usa el servicio de permisos si está configurado, sino usa la lógica hardcodeada.
      */
     protected function getAllowedRolesToCreate(): array
     {
         $user = auth()->user();
         
+        // Intentar usar el servicio de permisos
+        try {
+            $permissionService = app(PermissionService::class);
+            foreach ($user->roles as $role) {
+                $canCreate = $permissionService->getRolesCanCreate($role->name);
+                if (!empty($canCreate)) {
+                    return $canCreate;
+                }
+            }
+        } catch (\Exception $e) {
+            // Si falla, usar lógica hardcodeada
+        }
+        
+        // Lógica hardcodeada como fallback
         if ($user->hasRole('super_admin')) {
             return ['super_admin', 'panel_user', 'agent', 'client'];
         }
@@ -35,11 +51,26 @@ class UserController extends Controller
 
     /**
      * Obtener roles que el usuario autenticado puede ver según su rol.
+     * Usa el servicio de permisos si está configurado, sino usa la lógica hardcodeada.
      */
     protected function getAllowedRolesToView(): array
     {
         $user = auth()->user();
         
+        // Intentar usar el servicio de permisos
+        try {
+            $permissionService = app(PermissionService::class);
+            foreach ($user->roles as $role) {
+                $canView = $permissionService->getRolesCanView($role->name);
+                if (!empty($canView)) {
+                    return $canView;
+                }
+            }
+        } catch (\Exception $e) {
+            // Si falla, usar lógica hardcodeada
+        }
+        
+        // Lógica hardcodeada como fallback
         if ($user->hasRole('super_admin')) {
             return ['super_admin', 'panel_user', 'agent', 'client'];
         }

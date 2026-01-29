@@ -1,0 +1,144 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\RoleHierarchy;
+use App\Models\RolePermission;
+use Illuminate\Support\Facades\Cache;
+use Spatie\Permission\Models\Role;
+
+class PermissionService
+{
+    /**
+     * Módulos disponibles en el sistema.
+     */
+    public static function getModules(): array
+    {
+        return [
+            'dashboard' => 'Dashboard',
+            'companies' => 'Empresas',
+            'registrations' => 'Expedientes',
+            'users' => 'Usuarios',
+            'settings' => 'Configuración',
+            'backups' => 'Backups',
+        ];
+    }
+
+    /**
+     * Acciones disponibles por módulo.
+     */
+    public static function getActions(): array
+    {
+        return [
+            'view' => 'Ver',
+            'create' => 'Crear',
+            'update' => 'Editar',
+            'delete' => 'Eliminar',
+        ];
+    }
+
+    /**
+     * Verificar si un rol tiene permiso para una acción en un módulo.
+     */
+    public function hasPermission(string $roleName, string $module, string $action): bool
+    {
+        $cacheKey = "permission.{$roleName}.{$module}.{$action}";
+        
+        return Cache::remember($cacheKey, 3600, function () use ($roleName, $module, $action) {
+            $role = Role::where('name', $roleName)->first();
+            
+            if (!$role) {
+                return false;
+            }
+
+            // Super admin tiene todos los permisos
+            if ($roleName === 'super_admin') {
+                return true;
+            }
+
+            $permission = RolePermission::where('role_id', $role->id)
+                ->where('module', $module)
+                ->where('action', $action)
+                ->first();
+
+            return $permission && $permission->enabled;
+        });
+    }
+
+    /**
+     * Verificar si el usuario autenticado tiene permiso.
+     */
+    public function userHasPermission(string $module, string $action): bool
+    {
+        $user = auth()->user();
+        
+        if (!$user) {
+            return false;
+        }
+
+        // Super admin tiene todos los permisos
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        foreach ($user->roles as $role) {
+            if ($this->hasPermission($role->name, $module, $action)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Obtener roles que un rol puede crear.
+     */
+    public function getRolesCanCreate(string $roleName): array
+    {
+        $role = Role::where('name', $roleName)->first();
+        
+        if (!$role) {
+            return [];
+        }
+
+        // Super admin puede crear todos
+        if ($roleName === 'super_admin') {
+            return Role::pluck('name')->toArray();
+        }
+
+        return RoleHierarchy::where('role_id', $role->id)
+            ->where('can_create_role', '!=', null)
+            ->pluck('can_create_role')
+            ->toArray();
+    }
+
+    /**
+     * Obtener roles que un rol puede ver.
+     */
+    public function getRolesCanView(string $roleName): array
+    {
+        $role = Role::where('name', $roleName)->first();
+        
+        if (!$role) {
+            return [];
+        }
+
+        // Super admin puede ver todos
+        if ($roleName === 'super_admin') {
+            return Role::pluck('name')->toArray();
+        }
+
+        return RoleHierarchy::where('role_id', $role->id)
+            ->where('can_view', true)
+            ->pluck('can_create_role')
+            ->toArray();
+    }
+
+    /**
+     * Limpiar caché de permisos.
+     */
+    public function clearCache(): void
+    {
+        Cache::flush();
+    }
+}
