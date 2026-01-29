@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\ClientRegisterController;
 use App\Http\Controllers\ClientPortalController;
 
@@ -25,6 +26,10 @@ Route::get('/', function () {
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// Establecer/restablecer contraseña (link enviado por admin a agentes)
+Route::get('/establecer-contrasena', [ResetPasswordController::class, 'show'])->name('password.reset');
+Route::post('/establecer-contrasena', [ResetPasswordController::class, 'store'])->name('password.reset.store');
 
 // Registro por invitación (link de único uso, guest)
 Route::get('/registrarse', [ClientRegisterController::class, 'show'])->name('client.register');
@@ -73,6 +78,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::resource('registrations', RegistrationController::class);
     
     // Users
+    Route::post('users/{user}/send-access-email', [UserController::class, 'sendAccessEmail'])->name('users.send-access-email');
     Route::resource('users', UserController::class);
     
     // Profile (perfil del usuario autenticado)

@@ -132,6 +132,16 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
+                                    @if($listingType === 'agents' && $user->id !== auth()->id())
+                                        <form action="{{ route('admin.users.send-access-email', $user) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="text-amber-600 hover:text-amber-800"
+                                                    title="Enviar correo de acceso (activación o recuperación de contraseña)">
+                                                <i class="fas fa-envelope"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                     <a href="{{ route('admin.users.show', $user) }}"
                                        class="text-blue-600 hover:text-blue-800" title="Ver">
                                         <i class="fas fa-eye"></i>

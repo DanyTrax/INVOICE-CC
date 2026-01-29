@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Company;
+use App\Services\MailService;
 use App\Services\PermissionService;
+use App\Settings\GeneralSettings;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -356,6 +360,56 @@ class UserController extends Controller
         return redirect()
             ->route('admin.agents.index')
             ->with('success', 'Usuario eliminado exitosamente.');
+    }
+
+    /**
+     * Enviar correo de acceso al agente: link para establecer o restablecer contraseña.
+     */
+    public function sendAccessEmail(User $user): RedirectResponse
+    {
+        if (!$this->canViewUser($user)) {
+            abort(403, 'No tienes permiso para enviar correo a este usuario.');
+        }
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.agents.index')
+                ->with('error', 'No puedes enviarte el correo a ti mismo.');
+        }
+
+        $token = Password::broker()->createToken($user);
+        $link = route('password.reset', ['token' => $token, 'email' => $user->email]);
+
+        $settings = app(GeneralSettings::class);
+        $agencyName = $settings->agency_name ?? 'RAMS';
+        $body = '
+        <!DOCTYPE html>
+        <html lang="es">
+        <head><meta charset="UTF-8"><title>Acceso al sistema</title></head>
+        <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f4f4f4;">
+        <div style="max-width:600px;margin:20px auto;background:#fff;padding:24px;border-radius:8px;">
+        <h1 style="color:#0f766e;">Acceso a ' . htmlspecialchars($agencyName) . '</h1>
+        <p>Hola <strong>' . htmlspecialchars($user->name) . '</strong>,</p>
+        <p>Se ha generado un enlace para que puedas <strong>establecer o restablecer tu contraseña</strong> y acceder al sistema.</p>
+        <p><a href="' . htmlspecialchars($link) . '" style="display:inline-block;padding:12px 24px;background:#0f766e;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Establecer contraseña</a></p>
+        <p style="color:#666;font-size:12px;">Si no solicitaste este correo, puedes ignorarlo. El enlace caduca en 60 minutos.</p>
+        <p>Saludos,<br>' . htmlspecialchars($agencyName) . '</p>
+        </div>
+        </body>
+        </html>';
+
+        $mailService = app(MailService::class);
+        $sent = $mailService->send(
+            $user->email,
+            'Acceso al sistema - Establecer contraseña',
+            $body
+        );
+
+        if (!$sent) {
+            return redirect()->route('admin.agents.index')
+                ->with('error', 'No se pudo enviar el correo. Revisa Configuración → Historial de correos.');
+        }
+
+        return redirect()->route('admin.agents.index')
+            ->with('success', 'Correo de acceso enviado a ' . $user->email);
     }
 
     /**
