@@ -1211,23 +1211,25 @@ class SettingsController extends Controller
         
         $command = $request->input('command');
         
-        // Validar que el comando esté permitido (seguridad)
+        // Validar que el comando esté permitido (seguridad). Permite comando con opciones (ej. migrate --force)
         $allowedCommands = [
             'view:clear',
             'cache:clear',
             'config:clear',
             'route:clear',
             'optimize:clear',
+            'migrate --force',
         ];
         
         // Si el comando contiene &&, dividirlo en múltiples comandos
         $commands = [];
+        $regex = '/php\s+artisan\s+([\w:]+(?:\s+--[\w-]+)*)/';
         if (strpos($command, '&&') !== false) {
             $commandParts = explode('&&', $command);
             foreach ($commandParts as $part) {
                 $part = trim($part);
-                if (preg_match('/php\s+artisan\s+(\w+:\w+)/', $part, $matches)) {
-                    $cmd = $matches[1];
+                if (preg_match($regex, $part, $matches)) {
+                    $cmd = trim($matches[1]);
                     if (in_array($cmd, $allowedCommands)) {
                         $commands[] = $cmd;
                     }
@@ -1235,8 +1237,8 @@ class SettingsController extends Controller
             }
         } else {
             // Comando simple
-            if (preg_match('/php\s+artisan\s+(\w+:\w+)/', $command, $matches)) {
-                $cmd = $matches[1];
+            if (preg_match($regex, $command, $matches)) {
+                $cmd = trim($matches[1]);
                 if (in_array($cmd, $allowedCommands)) {
                     $commands[] = $cmd;
                 }

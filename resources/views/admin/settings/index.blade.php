@@ -1499,6 +1499,11 @@
                                             class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300">
                                         <i class="fas fa-broom mr-2"></i> Optimize:Clear
                                     </button>
+                                    <button type="button" 
+                                            onclick="executeArtisanCommand('php artisan migrate --force')"
+                                            class="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300">
+                                        <i class="fas fa-database mr-2"></i> Migrate --force
+                                    </button>
                                 </div>
                             </div>
                         </div>
