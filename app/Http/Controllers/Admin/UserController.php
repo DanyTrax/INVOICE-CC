@@ -371,8 +371,7 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        // Verificar que se puede ver/editar este usuario
-        if (!$this->canViewUser($user)) {
+        if (!$this->canEditUser($user)) {
             abort(403, 'No tienes permiso para editar este usuario.');
         }
 
@@ -433,8 +432,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        // Verificar que se puede eliminar este usuario
-        if (!$this->canViewUser($user)) {
+        if (!$this->canEditUser($user)) {
             abort(403, 'No tienes permiso para eliminar este usuario.');
         }
 
