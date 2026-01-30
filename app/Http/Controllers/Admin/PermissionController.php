@@ -122,10 +122,12 @@ class PermissionController extends Controller
                 $roleId = (int) $matches[1];
                 $canCreateRole = $matches[2];
                 $canView = !empty($data['can_view']) && (string) $data['can_view'] === '1';
+                $canEdit = !empty($data['can_edit']) && (string) $data['can_edit'] === '1';
                 $hierarchyData[] = [
                     'role_id' => $roleId,
                     'can_create_role' => $canCreateRole,
                     'can_view' => $canView,
+                    'can_edit' => $canEdit,
                 ];
             }
         }
@@ -186,13 +188,14 @@ class PermissionController extends Controller
             $adminRole = $roleByName->get('admin');
             $createModulePermissions($adminRole, [], ['backups', 'permissions']);
 
-            // Jerarquía: puede crear/ver admin, agent, client
+            // Jerarquía: puede crear/ver/editar admin, agent, client
             foreach (['admin', 'agent', 'client'] as $targetRole) {
                 RoleHierarchy::firstOrCreate([
                     'role_id' => $adminRole->id,
                     'can_create_role' => $targetRole,
                 ], [
                     'can_view' => true,
+                    'can_edit' => true,
                 ]);
             }
         }
@@ -202,12 +205,13 @@ class PermissionController extends Controller
             $agent = $roleByName->get('agent');
             $createModulePermissions($agent, [], ['backups', 'permissions']);
 
-            // Jerarquía: puede crear/ver solo client (regla actual)
+            // Jerarquía: puede crear/ver/editar solo client
             RoleHierarchy::firstOrCreate([
                 'role_id' => $agent->id,
                 'can_create_role' => 'client',
             ], [
                 'can_view' => true,
+                'can_edit' => true,
             ]);
         }
 

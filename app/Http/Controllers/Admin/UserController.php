@@ -92,23 +92,72 @@ class UserController extends Controller
     }
 
     /**
-     * Verificar si el usuario autenticado puede ver/editar otro usuario.
+     * Obtener roles que el usuario autenticado puede editar según su rol.
+     */
+    protected function getAllowedRolesToEdit(): array
+    {
+        $user = auth()->user();
+
+        try {
+            $permissionService = app(PermissionService::class);
+            foreach ($user->roles as $role) {
+                $canEdit = $permissionService->getRolesCanEdit($role->name);
+                if (!empty($canEdit)) {
+                    return $canEdit;
+                }
+            }
+        } catch (\Exception $e) {
+        }
+
+        if ($user->hasRole('super_admin')) {
+            return ['super_admin', 'admin', 'agent', 'client', PermissionService::NO_ROLE];
+        }
+        if ($user->hasRole('admin')) {
+            return ['admin', 'agent', 'client'];
+        }
+        if ($user->hasRole('agent')) {
+            return ['agent', 'client'];
+        }
+        return [];
+    }
+
+    /**
+     * Verificar si el usuario autenticado puede ver otro usuario.
      */
     protected function canViewUser(User $targetUser): bool
     {
         $allowedRoles = $this->getAllowedRolesToView();
-        
-        // Usuarios sin rol: permitir si la jerarquía incluye "Sin roles" (no_role)
+
         if ($targetUser->roles->isEmpty()) {
             return in_array(PermissionService::NO_ROLE, $allowedRoles, true);
         }
-        
+
         foreach ($targetUser->roles as $role) {
             if (in_array($role->name, $allowedRoles)) {
                 return true;
             }
         }
-        
+
+        return false;
+    }
+
+    /**
+     * Verificar si el usuario autenticado puede editar otro usuario (editar, actualizar, eliminar, enviar correo).
+     */
+    protected function canEditUser(User $targetUser): bool
+    {
+        $allowedRoles = $this->getAllowedRolesToEdit();
+
+        if ($targetUser->roles->isEmpty()) {
+            return in_array(PermissionService::NO_ROLE, $allowedRoles, true);
+        }
+
+        foreach ($targetUser->roles as $role) {
+            if (in_array($role->name, $allowedRoles)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -168,12 +217,14 @@ class UserController extends Controller
 
         $roles = collect();
         $canCreateClients = in_array('client', $this->getAllowedRolesToCreate(), true);
+        $editableUserIds = collect($users->items())->filter(fn ($u) => $this->canEditUser($u))->pluck('id')->all();
         return view('admin.users.listing', [
             'users' => $users,
             'roles' => $roles,
             'listingType' => 'clients',
             'canCreateClients' => $canCreateClients,
             'canFilterNoRole' => false,
+            'editableUserIds' => $editableUserIds,
         ]);
     }
 
@@ -225,13 +276,11 @@ class UserController extends Controller
     {
         $query = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'client'));
 
-        // Solo mostrar usuarios que el actual puede ver (según jerarquía)
+        // Solo mostrar usuarios que el actual puede ver (según jerarquía) + siempre incluir usuarios sin rol
         $allowedToView = $this->getAllowedRolesToView();
         $query->where(function ($q) use ($allowedToView) {
             $q->whereHas('roles', fn ($r) => $r->whereIn('name', $allowedToView));
-            if (in_array(PermissionService::NO_ROLE, $allowedToView, true)) {
-                $q->orWhereDoesntHave('roles');
-            }
+            $q->orWhereDoesntHave('roles'); // usuarios sin rol siempre se muestran en la lista de agentes
         });
 
         if ($request->filled('search')) {
@@ -337,8 +386,7 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        // Verificar que se puede editar este usuario
-        if (!$this->canViewUser($user)) {
+        if (!$this->canEditUser($user)) {
             abort(403, 'No tienes permiso para editar este usuario.');
         }
 
@@ -414,7 +462,7 @@ class UserController extends Controller
      */
     public function sendAccessEmail(User $user): RedirectResponse
     {
-        if (!$this->canViewUser($user)) {
+        if (!$this->canEditUser($user)) {
             abort(403, 'No tienes permiso para enviar correo a este usuario.');
         }
         if ($user->id === auth()->id()) {

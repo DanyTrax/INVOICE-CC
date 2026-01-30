@@ -16,12 +16,14 @@ class RoleHierarchy extends Model
         'role_id',
         'can_create_role',
         'can_view',
+        'can_edit',
     ];
 
     protected function casts(): array
     {
         return [
             'can_view' => 'boolean',
+            'can_edit' => 'boolean',
         ];
     }
 

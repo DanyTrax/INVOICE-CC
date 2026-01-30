@@ -150,6 +150,32 @@ class PermissionService
     }
 
     /**
+     * Obtener roles que un rol puede editar.
+     */
+    public function getRolesCanEdit(string $roleName): array
+    {
+        $role = Role::where('name', $roleName)->first();
+
+        if (!$role) {
+            return [];
+        }
+
+        if ($roleName === 'super_admin') {
+            return array_merge(Role::pluck('name')->toArray(), [self::NO_ROLE]);
+        }
+
+        $fromHierarchy = RoleHierarchy::where('role_id', $role->id)
+            ->where('can_edit', true)
+            ->pluck('can_create_role')
+            ->toArray();
+        // Un rol siempre puede editar usuarios de su mismo tipo
+        if (!in_array($roleName, $fromHierarchy, true)) {
+            $fromHierarchy[] = $roleName;
+        }
+        return $fromHierarchy;
+    }
+
+    /**
      * Limpiar caché de permisos para que el menú refleje al desmarcar.
      */
     public function clearCache(): void

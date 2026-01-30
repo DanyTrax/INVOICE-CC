@@ -136,8 +136,9 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-right">
+                                @php $canEditThis = in_array($user->id, $editableUserIds ?? []); @endphp
                                 <div class="flex items-center justify-end gap-2">
-                                    @if($listingType === 'agents' && $user->id !== auth()->id())
+                                    @if(($listingType === 'agents' || $listingType === 'clients') && $user->id !== auth()->id() && $canEditThis)
                                         <form action="{{ route('admin.users.send-access-email', $user) }}" method="POST" class="inline">
                                             @csrf
                                             <button type="submit"
@@ -151,21 +152,23 @@
                                        class="text-blue-600 hover:text-blue-800" title="Ver">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('admin.users.edit', $user) }}"
-                                       class="text-teal-600 hover:text-teal-800" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    @if($user->id !== auth()->id())
-                                        <form action="{{ route('admin.users.destroy', $user) }}"
-                                              method="POST"
-                                              class="inline"
-                                              onsubmit="return confirm('¿Estás seguro de eliminar este usuario?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-800" title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
+                                    @if($canEditThis)
+                                        <a href="{{ route('admin.users.edit', $user) }}"
+                                           class="text-teal-600 hover:text-teal-800" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        @if($user->id !== auth()->id())
+                                            <form action="{{ route('admin.users.destroy', $user) }}"
+                                                  method="POST"
+                                                  class="inline"
+                                                  onsubmit="return confirm('¿Estás seguro de eliminar este usuario?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-800" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     @endif
                                 </div>
                             </td>

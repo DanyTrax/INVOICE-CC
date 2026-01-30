@@ -120,7 +120,7 @@
                 Jerarquía de Roles
             </h2>
             <p class="text-sm text-gray-600 mb-4">
-                Define qué roles puede crear y ver cada rol. El rol <strong>client</strong> es de portal (no usa permisos de módulo de administración).
+                Define qué roles puede crear, ver y editar cada rol. Por cada rol destino: <strong>Crear</strong>, <strong>Ver</strong> y <strong>Editar</strong> son opciones independientes. El rol <strong>client</strong> es de portal.
             </p>
 
             <form id="hierarchyForm" method="POST" action="{{ route('admin.permissions.hierarchy') }}">
@@ -152,6 +152,7 @@
                                         $existingNoRole = $hierarchy->get($role->id)?->firstWhere('can_create_role', $noRole);
                                         $canCreateNoRole = $existingNoRole !== null;
                                         $canViewNoRole = $existingNoRole ? $existingNoRole->can_view : false;
+                                        $canEditNoRole = $existingNoRole ? ($existingNoRole->can_edit ?? false) : false;
                                     @endphp
                                     <div class="flex items-center justify-between text-sm border-b border-gray-100 pb-2">
                                         <label class="flex items-center">
@@ -159,20 +160,32 @@
                                                    name="hierarchy[{{ $role->id }}_{{ $noRole }}][can_create]"
                                                    value="1"
                                                    {{ $canCreateNoRole ? 'checked' : '' }}
-                                                   onchange="toggleViewCheckbox(this, '{{ $role->id }}_{{ $noRole }}')"
+                                                   onchange="toggleVerEditarCheckboxes(this, '{{ $role->id }}_{{ $noRole }}')"
                                                    class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-2">
                                             <span class="text-gray-700 font-medium">Sin roles</span>
                                         </label>
-                                        <label class="flex items-center text-xs text-gray-500">
-                                            <input type="checkbox" 
-                                                   name="hierarchy[{{ $role->id }}_{{ $noRole }}][can_view]"
-                                                   value="1"
-                                                   id="view_{{ $role->id }}_{{ $noRole }}"
-                                                   {{ $canViewNoRole ? 'checked' : '' }}
-                                                   {{ !$canCreateNoRole ? 'disabled' : '' }}
-                                                   class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-1">
-                                            Ver
-                                        </label>
+                                        <div class="flex items-center gap-4">
+                                            <label class="flex items-center text-xs text-gray-600 cursor-pointer">
+                                                <input type="checkbox" 
+                                                       name="hierarchy[{{ $role->id }}_{{ $noRole }}][can_view]"
+                                                       value="1"
+                                                       id="view_{{ $role->id }}_{{ $noRole }}"
+                                                       {{ $canViewNoRole ? 'checked' : '' }}
+                                                       {{ !$canCreateNoRole ? 'disabled' : '' }}
+                                                       class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-1">
+                                                Ver
+                                            </label>
+                                            <label class="flex items-center text-xs text-gray-600 cursor-pointer">
+                                                <input type="checkbox" 
+                                                       name="hierarchy[{{ $role->id }}_{{ $noRole }}][can_edit]"
+                                                       value="1"
+                                                       id="edit_{{ $role->id }}_{{ $noRole }}"
+                                                       {{ $canEditNoRole ? 'checked' : '' }}
+                                                       {{ !$canCreateNoRole ? 'disabled' : '' }}
+                                                       class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-1">
+                                                Editar
+                                            </label>
+                                        </div>
                                         <input type="hidden" 
                                                name="hierarchy[{{ $role->id }}_{{ $noRole }}][role_id]" 
                                                value="{{ $role->id }}">
@@ -235,13 +248,17 @@
 
     @push('scripts')
     <script>
-        function toggleViewCheckbox(createCheckbox, prefix) {
+        function toggleVerEditarCheckboxes(createCheckbox, prefix) {
             const viewCheckbox = document.getElementById('view_' + prefix);
+            const editCheckbox = document.getElementById('edit_' + prefix);
+            const enabled = !!createCheckbox.checked;
             if (viewCheckbox) {
-                viewCheckbox.disabled = !createCheckbox.checked;
-                if (!createCheckbox.checked) {
-                    viewCheckbox.checked = false;
-                }
+                viewCheckbox.disabled = !enabled;
+                if (!enabled) viewCheckbox.checked = false;
+            }
+            if (editCheckbox) {
+                editCheckbox.disabled = !enabled;
+                if (!enabled) editCheckbox.checked = false;
             }
         }
     </script>
