@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +33,7 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
+            app(ActivityLogService::class)->log('login', 'Inicio de sesión en el sistema');
             $default = Auth::user()->hasRole('client')
                 ? route('portal.dashboard')
                 : route('admin.dashboard');
@@ -45,6 +47,9 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
+        if (Auth::check()) {
+            app(ActivityLogService::class)->log('logout', 'Cierre de sesión');
+        }
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

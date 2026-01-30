@@ -9,6 +9,7 @@ use App\Models\EmailLog;
 use App\Services\GoogleDriveService;
 use App\Services\MailService;
 use App\Services\EmailTemplateService;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -78,6 +79,7 @@ class CompanyController extends Controller
         }
 
         $company = Company::create($validated);
+        app(ActivityLogService::class)->log('created', 'Creó la empresa "' . $company->name . '"', $company);
 
         if ($sendInvite && !empty($validated['contact_person_email'])) {
             $lastError = null;
@@ -125,6 +127,7 @@ class CompanyController extends Controller
         ]);
 
         $company->update($validated);
+        app(ActivityLogService::class)->log('updated', 'Actualizó la empresa "' . $company->name . '"', $company);
 
         return redirect()
             ->route('admin.companies.index')
@@ -167,7 +170,9 @@ class CompanyController extends Controller
                 ->with('error', 'No se puede eliminar la empresa porque tiene expedientes asociados.');
         }
 
+        $name = $company->name;
         $company->delete();
+        app(ActivityLogService::class)->log('deleted', 'Eliminó la empresa "' . $name . '"');
 
         return redirect()
             ->route('admin.companies.index')

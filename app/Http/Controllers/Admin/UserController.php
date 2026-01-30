@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Services\MailService;
 use App\Services\EmailTemplateService;
 use App\Services\PermissionService;
+use App\Services\ActivityLogService;
 use App\Settings\GeneralSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -264,6 +265,7 @@ class UserController extends Controller
         if ($request->filled('companies')) {
             $user->companies()->sync($request->companies);
         }
+        app(ActivityLogService::class)->log('created', 'Creó el cliente "' . $user->name . '" (' . $user->email . ')', $user);
         return redirect()
             ->route('admin.clients.index')
             ->with('success', 'Cliente creado exitosamente.');
@@ -356,6 +358,8 @@ class UserController extends Controller
             $user->companies()->sync($request->companies);
         }
 
+        app(ActivityLogService::class)->log('created', 'Creó el agente/usuario "' . $user->name . '" (' . $user->email . ')', $user);
+
         return redirect()
             ->route('admin.agents.index')
             ->with('success', 'Usuario creado exitosamente.');
@@ -425,6 +429,8 @@ class UserController extends Controller
             $user->companies()->sync([]);
         }
 
+        app(ActivityLogService::class)->log('updated', 'Actualizó el usuario "' . $user->name . '" (' . $user->email . ')', $user);
+
         return redirect()
             ->route('admin.agents.index')
             ->with('success', 'Usuario actualizado exitosamente.');
@@ -450,7 +456,10 @@ class UserController extends Controller
                 ->with('error', 'No se puede eliminar el usuario porque tiene expedientes asignados.');
         }
 
+        $name = $user->name;
+        $email = $user->email;
         $user->delete();
+        app(ActivityLogService::class)->log('deleted', 'Eliminó el usuario "' . $name . '" (' . $email . ')');
 
         return redirect()
             ->route('admin.agents.index')
@@ -497,6 +506,7 @@ class UserController extends Controller
                 ->with('error', 'No se pudo enviar el correo. Revisa Configuración → Historial de correos.');
         }
 
+        app(ActivityLogService::class)->log('sent_email', 'Envió correo de acceso a "' . $user->name . '" (' . $user->email . ')', $user);
         return redirect()->route('admin.agents.index')
             ->with('success', 'Correo de acceso enviado a ' . $user->email);
     }

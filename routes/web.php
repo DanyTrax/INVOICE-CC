@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\ClientRegisterController;
@@ -59,6 +60,10 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
             Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
             Route::post('/permissions/update', [PermissionController::class, 'updatePermissions'])->name('permissions.update');
             Route::post('/permissions/hierarchy', [PermissionController::class, 'updateHierarchy'])->name('permissions.hierarchy');
+
+    // Registros de actividad por usuario
+    Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('activity-logs/user/{user}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
     
     // Companies (Empresas)
     Route::post('companies/{company}/send-invite', [CompanyController::class, 'sendInvite'])->name('companies.send-invite');

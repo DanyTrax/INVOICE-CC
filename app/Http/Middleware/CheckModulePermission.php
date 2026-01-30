@@ -49,6 +49,9 @@ class CheckModulePermission
         if (str_starts_with($routeName, 'admin.permissions')) {
             return ['permissions', 'view'];
         }
+        if (str_starts_with($routeName, 'admin.activity-logs')) {
+            return ['activity_logs', 'view'];
+        }
         // profile y otras: permitir
         return null;
     }

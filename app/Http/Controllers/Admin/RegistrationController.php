@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Models\Document;
 use App\Services\GoogleDriveService;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -105,6 +106,7 @@ class RegistrationController extends Controller
 
         // Crear el registro primero
         $registration = Registration::create($validated);
+        app(ActivityLogService::class)->log('created', 'Creó el expediente "' . $registration->product_name . '"', $registration);
 
         if ($request->hasFile('documents')) {
             try {
@@ -254,6 +256,7 @@ class RegistrationController extends Controller
 
         $registration->update($validated);
         $registration->refresh();
+        app(ActivityLogService::class)->log('updated', 'Actualizó el expediente "' . $registration->product_name . '"', $registration);
 
         if ($request->hasFile('documents')) {
             try {
@@ -640,8 +643,10 @@ class RegistrationController extends Controller
                 Storage::disk('local')->delete($doc->file_path);
             }
         }
-        
+
+        $productName = $registration->product_name;
         $registration->delete();
+        app(ActivityLogService::class)->log('deleted', 'Eliminó el expediente "' . $productName . '"');
 
         return redirect()
             ->route('admin.registrations.index')

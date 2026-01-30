@@ -299,6 +299,15 @@
                         </a>
                     </li>
                     @endif
+                    @if($permService->userHasPermission('activity_logs', 'view'))
+                    <li>
+                        <a href="{{ route('admin.activity-logs.index') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.activity-logs.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-history w-5 h-5"></i>
+                            <span class="ms-3">Registros de Actividad</span>
+                        </a>
+                    </li>
+                    @endif
                 </ul>
             </div>
         </aside>

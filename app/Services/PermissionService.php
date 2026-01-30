@@ -32,6 +32,7 @@ class PermissionService
             'settings_system' => 'Config: Sistema',
             'backups' => 'Backups',
             'permissions' => 'Gestión de Permisos',
+            'activity_logs' => 'Registros de Actividad',
         ];
     }
 
