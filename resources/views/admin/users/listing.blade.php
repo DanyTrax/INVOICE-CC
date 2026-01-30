@@ -72,6 +72,11 @@
                 </a>
             @endif
         @endif
+        @if($listingType === 'clients' && ($canCreateClients ?? false))
+            <a href="{{ route('admin.clients.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                <i class="fas fa-plus mr-2"></i> Nuevo Cliente
+            </a>
+        @endif
     </div>
 
     <!-- Tabla -->

@@ -167,11 +167,55 @@ class UserController extends Controller
             ->withQueryString();
 
         $roles = collect();
+        $canCreateClients = in_array('client', $this->getAllowedRolesToCreate(), true);
         return view('admin.users.listing', [
             'users' => $users,
             'roles' => $roles,
             'listingType' => 'clients',
+            'canCreateClients' => $canCreateClients,
+            'canFilterNoRole' => false,
         ]);
+    }
+
+    /**
+     * Formulario para crear un nuevo cliente (rol client). Solo si el rol tiene permiso para crear clientes.
+     */
+    public function createClient()
+    {
+        if (!in_array('client', $this->getAllowedRolesToCreate(), true)) {
+            abort(403, 'No tienes permiso para crear clientes.');
+        }
+        $companies = Company::orderBy('name')->get();
+        return view('admin.users.create-client', compact('companies'));
+    }
+
+    /**
+     * Guardar nuevo cliente (rol client). Solo si el rol tiene permiso para crear clientes.
+     */
+    public function storeClient(Request $request): RedirectResponse
+    {
+        if (!in_array('client', $this->getAllowedRolesToCreate(), true)) {
+            abort(403, 'No tienes permiso para crear clientes.');
+        }
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:50',
+            'is_active' => 'boolean',
+            'companies' => 'array',
+            'companies.*' => 'exists:companies,id',
+        ]);
+        $validated['password'] = Hash::make($validated['password']);
+        $validated['is_active'] = $request->has('is_active');
+        $user = User::create($validated);
+        $user->assignRole('client');
+        if ($request->filled('companies')) {
+            $user->companies()->sync($request->companies);
+        }
+        return redirect()
+            ->route('admin.clients.index')
+            ->with('success', 'Cliente creado exitosamente.');
     }
 
     /**
@@ -226,7 +270,8 @@ class UserController extends Controller
 
     public function create()
     {
-        $allowedRoles = $this->getAllowedRolesToCreate();
+        // En Agentes no se muestra el rol "client"; solo se crean agentes (otros roles).
+        $allowedRoles = array_values(array_filter($this->getAllowedRolesToCreate(), fn ($n) => $n !== 'client'));
         $noRole = PermissionService::NO_ROLE;
         $canAssignNoRole = in_array($noRole, $allowedRoles, true);
         $roles = Role::whereIn('name', array_filter($allowedRoles, fn ($n) => $n !== $noRole))->get();
@@ -280,7 +325,8 @@ class UserController extends Controller
             abort(403, 'No tienes permiso para editar este usuario.');
         }
 
-        $allowedRoles = $this->getAllowedRolesToCreate();
+        // En Agentes no se muestra el rol "client"; solo roles de agentes.
+        $allowedRoles = array_values(array_filter($this->getAllowedRolesToCreate(), fn ($n) => $n !== 'client'));
         $noRole = PermissionService::NO_ROLE;
         $canAssignNoRole = in_array($noRole, $allowedRoles, true);
         $roles = Role::whereIn('name', array_filter($allowedRoles, fn ($n) => $n !== $noRole))->get();
