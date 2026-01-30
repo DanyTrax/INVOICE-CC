@@ -308,12 +308,14 @@ class UserController extends Controller
 
         $roles = Role::where('name', '!=', 'client')->get();
         $canFilterNoRole = in_array(PermissionService::NO_ROLE, $this->getAllowedRolesToView(), true);
+        $editableUserIds = collect($users->items())->filter(fn ($u) => $this->canEditUser($u))->pluck('id')->all();
 
         return view('admin.users.listing', [
             'users' => $users,
             'roles' => $roles,
             'listingType' => 'agents',
             'canFilterNoRole' => $canFilterNoRole,
+            'editableUserIds' => $editableUserIds,
         ]);
     }
 

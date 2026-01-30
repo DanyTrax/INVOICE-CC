@@ -199,6 +199,7 @@
                                                 $existing = $hierarchy->get($role->id)?->firstWhere('can_create_role', $targetRole->name);
                                                 $canCreate = $existing !== null;
                                                 $canView = $existing ? $existing->can_view : false;
+                                                $canEdit = $existing ? ($existing->can_edit ?? false) : false;
                                             @endphp
                                             <div class="flex items-center justify-between text-sm">
                                                 <label class="flex items-center">
@@ -206,23 +207,35 @@
                                                            name="hierarchy[{{ $role->id }}_{{ $targetRole->name }}][can_create]"
                                                            value="1"
                                                            {{ $canCreate ? 'checked' : '' }}
-                                                           onchange="toggleViewCheckbox(this, '{{ $role->id }}_{{ $targetRole->name }}')"
+                                                           onchange="toggleVerEditarCheckboxes(this, '{{ $role->id }}_{{ $targetRole->name }}')"
                                                            class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-2">
                                                     <span class="text-gray-700">{{ $targetRole->name }}</span>
                                                     @if($targetRole->name === 'client')
                                                         <span class="text-xs text-gray-400 ml-1">(portal)</span>
                                                     @endif
                                                 </label>
-                                                <label class="flex items-center text-xs text-gray-500">
-                                                    <input type="checkbox" 
-                                                           name="hierarchy[{{ $role->id }}_{{ $targetRole->name }}][can_view]"
-                                                           value="1"
-                                                           id="view_{{ $role->id }}_{{ $targetRole->name }}"
-                                                           {{ $canView ? 'checked' : '' }}
-                                                           {{ !$canCreate ? 'disabled' : '' }}
-                                                           class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-1">
-                                                    Ver
-                                                </label>
+                                                <div class="flex items-center gap-4">
+                                                    <label class="flex items-center text-xs text-gray-600 cursor-pointer">
+                                                        <input type="checkbox" 
+                                                               name="hierarchy[{{ $role->id }}_{{ $targetRole->name }}][can_view]"
+                                                               value="1"
+                                                               id="view_{{ $role->id }}_{{ $targetRole->name }}"
+                                                               {{ $canView ? 'checked' : '' }}
+                                                               {{ !$canCreate ? 'disabled' : '' }}
+                                                               class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-1">
+                                                        Ver
+                                                    </label>
+                                                    <label class="flex items-center text-xs text-gray-600 cursor-pointer">
+                                                        <input type="checkbox" 
+                                                               name="hierarchy[{{ $role->id }}_{{ $targetRole->name }}][can_edit]"
+                                                               value="1"
+                                                               id="edit_{{ $role->id }}_{{ $targetRole->name }}"
+                                                               {{ $canEdit ? 'checked' : '' }}
+                                                               {{ !$canCreate ? 'disabled' : '' }}
+                                                               class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 mr-1">
+                                                        Editar
+                                                    </label>
+                                                </div>
                                                 <input type="hidden" 
                                                        name="hierarchy[{{ $role->id }}_{{ $targetRole->name }}][role_id]" 
                                                        value="{{ $role->id }}">
