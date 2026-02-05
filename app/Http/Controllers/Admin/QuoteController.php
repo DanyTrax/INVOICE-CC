@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\Process;
 use App\Models\Quote;
 use App\Models\QuoteItem;
+use App\Models\QuotePdfTemplate;
 use App\Models\ServiceType;
 use App\Settings\GeneralSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -36,7 +37,12 @@ class QuoteController extends Controller
     public function show(Quote $quote): View
     {
         $quote->load(['client', 'quoteItems.serviceType']);
-        return view('admin.quotes.show', compact('quote'));
+        try {
+            $quotePdfTemplates = QuotePdfTemplate::orderByRaw('is_default DESC')->orderBy('name')->get();
+        } catch (\Throwable $e) {
+            $quotePdfTemplates = collect();
+        }
+        return view('admin.quotes.show', compact('quote', 'quotePdfTemplates'));
     }
 
     /**
@@ -184,11 +190,18 @@ class QuoteController extends Controller
     /**
      * Descargar cotización en PDF.
      */
-    public function pdf(Quote $quote)
+    public function pdf(Quote $quote, \Illuminate\Http\Request $request)
     {
         $quote->load(['client', 'quoteItems.serviceType']);
+        $template = null;
+        if ($request->filled('template_id')) {
+            $template = QuotePdfTemplate::find($request->template_id);
+        }
+        if (!$template) {
+            $template = QuotePdfTemplate::getDefault();
+        }
         $settings = app(GeneralSettings::class);
-        $pdf = Pdf::loadView('admin.quotes.pdf', compact('quote', 'settings'));
+        $pdf = Pdf::loadView('admin.quotes.pdf', compact('quote', 'settings', 'template'));
         $filename = 'cotizacion-' . preg_replace('/[^a-z0-9\-]/i', '-', $quote->consecutive) . '.pdf';
         return $pdf->download($filename);
     }

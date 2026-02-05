@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Settings\GeneralSettings;
 use App\Models\EmailTemplate;
 use App\Models\EmailLog;
+use App\Models\QuotePdfTemplate;
 use App\Services\MailService;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class SettingsController extends Controller
     public function index(Request $request, $section = 'agency')
     {
         // Validar que la sección sea válida
-        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system'];
+        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system', 'quote-pdf'];
         if (!in_array($section, $validSections)) {
             $section = 'agency';
         }
@@ -32,6 +33,7 @@ class SettingsController extends Controller
             'templates' => ['settings_templates'],
             'history' => ['settings_history'],
             'system' => ['settings_system'],
+            'quote-pdf' => ['settings_agency'],
         ];
 
         $modules = $sectionModuleMap[$section] ?? null;
@@ -60,6 +62,15 @@ class SettingsController extends Controller
         }
         
         $emailTemplates = EmailTemplate::all();
+
+        $quotePdfTemplates = [];
+        if ($section === 'quote-pdf') {
+            try {
+                $quotePdfTemplates = QuotePdfTemplate::orderByRaw('is_default DESC')->orderBy('name')->get();
+            } catch (\Throwable $e) {
+                $quotePdfTemplates = [];
+            }
+        }
         
         // Verificar si la tabla email_logs existe antes de consultarla
         try {
@@ -93,6 +104,7 @@ class SettingsController extends Controller
             'settings' => $settings,
             'emailTemplates' => $emailTemplates,
             'emailLogs' => $emailLogs,
+            'quotePdfTemplates' => $quotePdfTemplates,
             'activeSection' => $section,
         ]);
     }
@@ -112,6 +124,7 @@ class SettingsController extends Controller
             'templates' => ['settings_templates'],
             'history' => ['settings_history'],
             'system' => ['settings_system'],
+            'quote-pdf' => ['settings_agency'],
         ];
         foreach ($order as $section => $modules) {
             if ($section === 'system') {

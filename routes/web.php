@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ProcessController;
 use App\Http\Controllers\Admin\ServiceTypeController;
 use App\Http\Controllers\Admin\QuoteController;
+use App\Http\Controllers\Admin\QuotePdfTemplateController;
 use App\Http\Controllers\Admin\RegulatoryEventController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -123,7 +124,12 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     
             // Settings - Rutas independientes para cada sección
             Route::get('/settings', [SettingsController::class, 'redirectToFirstSection'])->name('settings.index');
-            Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system');
+            Route::get('/settings/quote-pdf-templates/create', [QuotePdfTemplateController::class, 'create'])->name('settings.quote-pdf-templates.create');
+            Route::post('/settings/quote-pdf-templates', [QuotePdfTemplateController::class, 'store'])->name('settings.quote-pdf-templates.store');
+            Route::get('/settings/quote-pdf-templates/{quotePdfTemplate}/edit', [QuotePdfTemplateController::class, 'edit'])->name('settings.quote-pdf-templates.edit');
+            Route::put('/settings/quote-pdf-templates/{quotePdfTemplate}', [QuotePdfTemplateController::class, 'update'])->name('settings.quote-pdf-templates.update');
+            Route::delete('/settings/quote-pdf-templates/{quotePdfTemplate}', [QuotePdfTemplateController::class, 'destroy'])->name('settings.quote-pdf-templates.destroy');
+            Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system|quote-pdf');
             Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
             
             // Git Pull (solo super_admin)

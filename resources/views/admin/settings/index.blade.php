@@ -59,6 +59,13 @@
                     <i class="fas fa-history mr-2"></i> Correos Enviados
                 </a>
                 @endif
+                @if($permService->userHasPermission('settings_agency', 'view'))
+                <a href="{{ route('admin.settings.section', 'quote-pdf') }}" 
+                        id="tab-quote-pdf"
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'quote-pdf' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i class="fas fa-file-pdf mr-2"></i> Plantilla PDF de cotizaciones
+                </a>
+                @endif
                 @if($permService->userHasPermission('settings_system', 'view'))
                 <a href="{{ route('admin.settings.section', 'system') }}" 
                         id="tab-system"
@@ -206,39 +213,6 @@
                             @endif
                         </div>
 
-                        <!-- Plantilla PDF de cotizaciones -->
-                        <div class="md:col-span-2 mt-6 pt-6 border-t border-gray-200">
-                            <h4 class="text-md font-semibold text-gray-900 mb-3">
-                                <i class="fas fa-file-pdf text-teal-600 mr-2"></i>
-                                Plantilla PDF de cotizaciones
-                            </h4>
-                            <p class="text-sm text-gray-600 mb-4">
-                                Textos que aparecen en la cabecera y el pie del PDF al descargar una cotización. El logo y el nombre de la empresa de arriba se usan en la cabecera.
-                            </p>
-                            <div class="space-y-4">
-                                <div>
-                                    <label for="quote_pdf_header_subtitle" class="block mb-2 text-sm font-medium text-gray-900">
-                                        Texto bajo el nombre (cabecera del PDF)
-                                    </label>
-                                    <input type="text"
-                                           id="quote_pdf_header_subtitle"
-                                           name="quote_pdf_header_subtitle"
-                                           value="{{ old('quote_pdf_header_subtitle', $settings->quote_pdf_header_subtitle ?? 'RAMS - Regulatory Affairs Management System') }}"
-                                           placeholder="Ej: RAMS - Regulatory Affairs Management System"
-                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                                </div>
-                                <div>
-                                    <label for="quote_pdf_footer_text" class="block mb-2 text-sm font-medium text-gray-900">
-                                        Pie de página (PDF de cotizaciones)
-                                    </label>
-                                    <textarea id="quote_pdf_footer_text"
-                                              name="quote_pdf_footer_text"
-                                              rows="3"
-                                              placeholder="Si está vacío, se usa el pie de página general del sistema."
-                                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('quote_pdf_footer_text', $settings->quote_pdf_footer_text ?? '') }}</textarea>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="mt-6 flex justify-end">
@@ -247,6 +221,74 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+        @endif
+
+        <!-- Tab: Plantilla PDF de cotizaciones -->
+        @if($permService->userHasPermission('settings_agency', 'view'))
+        <div id="panel-quote-pdf" class="tab-panel {{ $activeSection === 'quote-pdf' ? '' : 'hidden' }}">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-file-pdf text-teal-600 mr-2"></i>
+                    Plantilla PDF de cotizaciones
+                </h3>
+                <p class="text-sm text-gray-600 mb-6">
+                    Cree plantillas con logo, cabecera y contexto (texto introductorio) para el PDF de cotizaciones. Al descargar una cotización podrá elegir qué plantilla usar.
+                </p>
+                @if(session('success'))
+                    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+                    </div>
+                @endif
+                <a href="{{ route('admin.settings.quote-pdf-templates.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium mb-6">
+                    <i class="fas fa-plus mr-2"></i> Nueva plantilla
+                </a>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-700">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-3">Nombre</th>
+                                <th class="px-4 py-3">Logo</th>
+                                <th class="px-4 py-3">Por defecto</th>
+                                <th class="px-4 py-3 w-40">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($quotePdfTemplates ?? [] as $t)
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="px-4 py-3 font-medium">{{ $t->name }}</td>
+                                    <td class="px-4 py-3">
+                                        @if($t->logo_path && file_exists(public_path($t->logo_path)))
+                                            <img src="{{ asset($t->logo_path) }}" alt="" class="h-10 w-auto object-contain">
+                                        @else
+                                            <span class="text-gray-400">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($t->is_default)
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Por defecto</span>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <a href="{{ route('admin.settings.quote-pdf-templates.edit', $t) }}" class="text-teal-600 hover:underline mr-3">Editar</a>
+                                        <form action="{{ route('admin.settings.quote-pdf-templates.destroy', $t) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta plantilla?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:underline">Eliminar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-4 py-8 text-center text-gray-500">No hay plantillas. Cree una para usarla al generar el PDF de cotizaciones.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
         @endif
@@ -2032,7 +2074,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentSection = pathParts[pathParts.length - 1] || 'agency';
     
     // Validar que sea una sección válida
-    const validSections = ['agency', 'drive', 'mail', 'templates', 'history'];
+    const validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'quote-pdf', 'system'];
     const activeSection = validSections.includes(currentSection) ? currentSection : 'agency';
     
     // Inicializar campos según el proveedor

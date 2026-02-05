@@ -41,9 +41,37 @@
                 </button>
             </form>
         @endif
-        <a href="{{ route('admin.quotes.pdf', $quote) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">
-            <i class="fas fa-file-pdf mr-2"></i> Descargar PDF
-        </a>
+        <div class="inline-flex items-center gap-2">
+            @if(count($quotePdfTemplates ?? []) > 0)
+                <label for="pdf-template-select" class="text-sm text-gray-600">Plantilla PDF:</label>
+                <select id="pdf-template-select" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+                    @foreach($quotePdfTemplates as $t)
+                        <option value="{{ $t->id }}" {{ $t->is_default ? 'selected' : '' }}>{{ $t->name }}</option>
+                    @endforeach
+                </select>
+            @endif
+            <a href="{{ route('admin.quotes.pdf', $quote) }}" id="btn-download-pdf" target="_blank" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">
+                <i class="fas fa-file-pdf mr-2"></i> Descargar PDF
+            </a>
+        </div>
+        @if(count($quotePdfTemplates ?? []) > 0)
+        @push('scripts')
+        <script>
+        (function() {
+            var select = document.getElementById('pdf-template-select');
+            var link = document.getElementById('btn-download-pdf');
+            if (select && link) {
+                function updatePdfLink() {
+                    var id = select.value;
+                    link.href = '{{ route("admin.quotes.pdf", $quote) }}' + (id ? '?template_id=' + encodeURIComponent(id) : '');
+                }
+                select.addEventListener('change', updatePdfLink);
+                updatePdfLink();
+            }
+        })();
+        </script>
+        @endpush
+        @endif
         @if($quote->status !== 'Aprobada')
             <a href="{{ route('admin.quotes.edit', $quote) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium">
                 <i class="fas fa-edit mr-2"></i> Editar

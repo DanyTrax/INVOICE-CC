@@ -12,7 +12,8 @@
         .header-company { font-size: 16px; font-weight: bold; color: #0d9488; margin-bottom: 4px; }
         .header-subtitle { font-size: 9px; color: #6b7280; margin-bottom: 6px; }
         .header-details { font-size: 9px; color: #374151; line-height: 1.4; }
-        h1 { font-size: 15px; margin: 20px 0 14px 0; color: #111827; clear: both; }
+        h1 { font-size: 15px; margin: 20px 0 14px 0; color: #111827; clear: both; text-align: center; }
+        .context-body { margin-bottom: 18px; line-height: 1.5; }
         .meta { margin-bottom: 18px; }
         .meta p { margin: 3px 0; }
         table.items { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
@@ -32,49 +33,101 @@
 </head>
 <body>
     @php
-        $logoPath = (!empty($settings->agency_logo) && file_exists(public_path($settings->agency_logo)))
-            ? public_path($settings->agency_logo)
-            : null;
-        $footerText = !empty(trim($settings->quote_pdf_footer_text ?? ''))
-            ? $settings->quote_pdf_footer_text
-            : ($settings->footer_text ?? 'RAMS - Regulatory Affairs Management System');
+        $template = $template ?? null;
+        $useTemplate = $template && $template->id;
+
+        if ($useTemplate) {
+            $logoPath = ($template->logo_path && file_exists(public_path($template->logo_path)))
+                ? public_path($template->logo_path)
+                : null;
+            $footerText = trim($template->footer_text ?? '') ?: 'RAMS - Regulatory Affairs Management System';
+            $fechaTexto = $quote->date ? \Carbon\Carbon::parse($quote->date)->locale('es')->translatedFormat('d \d\e F \d\e Y') : '';
+            $ciudad = 'Bogotá D. C.';
+            $cliente = $quote->client->name ?? '';
+            $consecutivo = $quote->consecutive;
+            $destinatario = $quote->client->name ?? '';
+            $bodyHtml = $template->body_html ?? '';
+            $bodyHtml = str_replace(['{{fecha}}', '{{ciudad}}', '{{cliente}}', '{{consecutivo}}', '{{destinatario}}'], [$fechaTexto, $ciudad, $cliente, $consecutivo, $destinatario], $bodyHtml);
+        } else {
+            $settings = $settings ?? app(\App\Settings\GeneralSettings::class);
+            $logoPath = (!empty($settings->agency_logo) && file_exists(public_path($settings->agency_logo)))
+                ? public_path($settings->agency_logo)
+                : null;
+            $footerText = !empty(trim($settings->quote_pdf_footer_text ?? ''))
+                ? $settings->quote_pdf_footer_text
+                : ($settings->footer_text ?? 'RAMS - Regulatory Affairs Management System');
+        }
     @endphp
 
-    <div class="header">
-        <div class="header-left">
-            @if($logoPath)
-                <img src="{{ $logoPath }}" alt="" class="header-logo">
-            @else
-                <span class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</span>
-            @endif
+    @if($useTemplate)
+        {{-- Cabecera desde plantilla --}}
+        <div class="header">
+            <div class="header-left">
+                @if($logoPath)
+                    <img src="{{ $logoPath }}" alt="" class="header-logo">
+                @endif
+                @if(!empty(trim($template->header_company_name ?? '')))
+                    <div class="header-company" style="font-size: 12px;">{{ $template->header_company_name }}</div>
+                @endif
+                @if(!empty(trim($template->header_subtitle ?? '')))
+                    <div class="header-subtitle">{{ $template->header_subtitle }}</div>
+                @endif
+            </div>
+            <div class="header-right">
+                @if(!empty(trim($template->header_company_name ?? '')))
+                    <div class="header-company">{{ $template->header_company_name }}</div>
+                @endif
+                @if(!empty(trim($template->header_nit ?? '')))
+                    <div class="header-details"><strong>NIT.</strong> {{ $template->header_nit }}</div>
+                @endif
+            </div>
         </div>
-        <div class="header-right">
-            @if($logoPath)
-                <div class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</div>
-            @endif
-            @if(!empty(trim($settings->quote_pdf_header_subtitle ?? '')))
-                <div class="header-subtitle">{{ $settings->quote_pdf_header_subtitle }}</div>
-            @endif
-            @if(!empty(trim($settings->agency_address ?? '')) || !empty(trim($settings->agency_phone ?? '')) || !empty(trim($settings->agency_email ?? '')))
-                <div class="header-details">
-                    @if(!empty(trim($settings->agency_address ?? ''))){{ $settings->agency_address }}<br>@endif
-                    @if(!empty(trim($settings->agency_phone ?? '')))Tel: {{ $settings->agency_phone }}@if(!empty(trim($settings->agency_email ?? '')))<br>@endif @endif
-                    @if(!empty(trim($settings->agency_email ?? ''))){{ $settings->agency_email }}@endif
-                </div>
-            @endif
-        </div>
-    </div>
 
-    <h1>COTIZACIÓN {{ $quote->consecutive }}</h1>
+        <h1>COTIZACIÓN No. {{ $quote->consecutive }}</h1>
 
-    <div class="meta">
-        <p><strong>Cliente:</strong> {{ $quote->client->name ?? '-' }}</p>
-        <p><strong>Fecha:</strong> {{ $quote->date?->format('d/m/Y') ?? '-' }}</p>
-        <p><strong>Moneda:</strong> {{ $quote->currency ?? 'COP' }}</p>
-        @if($quote->exchange_rate)
-            <p><strong>Tasa de cambio:</strong> {{ number_format($quote->exchange_rate, 4) }}</p>
+        @if(!empty(trim($bodyHtml)))
+            <div class="context-body">
+                {!! $bodyHtml !!}
+            </div>
         @endif
-    </div>
+    @else
+        {{-- Cabecera desde configuración general (sin plantilla) --}}
+        <div class="header">
+            <div class="header-left">
+                @if($logoPath)
+                    <img src="{{ $logoPath }}" alt="" class="header-logo">
+                @else
+                    <span class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</span>
+                @endif
+            </div>
+            <div class="header-right">
+                @if($logoPath)
+                    <div class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</div>
+                @endif
+                @if(!empty(trim($settings->quote_pdf_header_subtitle ?? '')))
+                    <div class="header-subtitle">{{ $settings->quote_pdf_header_subtitle }}</div>
+                @endif
+                @if(!empty(trim($settings->agency_address ?? '')) || !empty(trim($settings->agency_phone ?? '')) || !empty(trim($settings->agency_email ?? '')))
+                    <div class="header-details">
+                        @if(!empty(trim($settings->agency_address ?? ''))){{ $settings->agency_address }}<br>@endif
+                        @if(!empty(trim($settings->agency_phone ?? '')))Tel: {{ $settings->agency_phone }}@if(!empty(trim($settings->agency_email ?? '')))<br>@endif @endif
+                        @if(!empty(trim($settings->agency_email ?? ''))){{ $settings->agency_email }}@endif
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <h1>COTIZACIÓN {{ $quote->consecutive }}</h1>
+
+        <div class="meta">
+            <p><strong>Cliente:</strong> {{ $quote->client->name ?? '-' }}</p>
+            <p><strong>Fecha:</strong> {{ $quote->date?->format('d/m/Y') ?? '-' }}</p>
+            <p><strong>Moneda:</strong> {{ $quote->currency ?? 'COP' }}</p>
+            @if($quote->exchange_rate)
+                <p><strong>Tasa de cambio:</strong> {{ number_format($quote->exchange_rate, 4) }}</p>
+            @endif
+        </div>
+    @endif
 
     <table class="items">
         <thead>
