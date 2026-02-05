@@ -148,7 +148,6 @@
                         @endif
                         <th class="px-2 py-2">Alcance</th>
                         <th class="px-2 py-2 w-28">Valor</th>
-                        <th class="px-2 py-2 w-20">Tipo</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -165,13 +164,6 @@
                             @endif
                             <td class="px-2 py-2">{{ Str::limit($item->scope, 40) ?? '-' }}</td>
                             <td class="px-2 py-2">{{ $quote->currency }} {{ number_format($item->fee_value, 2) }}</td>
-                            <td class="px-2 py-2">
-                                @if($item->is_loan)
-                                    <span class="text-amber-700 text-xs">Préstamo</span>
-                                @else
-                                    <span class="text-gray-500 text-xs">Honorario</span>
-                                @endif
-                            </td>
                         </tr>
                     @endforeach
                 </tbody>
