@@ -18,7 +18,15 @@ class Company extends Model
         'contact_person_name',
         'contact_person_email',
         'drive_folder_id',
+        'allows_loans',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'allows_loans' => 'boolean',
+        ];
+    }
 
     /**
      * Relación Many-to-Many con Users

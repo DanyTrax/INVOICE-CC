@@ -44,7 +44,7 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         <option value="">Seleccione...</option>
                         @foreach($companies as $c)
-                            <option value="{{ $c->id }}" {{ old('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                            <option value="{{ $c->id }}" data-allows-loans="{{ $c->allows_loans ? '1' : '0' }}" {{ old('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -71,29 +71,47 @@
 
         {{-- Detalle de ítems (tabla dinámica) --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
                 <h3 class="text-lg font-semibold text-gray-900">Detalle de ítems</h3>
-                <button type="button" id="btn-add-row" class="inline-flex items-center px-3 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700">
-                    <i class="fas fa-plus mr-2"></i> Agregar fila
-                </button>
+                <div class="flex gap-2">
+                    <button type="button" id="btn-add-row" class="inline-flex items-center px-3 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700">
+                        <i class="fas fa-plus mr-2"></i> Agregar fila
+                    </button>
+                    <button type="button" id="btn-add-loan-row" class="hidden inline-flex items-center px-3 py-2 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700" title="Ítem de préstamo (suplido)">
+                        <i class="fas fa-hand-holding-usd mr-2"></i> Agregar ítem de préstamo
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-700" id="items-table">
+                <table class="w-full text-sm text-left text-gray-700 min-w-[900px]" id="items-table">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                         <tr>
-                            <th class="px-3 py-2">Tipo de trámite</th>
-                            <th class="px-3 py-2">Descripción</th>
-                            <th class="px-3 py-2">Valor honorarios</th>
-                            <th class="px-3 py-2">Código tasa INVIMA</th>
-                            <th class="px-3 py-2">Valor tasa INVIMA</th>
-                            <th class="px-3 py-2 w-12"></th>
+                            <th class="px-2 py-2 w-12">#</th>
+                            <th class="px-2 py-2">Tipo de trámite</th>
+                            <th class="px-2 py-2">Producto / Descripción</th>
+                            <th class="px-2 py-2">Expediente / Licencia</th>
+                            <th class="px-2 py-2 w-20">RAA</th>
+                            <th class="px-2 py-2">Alcance</th>
+                            <th class="px-2 py-2 w-28">Valor</th>
+                            <th class="px-2 py-2 w-12"></th>
                         </tr>
                     </thead>
                     <tbody id="items-tbody">
-                        @php $oldItems = old('items', [['service_type_id' => '', 'description' => '', 'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '']]); @endphp
+                        @php
+                            $oldItems = old('items', []);
+                            if (empty($oldItems)) {
+                                $oldItems = [array_merge([
+                                    'item_position' => 1, 'service_type_id' => '', 'description' => '', 'previous_license' => '', 'raa_code' => '', 'scope' => '',
+                                    'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '', 'is_loan' => 0,
+                                ], [])];
+                            }
+                        @endphp
                         @foreach($oldItems as $idx => $item)
-                            <tr class="item-row border-b border-gray-200">
-                                <td class="px-3 py-2">
+                            <tr class="item-row border-b border-gray-200 {{ !empty($item['is_loan']) ? 'bg-amber-50' : '' }}" data-is-loan="{{ !empty($item['is_loan']) ? '1' : '0' }}">
+                                <td class="px-2 py-2 item-num">{{ $idx + 1 }}</td>
+                                <td class="px-2 py-2">
+                                    <input type="hidden" name="items[{{ $idx }}][item_position]" value="{{ $idx + 1 }}">
+                                    <input type="hidden" name="items[{{ $idx }}][is_loan]" value="{{ !empty($item['is_loan']) ? '1' : '0' }}" class="item-is-loan-input">
                                     <select name="items[{{ $idx }}][service_type_id]" class="item-service-type border border-gray-300 rounded-lg p-2 w-full text-sm" required>
                                         <option value="">Seleccione...</option>
                                         @foreach($serviceTypes as $st)
@@ -101,23 +119,29 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td class="px-3 py-2">
-                                    <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Descripción" maxlength="500"
+                                <td class="px-2 py-2">
+                                    <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Producto / Descripción" maxlength="500"
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm">
                                 </td>
-                                <td class="px-3 py-2">
+                                <td class="px-2 py-2">
+                                    <input type="text" name="items[{{ $idx }}][previous_license]" value="{{ $item['previous_license'] ?? '' }}" placeholder="Ej: 2021DM-0006049" maxlength="64"
+                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                </td>
+                                <td class="px-2 py-2">
+                                    <input type="text" name="items[{{ $idx }}][raa_code]" value="{{ $item['raa_code'] ?? '' }}" placeholder="Ej: 141153" maxlength="64"
+                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                </td>
+                                <td class="px-2 py-2">
+                                    <textarea name="items[{{ $idx }}][scope]" rows="2" placeholder="Alcance" maxlength="1000"
+                                              class="border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['scope'] ?? '' }}</textarea>
+                                </td>
+                                <td class="px-2 py-2">
                                     <input type="number" name="items[{{ $idx }}][fee_value]" value="{{ $item['fee_value'] ?? '' }}" placeholder="0" min="0" step="0.01" required
-                                           class="item-fee border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                           class="item-value border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                    <input type="hidden" name="items[{{ $idx }}][invima_rate_code]" value="{{ $item['invima_rate_code'] ?? '' }}">
+                                    <input type="hidden" name="items[{{ $idx }}][invima_rate_value]" value="{{ $item['invima_rate_value'] ?? '0' }}">
                                 </td>
-                                <td class="px-3 py-2">
-                                    <input type="text" name="items[{{ $idx }}][invima_rate_code]" value="{{ $item['invima_rate_code'] ?? '' }}" placeholder="Ej: 4001-37" maxlength="32"
-                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
-                                </td>
-                                <td class="px-3 py-2">
-                                    <input type="number" name="items[{{ $idx }}][invima_rate_value]" value="{{ $item['invima_rate_value'] ?? '' }}" placeholder="0" min="0" step="0.01"
-                                           class="item-invima border border-gray-300 rounded-lg p-2 w-full text-sm">
-                                </td>
-                                <td class="px-3 py-2">
+                                <td class="px-2 py-2">
                                     <button type="button" class="btn-remove-row text-red-600 hover:text-red-800 p-1" title="Quitar fila"><i class="fas fa-trash-alt"></i></button>
                                 </td>
                             </tr>
@@ -127,7 +151,7 @@
             </div>
         </div>
 
-        {{-- Sección financiera (footer) --}}
+        {{-- Resumen financiero (footer) --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Resumen financiero</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -135,15 +159,13 @@
                     <p class="text-sm text-gray-600">Total honorarios</p>
                     <p class="text-xl font-semibold text-gray-900" id="display-total-fees">0</p>
                 </div>
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <p class="text-sm text-gray-600">Total tasas INVIMA</p>
-                    <p class="text-xl font-semibold text-gray-900" id="display-total-invima">0</p>
+                <div class="bg-amber-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600">Total suplidos / Préstamos</p>
+                    <p class="text-xl font-semibold text-gray-900" id="display-total-loans">0</p>
                 </div>
-                <div>
-                    <label for="total_loans" class="block mb-2 text-sm font-medium text-gray-900">Préstamos DV</label>
-                    <p class="text-xs text-gray-500 mb-1">Monto que Doble Vía presta para la tasa (ej. cotización 6-25)</p>
-                    <input type="number" name="total_loans" id="total_loans" value="{{ old('total_loans', 0) }}" min="0" step="0.01"
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                <div class="bg-teal-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600">Gran total</p>
+                    <p class="text-xl font-semibold text-teal-800" id="display-grand-total">0</p>
                 </div>
             </div>
         </div>
@@ -158,9 +180,12 @@
         </div>
     </form>
 
-    <template id="row-template">
-        <tr class="item-row border-b border-gray-200">
-            <td class="px-3 py-2">
+    <template id="row-template-normal">
+        <tr class="item-row border-b border-gray-200" data-is-loan="0">
+            <td class="px-2 py-2 item-num"></td>
+            <td class="px-2 py-2">
+                <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
+                <input type="hidden" name="items[__INDEX__][is_loan]" value="0" class="item-is-loan-input">
                 <select name="items[__INDEX__][service_type_id]" class="item-service-type border border-gray-300 rounded-lg p-2 w-full text-sm" required>
                     <option value="">Seleccione...</option>
                     @foreach($serviceTypes as $st)
@@ -168,23 +193,69 @@
                     @endforeach
                 </select>
             </td>
-            <td class="px-3 py-2">
-                <input type="text" name="items[__INDEX__][description]" placeholder="Descripción" maxlength="500"
+            <td class="px-2 py-2">
+                <input type="text" name="items[__INDEX__][description]" placeholder="Producto / Descripción" maxlength="500"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
-            <td class="px-3 py-2">
+            <td class="px-2 py-2">
+                <input type="text" name="items[__INDEX__][previous_license]" placeholder="Ej: 2021DM-0006049" maxlength="64"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+            </td>
+            <td class="px-2 py-2">
+                <input type="text" name="items[__INDEX__][raa_code]" placeholder="Ej: 141153" maxlength="64"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+            </td>
+            <td class="px-2 py-2">
+                <textarea name="items[__INDEX__][scope]" rows="2" placeholder="Alcance" maxlength="1000"
+                          class="border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
+            </td>
+            <td class="px-2 py-2">
                 <input type="number" name="items[__INDEX__][fee_value]" placeholder="0" min="0" step="0.01" required
-                       class="item-fee border border-gray-300 rounded-lg p-2 w-full text-sm">
+                       class="item-value border border-gray-300 rounded-lg p-2 w-full text-sm">
+                <input type="hidden" name="items[__INDEX__][invima_rate_code]" value="">
+                <input type="hidden" name="items[__INDEX__][invima_rate_value]" value="0">
             </td>
-            <td class="px-3 py-2">
-                <input type="text" name="items[__INDEX__][invima_rate_code]" placeholder="Ej: 4001-37" maxlength="32"
+            <td class="px-2 py-2">
+                <button type="button" class="btn-remove-row text-red-600 hover:text-red-800 p-1" title="Quitar fila"><i class="fas fa-trash-alt"></i></button>
+            </td>
+        </tr>
+    </template>
+    <template id="row-template-loan">
+        <tr class="item-row border-b border-gray-200 bg-amber-50" data-is-loan="1">
+            <td class="px-2 py-2 item-num"></td>
+            <td class="px-2 py-2">
+                <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
+                <input type="hidden" name="items[__INDEX__][is_loan]" value="1" class="item-is-loan-input">
+                <select name="items[__INDEX__][service_type_id]" class="item-service-type border border-gray-300 rounded-lg p-2 w-full text-sm" required>
+                    <option value="">Seleccione...</option>
+                    @foreach($serviceTypes as $st)
+                        <option value="{{ $st->id }}">{{ $st->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td class="px-2 py-2">
+                <input type="text" name="items[__INDEX__][description]" placeholder="Préstamo / Suplido" maxlength="500"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
+            </td>
+            <td class="px-2 py-2">
+                <input type="text" name="items[__INDEX__][previous_license]" placeholder="-" maxlength="64"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
-            <td class="px-3 py-2">
-                <input type="number" name="items[__INDEX__][invima_rate_value]" placeholder="0" min="0" step="0.01"
-                       class="item-invima border border-gray-300 rounded-lg p-2 w-full text-sm">
+            <td class="px-2 py-2">
+                <input type="text" name="items[__INDEX__][raa_code]" placeholder="-" maxlength="64"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
-            <td class="px-3 py-2">
+            <td class="px-2 py-2">
+                <textarea name="items[__INDEX__][scope]" rows="2" placeholder="Alcance" maxlength="1000"
+                          class="border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
+            </td>
+            <td class="px-2 py-2">
+                <input type="number" name="items[__INDEX__][fee_value]" placeholder="0" min="0" step="0.01" required
+                       class="item-value border border-gray-300 rounded-lg p-2 w-full text-sm">
+                <input type="hidden" name="items[__INDEX__][invima_rate_code]" value="">
+                <input type="hidden" name="items[__INDEX__][invima_rate_value]" value="0">
+            </td>
+            <td class="px-2 py-2">
                 <button type="button" class="btn-remove-row text-red-600 hover:text-red-800 p-1" title="Quitar fila"><i class="fas fa-trash-alt"></i></button>
             </td>
         </tr>
@@ -194,19 +265,33 @@
     <script>
     (function() {
         const tbody = document.getElementById('items-tbody');
-        const template = document.getElementById('row-template');
+        const templateNormal = document.getElementById('row-template-normal');
+        const templateLoan = document.getElementById('row-template-loan');
         const btnAdd = document.getElementById('btn-add-row');
+        const btnAddLoan = document.getElementById('btn-add-loan-row');
+        const clientSelect = document.getElementById('client_id');
         let rowIndex = {{ count($oldItems) }};
 
-        function getServiceTypesHtml() {
-            return @json($serviceTypes->map(fn($st) => ['id' => $st->id, 'name' => $st->name])->values());
+        function updateLoanButtonVisibility() {
+            const opt = clientSelect.options[clientSelect.selectedIndex];
+            const allowsLoans = opt && opt.getAttribute('data-allows-loans') === '1';
+            if (allowsLoans) {
+                btnAddLoan.classList.remove('hidden');
+            } else {
+                btnAddLoan.classList.add('hidden');
+            }
         }
 
-        function addRow() {
+        function addRow(isLoan) {
+            const template = isLoan ? templateLoan : templateNormal;
             const html = template.innerHTML.replace(/__INDEX__/g, rowIndex);
             tbody.insertAdjacentHTML('beforeend', html);
+            const row = tbody.lastElementChild;
+            const posInput = row.querySelector('.item-position-input');
+            if (posInput) posInput.value = rowIndex + 1;
             rowIndex++;
-            bindRowEvents(tbody.lastElementChild);
+            updateRowNumbers();
+            bindRowEvents(row);
             updateTotals();
         }
 
@@ -218,8 +303,13 @@
                 reindexRows();
                 updateTotals();
             });
-            row.querySelectorAll('.item-fee, .item-invima').forEach(function(input) {
-                input.addEventListener('input', updateTotals);
+            row.querySelector('.item-value').addEventListener('input', updateTotals);
+        }
+
+        function updateRowNumbers() {
+            tbody.querySelectorAll('.item-row').forEach(function(row, i) {
+                const numCell = row.querySelector('.item-num');
+                if (numCell) numCell.textContent = i + 1;
             });
         }
 
@@ -230,32 +320,39 @@
                 row.querySelectorAll('[name^="items["]').forEach(function(el) {
                     el.name = el.name.replace(/items\[\d+\]/, 'items[' + rowIndex + ']');
                 });
+                const posInput = row.querySelector('.item-position-input');
+                if (posInput) posInput.value = rowIndex + 1;
                 rowIndex++;
             });
+            updateRowNumbers();
+            updateTotals();
         }
 
         function updateTotals() {
-            let totalFees = 0, totalInvima = 0;
+            let totalFees = 0, totalLoans = 0;
             tbody.querySelectorAll('.item-row').forEach(function(row) {
-                const fee = row.querySelector('.item-fee');
-                const invima = row.querySelector('.item-invima');
-                totalFees += parseFloat(fee?.value || 0) || 0;
-                totalInvima += parseFloat(invima?.value || 0) || 0;
+                const val = parseFloat(row.querySelector('.item-value')?.value || 0) || 0;
+                const isLoan = row.getAttribute('data-is-loan') === '1';
+                if (isLoan) totalLoans += val;
+                else totalFees += val;
             });
+            const grandTotal = totalFees + totalLoans;
             document.getElementById('display-total-fees').textContent = formatNum(totalFees);
-            document.getElementById('display-total-invima').textContent = formatNum(totalInvima);
+            document.getElementById('display-total-loans').textContent = formatNum(totalLoans);
+            document.getElementById('display-grand-total').textContent = formatNum(grandTotal);
         }
 
         function formatNum(n) {
             return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
         }
 
-        btnAdd.addEventListener('click', addRow);
+        clientSelect.addEventListener('change', updateLoanButtonVisibility);
+        btnAdd.addEventListener('click', function() { addRow(false); });
+        btnAddLoan.addEventListener('click', function() { addRow(true); });
 
         tbody.querySelectorAll('.item-row').forEach(bindRowEvents);
-        document.getElementById('total_loans').addEventListener('input', function() {
-            document.getElementById('display-total-fees').textContent; // no change, just ensure footer visible
-        });
+        updateRowNumbers();
+        updateLoanButtonVisibility();
         updateTotals();
     })();
     </script>

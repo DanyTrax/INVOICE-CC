@@ -10,11 +10,16 @@ class QuoteItem extends Model
 {
     protected $fillable = [
         'quote_id',
+        'item_position',
         'service_type_id',
+        'raa_code',
+        'previous_license',
         'description',
+        'scope',
         'fee_value',
         'invima_rate_code',
         'invima_rate_value',
+        'is_loan',
     ];
 
     protected function casts(): array
@@ -22,6 +27,7 @@ class QuoteItem extends Model
         return [
             'fee_value' => 'decimal:2',
             'invima_rate_value' => 'decimal:2',
+            'is_loan' => 'boolean',
         ];
     }
 

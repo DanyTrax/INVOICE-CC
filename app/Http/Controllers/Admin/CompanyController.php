@@ -52,7 +52,9 @@ class CompanyController extends Controller
             'contact_person_email' => 'nullable|email|max:255',
             'logo_path' => 'nullable|string|max:500',
             'drive_folder_id' => 'nullable|string|max:255',
+            'allows_loans' => 'nullable|boolean',
         ]);
+        $validated['allows_loans'] = $request->boolean('allows_loans');
 
         // Crear carpeta en Google Drive si está configurado
         if (empty($validated['drive_folder_id'])) {
@@ -124,8 +126,9 @@ class CompanyController extends Controller
             'contact_person_email' => 'nullable|email|max:255',
             'logo_path' => 'nullable|string|max:500',
             'drive_folder_id' => 'nullable|string|max:255',
+            'allows_loans' => 'nullable|boolean',
         ]);
-
+        $validated['allows_loans'] = $request->boolean('allows_loans');
         $company->update($validated);
         app(ActivityLogService::class)->log('updated', 'Actualizó la empresa "' . $company->name . '"', $company);
 

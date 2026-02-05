@@ -57,19 +57,30 @@ class QuoteController extends Controller
             'date' => 'required|date',
             'currency' => 'required|string|in:COP,USD',
             'consecutive' => 'required|string|max:32|unique:quotes,consecutive',
-            'total_loans' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
+            'items.*.item_position' => 'nullable|integer|min:0',
             'items.*.service_type_id' => 'required|exists:service_types,id',
             'items.*.description' => 'nullable|string|max:500',
+            'items.*.previous_license' => 'nullable|string|max:64',
+            'items.*.raa_code' => 'nullable|string|max:64',
+            'items.*.scope' => 'nullable|string|max:1000',
             'items.*.fee_value' => 'required|numeric|min:0',
             'items.*.invima_rate_code' => 'nullable|string|max:32',
             'items.*.invima_rate_value' => 'nullable|numeric|min:0',
+            'items.*.is_loan' => 'nullable|boolean',
         ]);
 
         $totalFees = 0;
+        $totalLoans = 0;
         $totalInvima = 0;
-        foreach ($validated['items'] as $row) {
-            $totalFees += (float) ($row['fee_value'] ?? 0);
+        foreach ($validated['items'] as $pos => $row) {
+            $val = (float) ($row['fee_value'] ?? 0);
+            $isLoan = !empty($row['is_loan']);
+            if ($isLoan) {
+                $totalLoans += $val;
+            } else {
+                $totalFees += $val;
+            }
             $totalInvima += (float) ($row['invima_rate_value'] ?? 0);
         }
 
@@ -81,17 +92,22 @@ class QuoteController extends Controller
             'status' => 'Borrador',
             'total_professional_fees' => round($totalFees, 2),
             'total_invima_fees' => round($totalInvima, 2),
-            'total_loans' => round((float) ($validated['total_loans'] ?? 0), 2),
+            'total_loans' => round($totalLoans, 2),
         ]);
 
-        foreach ($validated['items'] as $row) {
+        foreach ($validated['items'] as $pos => $row) {
             QuoteItem::create([
                 'quote_id' => $quote->id,
+                'item_position' => (int) ($row['item_position'] ?? $pos + 1),
                 'service_type_id' => $row['service_type_id'],
+                'raa_code' => $row['raa_code'] ?? null,
+                'previous_license' => $row['previous_license'] ?? null,
                 'description' => $row['description'] ?? null,
+                'scope' => $row['scope'] ?? null,
                 'fee_value' => (float) ($row['fee_value'] ?? 0),
                 'invima_rate_code' => $row['invima_rate_code'] ?? null,
                 'invima_rate_value' => (float) ($row['invima_rate_value'] ?? 0),
+                'is_loan' => !empty($row['is_loan']),
             ]);
         }
 

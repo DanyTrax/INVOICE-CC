@@ -121,6 +121,22 @@
                            placeholder="Opcional: ID de la carpeta en Google Drive"
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                 </div>
+
+                <!-- Préstamos de Tasa INVIMA -->
+                <div class="md:col-span-2">
+                    <div class="flex items-start">
+                        <input type="checkbox" 
+                               id="allows_loans" 
+                               name="allows_loans" 
+                               value="1"
+                               {{ old('allows_loans', $company->allows_loans) ? 'checked' : '' }}
+                               class="mt-1 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <label for="allows_loans" class="ml-2 block text-sm text-gray-900">
+                            <span class="font-medium">¿Este cliente opera con Préstamos de Tasa INVIMA?</span>
+                            <span class="block text-gray-500 mt-0.5">Si está marcado, en las cotizaciones se podrá agregar ítems de préstamo (suplidos).</span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Botones -->
