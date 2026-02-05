@@ -36,6 +36,7 @@
         .signature { margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
         .signature-line { width: 240px; border-bottom: 1px solid #1f2937; margin-top: 32px; margin-bottom: 4px; }
         .signature-label { font-size: 9px; color: #6b7280; }
+        .signature-name { font-size: 12px; font-weight: bold; color: #1f2937; }
     </style>
 </head>
 <body>
@@ -170,7 +171,7 @@
     <div class="signature">
         <div class="signature-line"></div>
         @if($useTemplate && (trim($template->signature_name ?? '') !== '' || trim($template->signature_position ?? '') !== ''))
-            <div class="signature-label">{{ trim($template->signature_name ?? '') }}</div>
+            <div class="signature-name">{{ trim($template->signature_name ?? '') }}</div>
             @if(trim($template->signature_position ?? '') !== '')
                 <div class="signature-label" style="margin-top: 1px;">{{ trim($template->signature_position) }}</div>
             @endif
