@@ -54,7 +54,7 @@
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                 </div>
                 <div>
-                    <label for="currency" class="block mb-2 text-sm font-medium text-gray-900">Moneda <span class="text-red-500">*</span></label>
+                    <label for="currency" class="block mb-2 text-sm font-medium text-gray-900">Moneda de la Oferta <span class="text-red-500">*</span></label>
                     <select name="currency" id="currency" required
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         <option value="COP" {{ old('currency', 'COP') === 'COP' ? 'selected' : '' }}>COP</option>
@@ -65,6 +65,13 @@
                     <label for="consecutive" class="block mb-2 text-sm font-medium text-gray-900">Consecutivo <span class="text-red-500">*</span></label>
                     <input type="text" name="consecutive" id="consecutive" value="{{ old('consecutive') }}" placeholder="Ej: 006-25" required maxlength="32"
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="exchange_rate" class="block mb-2 text-sm font-medium text-gray-900">Tasa de cambio (si aplica)</label>
+                    <input type="number" name="exchange_rate" id="exchange_rate" value="{{ old('exchange_rate') }}" min="0" step="0.000001"
+                           placeholder="Ej: 4000.50 para ofertas en USD"
+                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                    <p class="mt-1 text-xs text-gray-500">Use este campo cuando la moneda sea USD para registrar la tasa COP/USD usada en la oferta.</p>
                 </div>
             </div>
         </div>
@@ -122,12 +129,12 @@
                                 <td class="px-2 py-2">
                                     <input type="hidden" name="items[{{ $idx }}][item_position]" value="{{ $idx + 1 }}">
                                     <input type="hidden" name="items[{{ $idx }}][is_loan]" value="{{ !empty($item['is_loan']) ? '1' : '0' }}" class="item-is-loan-input">
-                                    <select name="items[{{ $idx }}][service_type_id]" class="item-service-type border border-gray-300 rounded-lg p-2 w-full text-sm" required>
-                                        <option value="">Seleccione...</option>
-                                        @foreach($serviceTypes as $st)
-                                            <option value="{{ $st->id }}" {{ ($item['service_type_id'] ?? '') == $st->id ? 'selected' : '' }}>{{ $st->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input type="text"
+                                           name="items[{{ $idx }}][service_type_name]"
+                                           list="service_types_datalist"
+                                           value="{{ $item['service_type_name'] ?? '' }}"
+                                           placeholder="Tipo de trámite"
+                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
                                 </td>
                                 <td class="px-2 py-2">
                                     <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Producto / Descripción" maxlength="500"
@@ -190,18 +197,24 @@
         </div>
     </form>
 
+    {{-- Sugerencias de tipos de trámite (datalist) --}}
+    <datalist id="service_types_datalist">
+        @foreach($serviceTypes as $st)
+            <option value="{{ $st->name }}"></option>
+        @endforeach
+    </datalist>
+
     <template id="row-template-normal">
         <tr class="item-row border-b border-gray-200" data-is-loan="0">
             <td class="px-2 py-2 item-num"></td>
             <td class="px-2 py-2">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="0" class="item-is-loan-input">
-                <select name="items[__INDEX__][service_type_id]" class="item-service-type border border-gray-300 rounded-lg p-2 w-full text-sm" required>
-                    <option value="">Seleccione...</option>
-                    @foreach($serviceTypes as $st)
-                        <option value="{{ $st->id }}">{{ $st->name }}</option>
-                    @endforeach
-                </select>
+                <input type="text"
+                       name="items[__INDEX__][service_type_name]"
+                       list="service_types_datalist"
+                       placeholder="Tipo de trámite"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
             <td class="px-2 py-2">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Producto / Descripción" maxlength="500"
@@ -236,12 +249,11 @@
             <td class="px-2 py-2">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="1" class="item-is-loan-input">
-                <select name="items[__INDEX__][service_type_id]" class="item-service-type border border-gray-300 rounded-lg p-2 w-full text-sm" required>
-                    <option value="">Seleccione...</option>
-                    @foreach($serviceTypes as $st)
-                        <option value="{{ $st->id }}">{{ $st->name }}</option>
-                    @endforeach
-                </select>
+                <input type="text"
+                       name="items[__INDEX__][service_type_name]"
+                       list="service_types_datalist"
+                       placeholder="Tipo de trámite (préstamo)"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
             </td>
             <td class="px-2 py-2">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Préstamo / Suplido" maxlength="500"

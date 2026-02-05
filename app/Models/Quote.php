@@ -13,6 +13,7 @@ class Quote extends Model
         'consecutive',
         'date',
         'currency',
+        'exchange_rate',
         'status',
         'total_professional_fees',
         'total_invima_fees',
@@ -26,6 +27,7 @@ class Quote extends Model
             'total_professional_fees' => 'decimal:2',
             'total_invima_fees' => 'decimal:2',
             'total_loans' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
         ];
     }
 

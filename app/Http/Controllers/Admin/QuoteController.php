@@ -56,10 +56,11 @@ class QuoteController extends Controller
             'client_id' => 'required|exists:companies,id',
             'date' => 'required|date',
             'currency' => 'required|string|in:COP,USD',
+            'exchange_rate' => 'nullable|numeric|min:0',
             'consecutive' => 'required|string|max:32|unique:quotes,consecutive',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
-            'items.*.service_type_id' => 'required|exists:service_types,id',
+            'items.*.service_type_name' => 'required|string|max:255',
             'items.*.description' => 'nullable|string|max:500',
             'items.*.previous_license' => 'nullable|string|max:64',
             'items.*.raa_code' => 'nullable|string|max:64',
@@ -89,6 +90,7 @@ class QuoteController extends Controller
             'consecutive' => $validated['consecutive'],
             'date' => $validated['date'],
             'currency' => $validated['currency'],
+            'exchange_rate' => $validated['exchange_rate'] ?? null,
             'status' => 'Borrador',
             'total_professional_fees' => round($totalFees, 2),
             'total_invima_fees' => round($totalInvima, 2),
@@ -96,10 +98,16 @@ class QuoteController extends Controller
         ]);
 
         foreach ($validated['items'] as $pos => $row) {
+            // Resolver o crear el tipo de trámite a partir del texto libre
+            $serviceType = ServiceType::firstOrCreate(
+                ['name' => $row['service_type_name']],
+                ['is_active' => true]
+            );
+
             QuoteItem::create([
                 'quote_id' => $quote->id,
                 'item_position' => (int) ($row['item_position'] ?? $pos + 1),
-                'service_type_id' => $row['service_type_id'],
+                'service_type_id' => $serviceType->id,
                 'raa_code' => $row['raa_code'] ?? null,
                 'previous_license' => $row['previous_license'] ?? null,
                 'description' => $row['description'] ?? null,
