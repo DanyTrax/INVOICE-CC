@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <title>Cotización {{ $quote->consecutive }}</title>
     <style>
-        @page { size: letter; margin: 10mm 12mm 14mm 12mm; }
+        @page { size: letter; margin: 24mm 12mm 14mm 12mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; }
-        .pdf-page-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 2px 0 6px 0; }
+        .pdf-page-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 4px 0 2px 0; }
         .pdf-page-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 6px 0 2px 0; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
-        .pdf-body-content { padding-top: 78px; padding-bottom: 24px; }
+        .pdf-body-content { padding-top: 4px; padding-bottom: 24px; }
         .header { overflow: visible; }
         .header-left { float: left; width: 28%; }
         .header-right { float: right; width: 70%; text-align: right; }
-        .header-logo { max-height: 62px; max-width: 208px; display: block; object-fit: contain; margin-bottom: 6px; }
-        .header-company { font-size: 16px; font-weight: bold; color: #0d9488; margin-bottom: 4px; }
-        .header-company-below-logo { font-size: 10px; font-weight: bold; color: #0d9488; margin-bottom: 2px; line-height: 1.2; }
-        .header-nit { font-size: 9px; color: #374151; line-height: 1.3; }
+        .header-logo { max-height: 62px; max-width: 208px; display: block; object-fit: contain; margin-bottom: 2px; }
+        .header-company { font-size: 16px; font-weight: bold; color: #0d9488; margin-bottom: 2px; }
+        .header-company-below-logo { font-size: 10px; font-weight: bold; color: #0d9488; margin-bottom: 1px; line-height: 1.15; }
+        .header-nit { font-size: 9px; color: #374151; line-height: 1.2; margin-bottom: 0; }
         .header-subtitle { font-size: 9px; color: #6b7280; margin-bottom: 6px; }
         .header-details { font-size: 9px; color: #374151; line-height: 1.4; }
         h1 { font-size: 15px; margin: 10px 0 14px 0; color: #111827; clear: both; text-align: center; }
