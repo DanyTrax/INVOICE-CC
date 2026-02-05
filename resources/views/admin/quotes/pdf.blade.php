@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <title>Cotización {{ $quote->consecutive }}</title>
     <style>
-        @page { size: letter; margin: 28mm 12mm 14mm 12mm; }
+        @page { size: letter; margin: 0 12mm 14mm 12mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; }
-        .pdf-page-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 0; }
         .pdf-page-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 6px 0 2px 0; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
-        .pdf-body-content { padding-top: 0; padding-bottom: 24px; }
+        .doc-wrapper { width: 100%; border: none; border-collapse: collapse; }
+        .doc-wrapper thead td { border: none; padding: 0; vertical-align: top; }
+        .doc-wrapper tbody td { border: none; padding: 0; vertical-align: top; padding-top: 4px; }
         .header { overflow: visible; }
         .header-left { float: left; width: 28%; }
         .header-right { float: right; width: 70%; text-align: right; }
@@ -66,33 +67,39 @@
         }
     @endphp
 
-    {{-- Cabecera fija: se repite en cada página --}}
-    <div class="pdf-page-header">
-        <div class="header">
-            <div class="header-left">
-                @if($logoPath)
-                    <img src="{{ $logoPath }}" alt="" class="header-logo">
-                @endif
-                @if($useTemplate)
-                    @if(!empty(trim($template->header_company_name ?? '')))
-                        <div class="header-company-below-logo">{{ $template->header_company_name }}</div>
-                    @endif
-                    @if(!empty(trim($template->header_nit ?? '')))
-                        <div class="header-nit"><strong>NIT.</strong> {{ $template->header_nit }}</div>
-                    @endif
-                @else
-                    @if(!$logoPath)
-                        <span class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</span>
-                    @endif
-                @endif
-            </div>
-        </div>
-    </div>
-
     {{-- Pie de página fijo: abajo de cada página --}}
     <div class="pdf-page-footer">{{ $footerText }}</div>
 
-    <div class="pdf-body-content">
+    {{-- Tabla con thead que se repite en cada página: logo/nombre/NIT pegados al top, sin margen superior --}}
+    <table class="doc-wrapper">
+        <thead>
+            <tr>
+                <td>
+                    <div class="header">
+                        <div class="header-left">
+                            @if($logoPath)
+                                <img src="{{ $logoPath }}" alt="" class="header-logo">
+                            @endif
+                            @if($useTemplate)
+                                @if(!empty(trim($template->header_company_name ?? '')))
+                                    <div class="header-company-below-logo">{{ $template->header_company_name }}</div>
+                                @endif
+                                @if(!empty(trim($template->header_nit ?? '')))
+                                    <div class="header-nit"><strong>NIT.</strong> {{ $template->header_nit }}</div>
+                                @endif
+                            @else
+                                @if(!$logoPath)
+                                    <span class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</span>
+                                @endif
+                            @endif
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
         <h1>COTIZACIÓN No. {{ $quote->consecutive }}</h1>
 
         @if($useTemplate)
@@ -171,6 +178,9 @@
         <div class="signature-label">Firma del Gerente</div>
     </div>
 
-    </div>{{-- .pdf-body-content --}}
+                </td>
+            </tr>
+        </tbody>
+    </table>
 </body>
 </html>
