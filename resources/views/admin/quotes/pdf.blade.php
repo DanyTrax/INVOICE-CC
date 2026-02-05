@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <title>Cotización {{ $quote->consecutive }}</title>
     <style>
-        @page { size: letter; margin: 26mm 12mm 14mm 12mm; }
+        @page { size: letter; margin: 28mm 12mm 14mm 12mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; }
-        .pdf-page-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 0 0 2px 0; }
+        .pdf-page-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 0; }
         .pdf-page-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 6px 0 2px 0; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
         .pdf-body-content { padding-top: 0; padding-bottom: 24px; }
         .header { overflow: visible; }
@@ -18,11 +18,11 @@
         .header-nit { font-size: 9px; color: #374151; line-height: 1.2; margin-bottom: 0; }
         .header-subtitle { font-size: 9px; color: #6b7280; margin-bottom: 6px; }
         .header-details { font-size: 9px; color: #374151; line-height: 1.4; }
-        h1 { font-size: 15px; margin: 10px 0 14px 0; color: #111827; clear: both; text-align: center; }
-        .context-body { margin-bottom: 18px; line-height: 1.5; font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
+        h1 { font-size: 15px; margin: 4px 0 6px 0; color: #111827; clear: both; text-align: center; }
+        .context-body { margin-bottom: 8px; line-height: 1.5; font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
         .context-body * { font-family: DejaVu Sans, sans-serif !important; font-size: 11px !important; color: #1f2937; }
         .context-body code, .context-body span, .context-body p { font-family: DejaVu Sans, sans-serif !important; font-size: 11px !important; }
-        .meta { margin-bottom: 18px; }
+        .meta { margin-bottom: 8px; }
         .meta p { margin: 3px 0; }
         table.items { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
         table.items th { background: #f3f4f6; text-align: left; padding: 8px 6px; font-size: 9px; text-transform: uppercase; border: 1px solid #e5e7eb; }
