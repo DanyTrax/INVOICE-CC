@@ -50,6 +50,10 @@ class GeneralSettings extends Settings
     public string $footer_text = 'RAMS - Regulatory Affairs Management System';
     public string $system_name = 'Sistema de Gestión Regulatoria';
 
+    // Plantilla PDF de cotizaciones (cabecera y pie editables)
+    public string $quote_pdf_header_subtitle = 'RAMS - Regulatory Affairs Management System';
+    public string $quote_pdf_footer_text = '';
+
     public static function group(): string
     {
         return 'general';

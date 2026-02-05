@@ -213,6 +213,8 @@ class SettingsController extends Controller
             'agency_email' => 'nullable|email|max:255',
             'agency_website' => 'nullable|url|max:255',
             'remove_logo' => 'nullable|boolean',
+            'quote_pdf_header_subtitle' => 'nullable|string|max:500',
+            'quote_pdf_footer_text' => 'nullable|string|max:1000',
         ];
 
         // Validación del logo sin depender de php_fileinfo
@@ -262,7 +264,13 @@ class SettingsController extends Controller
         if (isset($validated['agency_website'])) {
             $settings->agency_website = $validated['agency_website'] ?? '';
         }
-        
+        if (array_key_exists('quote_pdf_header_subtitle', $validated)) {
+            $settings->quote_pdf_header_subtitle = $validated['quote_pdf_header_subtitle'] ?? '';
+        }
+        if (array_key_exists('quote_pdf_footer_text', $validated)) {
+            $settings->quote_pdf_footer_text = $validated['quote_pdf_footer_text'] ?? '';
+        }
+
         // Manejar logo
         if ($request->has('remove_logo') && $request->remove_logo) {
             // Eliminar logo existente
@@ -347,6 +355,8 @@ class SettingsController extends Controller
             'zoho_from_email' => '',
             'footer_text' => 'RAMS - Regulatory Affairs Management System',
             'system_name' => 'Sistema de Gestión Regulatoria',
+            'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
+            'quote_pdf_footer_text' => '',
         ];
         
         $existingSettings = DB::table('settings')
@@ -407,6 +417,8 @@ class SettingsController extends Controller
             'zoho_from_email' => '',
             'footer_text' => 'RAMS - Regulatory Affairs Management System',
             'system_name' => 'Sistema de Gestión Regulatoria',
+            'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
+            'quote_pdf_footer_text' => '',
             'drive_folder_name_no_client' => 'Expedientes Sin Cliente',
             'drive_folder_name_with_client' => 'Clientes',
             'drive_mode' => 'service_account',

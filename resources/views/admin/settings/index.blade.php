@@ -205,6 +205,40 @@
                                 </div>
                             @endif
                         </div>
+
+                        <!-- Plantilla PDF de cotizaciones -->
+                        <div class="md:col-span-2 mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="text-md font-semibold text-gray-900 mb-3">
+                                <i class="fas fa-file-pdf text-teal-600 mr-2"></i>
+                                Plantilla PDF de cotizaciones
+                            </h4>
+                            <p class="text-sm text-gray-600 mb-4">
+                                Textos que aparecen en la cabecera y el pie del PDF al descargar una cotización. El logo y el nombre de la empresa de arriba se usan en la cabecera.
+                            </p>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="quote_pdf_header_subtitle" class="block mb-2 text-sm font-medium text-gray-900">
+                                        Texto bajo el nombre (cabecera del PDF)
+                                    </label>
+                                    <input type="text"
+                                           id="quote_pdf_header_subtitle"
+                                           name="quote_pdf_header_subtitle"
+                                           value="{{ old('quote_pdf_header_subtitle', $settings->quote_pdf_header_subtitle ?? 'RAMS - Regulatory Affairs Management System') }}"
+                                           placeholder="Ej: RAMS - Regulatory Affairs Management System"
+                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                </div>
+                                <div>
+                                    <label for="quote_pdf_footer_text" class="block mb-2 text-sm font-medium text-gray-900">
+                                        Pie de página (PDF de cotizaciones)
+                                    </label>
+                                    <textarea id="quote_pdf_footer_text"
+                                              name="quote_pdf_footer_text"
+                                              rows="3"
+                                              placeholder="Si está vacío, se usa el pie de página general del sistema."
+                                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('quote_pdf_footer_text', $settings->quote_pdf_footer_text ?? '') }}</textarea>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mt-6 flex justify-end">

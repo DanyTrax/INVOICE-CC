@@ -5,30 +5,64 @@
     <title>Cotización {{ $quote->consecutive }}</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
-        .header { margin-bottom: 24px; border-bottom: 2px solid #0d9488; padding-bottom: 12px; }
-        .logo { font-size: 18px; font-weight: bold; color: #0d9488; }
-        .subtitle { font-size: 9px; color: #6b7280; margin-top: 2px; }
-        h1 { font-size: 16px; margin: 0 0 16px 0; color: #111827; }
-        .meta { margin-bottom: 20px; }
-        .meta p { margin: 4px 0; }
-        table.items { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        .header { margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px solid #0d9488; overflow: hidden; }
+        .header-left { float: left; width: 28%; }
+        .header-right { float: right; width: 70%; text-align: right; }
+        .header-logo { max-height: 56px; max-width: 180px; }
+        .header-company { font-size: 16px; font-weight: bold; color: #0d9488; margin-bottom: 4px; }
+        .header-subtitle { font-size: 9px; color: #6b7280; margin-bottom: 6px; }
+        .header-details { font-size: 9px; color: #374151; line-height: 1.4; }
+        h1 { font-size: 15px; margin: 20px 0 14px 0; color: #111827; clear: both; }
+        .meta { margin-bottom: 18px; }
+        .meta p { margin: 3px 0; }
+        table.items { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
         table.items th { background: #f3f4f6; text-align: left; padding: 8px 6px; font-size: 9px; text-transform: uppercase; border: 1px solid #e5e7eb; }
         table.items td { padding: 6px; border: 1px solid #e5e7eb; }
         table.items tr.alt { background: #f9fafb; }
-        .totals { margin-top: 20px; width: 280px; margin-left: auto; }
+        .totals { margin-top: 18px; width: 280px; margin-left: auto; }
         .totals table { width: 100%; border-collapse: collapse; }
         .totals td { padding: 6px 8px; border: 1px solid #e5e7eb; }
         .totals .label { background: #f3f4f6; font-weight: bold; width: 55%; }
         .totals .grand { background: #ccfbf1; font-weight: bold; font-size: 12px; }
-        .signature { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
-        .signature-line { width: 250px; border-bottom: 1px solid #1f2937; margin-top: 36px; margin-bottom: 4px; }
+        .signature { margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+        .signature-line { width: 240px; border-bottom: 1px solid #1f2937; margin-top: 32px; margin-bottom: 4px; }
         .signature-label { font-size: 9px; color: #6b7280; }
+        .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
     </style>
 </head>
 <body>
+    @php
+        $logoPath = (!empty($settings->agency_logo) && file_exists(public_path($settings->agency_logo)))
+            ? public_path($settings->agency_logo)
+            : null;
+        $footerText = !empty(trim($settings->quote_pdf_footer_text ?? ''))
+            ? $settings->quote_pdf_footer_text
+            : ($settings->footer_text ?? 'RAMS - Regulatory Affairs Management System');
+    @endphp
+
     <div class="header">
-        <div class="logo">DobleVía</div>
-        <div class="subtitle">RAMS - Regulatory Affairs Management System</div>
+        <div class="header-left">
+            @if($logoPath)
+                <img src="{{ $logoPath }}" alt="" class="header-logo">
+            @else
+                <span class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</span>
+            @endif
+        </div>
+        <div class="header-right">
+            @if($logoPath)
+                <div class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</div>
+            @endif
+            @if(!empty(trim($settings->quote_pdf_header_subtitle ?? '')))
+                <div class="header-subtitle">{{ $settings->quote_pdf_header_subtitle }}</div>
+            @endif
+            @if(!empty(trim($settings->agency_address ?? '')) || !empty(trim($settings->agency_phone ?? '')) || !empty(trim($settings->agency_email ?? '')))
+                <div class="header-details">
+                    @if(!empty(trim($settings->agency_address ?? ''))){{ $settings->agency_address }}<br>@endif
+                    @if(!empty(trim($settings->agency_phone ?? '')))Tel: {{ $settings->agency_phone }}@if(!empty(trim($settings->agency_email ?? '')))<br>@endif @endif
+                    @if(!empty(trim($settings->agency_email ?? ''))){{ $settings->agency_email }}@endif
+                </div>
+            @endif
+        </div>
     </div>
 
     <h1>COTIZACIÓN {{ $quote->consecutive }}</h1>
@@ -118,6 +152,10 @@
     <div class="signature">
         <div class="signature-line"></div>
         <div class="signature-label">Firma del Gerente</div>
+    </div>
+
+    <div class="footer">
+        {{ $footerText }}
     </div>
 </body>
 </html>

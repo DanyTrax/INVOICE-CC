@@ -8,6 +8,7 @@ use App\Models\Process;
 use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\ServiceType;
+use App\Settings\GeneralSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -186,7 +187,8 @@ class QuoteController extends Controller
     public function pdf(Quote $quote)
     {
         $quote->load(['client', 'quoteItems.serviceType']);
-        $pdf = Pdf::loadView('admin.quotes.pdf', compact('quote'));
+        $settings = app(GeneralSettings::class);
+        $pdf = Pdf::loadView('admin.quotes.pdf', compact('quote', 'settings'));
         $filename = 'cotizacion-' . preg_replace('/[^a-z0-9\-]/i', '-', $quote->consecutive) . '.pdf';
         return $pdf->download($filename);
     }
