@@ -94,11 +94,11 @@
             </div>
             <div class="flex flex-wrap items-center gap-4 mb-3 text-sm text-gray-700">
                 <label class="inline-flex items-center gap-2">
-                    <input type="checkbox" id="toggle-prev-license" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked>
+                    <input type="checkbox" id="toggle-prev-license" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                     <span>Usar columna Expediente / INVIMA</span>
                 </label>
                 <label class="inline-flex items-center gap-2">
-                    <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked>
+                    <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                     <span>Usar columna RAA</span>
                 </label>
             </div>
@@ -224,11 +224,11 @@
                 <input type="text" name="items[__INDEX__][description]" placeholder="Producto / Descripción" maxlength="500"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="prev-license">
                 <input type="text" name="items[__INDEX__][previous_license]" placeholder="Ej: 2021DM-0006049" maxlength="64"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="raa">
                 <input type="text" name="items[__INDEX__][raa_code]" placeholder="Ej: 141153" maxlength="64"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
@@ -264,11 +264,11 @@
                 <input type="text" name="items[__INDEX__][description]" placeholder="Préstamo / Suplido" maxlength="500"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="prev-license">
                 <input type="text" name="items[__INDEX__][previous_license]" placeholder="-" maxlength="64"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="raa">
                 <input type="text" name="items[__INDEX__][raa_code]" placeholder="-" maxlength="64"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
