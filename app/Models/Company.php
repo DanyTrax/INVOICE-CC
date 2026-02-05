@@ -37,6 +37,22 @@ class Company extends Model
     }
 
     /**
+     * Cotizaciones (pre-venta) donde la empresa es cliente
+     */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class, 'client_id');
+    }
+
+    /**
+     * Expedientes (processes) donde la empresa es cliente
+     */
+    public function processes(): HasMany
+    {
+        return $this->hasMany(Process::class, 'client_id');
+    }
+
+    /**
      * Usuario registrado con el email de contacto (activo) para este cliente, si existe.
      */
     public function contactRegisteredUser(): ?User

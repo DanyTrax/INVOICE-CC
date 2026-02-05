@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\ProcessController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\ClientRegisterController;
@@ -83,6 +84,12 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::delete('/registrations/{registration}/documents/{document}', [RegistrationController::class, 'destroyDocument'])
         ->name('registrations.documents.destroy');
     Route::resource('registrations', RegistrationController::class);
+
+    // Expedientes (processes) y eventos regulatorios
+    Route::get('processes', [ProcessController::class, 'index'])->name('processes.index');
+    Route::get('processes/{process}', [ProcessController::class, 'show'])->name('processes.show');
+    Route::post('submissions/{submission}/events/auto', [ProcessController::class, 'storeAuto'])->name('submissions.events.store-auto');
+    Route::post('submissions/{submission}/events/resolution', [ProcessController::class, 'storeResolution'])->name('submissions.events.store-resolution');
     
     // Users
     Route::post('users/{user}/send-access-email', [UserController::class, 'sendAccessEmail'])->name('users.send-access-email');
