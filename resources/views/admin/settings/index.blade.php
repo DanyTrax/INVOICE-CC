@@ -26,9 +26,9 @@
                 @endphp
                 @if($permService->userHasPermission('settings_agency', 'view'))
                 <a href="{{ route('admin.settings.section', 'agency') }}" 
-                        id="tab-agency"
-                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'agency' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                    <i class="fas fa-building mr-2"></i> Datos de la Empresa
+                        id="tab-empresa"
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ in_array($activeSection, ['agency', 'quote-pdf']) ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i class="fas fa-building mr-2"></i> Empresa
                 </a>
                 @endif
                 @if($permService->userHasPermission('settings_drive', 'view') || $permService->userHasPermission('settings_drive_operations_log', 'view'))
@@ -59,13 +59,6 @@
                     <i class="fas fa-history mr-2"></i> Correos Enviados
                 </a>
                 @endif
-                @if($permService->userHasPermission('settings_agency', 'view'))
-                <a href="{{ route('admin.settings.section', 'quote-pdf') }}" 
-                        id="tab-quote-pdf"
-                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'quote-pdf' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                    <i class="fas fa-file-pdf mr-2"></i> Plantilla PDF de cotizaciones
-                </a>
-                @endif
                 @if($permService->userHasPermission('settings_system', 'view'))
                 <a href="{{ route('admin.settings.section', 'system') }}" 
                         id="tab-system"
@@ -75,6 +68,19 @@
                 @endif
             </nav>
         </div>
+
+        @if($permService->userHasPermission('settings_agency', 'view') && in_array($activeSection, ['agency', 'quote-pdf']))
+        <div class="flex gap-1 border-b border-gray-200 -mb-px">
+            <a href="{{ route('admin.settings.section', 'agency') }}" 
+                    class="px-4 py-2 text-sm font-medium {{ $activeSection === 'agency' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
+                Información de la Empresa
+            </a>
+            <a href="{{ route('admin.settings.section', 'quote-pdf') }}" 
+                    class="px-4 py-2 text-sm font-medium {{ $activeSection === 'quote-pdf' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
+                Plantilla PDF de cotizaciones
+            </a>
+        </div>
+        @endif
 
         <!-- Tab 1: Datos de la Empresa (solo si tiene permiso) -->
         @if($permService->userHasPermission('settings_agency', 'view'))
