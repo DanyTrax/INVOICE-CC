@@ -261,15 +261,20 @@
                             </a>
                         </li>
                     @endif
-                    @if($permService->userHasPermission('processes', 'view'))
-                        <li>
-                            <a href="{{ route('admin.processes.index') }}" 
-                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.*') || request()->routeIs('admin.submissions.*') ? 'bg-teal-700' : '' }}">
-                                <i class="fas fa-folder-open w-5 h-5"></i>
-                                <span class="ms-3">Expedientes INVIMA</span>
-                            </a>
-                        </li>
-                    @endif
+                    <li>
+                        <a href="{{ route('admin.quotes.index') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.quotes.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-file-invoice-dollar w-5 h-5"></i>
+                            <span class="ms-3">Cotizaciones</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.processes.index') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.*') || request()->routeIs('admin.submissions.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-folder w-5 h-5"></i>
+                            <span class="ms-3">Expedientes / Procesos</span>
+                        </a>
+                    </li>
                     
                     <!-- SISTEMA -->
                     @if($permService->userHasPermission('settings_agency', 'view') 

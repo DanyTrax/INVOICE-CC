@@ -120,6 +120,18 @@
                             <p>Registros (Expedientes)</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.quotes.index') }}" class="nav-link {{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                            <p>Cotizaciones</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.processes.index') }}" class="nav-link {{ request()->routeIs('admin.processes.*') || request()->routeIs('admin.submissions.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-folder"></i>
+                            <p>Expedientes / Procesos</p>
+                        </a>
+                    </li>
 
                     <!-- SISTEMA -->
                     <li class="nav-header">SISTEMA</li>

@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ProcessController;
+use App\Http\Controllers\Admin\QuoteController;
 use App\Http\Controllers\Admin\RegulatoryEventController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -85,6 +86,9 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::delete('/registrations/{registration}/documents/{document}', [RegistrationController::class, 'destroyDocument'])
         ->name('registrations.documents.destroy');
     Route::resource('registrations', RegistrationController::class);
+
+    // Cotizaciones (pre-venta)
+    Route::get('quotes', [QuoteController::class, 'index'])->name('quotes.index');
 
     // Expedientes (processes) y eventos regulatorios
     Route::get('processes', [ProcessController::class, 'index'])->name('processes.index');

@@ -17,14 +17,15 @@ class CheckModulePermission
         if (str_starts_with($routeName, 'admin.dashboard')) {
             return ['dashboard', 'view'];
         }
+        // Cotizaciones y Expedientes INVIMA: acceso permitido a cualquier admin (sin permiso granular)
+        if (str_starts_with($routeName, 'admin.quotes') || str_starts_with($routeName, 'admin.processes') || str_starts_with($routeName, 'admin.submissions')) {
+            return null;
+        }
         if (str_starts_with($routeName, 'admin.companies')) {
             return ['companies', 'view'];
         }
         if (str_starts_with($routeName, 'admin.registrations')) {
             return ['registrations', 'view'];
-        }
-        if (str_starts_with($routeName, 'admin.processes') || str_starts_with($routeName, 'admin.submissions')) {
-            return ['processes', 'view'];
         }
         if (str_starts_with($routeName, 'admin.clients') || str_starts_with($routeName, 'admin.agents') || str_starts_with($routeName, 'admin.users')) {
             return ['users', 'view'];
