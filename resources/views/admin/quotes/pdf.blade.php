@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <title>Cotización {{ $quote->consecutive }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
-        .header { margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px solid #0d9488; overflow: hidden; }
+        @page { size: letter; margin: 18mm; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; }
+        .header { margin-bottom: 10px; padding-top: 4px; padding-bottom: 10px; border-bottom: 2px solid #0d9488; overflow: visible; }
         .header-left { float: left; width: 28%; }
         .header-right { float: right; width: 70%; text-align: right; }
-        .header-logo { max-height: 56px; max-width: 180px; }
+        .header-logo { max-height: 48px; max-width: 160px; display: block; object-fit: contain; }
         .header-company { font-size: 16px; font-weight: bold; color: #0d9488; margin-bottom: 4px; }
         .header-subtitle { font-size: 9px; color: #6b7280; margin-bottom: 6px; }
         .header-details { font-size: 9px; color: #374151; line-height: 1.4; }
-        h1 { font-size: 15px; margin: 20px 0 14px 0; color: #111827; clear: both; text-align: center; }
+        h1 { font-size: 15px; margin: 10px 0 14px 0; color: #111827; clear: both; text-align: center; }
         .context-body { margin-bottom: 18px; line-height: 1.5; }
         .meta { margin-bottom: 18px; }
         .meta p { margin: 3px 0; }
