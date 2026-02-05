@@ -23,6 +23,9 @@ class CheckModulePermission
         if (str_starts_with($routeName, 'admin.registrations')) {
             return ['registrations', 'view'];
         }
+        if (str_starts_with($routeName, 'admin.processes') || str_starts_with($routeName, 'admin.submissions')) {
+            return ['processes', 'view'];
+        }
         if (str_starts_with($routeName, 'admin.clients') || str_starts_with($routeName, 'admin.agents') || str_starts_with($routeName, 'admin.users')) {
             return ['users', 'view'];
         }

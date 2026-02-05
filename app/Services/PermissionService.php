@@ -20,7 +20,8 @@ class PermissionService
         return [
             'dashboard' => 'Dashboard',
             'companies' => 'Empresas',
-            'registrations' => 'Expedientes',
+            'registrations' => 'Registros (Expedientes)',
+            'processes' => 'Expedientes INVIMA',
             'users' => 'Usuarios',
             // Configuración por secciones
             'settings_agency' => 'Config: Datos Empresa',
