@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <title>Cotización {{ $quote->consecutive }}</title>
     <style>
-        @page { size: letter; margin: 24mm 12mm 14mm 12mm; }
+        @page { size: letter; margin: 5mm 12mm 14mm 12mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; }
-        .pdf-page-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 4px 0 2px 0; }
+        .pdf-page-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 0 0 2px 0; }
         .pdf-page-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 6px 0 2px 0; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
-        .pdf-body-content { padding-top: 4px; padding-bottom: 24px; }
+        .pdf-body-content { padding-top: 0; padding-bottom: 24px; }
         .header { overflow: visible; }
         .header-left { float: left; width: 28%; }
         .header-right { float: right; width: 70%; text-align: right; }
