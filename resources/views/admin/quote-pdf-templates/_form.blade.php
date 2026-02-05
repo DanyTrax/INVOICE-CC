@@ -56,7 +56,7 @@
         <label for="body_html" class="block mb-2 text-sm font-medium text-gray-900">Contexto / Cuerpo (texto introductorio del PDF)</label>
         <textarea name="body_html" id="body_html" rows="12" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('body_html', $template->body_html ?? '') }}</textarea>
         <p class="mt-1 text-xs text-gray-500">
-            Use variables: <code class="bg-gray-100 px-1 rounded">@verbatim {{fecha}} @endverbatim</code> (fecha), <code class="bg-gray-100 px-1 rounded">@verbatim {{ciudad}} @endverbatim</code>, <code class="bg-gray-100 px-1 rounded">@verbatim {{cliente}} @endverbatim</code>, <code class="bg-gray-100 px-1 rounded">@verbatim {{consecutivo}} @endverbatim</code>, <code class="bg-gray-100 px-1 rounded">@verbatim {{destinatario}} @endverbatim</code> (nombre del cliente). Se reemplazarán al generar el PDF.
+            Use variables: <code class="bg-gray-100 px-1 rounded">@verbatim {{fecha}} @endverbatim</code> (fecha), <code class="bg-gray-100 px-1 rounded">@verbatim {{ciudad}} @endverbatim</code>, <code class="bg-gray-100 px-1 rounded">@verbatim {{cliente}} @endverbatim</code> (cliente seleccionado en la cotización), <code class="bg-gray-100 px-1 rounded">@verbatim {{consecutivo}} @endverbatim</code>, <code class="bg-gray-100 px-1 rounded">@verbatim {{destinatario}} @endverbatim</code> (nombre del destinatario, mismo cliente). Se reemplazarán al generar el PDF.
         </p>
     </div>
 

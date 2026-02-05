@@ -6,7 +6,7 @@
     <style>
         @page { size: letter; margin: 18mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; }
-        .header { margin-bottom: 10px; padding-top: 4px; padding-bottom: 10px; border-bottom: 2px solid #0d9488; overflow: visible; }
+        .header { margin-bottom: 10px; padding-top: 4px; padding-bottom: 10px; overflow: visible; }
         .header-left { float: left; width: 28%; }
         .header-right { float: right; width: 70%; text-align: right; }
         .header-logo { max-height: 48px; max-width: 160px; display: block; object-fit: contain; margin-bottom: 6px; }
@@ -65,7 +65,7 @@
     @endphp
 
     @if($useTemplate)
-        {{-- Cabecera desde plantilla: izquierda = logo + nombre + NIT; derecha = nombre + NIT --}}
+        {{-- Cabecera desde plantilla: solo izquierda = logo + nombre + NIT (sin línea ni bloque derecho) --}}
         <div class="header">
             <div class="header-left">
                 @if($logoPath)
@@ -78,14 +78,6 @@
                     <div class="header-nit"><strong>NIT.</strong> {{ $template->header_nit }}</div>
                 @endif
             </div>
-            <div class="header-right">
-                @if(!empty(trim($template->header_company_name ?? '')))
-                    <div class="header-company">{{ $template->header_company_name }}</div>
-                @endif
-                @if(!empty(trim($template->header_nit ?? '')))
-                    <div class="header-details"><strong>NIT.</strong> {{ $template->header_nit }}</div>
-                @endif
-            </div>
         </div>
 
         <h1>COTIZACIÓN No. {{ $quote->consecutive }}</h1>
@@ -96,28 +88,13 @@
             </div>
         @endif
     @else
-        {{-- Cabecera desde configuración general (sin plantilla) --}}
+        {{-- Cabecera desde configuración general (sin plantilla): solo izquierda, sin línea ni bloque derecho --}}
         <div class="header">
             <div class="header-left">
                 @if($logoPath)
                     <img src="{{ $logoPath }}" alt="" class="header-logo">
                 @else
                     <span class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</span>
-                @endif
-            </div>
-            <div class="header-right">
-                @if($logoPath)
-                    <div class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</div>
-                @endif
-                @if(!empty(trim($settings->quote_pdf_header_subtitle ?? '')))
-                    <div class="header-subtitle">{{ $settings->quote_pdf_header_subtitle }}</div>
-                @endif
-                @if(!empty(trim($settings->agency_address ?? '')) || !empty(trim($settings->agency_phone ?? '')) || !empty(trim($settings->agency_email ?? '')))
-                    <div class="header-details">
-                        @if(!empty(trim($settings->agency_address ?? ''))){{ $settings->agency_address }}<br>@endif
-                        @if(!empty(trim($settings->agency_phone ?? '')))Tel: {{ $settings->agency_phone }}@if(!empty(trim($settings->agency_email ?? '')))<br>@endif @endif
-                        @if(!empty(trim($settings->agency_email ?? ''))){{ $settings->agency_email }}@endif
-                    </div>
                 @endif
             </div>
         </div>
