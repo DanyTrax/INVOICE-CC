@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <title>Cotización {{ $quote->consecutive }}</title>
     <style>
-        @page { size: letter; margin: 18mm; }
+        @page { size: letter; margin: 10mm 12mm 14mm 12mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; }
-        .header { margin-bottom: 10px; padding-top: 4px; padding-bottom: 10px; overflow: visible; }
+        .pdf-page-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 2px 0 6px 0; }
+        .pdf-page-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 6px 0 2px 0; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
+        .pdf-body-content { padding-top: 78px; padding-bottom: 24px; }
+        .header { overflow: visible; }
         .header-left { float: left; width: 28%; }
         .header-right { float: right; width: 70%; text-align: right; }
-        .header-logo { max-height: 48px; max-width: 160px; display: block; object-fit: contain; margin-bottom: 6px; }
+        .header-logo { max-height: 62px; max-width: 208px; display: block; object-fit: contain; margin-bottom: 6px; }
         .header-company { font-size: 16px; font-weight: bold; color: #0d9488; margin-bottom: 4px; }
         .header-company-below-logo { font-size: 10px; font-weight: bold; color: #0d9488; margin-bottom: 2px; line-height: 1.2; }
         .header-nit { font-size: 9px; color: #374151; line-height: 1.3; }
@@ -33,7 +36,6 @@
         .signature { margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
         .signature-line { width: 240px; border-bottom: 1px solid #1f2937; margin-top: 32px; margin-bottom: 4px; }
         .signature-label { font-size: 9px; color: #6b7280; }
-        .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
     </style>
 </head>
 <body>
@@ -64,52 +66,51 @@
         }
     @endphp
 
-    @if($useTemplate)
-        {{-- Cabecera desde plantilla: solo izquierda = logo + nombre + NIT (sin línea ni bloque derecho) --}}
+    {{-- Cabecera fija: se repite en cada página --}}
+    <div class="pdf-page-header">
         <div class="header">
             <div class="header-left">
                 @if($logoPath)
                     <img src="{{ $logoPath }}" alt="" class="header-logo">
                 @endif
-                @if(!empty(trim($template->header_company_name ?? '')))
-                    <div class="header-company-below-logo">{{ $template->header_company_name }}</div>
-                @endif
-                @if(!empty(trim($template->header_nit ?? '')))
-                    <div class="header-nit"><strong>NIT.</strong> {{ $template->header_nit }}</div>
+                @if($useTemplate)
+                    @if(!empty(trim($template->header_company_name ?? '')))
+                        <div class="header-company-below-logo">{{ $template->header_company_name }}</div>
+                    @endif
+                    @if(!empty(trim($template->header_nit ?? '')))
+                        <div class="header-nit"><strong>NIT.</strong> {{ $template->header_nit }}</div>
+                    @endif
+                @else
+                    @if(!$logoPath)
+                        <span class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</span>
+                    @endif
                 @endif
             </div>
         </div>
+    </div>
 
+    {{-- Pie de página fijo: abajo de cada página --}}
+    <div class="pdf-page-footer">{{ $footerText }}</div>
+
+    <div class="pdf-body-content">
         <h1>COTIZACIÓN No. {{ $quote->consecutive }}</h1>
 
-        @if(!empty(trim($bodyHtml)))
-            <div class="context-body">
-                {!! $bodyHtml !!}
-            </div>
-        @endif
-    @else
-        {{-- Cabecera desde configuración general (sin plantilla): solo izquierda, sin línea ni bloque derecho --}}
-        <div class="header">
-            <div class="header-left">
-                @if($logoPath)
-                    <img src="{{ $logoPath }}" alt="" class="header-logo">
-                @else
-                    <span class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</span>
+        @if($useTemplate)
+            @if(!empty(trim($bodyHtml)))
+                <div class="context-body">
+                    {!! $bodyHtml !!}
+                </div>
+            @endif
+        @else
+            <div class="meta">
+                <p><strong>Cliente:</strong> {{ $quote->client->name ?? '-' }}</p>
+                <p><strong>Fecha:</strong> {{ $quote->date?->format('d/m/Y') ?? '-' }}</p>
+                <p><strong>Moneda:</strong> {{ $quote->currency ?? 'COP' }}</p>
+                @if($quote->exchange_rate)
+                    <p><strong>Tasa de cambio:</strong> {{ number_format($quote->exchange_rate, 4) }}</p>
                 @endif
             </div>
-        </div>
-
-        <h1>COTIZACIÓN {{ $quote->consecutive }}</h1>
-
-        <div class="meta">
-            <p><strong>Cliente:</strong> {{ $quote->client->name ?? '-' }}</p>
-            <p><strong>Fecha:</strong> {{ $quote->date?->format('d/m/Y') ?? '-' }}</p>
-            <p><strong>Moneda:</strong> {{ $quote->currency ?? 'COP' }}</p>
-            @if($quote->exchange_rate)
-                <p><strong>Tasa de cambio:</strong> {{ number_format($quote->exchange_rate, 4) }}</p>
-            @endif
-        </div>
-    @endif
+        @endif
 
     <table class="items">
         <thead>
@@ -170,8 +171,6 @@
         <div class="signature-label">Firma del Gerente</div>
     </div>
 
-    <div class="footer">
-        {{ $footerText }}
-    </div>
+    </div>{{-- .pdf-body-content --}}
 </body>
 </html>
