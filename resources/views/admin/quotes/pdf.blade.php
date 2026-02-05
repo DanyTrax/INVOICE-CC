@@ -33,7 +33,7 @@
         .totals td { padding: 6px 8px; border: 1px solid #e5e7eb; }
         .totals .label { background: #f3f4f6; font-weight: bold; width: 55%; }
         .totals .grand { background: #ccfbf1; font-weight: bold; font-size: 12px; }
-        .signature { margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+        .signature { margin-top: 36px; padding-top: 0; }
         .signature-line { width: 240px; border-bottom: 1px solid #1f2937; margin-top: 32px; margin-bottom: 4px; }
         .signature-label { font-size: 9px; color: #6b7280; }
         .signature-name { font-size: 12px; font-weight: bold; color: #1f2937; }
