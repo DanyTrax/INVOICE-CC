@@ -95,7 +95,7 @@
             <div class="flex flex-wrap items-center gap-4 mb-3 text-sm text-gray-700">
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" id="toggle-prev-license" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked>
-                    <span>Usar columna Expediente / Licencia</span>
+                    <span>Usar columna Expediente / INVIMA</span>
                 </label>
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked>
@@ -109,7 +109,7 @@
                             <th class="px-2 py-2 w-12">#</th>
                             <th class="px-2 py-2">Tipo de trámite</th>
                             <th class="px-2 py-2">Producto / Descripción</th>
-                            <th class="px-2 py-2" data-col="prev-license">Expediente / Licencia</th>
+                            <th class="px-2 py-2" data-col="prev-license">Expediente / INVIMA</th>
                             <th class="px-2 py-2 w-20" data-col="raa">RAA</th>
                             <th class="px-2 py-2">Alcance</th>
                             <th class="px-2 py-2 w-28">Valor</th>
@@ -340,6 +340,7 @@
             rowIndex++;
             updateRowNumbers();
             bindRowEvents(row);
+            updateColumnVisibility(); // aplicar visibilidad de columnas a la nueva fila
             updateTotals();
         }
 
