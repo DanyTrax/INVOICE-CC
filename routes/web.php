@@ -92,6 +92,12 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::get('quotes', [QuoteController::class, 'index'])->name('quotes.index');
     Route::get('quotes/create', [QuoteController::class, 'create'])->name('quotes.create');
     Route::post('quotes', [QuoteController::class, 'store'])->name('quotes.store');
+    Route::get('quotes/{quote}', [QuoteController::class, 'show'])->name('quotes.show');
+    Route::get('quotes/{quote}/edit', [QuoteController::class, 'edit'])->name('quotes.edit');
+    Route::put('quotes/{quote}', [QuoteController::class, 'update'])->name('quotes.update');
+    Route::post('quotes/{quote}/approve', [QuoteController::class, 'approve'])->name('quotes.approve');
+    Route::get('quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->name('quotes.pdf');
+    Route::post('quotes/{quote}/anular', [QuoteController::class, 'anular'])->name('quotes.anular');
 
     // Tipos de Trámite (ServiceTypes)
     Route::get('service-types', [ServiceTypeController::class, 'index'])->name('service-types.index');

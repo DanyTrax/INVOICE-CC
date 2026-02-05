@@ -38,6 +38,7 @@
                     <option value="Enviada" {{ request('status') === 'Enviada' ? 'selected' : '' }}>Enviada</option>
                     <option value="Aprobada" {{ request('status') === 'Aprobada' ? 'selected' : '' }}>Aprobada</option>
                     <option value="Rechazada" {{ request('status') === 'Rechazada' ? 'selected' : '' }}>Rechazada</option>
+                    <option value="Anulada" {{ request('status') === 'Anulada' ? 'selected' : '' }}>Anulada</option>
                 </select>
                 <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
                     <i class="fas fa-search mr-2"></i> Buscar
@@ -69,7 +70,9 @@
                 <tbody>
                     @forelse($quotes as $quote)
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td class="px-4 py-3 font-medium text-gray-900">{{ $quote->consecutive ?? '-' }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-900">
+                                <a href="{{ route('admin.quotes.show', $quote) }}" class="text-teal-600 hover:underline">{{ $quote->consecutive ?? '-' }}</a>
+                            </td>
                             <td class="px-4 py-3">{{ $quote->client->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $quote->date?->format('d/m/Y') ?? '-' }}</td>
                             <td class="px-4 py-3">
@@ -79,6 +82,7 @@
                                         'Enviada' => 'bg-blue-100 text-blue-800',
                                         'Aprobada' => 'bg-green-100 text-green-800',
                                         'Rechazada' => 'bg-red-100 text-red-800',
+                                        'Anulada' => 'bg-red-100 text-red-800',
                                     ];
                                     $style = $statusStyles[$quote->status] ?? 'bg-gray-100 text-gray-800';
                                 @endphp
