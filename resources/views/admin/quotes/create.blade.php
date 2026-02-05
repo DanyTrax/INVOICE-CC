@@ -129,12 +129,12 @@
                                 <td class="px-2 py-2">
                                     <input type="hidden" name="items[{{ $idx }}][item_position]" value="{{ $idx + 1 }}">
                                     <input type="hidden" name="items[{{ $idx }}][is_loan]" value="{{ !empty($item['is_loan']) ? '1' : '0' }}" class="item-is-loan-input">
-                                    <input type="text"
-                                           name="items[{{ $idx }}][service_type_name]"
-                                           list="service_types_datalist"
-                                           value="{{ $item['service_type_name'] ?? '' }}"
-                                           placeholder="Tipo de trámite"
-                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                    <textarea
+                                        name="items[{{ $idx }}][service_type_name]"
+                                        list="service_types_datalist"
+                                        rows="2"
+                                        placeholder="Tipo de trámite"
+                                        class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
                                 </td>
                                 <td class="px-2 py-2">
                                     <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Producto / Descripción" maxlength="500"
@@ -150,7 +150,7 @@
                                 </td>
                                 <td class="px-2 py-2">
                                     <textarea name="items[{{ $idx }}][scope]" rows="2" placeholder="Alcance" maxlength="1000"
-                                              class="border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['scope'] ?? '' }}</textarea>
+                                              class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['scope'] ?? '' }}</textarea>
                                 </td>
                                 <td class="px-2 py-2">
                                     <input type="number" name="items[{{ $idx }}][fee_value]" value="{{ $item['fee_value'] ?? '' }}" placeholder="0" min="0" step="0.01" required
@@ -210,11 +210,12 @@
             <td class="px-2 py-2">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="0" class="item-is-loan-input">
-                <input type="text"
-                       name="items[__INDEX__][service_type_name]"
-                       list="service_types_datalist"
-                       placeholder="Tipo de trámite"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                <textarea
+                    name="items[__INDEX__][service_type_name]"
+                    list="service_types_datalist"
+                    rows="2"
+                    placeholder="Tipo de trámite"
+                    class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Producto / Descripción" maxlength="500"
@@ -230,7 +231,7 @@
             </td>
             <td class="px-2 py-2">
                 <textarea name="items[__INDEX__][scope]" rows="2" placeholder="Alcance" maxlength="1000"
-                          class="border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
+                          class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
                 <input type="number" name="items[__INDEX__][fee_value]" placeholder="0" min="0" step="0.01" required
@@ -249,11 +250,12 @@
             <td class="px-2 py-2">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="1" class="item-is-loan-input">
-                <input type="text"
-                       name="items[__INDEX__][service_type_name]"
-                       list="service_types_datalist"
-                       placeholder="Tipo de trámite (préstamo)"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
+                <textarea
+                    name="items[__INDEX__][service_type_name]"
+                    list="service_types_datalist"
+                    rows="2"
+                    placeholder="Tipo de trámite (préstamo)"
+                    class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Préstamo / Suplido" maxlength="500"
@@ -269,7 +271,7 @@
             </td>
             <td class="px-2 py-2">
                 <textarea name="items[__INDEX__][scope]" rows="2" placeholder="Alcance" maxlength="1000"
-                          class="border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
+                          class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
                 <input type="number" name="items[__INDEX__][fee_value]" placeholder="0" min="0" step="0.01" required
@@ -338,6 +340,12 @@
             updateTotals();
         }
 
+        function autoResize(el) {
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight || 0) + 'px';
+        }
+
         function bindRowEvents(row) {
             const removeBtn = row.querySelector('.btn-remove-row');
             if (removeBtn) removeBtn.addEventListener('click', function() {
@@ -347,6 +355,10 @@
                 updateTotals();
             });
             row.querySelector('.item-value').addEventListener('input', updateTotals);
+            row.querySelectorAll('textarea.js-autoresize').forEach(function(ta) {
+                autoResize(ta);
+                ta.addEventListener('input', function() { autoResize(ta); });
+            });
         }
 
         function updateRowNumbers() {
