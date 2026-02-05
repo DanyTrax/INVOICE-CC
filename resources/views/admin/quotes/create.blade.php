@@ -33,6 +33,8 @@
 
     <form action="{{ route('admin.quotes.store') }}" method="POST" id="form-quote">
         @csrf
+        <input type="hidden" name="show_prev_license_column" id="input-show-prev-license" value="0">
+        <input type="hidden" name="show_raa_column" id="input-show-raa" value="0">
 
         {{-- Cabecera --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -101,6 +103,15 @@
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                     <span>Usar columna RAA</span>
                 </label>
+                <label class="inline-flex items-center gap-2 ml-4">
+                    <input type="checkbox" name="apply_tax" id="toggle-apply-tax" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                    <span>Aplicar impuesto (IVA)</span>
+                </label>
+                <span id="tax-pct-wrap" class="hidden">
+                    <label for="tax_percentage" class="sr-only">Porcentaje IVA</label>
+                    <input type="number" name="tax_percentage" id="tax_percentage" value="{{ old('tax_percentage', '19') }}" min="0" max="100" step="0.01" placeholder="%"
+                           class="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm"> %
+                </span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-700 min-w-[900px]" id="items-table">
@@ -184,9 +195,21 @@
                     <p class="text-xl font-semibold text-gray-900" id="display-total-loans">0</p>
                 </div>
                 <div class="bg-teal-50 rounded-lg p-4">
-                    <p class="text-sm text-gray-600">Gran total</p>
-                    <p class="text-xl font-semibold text-teal-800" id="display-grand-total">0</p>
+                    <p class="text-sm text-gray-600">Tasas INVIMA</p>
+                    <p class="text-xl font-semibold text-gray-900" id="display-total-invima">0</p>
                 </div>
+            </div>
+            <div id="resumen-sin-iva" class="mt-4 pt-4 border-t border-gray-200">
+                <p class="text-sm text-gray-600">Total</p>
+                <p class="text-2xl font-bold text-teal-800" id="display-grand-total">0</p>
+            </div>
+            <div id="resumen-con-iva" class="mt-4 pt-4 border-t border-gray-200 hidden">
+                <p class="text-sm text-gray-600">Sub-total</p>
+                <p class="text-xl font-semibold text-gray-900" id="display-subtotal">0</p>
+                <p class="text-sm text-gray-600 mt-2">IVA (<span id="display-iva-pct">0</span>%)</p>
+                <p class="text-xl font-semibold text-gray-900" id="display-iva-amount">0</p>
+                <p class="text-sm text-gray-600 mt-2">Total</p>
+                <p class="text-2xl font-bold text-teal-800" id="display-total-with-tax">0</p>
             </div>
         </div>
 
@@ -299,7 +322,26 @@
         const clientSelect = document.getElementById('client_id');
         const togglePrev = document.getElementById('toggle-prev-license');
         const toggleRaa = document.getElementById('toggle-raa');
+        const toggleApplyTax = document.getElementById('toggle-apply-tax');
+        const taxPctWrap = document.getElementById('tax-pct-wrap');
+        const inputShowPrevLicense = document.getElementById('input-show-prev-license');
+        const inputShowRaa = document.getElementById('input-show-raa');
         let rowIndex = {{ count($oldItems) }};
+
+        function syncColumnHiddenInputs() {
+            if (inputShowPrevLicense) inputShowPrevLicense.value = togglePrev?.checked ? '1' : '0';
+            if (inputShowRaa) inputShowRaa.value = toggleRaa?.checked ? '1' : '0';
+        }
+
+        function updateTaxSectionVisibility() {
+            const applyTax = toggleApplyTax?.checked;
+            if (taxPctWrap) taxPctWrap.classList.toggle('hidden', !applyTax);
+            const sinIva = document.getElementById('resumen-sin-iva');
+            const conIva = document.getElementById('resumen-con-iva');
+            if (sinIva) sinIva.classList.toggle('hidden', !!applyTax);
+            if (conIva) conIva.classList.toggle('hidden', !applyTax);
+            updateTotals();
+        }
 
         function updateLoanButtonVisibility() {
             const opt = clientSelect.options[clientSelect.selectedIndex];
@@ -328,6 +370,7 @@
             if (!togglePrev || !toggleRaa) return;
             setColumnEnabled('prev-license', togglePrev.checked);
             setColumnEnabled('raa', toggleRaa.checked);
+            syncColumnHiddenInputs();
         }
 
         function addRow(isLoan) {
@@ -388,17 +431,41 @@
         }
 
         function updateTotals() {
-            let totalFees = 0, totalLoans = 0;
+            let totalFees = 0, totalLoans = 0, totalInvima = 0;
             tbody.querySelectorAll('.item-row').forEach(function(row) {
                 const val = parseFloat(row.querySelector('.item-value')?.value || 0) || 0;
+                const invimaInput = row.querySelector('input[name$="[invima_rate_value]"]');
+                if (invimaInput) totalInvima += parseFloat(invimaInput.value || 0) || 0;
                 const isLoan = row.getAttribute('data-is-loan') === '1';
                 if (isLoan) totalLoans += val;
                 else totalFees += val;
             });
-            const grandTotal = totalFees + totalLoans;
-            document.getElementById('display-total-fees').textContent = formatNum(totalFees);
-            document.getElementById('display-total-loans').textContent = formatNum(totalLoans);
-            document.getElementById('display-grand-total').textContent = formatNum(grandTotal);
+            const subtotal = totalFees + totalLoans + totalInvima;
+            const applyTax = toggleApplyTax?.checked;
+            const taxPct = parseFloat(document.getElementById('tax_percentage')?.value || 0) || 0;
+            const ivaAmount = applyTax ? Math.round(subtotal * taxPct / 100 * 100) / 100 : 0;
+            const totalWithTax = subtotal + ivaAmount;
+
+            const feesEl = document.getElementById('display-total-fees');
+            const loansEl = document.getElementById('display-total-loans');
+            const invimaEl = document.getElementById('display-total-invima');
+            if (feesEl) feesEl.textContent = formatNum(totalFees);
+            if (loansEl) loansEl.textContent = formatNum(totalLoans);
+            if (invimaEl) invimaEl.textContent = formatNum(totalInvima);
+
+            const grandEl = document.getElementById('display-grand-total');
+            const subtotalEl = document.getElementById('display-subtotal');
+            const ivaPctEl = document.getElementById('display-iva-pct');
+            const ivaAmountEl = document.getElementById('display-iva-amount');
+            const totalWithTaxEl = document.getElementById('display-total-with-tax');
+            if (applyTax) {
+                if (subtotalEl) subtotalEl.textContent = formatNum(subtotal);
+                if (ivaPctEl) ivaPctEl.textContent = formatNum(taxPct);
+                if (ivaAmountEl) ivaAmountEl.textContent = formatNum(ivaAmount);
+                if (totalWithTaxEl) totalWithTaxEl.textContent = formatNum(totalWithTax);
+            } else {
+                if (grandEl) grandEl.textContent = formatNum(subtotal);
+            }
         }
 
         function formatNum(n) {
@@ -410,11 +477,15 @@
         btnAddLoan.addEventListener('click', function() { addRow(true); });
         if (togglePrev) togglePrev.addEventListener('change', updateColumnVisibility);
         if (toggleRaa) toggleRaa.addEventListener('change', updateColumnVisibility);
+        if (toggleApplyTax) toggleApplyTax.addEventListener('change', updateTaxSectionVisibility);
+        document.getElementById('tax_percentage')?.addEventListener('input', updateTotals);
+        document.getElementById('form-quote').addEventListener('submit', syncColumnHiddenInputs);
 
         tbody.querySelectorAll('.item-row').forEach(bindRowEvents);
         updateRowNumbers();
         updateLoanButtonVisibility();
         updateColumnVisibility();
+        updateTaxSectionVisibility();
         updateTotals();
     })();
     </script>

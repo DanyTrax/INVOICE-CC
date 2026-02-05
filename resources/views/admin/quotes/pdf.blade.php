@@ -48,8 +48,12 @@
                 <th style="width: 5%;">#</th>
                 <th style="width: 22%;">Tipo de trámite</th>
                 <th style="width: 22%;">Producto / Descripción</th>
-                <th style="width: 12%;">Expediente / INVIMA</th>
-                <th style="width: 8%;">RAA</th>
+                @if($quote->show_prev_license_column)
+                    <th style="width: 12%;">Expediente / INVIMA</th>
+                @endif
+                @if($quote->show_raa_column)
+                    <th style="width: 8%;">RAA</th>
+                @endif
                 <th style="width: 18%;">Alcance</th>
                 <th style="width: 8%;">Tipo</th>
                 <th style="width: 5%; text-align: right;">Valor</th>
@@ -61,8 +65,12 @@
                     <td>{{ $item->item_position }}</td>
                     <td>{{ $item->serviceType->name ?? '-' }}</td>
                     <td>{{ $item->description ?? '-' }}</td>
-                    <td>{{ $item->previous_license ?? '-' }}</td>
-                    <td>{{ $item->raa_code ?? '-' }}</td>
+                    @if($quote->show_prev_license_column)
+                        <td>{{ $item->previous_license ?? '-' }}</td>
+                    @endif
+                    @if($quote->show_raa_column)
+                        <td>{{ $item->raa_code ?? '-' }}</td>
+                    @endif
                     <td>{{ Str::limit($item->scope, 50) }}</td>
                     <td>{{ $item->is_loan ? 'Préstamo' : 'Honorario' }}</td>
                     <td style="text-align: right;">{{ number_format($item->fee_value, 2) }}</td>
@@ -85,10 +93,25 @@
                 <td class="label">Tasas INVIMA</td>
                 <td style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->total_invima_fees, 2) }}</td>
             </tr>
-            <tr>
-                <td class="label grand">Gran total</td>
-                <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->total_professional_fees + $quote->total_loans + $quote->total_invima_fees, 2) }}</td>
-            </tr>
+            @if($quote->apply_tax && $quote->tax_percentage !== null)
+                <tr>
+                    <td class="label">Sub-total</td>
+                    <td style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->subtotal, 2) }}</td>
+                </tr>
+                <tr>
+                    <td class="label">IVA ({{ number_format($quote->tax_percentage, 2) }}%)</td>
+                    <td style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->tax_amount, 2) }}</td>
+                </tr>
+                <tr>
+                    <td class="label grand">Total</td>
+                    <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->total_with_tax, 2) }}</td>
+                </tr>
+            @else
+                <tr>
+                    <td class="label grand">Total</td>
+                    <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->subtotal, 2) }}</td>
+                </tr>
+            @endif
         </table>
     </div>
 

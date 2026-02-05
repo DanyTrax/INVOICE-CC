@@ -69,6 +69,10 @@ class QuoteController extends Controller
             'currency' => 'required|string|in:COP,USD',
             'exchange_rate' => 'nullable|numeric|min:0',
             'consecutive' => 'required|string|max:32|unique:quotes,consecutive,' . $quote->id,
+            'show_prev_license_column' => 'nullable|boolean',
+            'show_raa_column' => 'nullable|boolean',
+            'apply_tax' => 'nullable|boolean',
+            'tax_percentage' => 'nullable|numeric|min:0|max:100',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
@@ -103,9 +107,13 @@ class QuoteController extends Controller
             'date' => $validated['date'],
             'currency' => $validated['currency'],
             'exchange_rate' => $validated['exchange_rate'] ?? null,
+            'show_prev_license_column' => !empty($validated['show_prev_license_column']),
+            'show_raa_column' => !empty($validated['show_raa_column']),
             'total_professional_fees' => round($totalFees, 2),
             'total_invima_fees' => round($totalInvima, 2),
             'total_loans' => round($totalLoans, 2),
+            'apply_tax' => !empty($validated['apply_tax']),
+            'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
         ]);
 
         $existingIds = [];
@@ -261,6 +269,10 @@ class QuoteController extends Controller
             'currency' => 'required|string|in:COP,USD',
             'exchange_rate' => 'nullable|numeric|min:0',
             'consecutive' => 'required|string|max:32|unique:quotes,consecutive',
+            'show_prev_license_column' => 'nullable|boolean',
+            'show_raa_column' => 'nullable|boolean',
+            'apply_tax' => 'nullable|boolean',
+            'tax_percentage' => 'nullable|numeric|min:0|max:100',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
             'items.*.service_type_name' => 'required|string|max:255',
@@ -294,10 +306,14 @@ class QuoteController extends Controller
             'date' => $validated['date'],
             'currency' => $validated['currency'],
             'exchange_rate' => $validated['exchange_rate'] ?? null,
+            'show_prev_license_column' => !empty($validated['show_prev_license_column']),
+            'show_raa_column' => !empty($validated['show_raa_column']),
             'status' => 'Borrador',
             'total_professional_fees' => round($totalFees, 2),
             'total_invima_fees' => round($totalInvima, 2),
             'total_loans' => round($totalLoans, 2),
+            'apply_tax' => !empty($validated['apply_tax']),
+            'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
         ]);
 
         foreach ($validated['items'] as $pos => $row) {

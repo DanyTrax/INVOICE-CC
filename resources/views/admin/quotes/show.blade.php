@@ -112,8 +112,12 @@
                         <th class="px-2 py-2 w-12">#</th>
                         <th class="px-2 py-2">Tipo de trámite</th>
                         <th class="px-2 py-2">Producto / Descripción</th>
-                        <th class="px-2 py-2">Expediente / INVIMA</th>
-                        <th class="px-2 py-2 w-20">RAA</th>
+                        @if($quote->show_prev_license_column)
+                            <th class="px-2 py-2">Expediente / INVIMA</th>
+                        @endif
+                        @if($quote->show_raa_column)
+                            <th class="px-2 py-2 w-20">RAA</th>
+                        @endif
                         <th class="px-2 py-2">Alcance</th>
                         <th class="px-2 py-2 w-28">Valor</th>
                         <th class="px-2 py-2 w-20">Tipo</th>
@@ -125,8 +129,12 @@
                             <td class="px-2 py-2">{{ $item->item_position }}</td>
                             <td class="px-2 py-2">{{ $item->serviceType->name ?? '-' }}</td>
                             <td class="px-2 py-2">{{ $item->description ?? '-' }}</td>
-                            <td class="px-2 py-2">{{ $item->previous_license ?? '-' }}</td>
-                            <td class="px-2 py-2">{{ $item->raa_code ?? '-' }}</td>
+                            @if($quote->show_prev_license_column)
+                                <td class="px-2 py-2">{{ $item->previous_license ?? '-' }}</td>
+                            @endif
+                            @if($quote->show_raa_column)
+                                <td class="px-2 py-2">{{ $item->raa_code ?? '-' }}</td>
+                            @endif
                             <td class="px-2 py-2">{{ Str::limit($item->scope, 40) ?? '-' }}</td>
                             <td class="px-2 py-2">{{ $quote->currency }} {{ number_format($item->fee_value, 2) }}</td>
                             <td class="px-2 py-2">
@@ -160,10 +168,21 @@
                 <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->total_invima_fees, 2) }}</p>
             </div>
         </div>
-        <div class="mt-4 pt-4 border-t border-gray-200">
-            <p class="text-sm text-gray-600">Gran total</p>
-            <p class="text-2xl font-bold text-teal-800">{{ $quote->currency }} {{ number_format($quote->total_professional_fees + $quote->total_loans + $quote->total_invima_fees, 2) }}</p>
-        </div>
+        @if($quote->apply_tax && $quote->tax_percentage !== null)
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <p class="text-sm text-gray-600">Sub-total</p>
+                <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->subtotal, 2) }}</p>
+                <p class="text-sm text-gray-600 mt-2">IVA ({{ number_format($quote->tax_percentage, 2) }}%)</p>
+                <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->tax_amount, 2) }}</p>
+                <p class="text-sm text-gray-600 mt-2">Total</p>
+                <p class="text-2xl font-bold text-teal-800">{{ $quote->currency }} {{ number_format($quote->total_with_tax, 2) }}</p>
+            </div>
+        @else
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <p class="text-sm text-gray-600">Total</p>
+                <p class="text-2xl font-bold text-teal-800">{{ $quote->currency }} {{ number_format($quote->subtotal, 2) }}</p>
+            </div>
+        @endif
     </div>
 
     <div class="flex gap-3">
