@@ -25,6 +25,11 @@
             <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
         </div>
     @endif
+    @if(session('error'))
+        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+        </div>
+    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Resumen del expediente -->
@@ -45,11 +50,10 @@
                         <dd>
                             @php
                                 $statusStyles = [
-                                    'Recolección Documentos' => 'bg-gray-100 text-gray-800',
+                                    'Recolección' => 'bg-gray-100 text-gray-800',
                                     'Radicado' => 'bg-blue-100 text-blue-800',
                                     'En Requerimiento' => 'bg-yellow-100 text-yellow-800',
                                     'Finalizado' => 'bg-green-100 text-green-800',
-                                    'Cancelado' => 'bg-red-100 text-red-800',
                                 ];
                                 $style = $statusStyles[$process->status] ?? 'bg-gray-100 text-gray-800';
                             @endphp
@@ -108,8 +112,8 @@
                                             @php
                                                 $itemStyle = match($item->status) {
                                                     'Aprobado' => 'text-green-700',
-                                                    'Observado' => 'text-red-700',
-                                                    'En Traducción' => 'text-yellow-700',
+                                                    'Traducción' => 'text-yellow-700',
+                                                    'Recibido' => 'text-blue-700',
                                                     default => 'text-gray-700',
                                                 };
                                             @endphp
@@ -126,7 +130,7 @@
 
                         {{-- 3. Sometimientos y eventos (raíz primero, ordenados por fecha) --}}
                         @php
-                            $rootSubmissions = $process->submissions->where('parent_id', null)->sortBy('filing_date');
+                            $rootSubmissions = $process->submissions->where('parent_id', null)->sortBy('fecha_radicacion');
                         @endphp
                         @foreach($rootSubmissions as $submission)
                             @include('admin.processes.partials.timeline-submission', ['submission' => $submission])
@@ -143,12 +147,17 @@
         </div>
     </div>
 
-    {{-- Modales para Registrar Auto y Resolución --}}
+    {{-- Acciones: Registrar Sometimiento, Auto, Resolución --}}
     @php
         $lastSubmission = $process->submissions->sortByDesc('id')->first();
+        $rejectedSubmissions = $process->submissions->where('status', \App\Models\Submission::STATUS_RECHAZADO);
     @endphp
-    @if($lastSubmission)
-        <div class="mt-6 flex flex-wrap gap-3">
+    <div class="mt-6 flex flex-wrap gap-3">
+        <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
+        </button>
+        @if($lastSubmission)
             <button type="button" onclick="document.getElementById('modal-auto').classList.remove('hidden')"
                     class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
                 <i class="fas fa-gavel mr-2"></i> Registrar Auto
@@ -157,8 +166,11 @@
                     class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                 <i class="fas fa-file-signature mr-2"></i> Registrar Resolución
             </button>
-        </div>
+        @endif
+    </div>
 
+    @include('admin.processes.partials.modal-submission', ['process' => $process, 'rejectedSubmissions' => $rejectedSubmissions])
+    @if($lastSubmission)
         @include('admin.processes.partials.modal-auto', ['submission' => $lastSubmission])
         @include('admin.processes.partials.modal-resolution', ['submission' => $lastSubmission])
     @endif

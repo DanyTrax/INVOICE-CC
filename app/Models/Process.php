@@ -8,11 +8,30 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Process extends Model
 {
+    public const STATUS_RECOLECCION = 'Recolección';
+    public const STATUS_RADICADO = 'Radicado';
+    public const STATUS_EN_REQUERIMIENTO = 'En Requerimiento';
+    public const STATUS_FINALIZADO = 'Finalizado';
+
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_RECOLECCION,
+            self::STATUS_RADICADO,
+            self::STATUS_EN_REQUERIMIENTO,
+            self::STATUS_FINALIZADO,
+        ];
+    }
+
     protected $fillable = [
         'quote_item_id',
         'client_id',
         'status',
         'expediente_invima',
+    ];
+
+    protected $attributes = [
+        'status' => self::STATUS_RECOLECCION,
     ];
 
     public function quoteItem(): BelongsTo

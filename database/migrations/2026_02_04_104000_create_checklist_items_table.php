@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('document_name');
             $table->boolean('is_translation_required')->default(false);
             $table->string('status', 32)->default('Pendiente');
-            // Pendiente | Recibido | En Traducción | Aprobado | Observado
+            // Pendiente | Recibido | Traducción | Aprobado
             $table->text('observation_agent')->nullable();   // Interno
             $table->text('observation_client')->nullable(); // Visible al cliente
             $table->timestamps();

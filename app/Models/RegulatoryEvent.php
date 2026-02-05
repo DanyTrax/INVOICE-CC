@@ -7,6 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RegulatoryEvent extends Model
 {
+    public const EVENT_TYPE_AUTO = 'AUTO';
+    public const EVENT_TYPE_RESOLUCION = 'RESOLUCION';
+
+    /** @return array<string> */
+    public static function eventTypes(): array
+    {
+        return [self::EVENT_TYPE_AUTO, self::EVENT_TYPE_RESOLUCION];
+    }
+
     protected $fillable = [
         'submission_id',
         'event_type',

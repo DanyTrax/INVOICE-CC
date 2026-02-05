@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ProcessController;
+use App\Http\Controllers\Admin\RegulatoryEventController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\ClientRegisterController;
@@ -88,8 +89,9 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     // Expedientes (processes) y eventos regulatorios
     Route::get('processes', [ProcessController::class, 'index'])->name('processes.index');
     Route::get('processes/{process}', [ProcessController::class, 'show'])->name('processes.show');
-    Route::post('submissions/{submission}/events/auto', [ProcessController::class, 'storeAuto'])->name('submissions.events.store-auto');
-    Route::post('submissions/{submission}/events/resolution', [ProcessController::class, 'storeResolution'])->name('submissions.events.store-resolution');
+    Route::post('processes/{process}/submissions', [ProcessController::class, 'storeSubmission'])->name('processes.submissions.store');
+    Route::post('submissions/{submission}/events/auto', [RegulatoryEventController::class, 'storeAuto'])->name('submissions.events.store-auto');
+    Route::post('submissions/{submission}/events/resolution', [RegulatoryEventController::class, 'storeResolution'])->name('submissions.events.store-resolution');
     
     // Users
     Route::post('users/{user}/send-access-email', [UserController::class, 'sendAccessEmail'])->name('users.send-access-email');

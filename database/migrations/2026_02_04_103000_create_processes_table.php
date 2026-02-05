@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('quote_item_id')->constrained('quote_items')->cascadeOnDelete();
             $table->foreignId('client_id')->constrained('companies')->cascadeOnDelete();
-            $table->string('status', 64)->default('Recolección Documentos');
-            // Recolección Documentos | Radicado | En Requerimiento | Finalizado | Cancelado
+            $table->string('status', 64)->default('Recolección');
+            // Recolección | Radicado | En Requerimiento | Finalizado
             $table->string('expediente_invima', 64)->nullable(); // Se llena después del radicado
             $table->timestamps();
         });

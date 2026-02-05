@@ -4,15 +4,40 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Process;
+use App\Models\Quote;
 use App\Models\Submission;
-use App\Models\RegulatoryEvent;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Carbon\Carbon;
 
 class ProcessController extends Controller
 {
+    /**
+     * Crear procesos automáticamente cuando se aprueba una cotización.
+     * Un Process por cada QuoteItem que aún no tenga proceso.
+     * (También se dispara desde QuoteObserver al cambiar status a Aprobada.)
+     */
+    public static function createFromApprovedQuote(Quote $quote): int
+    {
+        $quote->loadMissing('quoteItems');
+        $created = 0;
+
+        foreach ($quote->quoteItems as $item) {
+            if ($item->process()->exists()) {
+                continue;
+            }
+            Process::create([
+                'quote_item_id' => $item->id,
+                'client_id' => $quote->client_id,
+                'status' => Process::STATUS_RECOLECCION,
+                'expediente_invima' => null,
+            ]);
+            $created++;
+        }
+
+        return $created;
+    }
+
     /**
      * Listado de expedientes (processes).
      */
@@ -60,89 +85,45 @@ class ProcessController extends Controller
     }
 
     /**
-     * Registrar un Auto. Crea el evento y transiciona el proceso a 'En Requerimiento'.
-     * due_date = 90 días hábiles desde notification_date.
+     * Crear un sometimiento. Solo permite si toda la checklist está en estado Aprobado.
      */
-    public function storeAuto(Request $request, Submission $submission): RedirectResponse
+    public function storeSubmission(Request $request, Process $process): RedirectResponse
     {
-        $validated = $request->validate([
-            'document_number' => 'nullable|string|max:64',
-            'event_date' => 'nullable|date',
-            'notification_date' => 'required|date',
-            'file' => 'nullable|file|mimes:pdf|max:10240',
-        ]);
+        $checklistItems = $process->checklistItems;
 
-        $dueDate = $this->addBusinessDays(
-            Carbon::parse($validated['notification_date']),
-            90
-        );
-
-        $filePath = null;
-        if ($request->hasFile('file')) {
-            $filePath = $request->file('file')->store('regulatory_events', 'public');
+        if ($checklistItems->isEmpty()) {
+            return redirect()
+                ->route('admin.processes.show', $process)
+                ->with('error', 'Debe existir al menos un ítem en la checklist del expediente.');
         }
 
-        RegulatoryEvent::create([
-            'submission_id' => $submission->id,
-            'event_type' => 'AUTO',
-            'document_number' => $validated['document_number'] ?? null,
-            'event_date' => $validated['event_date'] ?? null,
-            'notification_date' => $validated['notification_date'],
-            'due_date' => $dueDate,
-            'resolution_key' => null,
-            'file_path' => $filePath,
+        $notApproved = $checklistItems->where('status', '!=', \App\Models\ChecklistItem::STATUS_APROBADO);
+        if ($notApproved->isNotEmpty()) {
+            $names = $notApproved->pluck('document_name')->implode(', ');
+            return redirect()
+                ->route('admin.processes.show', $process)
+                ->with('error', "No se puede crear el sometimiento: todos los ítems de la checklist deben estar en estado Aprobado. Pendientes: {$names}");
+        }
+
+        $validated = $request->validate([
+            'radicado_invima' => 'nullable|string|max:64',
+            'tracking_id' => 'nullable|string|max:64',
+            'fecha_radicacion' => 'nullable|date',
+            'status' => 'required|string|in:' . implode(',', Submission::statuses()),
+            'parent_id' => 'nullable|exists:submissions,id',
         ]);
 
-        $process = $submission->process;
-        $process->update(['status' => 'En Requerimiento']);
+        $validated['process_id'] = $process->id;
+        if (empty($validated['parent_id'])) {
+            $validated['parent_id'] = null;
+        }
+
+        Submission::create($validated);
+
+        $process->update(['status' => Process::STATUS_RADICADO]);
 
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', 'Auto registrado. El expediente pasó a estado "En Requerimiento".');
-    }
-
-    /**
-     * Registrar una Resolución. Crea el evento y transiciona el proceso a 'Finalizado'.
-     */
-    public function storeResolution(Request $request, Submission $submission): RedirectResponse
-    {
-        $validated = $request->validate([
-            'document_number' => 'nullable|string|max:64',
-            'event_date' => 'nullable|date',
-            'notification_date' => 'nullable|date',
-            'resolution_key' => 'nullable|string|max:64',
-            'file' => 'nullable|file|mimes:pdf|max:10240',
-        ]);
-
-        $filePath = null;
-        if ($request->hasFile('file')) {
-            $filePath = $request->file('file')->store('regulatory_events', 'public');
-        }
-
-        RegulatoryEvent::create([
-            'submission_id' => $submission->id,
-            'event_type' => 'RESOLUCION',
-            'document_number' => $validated['document_number'] ?? null,
-            'event_date' => $validated['event_date'] ?? null,
-            'notification_date' => $validated['notification_date'] ?? null,
-            'due_date' => null,
-            'resolution_key' => $validated['resolution_key'] ?? null,
-            'file_path' => $filePath,
-        ]);
-
-        $process = $submission->process;
-        $process->update(['status' => 'Finalizado']);
-
-        return redirect()
-            ->route('admin.processes.show', $process)
-            ->with('success', 'Resolución registrada. El expediente pasó a estado "Finalizado".');
-    }
-
-    /**
-     * Sumar N días hábiles (excluye sábado y domingo).
-     */
-    protected function addBusinessDays(Carbon $date, int $days): Carbon
-    {
-        return $date->copy()->addWeekdays($days);
+            ->with('success', 'Sometimiento registrado correctamente.');
     }
 }

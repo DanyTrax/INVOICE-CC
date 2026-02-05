@@ -11,8 +11,8 @@
             {{ $submission->submission_type }} · {{ $submission->filing_number ?? 'Sin radicado' }}
         </p>
         <p class="font-semibold text-gray-900">
-            @if($submission->filing_date)
-                Radicado {{ $submission->filing_date->format('d/m/Y') }}
+            @if($submission->fecha_radicacion)
+                Radicado {{ $submission->fecha_radicacion->format('d/m/Y') }}
             @else
                 Sometimiento (pendiente radicación)
             @endif
@@ -69,7 +69,7 @@
     @endforeach
 
     {{-- Sometimientos hijos (ej. nuevo intento por rechazo) --}}
-    @foreach($submission->children->sortBy('filing_date') as $child)
+    @foreach($submission->children->sortBy('fecha_radicacion') as $child)
         @include('admin.processes.partials.timeline-submission', ['submission' => $child])
     @endforeach
     </ul>
