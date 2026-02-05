@@ -88,7 +88,7 @@
                                 @endphp
                                 <span class="px-2 py-1 text-xs font-medium rounded-full {{ $style }}">{{ $quote->status ?? '-' }}</span>
                             </td>
-                            <td class="px-4 py-3">{{ $quote->currency ?? 'COP' }} {{ number_format($quote->total_professional_fees + $quote->total_invima_fees + $quote->total_loans, 2) }}</td>
+                            <td class="px-4 py-3">{{ $quote->currency ?? 'COP' }} {{ number_format($quote->apply_tax && $quote->tax_percentage !== null ? $quote->total_with_tax : $quote->subtotal, 2) }}</td>
                         </tr>
                     @empty
                         <tr>
