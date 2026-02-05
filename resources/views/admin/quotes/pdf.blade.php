@@ -169,7 +169,14 @@
 
     <div class="signature">
         <div class="signature-line"></div>
-        <div class="signature-label">Firma del Gerente</div>
+        @if($useTemplate && (trim($template->signature_name ?? '') !== '' || trim($template->signature_position ?? '') !== ''))
+            <div class="signature-label">{{ trim($template->signature_name ?? '') }}</div>
+            @if(trim($template->signature_position ?? '') !== '')
+                <div class="signature-label" style="margin-top: 1px;">{{ trim($template->signature_position) }}</div>
+            @endif
+        @else
+            <div class="signature-label">Firma del Gerente</div>
+        @endif
     </div>
 
     </div>{{-- .pdf-body-content --}}

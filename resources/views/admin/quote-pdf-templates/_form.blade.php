@@ -67,6 +67,25 @@
                placeholder="Ej: RAMS - Regulatory Affairs Management System">
     </div>
 
+    <div class="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+        <p class="text-sm font-medium text-gray-900 mb-3">Firma (aparece al final del PDF)</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="signature_name" class="block mb-2 text-sm font-medium text-gray-900">Nombre (debajo de la línea)</label>
+                <input type="text" name="signature_name" id="signature_name" value="{{ old('signature_name', $template->signature_name ?? '') }}"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
+                       placeholder="Ej: Juan Pérez">
+            </div>
+            <div>
+                <label for="signature_position" class="block mb-2 text-sm font-medium text-gray-900">Cargo</label>
+                <input type="text" name="signature_position" id="signature_position" value="{{ old('signature_position', $template->signature_position ?? '') }}"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
+                       placeholder="Ej: Gerente General">
+            </div>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">Se mostrará la línea de firma, luego el nombre y el cargo en el PDF.</p>
+    </div>
+
     <div class="md:col-span-2">
         <label class="inline-flex items-center gap-2">
             <input type="checkbox" name="is_default" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('is_default', $template->is_default ?? false) ? 'checked' : '' }}>

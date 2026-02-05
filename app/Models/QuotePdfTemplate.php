@@ -14,6 +14,8 @@ class QuotePdfTemplate extends Model
         'header_subtitle',
         'body_html',
         'footer_text',
+        'signature_name',
+        'signature_position',
         'is_default',
     ];
 

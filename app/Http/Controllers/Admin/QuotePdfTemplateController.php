@@ -33,6 +33,8 @@ class QuotePdfTemplateController extends Controller
             'header_subtitle' => 'nullable|string|max:500',
             'body_html' => 'nullable|string',
             'footer_text' => 'nullable|string|max:500',
+            'signature_name' => 'nullable|string|max:128',
+            'signature_position' => 'nullable|string|max:128',
             'is_default' => 'nullable|boolean',
         ]);
 
@@ -67,6 +69,8 @@ class QuotePdfTemplateController extends Controller
             'header_subtitle' => $validated['header_subtitle'] ?? null,
             'body_html' => $validated['body_html'] ?? null,
             'footer_text' => $validated['footer_text'] ?? null,
+            'signature_name' => $validated['signature_name'] ?? null,
+            'signature_position' => $validated['signature_position'] ?? null,
             'is_default' => !empty($validated['is_default']),
         ]);
 
@@ -90,6 +94,8 @@ class QuotePdfTemplateController extends Controller
             'header_subtitle' => 'nullable|string|max:500',
             'body_html' => 'nullable|string',
             'footer_text' => 'nullable|string|max:500',
+            'signature_name' => 'nullable|string|max:128',
+            'signature_position' => 'nullable|string|max:128',
             'is_default' => 'nullable|boolean',
             'remove_logo' => 'nullable|boolean',
         ]);
@@ -137,6 +143,8 @@ class QuotePdfTemplateController extends Controller
             'header_subtitle' => $validated['header_subtitle'] ?? null,
             'body_html' => $validated['body_html'] ?? null,
             'footer_text' => $validated['footer_text'] ?? null,
+            'signature_name' => $validated['signature_name'] ?? null,
+            'signature_position' => $validated['signature_position'] ?? null,
             'is_default' => !empty($validated['is_default']),
         ]);
 
