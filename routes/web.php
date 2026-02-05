@@ -89,6 +89,8 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
 
     // Cotizaciones (pre-venta)
     Route::get('quotes', [QuoteController::class, 'index'])->name('quotes.index');
+    Route::get('quotes/create', [QuoteController::class, 'create'])->name('quotes.create');
+    Route::post('quotes', [QuoteController::class, 'store'])->name('quotes.store');
 
     // Expedientes (processes) y eventos regulatorios
     Route::get('processes', [ProcessController::class, 'index'])->name('processes.index');
