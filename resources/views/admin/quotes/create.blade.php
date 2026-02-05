@@ -134,11 +134,11 @@
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm">
                                 </td>
                                 <td class="px-2 py-2" data-col="prev-license">
-                                    <input type="text" name="items[{{  }}][previous_license]" value="{{ $item['previous_license'] ?? '' }}" placeholder="Ej: 2021DM-0006049" maxlength="64"
+                                    <input type="text" name="items[{{ $idx }}][previous_license]" value="{{ $item['previous_license'] ?? '' }}" placeholder="Ej: 2021DM-0006049" maxlength="64"
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm">
                                 </td>
                                 <td class="px-2 py-2" data-col="raa">
-                                    <input type="text" name="items[{{  }}][raa_code]" value="{{ $item['raa_code'] ?? '' }}" placeholder="Ej: 141153" maxlength="64"
+                                    <input type="text" name="items[{{ $idx }}][raa_code]" value="{{ $item['raa_code'] ?? '' }}" placeholder="Ej: 141153" maxlength="64"
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm">
                                 </td>
                                 <td class="px-2 py-2">
