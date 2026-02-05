@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ProcessController;
+use App\Http\Controllers\Admin\ServiceTypeController;
 use App\Http\Controllers\Admin\QuoteController;
 use App\Http\Controllers\Admin\RegulatoryEventController;
 use App\Http\Controllers\Auth\LoginController;
@@ -91,6 +92,13 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::get('quotes', [QuoteController::class, 'index'])->name('quotes.index');
     Route::get('quotes/create', [QuoteController::class, 'create'])->name('quotes.create');
     Route::post('quotes', [QuoteController::class, 'store'])->name('quotes.store');
+
+    // Tipos de Trámite (ServiceTypes)
+    Route::get('service-types', [ServiceTypeController::class, 'index'])->name('service-types.index');
+    Route::get('service-types/create', [ServiceTypeController::class, 'create'])->name('service-types.create');
+    Route::post('service-types', [ServiceTypeController::class, 'store'])->name('service-types.store');
+    Route::get('service-types/{serviceType}/edit', [ServiceTypeController::class, 'edit'])->name('service-types.edit');
+    Route::put('service-types/{serviceType}', [ServiceTypeController::class, 'update'])->name('service-types.update');
 
     // Expedientes (processes) y eventos regulatorios
     Route::get('processes', [ProcessController::class, 'index'])->name('processes.index');

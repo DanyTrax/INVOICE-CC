@@ -38,6 +38,9 @@ class DatabaseSeeder extends Seeder
         }
 
         // Crear plantillas de correo
-        $this->call(EmailTemplateSeeder::class);
+        ->call(EmailTemplateSeeder::class);
+
+        // Tipos de trámite (ServiceTypes)
+        ->call(ServiceTypeSeeder::class);
     }
 }

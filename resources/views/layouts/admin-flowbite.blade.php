@@ -295,6 +295,13 @@
                             </a>
                         </li>
                     @endif
+                    <li>
+                        <a href="{{ route('admin.service-types.index') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.service-types.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-list-alt w-5 h-5"></i>
+                            <span class="ms-3">Tipos de Trámite</span>
+                        </a>
+                    </li>
                     @if($permService->userHasPermission('backups', 'view'))
                     <li>
                         <a href="{{ route('admin.backups.index') }}" 

@@ -1,0 +1,80 @@
+@extends('layouts.admin-flowbite')
+
+@section('title', 'Tipos de Trámite - RAMS')
+
+@section('page-title', 'Tipos de Trámite')
+
+@section('breadcrumb')
+    <li>
+        <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="text-sm font-medium text-gray-500">Tipos de Trámite</span>
+        </div>
+    </li>
+@endsection
+
+@section('content')
+    @if(session('success'))
+        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+            <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+        </div>
+    @endif
+
+    <div class="mb-4 flex justify-end">
+        <a href="{{ route('admin.service-types.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium">
+            <i class="fas fa-plus mr-2"></i> Nuevo Tipo de Trámite
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-600">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3">Nombre</th>
+                        <th class="px-4 py-3">Código</th>
+                        <th class="px-4 py-3">Precio por defecto</th>
+                        <th class="px-4 py-3">Activo</th>
+                        <th class="px-4 py-3 w-24">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($serviceTypes as $type)
+                        <tr class="bg-white border-b last:border-b-0">
+                            <td class="px-4 py-3 font-medium text-gray-900">{{ $type->name }}</td>
+                            <td class="px-4 py-3">{{ $type->code ?? '-' }}</td>
+                            <td class="px-4 py-3">
+                                @if(!is_null($type->default_price))
+                                    {{ number_format($type->default_price, 2) }}
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                @if($type->is_active)
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Sí</span>
+                                @else
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">No</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                <a href="{{ route('admin.service-types.edit', $type) }}" class="text-teal-600 hover:text-teal-800 text-sm font-medium">
+                                    <i class="fas fa-edit mr-1"></i>Editar
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-4 py-8 text-center text-gray-500">No hay tipos de trámite configurados.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($serviceTypes->hasPages())
+            <div class="px-4 py-3 border-t border-gray-200">
+                {{ $serviceTypes->links() }}
+            </div>
+        @endif
+    </div>
+@endsection
