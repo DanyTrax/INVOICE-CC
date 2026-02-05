@@ -44,7 +44,25 @@ class QuoteController extends Controller
         $companies = Company::orderBy('name')->get();
         $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.quotes.create', compact('companies', 'serviceTypes'));
+        // Sugerir consecutivo automático en formato NNN-AA (ej. 001-26)
+        $year = now()->year % 100;
+        $yearSuffix = str_pad((string) $year, 2, '0', STR_PAD_LEFT);
+        $lastConsecutive = Quote::where('consecutive', 'like', '%-' . $yearSuffix)
+            ->orderBy('consecutive', 'desc')
+            ->value('consecutive');
+
+        $nextNumber = 1;
+        if ($lastConsecutive) {
+            [$numberPart] = explode('-', $lastConsecutive);
+            $nextNumber = (int) $numberPart + 1;
+        }
+        $suggestedConsecutive = sprintf('%03d-%s', $nextNumber, $yearSuffix);
+
+        return view('admin.quotes.create', [
+            'companies' => $companies,
+            'serviceTypes' => $serviceTypes,
+            'suggestedConsecutive' => $suggestedConsecutive,
+        ]);
     }
 
     /**

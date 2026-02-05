@@ -29,7 +29,7 @@
                     <input type="text"
                            name="search"
                            value="{{ request('search') }}"
-                           placeholder="Consecutivo o cliente..."
+                           placeholder="COTIZACIÓN No. o cliente..."
                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500">
                 </div>
                 <select name="status" class="border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 px-3 py-2">
@@ -59,7 +59,7 @@
             <table class="w-full text-sm text-left text-gray-500">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3">Consecutivo</th>
+                        <th class="px-4 py-3">COTIZACIÓN No.</th>
                         <th class="px-4 py-3">Cliente</th>
                         <th class="px-4 py-3">Fecha</th>
                         <th class="px-4 py-3">Estado</th>

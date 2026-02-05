@@ -62,9 +62,12 @@
                     </select>
                 </div>
                 <div>
-                    <label for="consecutive" class="block mb-2 text-sm font-medium text-gray-900">Consecutivo <span class="text-red-500">*</span></label>
-                    <input type="text" name="consecutive" id="consecutive" value="{{ old('consecutive') }}" placeholder="Ej: 006-25" required maxlength="32"
+                    <label for="consecutive" class="block mb-2 text-sm font-medium text-gray-900">COTIZACIÓN No. <span class="text-red-500">*</span></label>
+                    <input type="text" name="consecutive" id="consecutive"
+                           value="{{ old('consecutive', $suggestedConsecutive ?? '') }}"
+                           placeholder="Ej: 001-26" required maxlength="32"
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                    <p class="mt-1 text-xs text-gray-500">Se sugiere automáticamente el siguiente número de la forma NNN-AA (número + último dígito del año), pero puedes ajustarlo si lo necesitas.</p>
                 </div>
                 <div class="md:col-span-2">
                     <label for="exchange_rate" class="block mb-2 text-sm font-medium text-gray-900">Tasa de cambio (si aplica)</label>
