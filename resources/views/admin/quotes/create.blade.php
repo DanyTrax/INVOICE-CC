@@ -82,6 +82,16 @@
                     </button>
                 </div>
             </div>
+            <div class="flex flex-wrap items-center gap-4 mb-3 text-sm text-gray-700">
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" id="toggle-prev-license" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked>
+                    <span>Usar columna Expediente / Licencia</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked>
+                    <span>Usar columna RAA</span>
+                </label>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-700 min-w-[900px]" id="items-table">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-100">
@@ -89,8 +99,8 @@
                             <th class="px-2 py-2 w-12">#</th>
                             <th class="px-2 py-2">Tipo de trámite</th>
                             <th class="px-2 py-2">Producto / Descripción</th>
-                            <th class="px-2 py-2">Expediente / Licencia</th>
-                            <th class="px-2 py-2 w-20">RAA</th>
+                            <th class="px-2 py-2" data-col="prev-license">Expediente / Licencia</th>
+                            <th class="px-2 py-2 w-20" data-col="raa">RAA</th>
                             <th class="px-2 py-2">Alcance</th>
                             <th class="px-2 py-2 w-28">Valor</th>
                             <th class="px-2 py-2 w-12"></th>
@@ -123,12 +133,12 @@
                                     <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Producto / Descripción" maxlength="500"
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm">
                                 </td>
-                                <td class="px-2 py-2">
-                                    <input type="text" name="items[{{ $idx }}][previous_license]" value="{{ $item['previous_license'] ?? '' }}" placeholder="Ej: 2021DM-0006049" maxlength="64"
+                                <td class="px-2 py-2" data-col="prev-license">
+                                    <input type="text" name="items[{{  }}][previous_license]" value="{{ $item['previous_license'] ?? '' }}" placeholder="Ej: 2021DM-0006049" maxlength="64"
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm">
                                 </td>
-                                <td class="px-2 py-2">
-                                    <input type="text" name="items[{{ $idx }}][raa_code]" value="{{ $item['raa_code'] ?? '' }}" placeholder="Ej: 141153" maxlength="64"
+                                <td class="px-2 py-2" data-col="raa">
+                                    <input type="text" name="items[{{  }}][raa_code]" value="{{ $item['raa_code'] ?? '' }}" placeholder="Ej: 141153" maxlength="64"
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm">
                                 </td>
                                 <td class="px-2 py-2">
@@ -270,6 +280,8 @@
         const btnAdd = document.getElementById('btn-add-row');
         const btnAddLoan = document.getElementById('btn-add-loan-row');
         const clientSelect = document.getElementById('client_id');
+        const togglePrev = document.getElementById('toggle-prev-license');
+        const toggleRaa = document.getElementById('toggle-raa');
         let rowIndex = {{ count($oldItems) }};
 
         function updateLoanButtonVisibility() {
@@ -280,6 +292,25 @@
             } else {
                 btnAddLoan.classList.add('hidden');
             }
+        }
+
+        function setColumnEnabled(key, enabled) {
+            document.querySelectorAll('[data-col=\"' + key + '\"]').forEach(function(cell) {
+                if (enabled) {
+                    cell.classList.remove('hidden');
+                } else {
+                    cell.classList.add('hidden');
+                }
+                cell.querySelectorAll('input,textarea,select').forEach(function(el) {
+                    el.disabled = !enabled;
+                });
+            });
+        }
+
+        function updateColumnVisibility() {
+            if (!togglePrev || !toggleRaa) return;
+            setColumnEnabled('prev-license', togglePrev.checked);
+            setColumnEnabled('raa', toggleRaa.checked);
         }
 
         function addRow(isLoan) {
@@ -349,10 +380,13 @@
         clientSelect.addEventListener('change', updateLoanButtonVisibility);
         btnAdd.addEventListener('click', function() { addRow(false); });
         btnAddLoan.addEventListener('click', function() { addRow(true); });
+        if (togglePrev) togglePrev.addEventListener('change', updateColumnVisibility);
+        if (toggleRaa) toggleRaa.addEventListener('change', updateColumnVisibility);
 
         tbody.querySelectorAll('.item-row').forEach(bindRowEvents);
         updateRowNumbers();
         updateLoanButtonVisibility();
+        updateColumnVisibility();
         updateTotals();
     })();
     </script>
