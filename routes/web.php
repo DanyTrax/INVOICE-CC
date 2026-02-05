@@ -109,8 +109,12 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
 
     // Expedientes (processes) y eventos regulatorios
     Route::get('processes', [ProcessController::class, 'index'])->name('processes.index');
+    Route::get('processes/create', [ProcessController::class, 'create'])->name('processes.create');
+    Route::post('processes', [ProcessController::class, 'store'])->name('processes.store');
     Route::get('processes/{process}', [ProcessController::class, 'show'])->name('processes.show');
     Route::post('processes/{process}/submissions', [ProcessController::class, 'storeSubmission'])->name('processes.submissions.store');
+    Route::post('processes/{process}/checklist-items', [ProcessController::class, 'storeChecklistItem'])->name('processes.checklist-items.store');
+    Route::put('checklist-items/{checklistItem}', [ProcessController::class, 'updateChecklistItem'])->name('checklist-items.update');
     Route::post('submissions/{submission}/events/auto', [RegulatoryEventController::class, 'storeAuto'])->name('submissions.events.store-auto');
     Route::post('submissions/{submission}/events/resolution', [RegulatoryEventController::class, 'storeResolution'])->name('submissions.events.store-resolution');
     

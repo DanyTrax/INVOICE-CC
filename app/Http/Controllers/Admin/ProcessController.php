@@ -7,8 +7,11 @@ use App\Models\Process;
 use App\Models\Quote;
 use App\Models\Submission;
 use App\Models\Company;
+use App\Models\ChecklistItem;
+use App\Models\ServiceType;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class ProcessController extends Controller
 {
@@ -39,11 +42,52 @@ class ProcessController extends Controller
     }
 
     /**
+     * Formulario para crear un proceso directo (sin cotización).
+     */
+    public function create(): View
+    {
+        $companies = Company::orderBy('name')->get();
+        $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
+        return view('admin.processes.create', compact('companies', 'serviceTypes'));
+    }
+
+    /**
+     * Guardar proceso directo (sin cotización). Checklist queda vacía para que el agente la complete.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'client_id' => 'required|exists:companies,id',
+            'service_type_name' => 'required|string|max:255',
+            'product_reference' => 'nullable|string|max:500',
+        ]);
+
+        $serviceType = ServiceType::where('name', $validated['service_type_name'])->first();
+        if (!$serviceType) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['service_type_name' => 'Seleccione un tipo de trámite de la lista.']);
+        }
+
+        $process = Process::create([
+            'quote_item_id' => null,
+            'client_id' => $validated['client_id'],
+            'service_type_id' => $serviceType->id,
+            'product_reference' => $validated['product_reference'] ?? null,
+            'status' => Process::STATUS_RECOLECCION,
+        ]);
+
+        return redirect()
+            ->route('admin.processes.show', $process)
+            ->with('success', 'Expediente creado. Complete la checklist en la vista del expediente.');
+    }
+
+    /**
      * Listado de expedientes (processes).
      */
     public function index(Request $request)
     {
-        $query = Process::with(['client', 'quoteItem.serviceType', 'submissions']);
+        $query = Process::with(['client', 'quoteItem.serviceType', 'serviceType', 'submissions']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -76,6 +120,7 @@ class ProcessController extends Controller
             'client',
             'quoteItem.quote',
             'quoteItem.serviceType',
+            'serviceType',
             'checklistItems',
             'submissions.regulatoryEvents',
             'submissions.children.regulatoryEvents',
@@ -125,5 +170,41 @@ class ProcessController extends Controller
         return redirect()
             ->route('admin.processes.show', $process)
             ->with('success', 'Sometimiento registrado correctamente.');
+    }
+
+    /**
+     * Agregar un documento (ítem) a la checklist del expediente.
+     */
+    public function storeChecklistItem(Request $request, Process $process): RedirectResponse
+    {
+        $validated = $request->validate([
+            'document_name' => 'required|string|max:255',
+        ]);
+        ChecklistItem::create([
+            'process_id' => $process->id,
+            'document_name' => $validated['document_name'],
+            'status' => ChecklistItem::STATUS_PENDIENTE,
+        ]);
+        return redirect()
+            ->route('admin.processes.show', $process)
+            ->with('success', 'Documento agregado a la checklist.');
+    }
+
+    /**
+     * Actualizar estado y/o observación de un ítem de la checklist.
+     */
+    public function updateChecklistItem(Request $request, ChecklistItem $checklistItem): RedirectResponse
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:' . implode(',', ChecklistItem::statuses()),
+            'observation_agent' => 'nullable|string|max:1000',
+        ]);
+        $checklistItem->update([
+            'status' => $validated['status'],
+            'observation_agent' => $validated['observation_agent'] ?? null,
+        ]);
+        return redirect()
+            ->route('admin.processes.show', $checklistItem->process)
+            ->with('success', 'Documento actualizado.');
     }
 }

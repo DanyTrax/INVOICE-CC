@@ -15,6 +15,9 @@
 
 @section('content')
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <a href="{{ route('admin.processes.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 whitespace-nowrap">
+            <i class="fas fa-plus mr-2"></i> Nuevo Proceso
+        </a>
         <div class="flex-1 w-full sm:w-auto">
             <form method="GET" action="{{ route('admin.processes.index') }}" class="flex gap-2 flex-wrap">
                 <div class="relative flex-1 min-w-[200px]">
@@ -61,6 +64,7 @@
                         <th class="px-4 py-3">Tipo servicio</th>
                         <th class="px-4 py-3">Expediente INVIMA</th>
                         <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3 w-28">Facturable</th>
                         <th class="px-4 py-3">Actualizado</th>
                         <th class="px-4 py-3">Acciones</th>
                     </tr>
@@ -69,7 +73,7 @@
                     @forelse($processes as $process)
                         <tr class="bg-white border-b hover:bg-gray-50">
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
-                            <td class="px-4 py-3">{{ $process->quoteItem->serviceType->name ?? '-' }}</td>
+                            <td class="px-4 py-3">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $process->expediente_invima ?? '-' }}</td>
                             <td class="px-4 py-3">
                                 @php
@@ -83,6 +87,13 @@
                                 @endphp
                                 <span class="px-2 py-1 text-xs font-medium rounded-full {{ $style }}">{{ $process->status }}</span>
                             </td>
+                            <td class="px-4 py-3">
+                                @if($process->quote_item_id === null)
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800" title="Sin cotización asociada – facturable directo">Facturable</span>
+                                @else
+                                    <span class="text-gray-400 text-xs">—</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">{{ $process->updated_at->format('d/m/Y H:i') }}</td>
                             <td class="px-4 py-3">
                                 <a href="{{ route('admin.processes.show', $process) }}" class="text-teal-600 hover:text-teal-700 font-medium">
@@ -92,7 +103,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">No hay expedientes.</td>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">No hay expedientes.</td>
                         </tr>
                     @endforelse
                 </tbody>
