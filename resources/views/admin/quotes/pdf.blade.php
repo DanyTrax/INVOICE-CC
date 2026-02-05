@@ -9,12 +9,16 @@
         .header { margin-bottom: 10px; padding-top: 4px; padding-bottom: 10px; border-bottom: 2px solid #0d9488; overflow: visible; }
         .header-left { float: left; width: 28%; }
         .header-right { float: right; width: 70%; text-align: right; }
-        .header-logo { max-height: 48px; max-width: 160px; display: block; object-fit: contain; }
+        .header-logo { max-height: 48px; max-width: 160px; display: block; object-fit: contain; margin-bottom: 6px; }
         .header-company { font-size: 16px; font-weight: bold; color: #0d9488; margin-bottom: 4px; }
+        .header-company-below-logo { font-size: 10px; font-weight: bold; color: #0d9488; margin-bottom: 2px; line-height: 1.2; }
+        .header-nit { font-size: 9px; color: #374151; line-height: 1.3; }
         .header-subtitle { font-size: 9px; color: #6b7280; margin-bottom: 6px; }
         .header-details { font-size: 9px; color: #374151; line-height: 1.4; }
         h1 { font-size: 15px; margin: 10px 0 14px 0; color: #111827; clear: both; text-align: center; }
-        .context-body { margin-bottom: 18px; line-height: 1.5; }
+        .context-body { margin-bottom: 18px; line-height: 1.5; font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
+        .context-body * { font-family: DejaVu Sans, sans-serif !important; font-size: 11px !important; color: #1f2937; }
+        .context-body code, .context-body span, .context-body p { font-family: DejaVu Sans, sans-serif !important; font-size: 11px !important; }
         .meta { margin-bottom: 18px; }
         .meta p { margin: 3px 0; }
         table.items { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
@@ -61,17 +65,17 @@
     @endphp
 
     @if($useTemplate)
-        {{-- Cabecera desde plantilla --}}
+        {{-- Cabecera desde plantilla: izquierda = logo + nombre + NIT; derecha = nombre + NIT --}}
         <div class="header">
             <div class="header-left">
                 @if($logoPath)
                     <img src="{{ $logoPath }}" alt="" class="header-logo">
                 @endif
                 @if(!empty(trim($template->header_company_name ?? '')))
-                    <div class="header-company" style="font-size: 12px;">{{ $template->header_company_name }}</div>
+                    <div class="header-company-below-logo">{{ $template->header_company_name }}</div>
                 @endif
-                @if(!empty(trim($template->header_subtitle ?? '')))
-                    <div class="header-subtitle">{{ $template->header_subtitle }}</div>
+                @if(!empty(trim($template->header_nit ?? '')))
+                    <div class="header-nit"><strong>NIT.</strong> {{ $template->header_nit }}</div>
                 @endif
             </div>
             <div class="header-right">
