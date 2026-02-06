@@ -25,6 +25,7 @@ class Process extends Model
 
     protected $fillable = [
         'quote_item_id',
+        'quote_id',
         'client_id',
         'service_type_id',
         'product_reference',
@@ -39,6 +40,11 @@ class Process extends Model
     public function quoteItem(): BelongsTo
     {
         return $this->belongsTo(QuoteItem::class);
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
     }
 
     public function serviceType(): BelongsTo

@@ -75,4 +75,12 @@ class Quote extends Model
     {
         return $this->hasMany(QuoteItem::class);
     }
+
+    /**
+     * Procesos vinculados a esta cotización por quote_id (organización en acordeones).
+     */
+    public function processes(): HasMany
+    {
+        return $this->hasMany(Process::class);
+    }
 }

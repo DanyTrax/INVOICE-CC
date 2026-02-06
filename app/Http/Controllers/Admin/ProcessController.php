@@ -32,6 +32,7 @@ class ProcessController extends Controller
             }
             Process::create([
                 'quote_item_id' => $item->id,
+                'quote_id' => $quote->id,
                 'client_id' => $quote->client_id,
                 'status' => Process::STATUS_RECOLECCION,
                 'expediente_invima' => null,
@@ -90,8 +91,9 @@ class ProcessController extends Controller
     {
         $companies = Company::orderBy('name')->get();
 
-        // Cotizaciones que tienen al menos un proceso (vía quote_items con process).
+        // Cotizaciones que tienen al menos un proceso (vía quote_items o vía quote_id).
         $grouped_quotes = Quote::whereHas('quoteItems', fn ($q) => $q->whereHas('process'))
+            ->orWhereHas('processes')
             ->with([
                 'client',
                 'quoteItems' => fn ($q) => $q->whereHas('process')->with([
@@ -100,50 +102,45 @@ class ProcessController extends Controller
                     'process.submissions',
                     'serviceType',
                 ]),
+                'processes.client',
+                'processes.serviceType',
             ])
             ->orderBy('id', 'desc')
             ->get();
 
-        // Procesos sin cotización (huérfanos).
+        // Procesos sin asignar a ninguna cotización (huérfanos: sin quote_item_id ni quote_id).
         $orphan_processes = Process::whereNull('quote_item_id')
+            ->whereNull('quote_id')
             ->with(['client', 'serviceType'])
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        // Ítems de cotización sin proceso asignado (para el modal "Asignar a Cotización").
-        $quote_items_for_assign = QuoteItem::whereDoesntHave('process')
-            ->with(['quote.client', 'serviceType'])
-            ->orderBy('quote_id')
+        // Todas las cotizaciones para el modal "Asignar a Cotización" (sin restricción de estado).
+        $quotes_for_assign = Quote::with('client')
+            ->orderBy('id', 'desc')
             ->get();
 
-        return view('admin.processes.index', compact('grouped_quotes', 'orphan_processes', 'quote_items_for_assign', 'companies'));
+        return view('admin.processes.index', compact('grouped_quotes', 'orphan_processes', 'quotes_for_assign', 'companies'));
     }
 
     /**
-     * Asignar un proceso huérfano a una línea de cotización.
+     * Vincular un proceso a una cotización (organización en acordeones). Actualiza quote_id y client_id.
      */
-    public function assignQuoteItem(Request $request, Process $process): RedirectResponse
+    public function linkToQuote(Request $request, Process $process): RedirectResponse
     {
-        if ($process->quote_item_id !== null) {
-            return redirect()->route('admin.processes.index')->with('error', 'Este expediente ya está asignado a una cotización.');
-        }
-
         $validated = $request->validate([
-            'quote_item_id' => 'required|exists:quote_items,id',
+            'quote_id' => 'required|exists:quotes,id',
         ]);
 
-        $quoteItem = QuoteItem::whereDoesntHave('process')->find($validated['quote_item_id']);
-        if (!$quoteItem) {
-            return redirect()->back()->with('error', 'Esa línea de cotización ya tiene un expediente asignado.');
-        }
+        $quote = Quote::findOrFail($validated['quote_id']);
 
         $process->update([
-            'quote_item_id' => $quoteItem->id,
-            'client_id' => $quoteItem->quote->client_id,
+            'quote_id' => $quote->id,
+            'client_id' => $quote->client_id,
         ]);
 
         return redirect()
-            ->route('admin.processes.index', ['open_quote' => $quoteItem->quote_id])
+            ->route('admin.processes.index', ['open_quote' => $quote->id])
             ->with('success', 'Expediente asignado a la cotización.');
     }
 
