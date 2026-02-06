@@ -186,23 +186,32 @@
             <div class="relative bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
                 <h4 class="text-lg font-semibold text-gray-900 mb-2">Asignar a Cotización</h4>
                 <p id="modal-assign-process-label" class="text-sm text-gray-600 mb-4"></p>
-                <form id="form-assign-quote" method="post" action="" data-action-template="{{ str_replace('999', ':id', route('admin.processes.link-to-quote', ['process' => 999])) }}">
+                <form id="form-assign-quote" method="post" action="" data-action-template="{{ str_replace('999', ':id', route('admin.processes.link-to-quote', ['process' => 999])) }}"
+                      data-quotes="{{ $quotes_for_assign->map(fn($q) => ['id' => $q->id, 'consecutive' => $q->consecutive ?? (string)$q->id, 'client' => $q->client->name ?? '-', 'status' => $q->status ?? '-'])->values()->toJson() }}">
                     @csrf
-                    <div class="mb-4">
-                        <label for="assign-quote-id" class="block text-sm font-medium text-gray-700 mb-1">Cotización</label>
-                        <select name="quote_id" id="assign-quote-id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                            <option value="">Seleccione una cotización...</option>
-                            @foreach($quotes_for_assign as $q)
-                                <option value="{{ $q->id }}">#{{ $q->consecutive ?? $q->id }} | Cliente: {{ $q->client->name ?? '-' }} | Estado: {{ $q->status ?? '-' }}</option>
-                            @endforeach
-                        </select>
-                        @if($quotes_for_assign->isEmpty())
-                            <p class="mt-1 text-xs text-amber-600">No hay cotizaciones creadas.</p>
-                        @endif
+                    <input type="hidden" name="quote_id" id="assign-quote-id" value="">
+                    <div class="mb-3">
+                        <label for="quote-search-input" class="block text-sm font-medium text-gray-700 mb-1">Número de cotización</label>
+                        <input type="text"
+                               id="quote-search-input"
+                               autocomplete="off"
+                               placeholder="Ej: 002-26 o 002"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">
                     </div>
+                    <div id="quote-search-results" class="mb-4 max-h-48 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50 hidden">
+                        {{-- Se llena por JS al escribir --}}
+                    </div>
+                    <div id="quote-selected-display" class="mb-4 hidden p-3 rounded-lg bg-teal-50 border border-teal-200">
+                        <p class="text-xs font-medium text-teal-800 uppercase tracking-wide mb-1">Seleccionado</p>
+                        <p id="quote-selected-text" class="text-sm font-medium text-gray-900"></p>
+                        <button type="button" onclick="clearQuoteSelection()" class="mt-2 text-xs text-teal-600 hover:text-teal-800">Cambiar cotización</button>
+                    </div>
+                    @if($quotes_for_assign->isEmpty())
+                        <p class="mb-4 text-xs text-amber-600">No hay cotizaciones creadas.</p>
+                    @endif
                     <div class="flex justify-end gap-2">
                         <button type="button" onclick="closeAssignModal()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">Cancelar</button>
-                        <button type="submit" class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700" @if($quotes_for_assign->isEmpty()) disabled @endif>
+                        <button type="submit" id="assign-quote-submit" class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed" @if($quotes_for_assign->isEmpty()) disabled @endif>
                             Guardar
                         </button>
                     </div>
@@ -228,10 +237,80 @@
             var form = document.getElementById('form-assign-quote');
             form.action = form.getAttribute('data-action-template').replace(':id', processId);
             document.getElementById('modal-assign-process-label').textContent = 'Expediente: ' + processLabel;
+            clearQuoteSelection();
+            document.getElementById('quote-search-input').value = '';
             document.getElementById('modal-assign-quote').classList.remove('hidden');
         }
         function closeAssignModal() {
             document.getElementById('modal-assign-quote').classList.add('hidden');
+        }
+        var quotesData = [];
+        var formEl = document.getElementById('form-assign-quote');
+        if (formEl && formEl.getAttribute('data-quotes')) {
+            try { quotesData = JSON.parse(formEl.getAttribute('data-quotes')); } catch (e) {}
+        }
+        var searchInput = document.getElementById('quote-search-input');
+        var resultsDiv = document.getElementById('quote-search-results');
+        var selectedDisplay = document.getElementById('quote-selected-display');
+        var selectedText = document.getElementById('quote-selected-text');
+        var hiddenQuoteId = document.getElementById('assign-quote-id');
+        var submitBtn = document.getElementById('assign-quote-submit');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                var q = (this.value || '').trim().toLowerCase();
+                hiddenQuoteId.value = '';
+                selectedDisplay.classList.add('hidden');
+                if (submitBtn) submitBtn.disabled = true;
+                if (!q) {
+                    resultsDiv.classList.add('hidden');
+                    resultsDiv.innerHTML = '';
+                    return;
+                }
+                var matches = quotesData.filter(function(quote) {
+                    var consec = (quote.consecutive || '').toLowerCase();
+                    var client = (quote.client || '').toLowerCase();
+                    return consec.indexOf(q) !== -1 || (quote.id + '').indexOf(q) !== -1 || client.indexOf(q) !== -1;
+                });
+                resultsDiv.innerHTML = '';
+                if (matches.length === 0) {
+                    resultsDiv.classList.remove('hidden');
+                    resultsDiv.innerHTML = '<p class="p-3 text-sm text-gray-500">No hay cotizaciones que coincidan.</p>';
+                } else {
+                    resultsDiv.classList.remove('hidden');
+                    matches.forEach(function(quote) {
+                        var row = document.createElement('button');
+                        row.type = 'button';
+                        row.className = 'w-full text-left px-3 py-2 text-sm hover:bg-teal-100 border-b border-gray-100 last:border-0';
+                        row.textContent = '#' + quote.consecutive + ' | Cliente: ' + quote.client + ' | Estado: ' + quote.status;
+                        row.dataset.quoteId = quote.id;
+                        row.dataset.label = '#' + quote.consecutive + ' | Cliente: ' + quote.client + ' | Estado: ' + quote.status;
+                        row.addEventListener('click', function() {
+                            hiddenQuoteId.value = this.dataset.quoteId;
+                            selectedText.textContent = this.dataset.label;
+                            selectedDisplay.classList.remove('hidden');
+                            resultsDiv.classList.add('hidden');
+                            resultsDiv.innerHTML = '';
+                            searchInput.value = '';
+                            if (submitBtn) submitBtn.disabled = false;
+                        });
+                        resultsDiv.appendChild(row);
+                    });
+                }
+            });
+            searchInput.addEventListener('focus', function() {
+                if (this.value.trim() && !hiddenQuoteId.value) {
+                    searchInput.dispatchEvent(new Event('input'));
+                }
+            });
+        }
+        function clearQuoteSelection() {
+            hiddenQuoteId.value = '';
+            selectedDisplay.classList.add('hidden');
+            selectedText.textContent = '';
+            resultsDiv.classList.add('hidden');
+            resultsDiv.innerHTML = '';
+            if (searchInput) searchInput.value = '';
+            if (submitBtn) submitBtn.disabled = true;
         }
     </script>
     @endpush
