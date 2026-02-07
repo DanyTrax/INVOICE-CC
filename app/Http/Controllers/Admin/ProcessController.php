@@ -201,15 +201,17 @@ class ProcessController extends Controller
             'parent_id' => 'nullable|exists:submissions,id',
         ]);
 
+        $parentId = $validated['parent_id'] ?? null;
+
         Submission::create([
             'process_id' => $process->id,
-            'parent_id' => $validated['parent_id'] ?? null,
+            'parent_id' => $parentId,
             'submission_date' => $validated['submission_date'],
             'submission_code' => $validated['submission_code'],
             'fecha_radicacion' => $validated['filing_date'] ?? null,
             'radicado_invima' => $validated['filing_number'] ?? null,
             'status' => Submission::STATUS_PENDIENTE,
-            'submission_type' => $validated['parent_id'] ? 'Subsanación / Nuevo intento' : 'Inicial',
+            'submission_type' => $parentId ? 'Subsanación / Nuevo intento' : 'Inicial',
         ]);
 
         $process->update(['status' => Process::STATUS_RADICADO]);
