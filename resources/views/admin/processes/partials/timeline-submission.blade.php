@@ -1,28 +1,46 @@
 @php
     $isChild = $submission->parent_id !== null;
+    $attemptNum = $attemptNum ?? ($isChild ? 2 : 1);
+    $sometidoAt = $submission->submission_date ? $submission->submission_date->format('d/M') : null;
+    $radicadoAt = $submission->fecha_radicacion ? $submission->fecha_radicacion->format('d/M') : null;
 @endphp
 <li class="relative pl-12 pb-6">
-    {{-- Radicación / Sometimiento --}}
-    <div class="absolute left-0 w-8 h-8 rounded-full {{ $submission->status === 'Rechazado/Negado' ? 'bg-red-500' : 'bg-blue-500' }} flex items-center justify-center text-white text-xs">
+    <div class="absolute left-0 w-8 h-8 rounded-full {{ $submission->status === \App\Models\Submission::STATUS_RECHAZADO ? 'bg-red-500' : 'bg-blue-500' }} flex items-center justify-center text-white text-xs">
         <i class="fas fa-paper-plane"></i>
     </div>
     <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-2">
         <p class="text-xs font-medium text-blue-600 uppercase tracking-wide">
-            {{ $submission->submission_type }} · {{ $submission->filing_number ?? 'Sin radicado' }}
+            Intento {{ $attemptNum }}
+            @if($submission->status === \App\Models\Submission::STATUS_RECHAZADO)
+                (Rechazado)
+            @else
+                (En curso)
+            @endif
         </p>
         <p class="font-semibold text-gray-900">
-            @if($submission->fecha_radicacion)
-                Radicado {{ $submission->fecha_radicacion->format('d/m/Y') }}
+            @if($sometidoAt)
+                Sometido: {{ $sometidoAt }}
             @else
-                Sometimiento (pendiente radicación)
+                Sometimiento sin fecha
+            @endif
+            @if($radicadoAt)
+                → Radicado: {{ $radicadoAt }}
+            @else
+                → Pendiente de radicación
+            @endif
+            @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && !$submission->regulatoryEvents->isEmpty())
+                → Esperando respuesta...
+            @elseif($submission->status === \App\Models\Submission::STATUS_PENDIENTE)
+                → Esperando respuesta INVIMA
             @endif
         </p>
         <p class="text-sm text-gray-600 mt-1">
-            @if($submission->tracking_id) Seguimiento: {{ $submission->tracking_id }} · @endif
-            <span class="px-2 py-0.5 rounded text-xs font-medium
+            {{ $submission->submission_code ?? $submission->radicado_invima ?? 'Sin código' }}
+            @if($submission->tracking_id) · Seguimiento: {{ $submission->tracking_id }} @endif
+            · <span class="px-2 py-0.5 rounded text-xs font-medium
                 @if($submission->status === 'Aprobado') bg-green-100 text-green-800
-                @elseif($submission->status === 'Rechazado/Negado') bg-red-100 text-red-800
-                @elseif($submission->status === 'Requerido') bg-yellow-100 text-yellow-800
+                @elseif($submission->status === 'Rechazado') bg-red-100 text-red-800
+                @elseif($submission->status === 'En Requerimiento') bg-yellow-100 text-yellow-800
                 @else bg-blue-100 text-blue-800
                 @endif
             ">{{ $submission->status }}</span>
@@ -30,7 +48,6 @@
     </div>
 
     <ul class="space-y-0 mt-0">
-    {{-- Eventos regulatorios de este sometimiento --}}
     @foreach($submission->regulatoryEvents->sortBy('notification_date') as $event)
         <li class="relative pl-12 pb-4">
             @php
@@ -68,9 +85,8 @@
         </li>
     @endforeach
 
-    {{-- Sometimientos hijos (ej. nuevo intento por rechazo) --}}
     @foreach($submission->children->sortBy('fecha_radicacion') as $child)
-        @include('admin.processes.partials.timeline-submission', ['submission' => $child])
+        @include('admin.processes.partials.timeline-submission', ['submission' => $child, 'attemptNum' => $attemptNum + $loop->iteration])
     @endforeach
     </ul>
 </li>

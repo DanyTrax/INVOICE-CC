@@ -190,10 +190,10 @@
 
                         {{-- 3. Sometimientos y eventos (raíz primero, ordenados por fecha) --}}
                         @php
-                            $rootSubmissions = $process->submissions->where('parent_id', null)->sortBy('fecha_radicacion');
+                            $rootSubmissions = $process->submissions->where('parent_id', null)->sortBy(fn($s) => $s->submission_date ?? $s->created_at);
                         @endphp
                         @foreach($rootSubmissions as $submission)
-                            @include('admin.processes.partials.timeline-submission', ['submission' => $submission])
+                            @include('admin.processes.partials.timeline-submission', ['submission' => $submission, 'attemptNum' => $loop->iteration])
                         @endforeach
 
                         @if($rootSubmissions->isEmpty() && $process->checklistItems->isEmpty() && !$process->quoteItem?->quote)
@@ -207,13 +207,35 @@
         </div>
     </div>
 
-    {{-- Acciones: Registrar Sometimiento, Auto, Resolución --}}
+    {{-- Alertas: semáforo En Requerimiento (días restantes) --}}
     @php
         $lastSubmission = $process->submissions->sortByDesc('id')->first();
         $rejectedSubmissions = $process->submissions->where('status', \App\Models\Submission::STATUS_RECHAZADO);
         $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
+        $latestAutoDue = $process->submissions->flatMap->regulatoryEvents->where('event_type', \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO)->whereNotNull('due_date')->max('due_date');
+        $daysLeftRaw = $latestAutoDue ? \Carbon\Carbon::parse($latestAutoDue)->startOfDay()->diffInDays(now()->startOfDay(), false) : null;
+        $daysLeft = $daysLeftRaw !== null ? (int) $daysLeftRaw : null;
     @endphp
-    <div class="mt-6 flex flex-wrap gap-3">
+    @if($process->status === 'En Requerimiento' && $daysLeft !== null)
+        <div class="mt-6 p-4 rounded-lg border-2 {{ $daysLeft <= 30 ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-200' }}">
+            @if($daysLeft < 0)
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-red-100 text-red-800 animate-pulse">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> Vencido hace {{ abs($daysLeft) }} día(s)
+                </span>
+            @elseif($daysLeft > 30)
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
+                    <i class="fas fa-clock mr-2"></i> Vence en {{ $daysLeft }} días
+                </span>
+            @else
+                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-red-100 text-red-800 animate-pulse">
+                    <i class="fas fa-exclamation-triangle mr-2"></i> ¡ACCIÓN INMEDIATA! Vence en {{ $daysLeft }} días
+                </span>
+            @endif
+        </div>
+    @endif
+
+    {{-- Acciones: Sometimiento, Respuesta INVIMA, Nuevo Intento --}}
+    <div class="mt-6 flex flex-wrap gap-3 items-center">
         @if($allChecklistApproved)
             <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                     class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
@@ -223,17 +245,21 @@
             <span class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed" title="Debe aprobar todos los documentos antes de radicar.">
                 <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
             </span>
-            <p class="text-sm text-amber-700 mt-1 w-full">Debe aprobar todos los documentos antes de radicar.</p>
         @endif
-        @if($lastSubmission)
-            <button type="button" onclick="document.getElementById('modal-auto').classList.remove('hidden')"
-                    class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
-                <i class="fas fa-gavel mr-2"></i> Registrar Auto
+        @if($lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_PENDIENTE, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]))
+            <button type="button" onclick="document.getElementById('modal-response-invima').classList.remove('hidden')"
+                    class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                <i class="fas fa-reply mr-2"></i> Registrar Respuesta INVIMA
             </button>
-            <button type="button" onclick="document.getElementById('modal-resolution').classList.remove('hidden')"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                <i class="fas fa-file-signature mr-2"></i> Registrar Resolución
+        @endif
+        @if($rejectedSubmissions->isNotEmpty())
+            <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento
             </button>
+        @endif
+        @if(!$allChecklistApproved)
+            <p class="text-sm text-amber-700 w-full">Debe aprobar todos los documentos antes de radicar.</p>
         @endif
     </div>
 
@@ -303,7 +329,6 @@
 
     @include('admin.processes.partials.modal-submission', ['process' => $process, 'rejectedSubmissions' => $rejectedSubmissions])
     @if($lastSubmission)
-        @include('admin.processes.partials.modal-auto', ['submission' => $lastSubmission])
-        @include('admin.processes.partials.modal-resolution', ['submission' => $lastSubmission])
+        @include('admin.processes.partials.modal-response-invima', ['submission' => $lastSubmission])
     @endif
 @endsection

@@ -8,45 +8,41 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
                         <i class="fas fa-paper-plane text-blue-500 mr-2"></i> Registrar Sometimiento
                     </h3>
-                    <p class="text-sm text-gray-600 mb-4">Todos los ítems de la checklist deben estar en estado <strong>Aprobado</strong>. El expediente pasará a <strong>Radicado</strong>.</p>
+                    <p class="text-sm text-gray-600 mb-4">Todos los ítems de la checklist deben estar en estado <strong>Aprobado</strong>. Estado inicial: <strong>Pendiente</strong>. El expediente pasará a <strong>Radicado</strong>.</p>
                     <div class="space-y-4">
                         <div>
-                            <label for="submission_radicado_invima" class="block text-sm font-medium text-gray-700">Radicado INVIMA</label>
-                            <input type="text" name="radicado_invima" id="submission_radicado_invima" value="{{ old('radicado_invima') }}" maxlength="64"
+                            <label for="submission_date" class="block text-sm font-medium text-gray-700">Fecha de Sometimiento (carga en plataforma) <span class="text-red-500">*</span></label>
+                            <input type="datetime-local" name="submission_date" id="submission_date" value="{{ old('submission_date', now()->format('Y-m-d\TH:i')) }}" required
                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
-                            @error('radicado_invima')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            @error('submission_date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="submission_tracking_id" class="block text-sm font-medium text-gray-700">Tracking ID</label>
-                            <input type="text" name="tracking_id" id="submission_tracking_id" value="{{ old('tracking_id') }}" maxlength="64"
-                                   class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
-                            @error('tracking_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            <label for="submission_code" class="block text-sm font-medium text-gray-700">ID de Sometimiento <span class="text-red-500">*</span></label>
+                            <input type="text" name="submission_code" id="submission_code" value="{{ old('submission_code') }}" maxlength="64" required
+                                   class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="Ej: SOM-2025-001">
+                            @error('submission_code')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="submission_fecha_radicacion" class="block text-sm font-medium text-gray-700">Fecha de radicación</label>
-                            <input type="date" name="fecha_radicacion" id="submission_fecha_radicacion" value="{{ old('fecha_radicacion', now()->format('Y-m-d')) }}"
+                            <label for="filing_date" class="block text-sm font-medium text-gray-700">Fecha de Radicado (oficial INVIMA)</label>
+                            <input type="date" name="filing_date" id="filing_date" value="{{ old('filing_date') }}"
                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
-                            @error('fecha_radicacion')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            @error('filing_date')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="submission_status" class="block text-sm font-medium text-gray-700">Estado <span class="text-red-500">*</span></label>
-                            <select name="status" id="submission_status" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
-                                @foreach(\App\Models\Submission::statuses() as $s)
-                                    <option value="{{ $s }}" {{ old('status', \App\Models\Submission::STATUS_EN_ESTUDIO) === $s ? 'selected' : '' }}>{{ $s }}</option>
-                                @endforeach
-                            </select>
-                            @error('status')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            <label for="filing_number" class="block text-sm font-medium text-gray-700">Número de Radicado</label>
+                            <input type="text" name="filing_number" id="filing_number" value="{{ old('filing_number') }}" maxlength="64"
+                                   class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                            @error('filing_number')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         @if($rejectedSubmissions->isNotEmpty())
                             <div>
-                                <label for="submission_parent_id" class="block text-sm font-medium text-gray-700">Vincular a rechazo anterior (opcional)</label>
+                                <label for="submission_parent_id" class="block text-sm font-medium text-gray-700">Vincular a rechazo anterior (Nuevo Intento)</label>
                                 <select name="parent_id" id="submission_parent_id"
                                         class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
                                     <option value="">— Nuevo sometimiento (sin rechazo previo) —</option>
                                     @foreach($rejectedSubmissions as $rej)
                                         <option value="{{ $rej->id }}" {{ (string) old('parent_id') === (string) $rej->id ? 'selected' : '' }}>
-                                            {{ $rej->radicado_invima ?? 'ID ' . $rej->id }} · {{ $rej->fecha_radicacion?->format('d/m/Y') ?? '-' }}
+                                            Intento · {{ $rej->submission_code ?? $rej->radicado_invima ?? 'ID ' . $rej->id }} · {{ $rej->fecha_radicacion?->format('d/m/Y') ?? '-' }}
                                         </option>
                                     @endforeach
                                 </select>

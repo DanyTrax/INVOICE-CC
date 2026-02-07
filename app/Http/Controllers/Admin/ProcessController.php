@@ -7,6 +7,7 @@ use App\Models\Process;
 use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\Submission;
+use App\Models\RegulatoryEvent;
 use App\Models\Company;
 use App\Models\ChecklistItem;
 use App\Models\ServiceType;
@@ -172,7 +173,7 @@ class ProcessController extends Controller
     }
 
     /**
-     * Crear un sometimiento. Solo permite si toda la checklist está en estado Aprobado.
+     * Crear un sometimiento (inicio del flujo). Solo guarda datos de sometimiento y radicado; estado inicial Pendiente.
      */
     public function storeSubmission(Request $request, Process $process): RedirectResponse
     {
@@ -193,25 +194,97 @@ class ProcessController extends Controller
         }
 
         $validated = $request->validate([
-            'radicado_invima' => 'nullable|string|max:64',
-            'tracking_id' => 'nullable|string|max:64',
-            'fecha_radicacion' => 'nullable|date',
-            'status' => 'required|string|in:' . implode(',', Submission::statuses()),
+            'submission_date' => 'required|date',
+            'submission_code' => 'required|string|max:64',
+            'filing_date' => 'nullable|date',
+            'filing_number' => 'nullable|string|max:64',
             'parent_id' => 'nullable|exists:submissions,id',
         ]);
 
-        $validated['process_id'] = $process->id;
-        if (empty($validated['parent_id'])) {
-            $validated['parent_id'] = null;
-        }
-
-        Submission::create($validated);
+        Submission::create([
+            'process_id' => $process->id,
+            'parent_id' => $validated['parent_id'] ?? null,
+            'submission_date' => $validated['submission_date'],
+            'submission_code' => $validated['submission_code'],
+            'fecha_radicacion' => $validated['filing_date'] ?? null,
+            'radicado_invima' => $validated['filing_number'] ?? null,
+            'status' => Submission::STATUS_PENDIENTE,
+            'submission_type' => $validated['parent_id'] ? 'Subsanación / Nuevo intento' : 'Inicial',
+        ]);
 
         $process->update(['status' => Process::STATUS_RADICADO]);
 
         return redirect()
             ->route('admin.processes.show', $process)
             ->with('success', 'Sometimiento registrado correctamente.');
+    }
+
+    /**
+     * Registrar respuesta del INVIMA: Auto/Requerimiento, Resolución Aprobatoria o Rechazo.
+     */
+    public function registerResponse(Request $request, Submission $submission): RedirectResponse
+    {
+        $type = $request->input('response_type');
+
+        if ($type === 'rechazo') {
+            $submission->update(['status' => Submission::STATUS_RECHAZADO]);
+            return redirect()
+                ->route('admin.processes.show', $submission->process)
+                ->with('success', 'Respuesta registrada: Rechazo. Puede crear un nuevo intento desde el expediente.');
+        }
+
+        if ($type === 'auto') {
+            $validated = $request->validate([
+                'document_number' => 'required|string|max:64',
+                'notification_date' => 'required|date',
+                'file' => 'nullable|file|mimes:pdf|max:10240',
+            ]);
+            $filePath = $request->hasFile('file') ? $request->file('file')->store('regulatory_events', 'public') : null;
+            $notificationDate = \Carbon\Carbon::parse($validated['notification_date']);
+            $dueDate = $notificationDate->copy()->addWeekdays(90);
+
+            RegulatoryEvent::create([
+                'submission_id' => $submission->id,
+                'event_type' => RegulatoryEvent::EVENT_TYPE_AUTO,
+                'document_number' => $validated['document_number'],
+                'notification_date' => $validated['notification_date'],
+                'due_date' => $dueDate,
+                'file_path' => $filePath,
+            ]);
+            $submission->process->update(['status' => Process::STATUS_EN_REQUERIMIENTO]);
+            $submission->update(['status' => Submission::STATUS_EN_REQUERIMIENTO]);
+
+            return redirect()
+                ->route('admin.processes.show', $submission->process)
+                ->with('success', 'Auto registrado. Fecha límite: ' . $dueDate->format('d/m/Y') . ' (90 días hábiles).');
+        }
+
+        if ($type === 'aprobado') {
+            $validated = $request->validate([
+                'resolution_number' => 'required|string|max:64',
+                'resolution_date' => 'required|date',
+                'resolution_key' => 'required|string|max:64',
+                'file' => 'nullable|file|mimes:pdf|max:10240',
+            ]);
+            $filePath = $request->hasFile('file') ? $request->file('file')->store('regulatory_events', 'public') : null;
+
+            RegulatoryEvent::create([
+                'submission_id' => $submission->id,
+                'event_type' => RegulatoryEvent::EVENT_TYPE_RESOLUCION,
+                'document_number' => $validated['resolution_number'],
+                'event_date' => $validated['resolution_date'],
+                'resolution_key' => $validated['resolution_key'],
+                'file_path' => $filePath,
+            ]);
+            $submission->process->update(['status' => Process::STATUS_FINALIZADO]);
+            $submission->update(['status' => Submission::STATUS_APROBADO]);
+
+            return redirect()
+                ->route('admin.processes.show', $submission->process)
+                ->with('success', 'Resolución aprobatoria registrada. Expediente finalizado.');
+        }
+
+        return redirect()->back()->with('error', 'Tipo de respuesta no válido.');
     }
 
     /**
