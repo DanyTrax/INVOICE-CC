@@ -262,9 +262,16 @@
                     </li>
                     <li>
                         <a href="{{ route('admin.processes.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.*') || request()->routeIs('admin.submissions.*') ? 'bg-teal-700' : '' }}">
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.index') || request()->routeIs('admin.processes.show') || request()->routeIs('admin.processes.create') || request()->routeIs('admin.submissions.*') ? 'bg-teal-700' : '' }}">
                             <i class="fas fa-folder w-5 h-5"></i>
                             <span class="ms-3">Expedientes / Procesos</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.processes.monitor') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.monitor') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-table-list w-5 h-5"></i>
+                            <span class="ms-3">Monitor de Operaciones</span>
                         </a>
                     </li>
                     
