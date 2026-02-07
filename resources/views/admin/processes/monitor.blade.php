@@ -58,6 +58,11 @@
                        class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">
             </div>
         </div>
+        <div class="mt-3 flex justify-end">
+            <a href="#" id="monitor-export-btn" class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700">
+                <i class="fas fa-file-excel mr-2"></i> Exportar Vista Actual
+            </a>
+        </div>
     </div>
 
     <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden relative">
@@ -168,6 +173,17 @@
                 });
             }
         });
+
+        var exportBtn = document.getElementById('monitor-export-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var params = getFilterParams();
+                var qs = buildQueryString(params);
+                var url = '{{ route('admin.processes.export') }}' + qs;
+                window.location.href = url;
+            });
+        }
     })();
     </script>
     @endpush

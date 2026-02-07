@@ -11,7 +11,10 @@ use App\Models\RegulatoryEvent;
 use App\Models\Company;
 use App\Models\ChecklistItem;
 use App\Models\ServiceType;
+use App\Exports\GeneralProcessExport;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -184,6 +187,25 @@ class ProcessController extends Controller
 
         $companies = Company::orderBy('name')->get();
         return view('admin.processes.monitor', compact('processes', 'companies'));
+    }
+
+    /**
+     * Exportar procesos del Monitor a Excel con los filtros actuales.
+     */
+    public function export(Request $request): BinaryFileResponse
+    {
+        $filters = [
+            'client_id' => $request->filled('client_id') ? $request->client_id : null,
+            'status' => $request->filled('status') ? $request->status : null,
+            'date_from' => $request->filled('date_from') ? $request->date_from : null,
+            'date_to' => $request->filled('date_to') ? $request->date_to : null,
+            'search' => $request->filled('search') ? $request->search : null,
+        ];
+
+        $export = new GeneralProcessExport($filters);
+        $filename = 'monitor-procesos-' . now()->format('Y-m-d-His') . '.xlsx';
+
+        return Excel::download($export, $filename);
     }
 
     /**
