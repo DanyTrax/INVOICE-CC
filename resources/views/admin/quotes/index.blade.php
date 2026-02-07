@@ -14,11 +14,6 @@
 @endsection
 
 @section('content')
-    @if(session('success'))
-        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-            <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-        </div>
-    @endif
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div class="flex-1 w-full sm:w-auto">
             <form method="GET" action="{{ route('admin.quotes.index') }}" class="flex gap-2 flex-wrap">
