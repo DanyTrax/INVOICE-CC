@@ -134,6 +134,59 @@ class ProcessController extends Controller
     }
 
     /**
+     * Monitor de Operaciones (Master List): listado plano con filtros. Soporta respuesta AJAX (solo filas).
+     */
+    public function masterList(Request $request)
+    {
+        $query = Process::with([
+            'client',
+            'quoteItem.quote',
+            'quoteItem.serviceType',
+            'quote',
+            'serviceType',
+            'submissions.regulatoryEvents',
+        ]);
+
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->client_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('updated_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('updated_at', '<=', $request->date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('product_reference', 'like', "%{$search}%")
+                    ->orWhere('expediente_invima', 'like', "%{$search}%")
+                    ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"))
+                    ->orWhereHas('quoteItem.quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"));
+            });
+        }
+
+        $processes = $query->orderBy('updated_at', 'desc')->paginate(25)->withQueryString();
+
+        if ($request->ajax()) {
+            $rows = view('admin.processes.partials.process-rows', compact('processes'))->render();
+            $pagination = $processes->hasPages() ? $processes->withQueryString()->links()->render() : '';
+            return response()->json(['rows' => $rows, 'pagination' => $pagination]);
+        }
+
+        $companies = Company::orderBy('name')->get();
+        return view('admin.processes.monitor', compact('processes', 'companies'));
+    }
+
+    /**
      * Vincular un proceso a una cotización (organización en acordeones). Actualiza quote_id y client_id.
      */
     public function linkToQuote(Request $request, Process $process): RedirectResponse
