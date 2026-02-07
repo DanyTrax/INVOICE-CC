@@ -80,14 +80,14 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::post('clients', [UserController::class, 'storeClient'])->name('clients.store');
     Route::get('agents', [UserController::class, 'agents'])->name('agents.index');
     
-    // Registrations
-    Route::get('/registrations/{registration}/documents/{document}/view', [RegistrationController::class, 'viewDocument'])
-        ->name('registrations.documents.view');
-    Route::get('/registrations/{registration}/documents/{document}/download', [RegistrationController::class, 'downloadDocument'])
-        ->name('registrations.documents.download');
-    Route::delete('/registrations/{registration}/documents/{document}', [RegistrationController::class, 'destroyDocument'])
-        ->name('registrations.documents.destroy');
-    Route::resource('registrations', RegistrationController::class);
+    // Registrations (módulo jubilado: se usa Expedientes / Procesos)
+    // Route::get('/registrations/{registration}/documents/{document}/view', [RegistrationController::class, 'viewDocument'])
+    //     ->name('registrations.documents.view');
+    // Route::get('/registrations/{registration}/documents/{document}/download', [RegistrationController::class, 'downloadDocument'])
+    //     ->name('registrations.documents.download');
+    // Route::delete('/registrations/{registration}/documents/{document}', [RegistrationController::class, 'destroyDocument'])
+    //     ->name('registrations.documents.destroy');
+    // Route::resource('registrations', RegistrationController::class);
 
     // Cotizaciones (pre-venta)
     Route::get('quotes', [QuoteController::class, 'index'])->name('quotes.index');

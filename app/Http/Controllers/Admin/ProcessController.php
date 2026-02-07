@@ -90,10 +90,17 @@ class ProcessController extends Controller
     public function index(Request $request)
     {
         $companies = Company::orderBy('name')->get();
+        $clientId = $request->integer('client_id') ?: null;
 
-        // Cotizaciones que tienen al menos un proceso (vía quote_items o vía quote_id).
-        $grouped_quotes = Quote::whereHas('quoteItems', fn ($q) => $q->whereHas('process'))
-            ->orWhereHas('processes')
+        $quoteQuery = Quote::whereHas('quoteItems', fn ($q) => $q->whereHas('process'))
+            ->orWhereHas('processes');
+        if ($clientId) {
+            $quoteQuery->where(function ($q) use ($clientId) {
+                $q->whereHas('quoteItems', fn ($q2) => $q2->whereHas('process', fn ($q3) => $q3->where('client_id', $clientId)))
+                    ->orWhereHas('processes', fn ($q2) => $q2->where('client_id', $clientId));
+            });
+        }
+        $grouped_quotes = $quoteQuery
             ->with([
                 'client',
                 'quoteItems' => fn ($q) => $q->whereHas('process')->with([
@@ -108,9 +115,11 @@ class ProcessController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
-        // Procesos sin asignar a ninguna cotización (huérfanos: sin quote_item_id ni quote_id).
-        $orphan_processes = Process::whereNull('quote_item_id')
-            ->whereNull('quote_id')
+        $orphanQuery = Process::whereNull('quote_item_id')->whereNull('quote_id');
+        if ($clientId) {
+            $orphanQuery->where('client_id', $clientId);
+        }
+        $orphan_processes = $orphanQuery
             ->with(['client', 'serviceType'])
             ->orderBy('updated_at', 'desc')
             ->get();

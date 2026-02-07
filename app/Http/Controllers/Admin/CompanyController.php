@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanyInvite;
 use App\Models\EmailLog;
+use App\Models\Process;
+use App\Models\RegulatoryEvent;
 use App\Services\GoogleDriveService;
 use App\Services\MailService;
 use App\Services\EmailTemplateService;
@@ -105,9 +107,46 @@ class CompanyController extends Controller
     public function show(Company $company)
     {
         $company->loadCount('registrations');
-        $company->load('registrations');
-        
-        return view('admin.companies.show', compact('company'));
+
+        // Centro de trazabilidad: expedientes (processes) del cliente
+        $total_processes = Process::where('client_id', $company->id)->count();
+
+        $stats_by_status = Process::where('client_id', $company->id)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
+        $processes_timeline = Process::where('client_id', $company->id)
+            ->with([
+                'quote',
+                'quoteItem.quote',
+                'quoteItem.serviceType',
+                'serviceType',
+                'submissions.regulatoryEvents',
+                'submissions.children.regulatoryEvents',
+            ])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        // Semáforo: procesos en radicación y con autos vencidos
+        $count_radicado = (int) ($stats_by_status[Process::STATUS_RADICADO] ?? 0);
+        $count_autos_vencidos = Process::where('client_id', $company->id)
+            ->whereHas('submissions.regulatoryEvents', function ($q) {
+                $q->where('event_type', RegulatoryEvent::EVENT_TYPE_AUTO)
+                    ->whereNotNull('due_date')
+                    ->where('due_date', '<', today());
+            })
+            ->count();
+
+        return view('admin.companies.show', compact(
+            'company',
+            'total_processes',
+            'stats_by_status',
+            'processes_timeline',
+            'count_radicado',
+            'count_autos_vencidos'
+        ));
     }
 
     public function edit(Company $company)
@@ -166,8 +205,8 @@ class CompanyController extends Controller
 
     public function destroy(Company $company)
     {
-        // Verificar si tiene registros
-        if ($company->registrations()->count() > 0) {
+        // Verificar si tiene expedientes (processes) o registros antiguos
+        if ($company->processes()->count() > 0 || $company->registrations()->count() > 0) {
             return redirect()
                 ->route('admin.companies.index')
                 ->with('error', 'No se puede eliminar la empresa porque tiene expedientes asociados.');
