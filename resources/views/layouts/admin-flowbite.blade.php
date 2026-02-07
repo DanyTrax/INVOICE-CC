@@ -253,20 +253,6 @@
                     @endif
 
                     {{-- Módulo Registrations jubilado: se usa Expedientes / Procesos --}}
-                    {{--
-                    {{-- Módulo Registrations jubilado: se usa Expedientes / Procesos --}}
-                    {{--
-                    @if($permService->userHasPermission('registrations', 'view'))
-                        <li>
-                            <a href="{{ route('admin.registrations.index') }}" 
-                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.registrations.*') ? 'bg-teal-700' : '' }}">
-                                <i class="fas fa-clipboard-list w-5 h-5"></i>
-                                <span class="ms-3">Registros (Expedientes)</span>
-                            </a>
-                        </li>
-                    @endif
-                    --}}
-                    --}}
                     <li>
                         <a href="{{ route('admin.quotes.index') }}" 
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.quotes.*') ? 'bg-teal-700' : '' }}">

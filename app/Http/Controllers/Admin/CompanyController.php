@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanyInvite;
 use App\Models\EmailLog;
-use App\Models\Process;
-use App\Models\RegulatoryEvent;
 use App\Services\GoogleDriveService;
 use App\Services\MailService;
 use App\Services\EmailTemplateService;
@@ -106,47 +104,37 @@ class CompanyController extends Controller
 
     public function show(Company $company)
     {
-        $company->loadCount('registrations');
-
-        // Centro de trazabilidad: expedientes (processes) del cliente
-        $total_processes = Process::where('client_id', $company->id)->count();
-
-        $stats_by_status = Process::where('client_id', $company->id)
-            ->selectRaw('status, count(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status')
-            ->toArray();
-
-        $processes_timeline = Process::where('client_id', $company->id)
-            ->with([
+        // 1. Cargar procesos con sus relaciones clave para la trazabilidad
+        $company->load(['processes' => function ($q) {
+            $q->with([
+                'serviceType',
                 'quote',
                 'quoteItem.quote',
                 'quoteItem.serviceType',
-                'serviceType',
                 'submissions.regulatoryEvents',
                 'submissions.children.regulatoryEvents',
             ])
-            ->orderBy('updated_at', 'desc')
-            ->get();
+                ->orderBy('updated_at', 'desc');
+        }]);
 
-        // Semáforo: procesos en radicación y con autos vencidos
-        $count_radicado = (int) ($stats_by_status[Process::STATUS_RADICADO] ?? 0);
-        $count_autos_vencidos = Process::where('client_id', $company->id)
-            ->whereHas('submissions.regulatoryEvents', function ($q) {
-                $q->where('event_type', RegulatoryEvent::EVENT_TYPE_AUTO)
-                    ->whereNotNull('due_date')
-                    ->where('due_date', '<', today());
-            })
-            ->count();
+        $processes = $company->processes;
 
-        return view('admin.companies.show', compact(
-            'company',
-            'total_processes',
-            'stats_by_status',
-            'processes_timeline',
-            'count_radicado',
-            'count_autos_vencidos'
-        ));
+        // 2. Calcular Estadísticas (KPIs)
+        $total_processes = $processes->count();
+
+        $stats = [
+            'recoleccion' => $processes->where('status', 'Recolección')->count(),
+            'radicado' => $processes->where('status', 'Radicado')->count(),
+            'requerimiento' => $processes->where('status', 'En Requerimiento')->count(),
+            'finalizado' => $processes->where('status', 'Finalizado')->count(),
+        ];
+
+        // 3. Detectar Alertas (procesos en requerimiento que requieren atención)
+        $alerts = $processes->filter(function ($p) {
+            return $p->status === 'En Requerimiento';
+        })->count();
+
+        return view('admin.companies.show', compact('company', 'total_processes', 'stats', 'alerts'));
     }
 
     public function edit(Company $company)

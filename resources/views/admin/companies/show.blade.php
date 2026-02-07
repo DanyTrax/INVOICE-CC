@@ -80,7 +80,7 @@
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-gray-500">En Recolección / Checklist</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats_by_status[\App\Models\Process::STATUS_RECOLECCION] ?? 0 }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $stats['recoleccion'] ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -91,7 +91,7 @@
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-gray-500">En Requerimiento</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats_by_status[\App\Models\Process::STATUS_EN_REQUERIMIENTO] ?? 0 }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $stats['requerimiento'] ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -102,7 +102,7 @@
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-gray-500">Finalizados / Aprobados</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats_by_status[\App\Models\Process::STATUS_FINALIZADO] ?? 0 }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $stats['finalizado'] ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -114,12 +114,12 @@
         <ul class="space-y-2 text-sm">
             <li class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                <strong>{{ $count_radicado }}</strong> proceso(s) están en Radicación
+                <strong>{{ $stats['radicado'] ?? 0 }}</strong> proceso(s) están en Radicación
             </li>
-            @if($count_autos_vencidos > 0)
+            @if(($alerts ?? 0) > 0)
                 <li class="flex items-center gap-2 text-amber-700">
                     <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <strong>{{ $count_autos_vencidos }}</strong> proceso(s) tienen Autos vencidos
+                    <strong>{{ $alerts }}</strong> proceso(s) en Requerimiento (requieren atención)
                 </li>
             @endif
         </ul>
@@ -142,7 +142,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($processes_timeline as $process)
+                    @forelse($company->processes as $process)
                         @php
                             $origen = $process->quote?->consecutive ?? $process->quoteItem?->quote?->consecutive ?? '-';
                             $producto = $process->product_reference ?: ($process->expediente_invima ?: ($process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? 'Expediente #' . $process->id));
