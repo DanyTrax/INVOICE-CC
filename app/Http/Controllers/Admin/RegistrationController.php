@@ -254,9 +254,53 @@ class RegistrationController extends Controller
             'documents.*' => 'file|max:10240', // 10MB máximo
         ]);
 
+        $oldCompanyId = $registration->company_id;
         $registration->update($validated);
         $registration->refresh();
         app(ActivityLogService::class)->log('updated', 'Actualizó el expediente "' . $registration->product_name . '"', $registration);
+
+        // Si se asignó o cambió la empresa y el expediente tiene carpeta en Drive, mover la carpeta a la ruta correcta
+        if ($registration->drive_folder_id && (int) $oldCompanyId !== (int) $registration->company_id) {
+            try {
+                $driveService = app(GoogleDriveService::class);
+                $newParentId = null;
+                if ($registration->company_id) {
+                    $company = $registration->company;
+                    if ($company && $company->drive_folder_id) {
+                        $newParentId = $company->drive_folder_id;
+                    } elseif ($company) {
+                        $country = !empty(trim($company->country ?? '')) ? trim($company->country) : null;
+                        $parentId = $country
+                            ? $driveService->getOrCreateCountryFolder($country)
+                            : $driveService->getOrCreateClientsFolder(null);
+                        $folder = $driveService->createFolder(
+                            $company->name . ' - ' . ($company->nit_rut ?? 'Sin NIT'),
+                            $parentId
+                        );
+                        $company->update(['drive_folder_id' => $folder['id']]);
+                        $newParentId = $folder['id'];
+                    }
+                } else {
+                    $newParentId = $driveService->getOrCreateNoClientFolder();
+                }
+                if ($newParentId) {
+                    $driveService->moveFile($registration->drive_folder_id, $newParentId);
+                    Log::info('Carpeta del expediente movida según empresa asignada', [
+                        'registration_id' => $registration->id,
+                        'company_id' => $registration->company_id,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error al mover carpeta del expediente', [
+                    'registration_id' => $registration->id,
+                    'error' => $e->getMessage(),
+                ]);
+                return redirect()
+                    ->route('admin.registrations.edit', $registration)
+                    ->with('success', 'Expediente actualizado.')
+                    ->with('error', 'No se pudo mover la carpeta en Drive: ' . $e->getMessage());
+            }
+        }
 
         if ($request->hasFile('documents')) {
             try {

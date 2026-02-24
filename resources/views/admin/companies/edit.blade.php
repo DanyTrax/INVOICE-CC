@@ -70,6 +70,19 @@
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                 </div>
 
+                <!-- País -->
+                <div>
+                    <label for="country" class="block mb-2 text-sm font-medium text-gray-900">
+                        País
+                    </label>
+                    <input type="text" 
+                           id="country" 
+                           name="country" 
+                           value="{{ old('country', $company->country) }}"
+                           placeholder="Ej: Colombia, México"
+                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                </div>
+
                 <!-- Teléfono -->
                 <div>
                     <label for="phone" class="block mb-2 text-sm font-medium text-gray-900">

@@ -464,9 +464,8 @@
                                     Nombres de Directorios Principales
                                 </h4>
                                 <p class="text-sm text-gray-600 mb-4">
-                                    Configura los nombres de las carpetas principales que se crearán automáticamente en Google Drive.
+                                    <strong>Con cliente:</strong> Base (ID) → País → Empresa → Expediente → documentos. <strong>Sin cliente:</strong> Base (ID) → Expedientes Sin Cliente → expediente → documentos. El país se define en cada empresa.
                                 </p>
-                                
                                 <div class="space-y-4">
                                     <!-- Carpeta para Expedientes Sin Cliente -->
                                     <div>
@@ -481,11 +480,11 @@
                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                                         <p class="mt-2 text-xs text-gray-500">
                                             <i class="fas fa-info-circle mr-1"></i>
-                                            Esta carpeta contendrá todos los expedientes que no tengan un cliente asignado. Ejemplo: <code class="bg-gray-100 px-1 rounded">Expedientes Sin Cliente\Nombre del Expediente</code>
+                                            Carpeta bajo la Base para expedientes sin cliente (sin nivel país). Ejemplo: <code class="bg-gray-100 px-1 rounded">Base\Expedientes Sin Cliente\Nombre del Expediente</code>
                                         </p>
                                     </div>
 
-                                    <!-- Carpeta para Clientess -->
+                                    <!-- Carpeta para Clientes -->
                                     <div>
                                         <label for="drive_folder_name_with_client" class="block mb-2 text-sm font-medium text-gray-900">
                                             Nombre de Carpeta para Clientes
@@ -498,7 +497,7 @@
                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                                         <p class="mt-2 text-xs text-gray-500">
                                             <i class="fas fa-info-circle mr-1"></i>
-                                            Esta carpeta contendrá todas las carpetas de clientes. Ejemplo: <code class="bg-gray-100 px-1 rounded">Clientes\Nombre del Cliente\Nombre del Expediente</code>
+                                            Solo se usa cuando la empresa no tiene País: Base → Clientes → Empresa. Con país: Base → País → Empresa (sin esta carpeta).
                                         </p>
                                     </div>
                                 </div>

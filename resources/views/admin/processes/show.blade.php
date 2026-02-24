@@ -74,6 +74,65 @@
         </div>
     </div>
 
+    {{-- Documentos en Drive: carpeta, listado y subida --}}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-cloud-upload-alt text-teal-600 mr-2"></i> Documentos en Drive
+        </h3>
+        @if($process->drive_folder_id)
+            <p class="text-sm text-gray-600 mb-3">
+                <a href="{{ $process->drive_folder_url ?? 'https://drive.google.com/drive/folders/' . $process->drive_folder_id }}" target="_blank" rel="noopener"
+                   class="inline-flex items-center text-teal-600 hover:text-teal-800 font-medium">
+                    <i class="fas fa-external-link-alt mr-2"></i> Abrir carpeta en Google Drive
+                </a>
+            </p>
+        @else
+            <p class="text-sm text-gray-500 mb-3">La carpeta en Drive se creará al subir el primer documento (si está configurado Google Drive en Configuración).</p>
+        @endif
+        <form action="{{ route('admin.processes.documents.upload', $process) }}" method="POST" enctype="multipart/form-data" class="mb-4 flex flex-wrap items-end gap-3">
+            @csrf
+            <div class="flex-1 min-w-[200px]">
+                <label for="process-document-file" class="block text-sm font-medium text-gray-700 mb-1">Subir documento</label>
+                <input type="file" name="document" id="process-document-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" required
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
+                <i class="fas fa-upload mr-2"></i> Subir
+            </button>
+        </form>
+        <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                    <tr>
+                        <th class="px-3 py-2">Documento</th>
+                        <th class="px-3 py-2 w-28">Subido</th>
+                        <th class="px-3 py-2 w-40">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($process->processDocuments as $doc)
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="px-3 py-2 font-medium text-gray-900">{{ $doc->file_name }}</td>
+                            <td class="px-3 py-2 text-gray-600">{{ $doc->created_at->format('d/m/Y H:i') }}</td>
+                            <td class="px-3 py-2">
+                                @if($doc->drive_id)
+                                    <a href="{{ route('admin.processes.documents.view', [$process, $doc]) }}" target="_blank" class="text-teal-600 hover:text-teal-800 mr-3"><i class="fas fa-eye mr-1"></i> Ver</a>
+                                    <a href="{{ route('admin.processes.documents.download', [$process, $doc]) }}" class="text-teal-600 hover:text-teal-800"><i class="fas fa-download mr-1"></i> Descargar</a>
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="px-3 py-6 text-center text-gray-500">Aún no hay documentos subidos. Use el formulario de arriba para subir archivos a la carpeta de Drive.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Resumen del expediente -->
         <div class="lg:col-span-1">

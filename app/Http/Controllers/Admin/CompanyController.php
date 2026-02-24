@@ -47,6 +47,7 @@ class CompanyController extends Controller
             'name' => 'required|string|max:255',
             'nit_rut' => 'required|string|max:50|unique:companies,nit_rut',
             'address' => 'nullable|string|max:500',
+            'country' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:50',
             'contact_person_name' => 'nullable|string|max:255',
             'contact_person_email' => 'nullable|email|max:255',
@@ -56,15 +57,16 @@ class CompanyController extends Controller
         ]);
         $validated['allows_loans'] = $request->boolean('allows_loans');
 
-        // Crear carpeta en Google Drive si está configurado
+        // Crear carpeta en Google Drive: Base → País → Empresa (sin carpeta "Clientes" intermedia)
         if (empty($validated['drive_folder_id'])) {
             try {
                 $driveService = app(GoogleDriveService::class);
                 $folderName = $validated['name'] . ' - ' . ($validated['nit_rut'] ?? 'Sin NIT');
-                
-                // Crear dentro de la carpeta base de clientes
-                $clientsFolderId = $driveService->getOrCreateClientsFolder();
-                $folder = $driveService->createFolder($folderName, $clientsFolderId);
+                $country = isset($validated['country']) && trim($validated['country']) !== '' ? trim($validated['country']) : null;
+                $parentId = $country
+                    ? $driveService->getOrCreateCountryFolder($country)
+                    : $driveService->getOrCreateClientsFolder(null);
+                $folder = $driveService->createFolder($folderName, $parentId);
                 $validated['drive_folder_id'] = $folder['id'];
                 
                 Log::info('Carpeta de Google Drive creada para cliente', [
@@ -149,6 +151,7 @@ class CompanyController extends Controller
             'name' => 'required|string|max:255',
             'nit_rut' => 'required|string|max:50|unique:companies,nit_rut,' . $company->id,
             'address' => 'nullable|string|max:500',
+            'country' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:50',
             'contact_person_name' => 'nullable|string|max:255',
             'contact_person_email' => 'nullable|email|max:255',

@@ -20,6 +20,8 @@ class GeneralSettings extends Settings
     public string $drive_folder_id = '';
     public string $drive_folder_name_no_client = 'Expedientes Sin Cliente';
     public string $drive_folder_name_with_client = 'Clientes';
+    /** País por defecto para la carpeta "Expedientes Sin Cliente" (estructura: Base → País → Expedientes Sin Cliente). Vacío = bajo carpeta base. */
+    public string $drive_default_country_no_client = '';
     public string $drive_mode = 'service_account'; // 'service_account' | 'oauth_user'
     public string $drive_oauth_client_id = '';
     public string $drive_oauth_client_secret = '';

@@ -40,6 +40,10 @@
                 <dd class="font-medium text-gray-900">{{ $company->nit_rut }}</dd>
             </div>
             <div>
+                <dt class="text-gray-500">País</dt>
+                <dd class="font-medium text-gray-900">{{ $company->country ?? '-' }}</dd>
+            </div>
+            <div>
                 <dt class="text-gray-500">Contacto</dt>
                 <dd class="font-medium text-gray-900">{{ $company->contact_person_name ?? '-' }}</dd>
             </div>

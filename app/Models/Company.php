@@ -13,6 +13,7 @@ class Company extends Model
         'name',
         'nit_rut',
         'address',
+        'country',
         'phone',
         'logo_path',
         'contact_person_name',

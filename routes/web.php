@@ -119,6 +119,9 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::post('submissions/{submission}/register-response', [ProcessController::class, 'registerResponse'])->name('submissions.register-response');
     Route::post('processes/{process}/checklist-items', [ProcessController::class, 'storeChecklistItem'])->name('processes.checklist-items.store');
     Route::put('checklist-items/{checklistItem}', [ProcessController::class, 'updateChecklistItem'])->name('checklist-items.update');
+    Route::post('processes/{process}/documents', [ProcessController::class, 'uploadDocument'])->name('processes.documents.upload');
+    Route::get('processes/{process}/documents/{processDocument}/view', [ProcessController::class, 'viewDocument'])->name('processes.documents.view');
+    Route::get('processes/{process}/documents/{processDocument}/download', [ProcessController::class, 'downloadDocument'])->name('processes.documents.download');
     Route::post('submissions/{submission}/events/auto', [RegulatoryEventController::class, 'storeAuto'])->name('submissions.events.store-auto');
     Route::post('submissions/{submission}/events/resolution', [RegulatoryEventController::class, 'storeResolution'])->name('submissions.events.store-resolution');
     

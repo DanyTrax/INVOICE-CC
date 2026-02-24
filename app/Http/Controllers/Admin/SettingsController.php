@@ -462,6 +462,7 @@ class SettingsController extends Controller
             'drive_folder_id' => 'nullable|string|max:255',
             'drive_folder_name_no_client' => 'nullable|string|max:255',
             'drive_folder_name_with_client' => 'nullable|string|max:255',
+            'drive_default_country_no_client' => 'nullable|string|max:100',
             'drive_mode' => 'nullable|in:service_account,oauth_user',
             'drive_oauth_client_id' => 'nullable|string|max:255',
             'drive_oauth_client_secret' => 'nullable|string|max:255',
@@ -549,6 +550,10 @@ class SettingsController extends Controller
             }
         } else {
             $settings->drive_folder_name_with_client = $validated['drive_folder_name_with_client'] ?: 'Clientes';
+        }
+
+        if (array_key_exists('drive_default_country_no_client', $validated)) {
+            $settings->drive_default_country_no_client = $validated['drive_default_country_no_client'] ?? '';
         }
         
         $settings->save();

@@ -10,9 +10,13 @@ use App\Models\Submission;
 use App\Models\RegulatoryEvent;
 use App\Models\Company;
 use App\Models\ChecklistItem;
+use App\Models\ProcessDocument;
 use App\Models\ServiceType;
 use App\Exports\GeneralProcessExport;
+use App\Services\GoogleDriveService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Http\RedirectResponse;
@@ -242,9 +246,18 @@ class ProcessController extends Controller
             'quoteItem.serviceType',
             'serviceType',
             'checklistItems',
+            'processDocuments',
             'submissions.regulatoryEvents',
             'submissions.children.regulatoryEvents',
         ]);
+
+        // Asegurar carpeta en Drive para este expediente (se crea al visitar la página si está configurado Drive)
+        try {
+            app(GoogleDriveService::class)->getOrCreateProcessFolder($process);
+            $process->refresh();
+        } catch (\Exception $e) {
+            Log::debug('No se pudo crear/obtener carpeta Drive del proceso', ['process_id' => $process->id, 'error' => $e->getMessage()]);
+        }
 
         return view('admin.processes.show', compact('process'));
     }
@@ -400,5 +413,129 @@ class ProcessController extends Controller
         return redirect()
             ->route('admin.processes.show', $checklistItem->process)
             ->with('success', 'Documento actualizado.');
+    }
+
+    /**
+     * Subir documento del expediente a Google Drive.
+     */
+    public function uploadDocument(Request $request, Process $process): RedirectResponse
+    {
+        $request->validate([
+            'document' => 'required|file|max:10240', // 10MB
+        ]);
+
+        $file = $request->file('document');
+        $driveService = app(GoogleDriveService::class);
+        $folderId = $driveService->getOrCreateProcessFolder($process);
+
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        $originalName = $file->getClientOriginalName();
+        $mimeType = $file->getMimeType() ?: 'application/octet-stream';
+        $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
+        $baseName = pathinfo($originalName, PATHINFO_FILENAME);
+        $safeName = preg_replace('/[^a-zA-Z0-9_\-\pL]/u', '_', $baseName) ?: 'file';
+        $uniqueName = Str::uuid() . '_' . $safeName . ($extension ? '.' . $extension : '');
+        $fullPath = $tempDir . '/' . $uniqueName;
+
+        try {
+            $file->move($tempDir, $uniqueName);
+            $driveFile = $driveService->uploadFile(
+                $fullPath,
+                $originalName,
+                $folderId,
+                $mimeType,
+                null,
+                $process->client_id
+            );
+            ProcessDocument::create([
+                'process_id' => $process->id,
+                'uploaded_by_id' => auth()->id(),
+                'file_path' => 'drive://' . $driveFile['id'],
+                'file_name' => $originalName,
+                'file_type' => $mimeType,
+                'drive_id' => $driveFile['id'],
+            ]);
+        } catch (\Exception $e) {
+            if (file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
+            Log::error('Error al subir documento del proceso', ['process_id' => $process->id, 'error' => $e->getMessage()]);
+            return redirect()->route('admin.processes.show', $process)
+                ->with('error', 'No se pudo subir el documento: ' . $e->getMessage());
+        }
+        if (file_exists($fullPath)) {
+            @unlink($fullPath);
+        }
+
+        return redirect()->route('admin.processes.show', $process)
+            ->with('success', 'Documento subido correctamente.');
+    }
+
+    /**
+     * Ver documento del expediente en el navegador (desde Drive).
+     */
+    public function viewDocument(Process $process, ProcessDocument $processDocument): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+    {
+        if ($processDocument->process_id !== $process->id) {
+            abort(404);
+        }
+        if (!$processDocument->drive_id) {
+            abort(404, 'Documento sin enlace a Drive.');
+        }
+        $driveService = app(GoogleDriveService::class);
+        try {
+            $fileInfo = $driveService->getFileInfo($processDocument->drive_id);
+        } catch (\Exception $e) {
+            Log::warning('Archivo no encontrado en Drive', ['document_id' => $processDocument->id, 'error' => $e->getMessage()]);
+            abort(404, 'El documento no existe en Google Drive.');
+        }
+        try {
+            $fileContent = $driveService->downloadFile($processDocument->drive_id);
+            $mime = $processDocument->file_type ?: ($fileInfo['mimeType'] ?? 'application/octet-stream');
+            $disposition = 'inline; filename="' . addcslashes($processDocument->file_name, '"\\') . '"';
+            return response($fileContent, 200, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => $disposition,
+                'Content-Length' => strlen($fileContent),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al descargar archivo de Drive para ver', ['document_id' => $processDocument->id, 'error' => $e->getMessage()]);
+            abort(404, 'No se pudo obtener el documento.');
+        }
+    }
+
+    /**
+     * Descargar documento del expediente (desde Drive).
+     */
+    public function downloadDocument(Process $process, ProcessDocument $processDocument): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+    {
+        if ($processDocument->process_id !== $process->id) {
+            abort(404);
+        }
+        if (!$processDocument->drive_id) {
+            abort(404, 'Documento sin enlace a Drive.');
+        }
+        $driveService = app(GoogleDriveService::class);
+        try {
+            $fileInfo = $driveService->getFileInfo($processDocument->drive_id);
+        } catch (\Exception $e) {
+            abort(404, 'El documento no existe en Google Drive.');
+        }
+        try {
+            $fileContent = $driveService->downloadFile($processDocument->drive_id);
+            $mime = $processDocument->file_type ?: ($fileInfo['mimeType'] ?? 'application/octet-stream');
+            $disposition = 'attachment; filename="' . addcslashes($processDocument->file_name, '"\\') . '"';
+            return response($fileContent, 200, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => $disposition,
+                'Content-Length' => strlen($fileContent),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al descargar documento del proceso', ['document_id' => $processDocument->id, 'error' => $e->getMessage()]);
+            abort(404, 'No se pudo descargar el documento.');
+        }
     }
 }

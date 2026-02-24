@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Settings\GeneralSettings;
 use App\Models\DriveOperationLog;
+use App\Models\Process;
 use App\Models\Registration;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -531,14 +532,24 @@ class GoogleDriveService
         // Crear carpeta del expediente
         $folderName = $registration->product_name . ' - ' . ($registration->registration_number ?? 'Sin Número');
         
-        // Determinar carpeta padre
+        // Con cliente: Base → País → Empresa → Expediente. Sin cliente: Base → Expedientes Sin Cliente → Expediente
         $parentFolderId = null;
         if ($registration->company_id) {
             $company = $registration->company;
             if ($company && $company->drive_folder_id) {
                 $parentFolderId = $company->drive_folder_id;
             } else {
-                $parentFolderId = $this->getOrCreateClientsFolder();
+                // Crear carpeta empresa: con país → Base → País → Empresa; sin país → Base → Clientes → Empresa
+                $country = $company && !empty(trim($company->country ?? '')) ? trim($company->country) : null;
+                $parentId = $country
+                    ? $this->getOrCreateCountryFolder($country)
+                    : $this->getOrCreateClientsFolder(null);
+                $companyFolder = $this->createFolder(
+                    $company->name . ' - ' . ($company->nit_rut ?? 'Sin NIT'),
+                    $parentId
+                );
+                $company->update(['drive_folder_id' => $companyFolder['id']]);
+                $parentFolderId = $companyFolder['id'];
             }
         } else {
             $parentFolderId = $this->getOrCreateNoClientFolder();
@@ -548,6 +559,50 @@ class GoogleDriveService
         
         // Actualizar registro con la carpeta
         $registration->update([
+            'drive_folder_id' => $folder['id'],
+            'drive_folder_url' => $folder['webViewLink'],
+        ]);
+
+        return $folder['id'];
+    }
+
+    /**
+     * Obtener o crear carpeta del proceso (expediente) en Drive.
+     * Con cliente: Base → País → Empresa → Expediente. Sin cliente: Base → Expedientes Sin Cliente → Expediente.
+     */
+    public function getOrCreateProcessFolder(Process $process): string
+    {
+        if ($process->drive_folder_id) {
+            return $process->drive_folder_id;
+        }
+
+        $process->load(['client', 'serviceType']);
+        $folderName = 'Expediente #' . $process->id . ' - ' . ($process->serviceType?->name ?? $process->product_reference ?? 'Sin nombre');
+
+        $parentFolderId = null;
+        if ($process->client_id) {
+            $company = $process->client;
+            if ($company && $company->drive_folder_id) {
+                $parentFolderId = $company->drive_folder_id;
+            } elseif ($company) {
+                $country = !empty(trim($company->country ?? '')) ? trim($company->country) : null;
+                $parentId = $country
+                    ? $this->getOrCreateCountryFolder($country)
+                    : $this->getOrCreateClientsFolder(null);
+                $companyFolder = $this->createFolder(
+                    $company->name . ' - ' . ($company->nit_rut ?? 'Sin NIT'),
+                    $parentId
+                );
+                $company->update(['drive_folder_id' => $companyFolder['id']]);
+                $parentFolderId = $companyFolder['id'];
+            }
+        }
+        if ($parentFolderId === null) {
+            $parentFolderId = $this->getOrCreateNoClientFolder();
+        }
+
+        $folder = $this->createFolder($folderName, $parentFolderId);
+        $process->update([
             'drive_folder_id' => $folder['id'],
             'drive_folder_url' => $folder['webViewLink'],
         ]);
@@ -793,37 +848,72 @@ class GoogleDriveService
     }
 
     /**
-     * Obtener o crear carpeta base para expedientes sin cliente
+     * Obtener o crear carpeta de país bajo la carpeta base de Drive.
+     * Estructura: Base → País → (Clientes | Expedientes Sin Cliente)
      */
-    public function getOrCreateNoClientFolder()
+    public function getOrCreateCountryFolder(string $country): string
     {
-        $folderName = $this->settings->drive_folder_name_no_client ?: 'Expedientes Sin Cliente';
         $baseFolderId = $this->settings->drive_folder_id;
-        
-        // Buscar si ya existe una carpeta con ese nombre en la carpeta base
+        if (empty($baseFolderId)) {
+            throw new \Exception('No está configurado el ID de Carpeta Base de Drive en Configuración.');
+        }
+        $country = trim($country);
+        if ($country === '') {
+            throw new \Exception('El nombre del país no puede estar vacío.');
+        }
+        $safeName = str_replace("'", "\\'", $country);
         try {
             $token = $this->getAccessToken();
-            
-            $query = "name='{$folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false";
-            if ($baseFolderId) {
-                $query .= " and '{$baseFolderId}' in parents";
-            }
-            
+            $query = "name='{$safeName}' and mimeType='application/vnd.google-apps.folder' and trashed=false and '{$baseFolderId}' in parents";
             $response = Http::withToken($token)
                 ->get($this->baseUrl . '/files', [
                     'q' => $query,
                     'fields' => 'files(id, name)',
                 ]);
-            
             if ($response->successful()) {
                 $files = $response->json()['files'] ?? [];
                 if (!empty($files)) {
                     return $files[0]['id'];
                 }
             }
-            
-            // Si no existe, crearla
-            $folder = $this->createFolder($folderName, $baseFolderId);
+            $folder = $this->createFolder($country, $baseFolderId);
+            return $folder['id'];
+        } catch (\Exception $e) {
+            Log::error('Error al obtener/crear carpeta de país en Drive', [
+                'country' => $country,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Obtener o crear carpeta para expedientes sin cliente.
+     * Estructura: Base → Expedientes Sin Cliente (sin nivel país).
+     */
+    public function getOrCreateNoClientFolder(): string
+    {
+        $folderName = $this->settings->drive_folder_name_no_client ?: 'Expedientes Sin Cliente';
+        $parentId = $this->settings->drive_folder_id;
+        try {
+            $token = $this->getAccessToken();
+            $safeName = str_replace("'", "\\'", $folderName);
+            $query = "name='{$safeName}' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+            if (!empty($parentId)) {
+                $query .= " and '{$parentId}' in parents";
+            }
+            $response = Http::withToken($token)
+                ->get($this->baseUrl . '/files', [
+                    'q' => $query,
+                    'fields' => 'files(id, name)',
+                ]);
+            if ($response->successful()) {
+                $files = $response->json()['files'] ?? [];
+                if (!empty($files)) {
+                    return $files[0]['id'];
+                }
+            }
+            $folder = $this->createFolder($folderName, $parentId ?: null);
             return $folder['id'];
         } catch (\Exception $e) {
             Log::error('Error al obtener/crear carpeta de expedientes sin cliente', [
@@ -834,37 +924,37 @@ class GoogleDriveService
     }
 
     /**
-     * Obtener o crear carpeta base para clientes
+     * Obtener o crear carpeta "Clientes" bajo base (o bajo país si se pasa).
+     * Solo se usa cuando la empresa no tiene país: Base → Clientes → carpeta empresa.
      */
-    public function getOrCreateClientsFolder()
+    public function getOrCreateClientsFolder(?string $country = null): string
     {
         $folderName = $this->settings->drive_folder_name_with_client ?: 'Clientes';
-        $baseFolderId = $this->settings->drive_folder_id;
-        
-        // Buscar si ya existe una carpeta con ese nombre en la carpeta base
+        $parentId = null;
+        if (!empty($country)) {
+            $parentId = $this->getOrCreateCountryFolder(trim($country));
+        } else {
+            $parentId = $this->settings->drive_folder_id;
+        }
         try {
             $token = $this->getAccessToken();
-            
-            $query = "name='{$folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false";
-            if ($baseFolderId) {
-                $query .= " and '{$baseFolderId}' in parents";
+            $safeName = str_replace("'", "\\'", $folderName);
+            $query = "name='{$safeName}' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+            if (!empty($parentId)) {
+                $query .= " and '{$parentId}' in parents";
             }
-            
             $response = Http::withToken($token)
                 ->get($this->baseUrl . '/files', [
                     'q' => $query,
                     'fields' => 'files(id, name)',
                 ]);
-            
             if ($response->successful()) {
                 $files = $response->json()['files'] ?? [];
                 if (!empty($files)) {
                     return $files[0]['id'];
                 }
             }
-            
-            // Si no existe, crearla
-            $folder = $this->createFolder($folderName, $baseFolderId);
+            $folder = $this->createFolder($folderName, $parentId ?: null);
             return $folder['id'];
         } catch (\Exception $e) {
             Log::error('Error al obtener/crear carpeta de clientes', [

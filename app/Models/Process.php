@@ -32,6 +32,8 @@ class Process extends Model
         'email_name',
         'status',
         'expediente_invima',
+        'drive_folder_id',
+        'drive_folder_url',
     ];
 
     protected $attributes = [
@@ -66,5 +68,10 @@ class Process extends Model
     public function submissions(): HasMany
     {
         return $this->hasMany(Submission::class, 'process_id');
+    }
+
+    public function processDocuments(): HasMany
+    {
+        return $this->hasMany(ProcessDocument::class, 'process_id');
     }
 }
