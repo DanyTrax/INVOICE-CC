@@ -83,6 +83,7 @@ class CompanyController extends Controller
         $company = Company::create($validated);
         app(ActivityLogService::class)->log('created', 'Creó la empresa "' . $company->name . '"', $company);
 
+        $sendInvite = $request->boolean('send_invite_email');
         if ($sendInvite && !empty($validated['contact_person_email'])) {
             $lastError = null;
             $sent = $this->sendCompanyInviteEmail($company, $validated['contact_person_email'], $validated['contact_person_name'] ?? $validated['name'], $lastError);
