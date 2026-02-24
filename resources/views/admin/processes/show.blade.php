@@ -95,6 +95,10 @@
                     </div>
                     @endif
                     <div>
+                        <dt class="text-gray-500">Nombre de correo</dt>
+                        <dd class="font-medium text-gray-900">{{ $process->email_name ?? '-' }}</dd>
+                    </div>
+                    <div>
                         <dt class="text-gray-500">Estado</dt>
                         <dd>
                             @php
