@@ -29,6 +29,7 @@ class Process extends Model
         'client_id',
         'service_type_id',
         'product_reference',
+        'email_name',
         'status',
         'expediente_invima',
     ];

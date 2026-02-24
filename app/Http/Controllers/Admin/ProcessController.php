@@ -66,6 +66,7 @@ class ProcessController extends Controller
             'client_id' => 'required|exists:companies,id',
             'service_type_name' => 'required|string|max:255',
             'product_reference' => 'nullable|string|max:500',
+            'email_name' => 'nullable|string|max:255',
         ]);
 
         $serviceType = ServiceType::where('name', $validated['service_type_name'])->first();
@@ -80,6 +81,7 @@ class ProcessController extends Controller
             'client_id' => $validated['client_id'],
             'service_type_id' => $serviceType->id,
             'product_reference' => $validated['product_reference'] ?? null,
+            'email_name' => $validated['email_name'] ?? null,
             'status' => Process::STATUS_RECOLECCION,
         ]);
 
