@@ -571,8 +571,9 @@ class UserController extends Controller
         if (!$this->canEditUser($user)) {
             abort(403, 'No tienes permiso para enviar correo a este usuario.');
         }
+        $redirectRoute = $user->hasRole('client') ? 'admin.clients.index' : 'admin.agents.index';
         if ($user->id === auth()->id()) {
-            return redirect()->route('admin.agents.index')
+            return redirect()->route($redirectRoute)
                 ->with('error', 'No puedes enviarte el correo a ti mismo.');
         }
 
@@ -587,7 +588,7 @@ class UserController extends Controller
         ]);
 
         if (!$processed) {
-            return redirect()->route('admin.agents.index')
+            return redirect()->route($redirectRoute)
                 ->with('error', 'No existe la plantilla de correo de acceso. Ejecuta: php artisan db:seed --class=EmailTemplateSeeder');
         }
 
@@ -599,12 +600,12 @@ class UserController extends Controller
         );
 
         if (!$sent) {
-            return redirect()->route('admin.agents.index')
+            return redirect()->route($redirectRoute)
                 ->with('error', 'No se pudo enviar el correo. Revisa Configuración → Historial de correos.');
         }
 
         app(ActivityLogService::class)->log('sent_email', 'Envió correo de acceso a "' . $user->name . '" (' . $user->email . ')', $user);
-        return redirect()->route('admin.agents.index')
+        return redirect()->route($redirectRoute)
             ->with('success', 'Correo de acceso enviado a ' . $user->email);
     }
 
