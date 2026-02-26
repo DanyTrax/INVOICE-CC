@@ -74,13 +74,20 @@
                     <label for="country" class="block mb-2 text-sm font-medium text-gray-900">
                         País
                     </label>
-                    <input type="text" 
-                           id="country" 
-                           name="country" 
+                    <input type="text"
+                           id="country"
+                           name="country"
                            value="{{ old('country') }}"
-                           placeholder="Ej: Colombia, México"
+                           list="country-list"
+                           placeholder="Escriba para buscar (ej: col, mex)"
+                           autocomplete="off"
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                    <p class="mt-1 text-xs text-gray-500">Define la carpeta por país en Google Drive (Base → País → Clientes / Expedientes Sin Cliente).</p>
+                    <datalist id="country-list">
+                        @foreach($countries ?? [] as $c)
+                            <option value="{{ $c }}">
+                        @endforeach
+                    </datalist>
+                    <p class="mt-1 text-xs text-gray-500">Seleccione un país; en Drive la empresa quedará en Base → País → Empresa.</p>
                 </div>
 
                 <!-- Teléfono -->

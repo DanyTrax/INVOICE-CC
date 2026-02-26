@@ -21,6 +21,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Http\UploadedFile;
 
 class ProcessController extends Controller
 {
@@ -337,7 +338,23 @@ class ProcessController extends Controller
                 'notification_date' => 'required|date',
                 'file' => 'nullable|file|mimes:pdf|max:10240',
             ]);
-            $filePath = $request->hasFile('file') ? $request->file('file')->store('regulatory_events', 'public') : null;
+            $filePath = null;
+            if ($request->hasFile('file')) {
+                try {
+                    $name = 'Auto ' . ($validated['document_number'] ?? '') . '.pdf';
+                    $result = $this->uploadProcessFileToDrive($submission->process, $request->file('file'), $name);
+                    $filePath = 'drive://' . $result['drive_id'];
+                } catch (\Exception $e) {
+                    Log::error('Error al subir PDF de Auto a Drive', ['submission_id' => $submission->id, 'error' => $e->getMessage()]);
+                    $msg = $e->getMessage();
+                    if (str_contains($msg, 'OAuth') || str_contains($msg, 'token') || str_contains($msg, 'Reautoriza')) {
+                        $msg = 'Google Drive no está conectado o el acceso ha expirado. Ve a Configuración > Google Drive y reautoriza.';
+                    } else {
+                        $msg = 'No se pudo subir el PDF a Drive: ' . $msg;
+                    }
+                    return redirect()->route('admin.processes.show', $submission->process)->with('error', $msg);
+                }
+            }
             $notificationDate = \Carbon\Carbon::parse($validated['notification_date']);
             $dueDate = $notificationDate->copy()->addWeekdays(90);
 
@@ -364,7 +381,23 @@ class ProcessController extends Controller
                 'resolution_key' => 'required|string|max:64',
                 'file' => 'nullable|file|mimes:pdf|max:10240',
             ]);
-            $filePath = $request->hasFile('file') ? $request->file('file')->store('regulatory_events', 'public') : null;
+            $filePath = null;
+            if ($request->hasFile('file')) {
+                try {
+                    $name = 'Resolución ' . ($validated['resolution_number'] ?? '') . '.pdf';
+                    $result = $this->uploadProcessFileToDrive($submission->process, $request->file('file'), $name);
+                    $filePath = 'drive://' . $result['drive_id'];
+                } catch (\Exception $e) {
+                    Log::error('Error al subir PDF de Resolución a Drive', ['submission_id' => $submission->id, 'error' => $e->getMessage()]);
+                    $msg = $e->getMessage();
+                    if (str_contains($msg, 'OAuth') || str_contains($msg, 'token') || str_contains($msg, 'Reautoriza')) {
+                        $msg = 'Google Drive no está conectado o el acceso ha expirado. Ve a Configuración > Google Drive y reautoriza.';
+                    } else {
+                        $msg = 'No se pudo subir el PDF a Drive: ' . $msg;
+                    }
+                    return redirect()->route('admin.processes.show', $submission->process)->with('error', $msg);
+                }
+            }
 
             RegulatoryEvent::create([
                 'submission_id' => $submission->id,
@@ -494,32 +527,27 @@ class ProcessController extends Controller
     }
 
     /**
-     * Subir documento del expediente a Google Drive.
+     * Subir un archivo del expediente a Google Drive y registrarlo en Documentos en Drive.
+     * Respeta la estructura de carpetas (proceso/cliente/país). Retorna ['drive_id' => id] o lanza.
      */
-    public function uploadDocument(Request $request, Process $process): RedirectResponse
+    private function uploadProcessFileToDrive(Process $process, UploadedFile $file, ?string $fileName = null): array
     {
-        $request->validate([
-            'document' => 'required|file|max:10240', // 10MB
-        ]);
-
-        $file = $request->file('document');
         $tempDir = storage_path('app/temp');
         if (!is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
-        $originalName = $file->getClientOriginalName();
+        $originalName = $fileName ?? $file->getClientOriginalName();
         $mimeType = $file->getMimeType() ?: 'application/octet-stream';
-        $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
+        $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION) : pathinfo($originalName, PATHINFO_EXTENSION);
         $baseName = pathinfo($originalName, PATHINFO_FILENAME);
         $safeName = preg_replace('/[^a-zA-Z0-9_\-\pL]/u', '_', $baseName) ?: 'file';
         $uniqueName = Str::uuid() . '_' . $safeName . ($extension ? '.' . $extension : '');
         $fullPath = $tempDir . '/' . $uniqueName;
 
+        $file->move($tempDir, $uniqueName);
         try {
             $driveService = app(GoogleDriveService::class);
             $folderId = $driveService->getOrCreateProcessFolder($process);
-
-            $file->move($tempDir, $uniqueName);
             $driveFile = $driveService->uploadFile(
                 $fullPath,
                 $originalName,
@@ -536,10 +564,27 @@ class ProcessController extends Controller
                 'file_type' => $mimeType,
                 'drive_id' => $driveFile['id'],
             ]);
-        } catch (\Exception $e) {
-            if (isset($fullPath) && file_exists($fullPath)) {
+            return ['drive_id' => $driveFile['id']];
+        } finally {
+            if (file_exists($fullPath)) {
                 @unlink($fullPath);
             }
+        }
+    }
+
+    /**
+     * Subir documento del expediente a Google Drive.
+     */
+    public function uploadDocument(Request $request, Process $process): RedirectResponse
+    {
+        $request->validate([
+            'document' => 'required|file|max:10240', // 10MB
+        ]);
+
+        $file = $request->file('document');
+        try {
+            $this->uploadProcessFileToDrive($process, $file);
+        } catch (\Exception $e) {
             Log::error('Error al subir documento del proceso', ['process_id' => $process->id, 'error' => $e->getMessage()]);
             $message = $e->getMessage();
             if (str_contains($message, 'OAuth') || str_contains($message, 'token') || str_contains($message, 'Reautoriza')) {
@@ -549,9 +594,6 @@ class ProcessController extends Controller
             }
             return redirect()->route('admin.processes.show', $process)
                 ->with('error', $message);
-        }
-        if (file_exists($fullPath)) {
-            @unlink($fullPath);
         }
 
         return redirect()->route('admin.processes.show', $process)

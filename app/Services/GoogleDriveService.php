@@ -618,11 +618,13 @@ class GoogleDriveService
         try {
             $token = $this->getAccessToken();
 
+            $supportsAllDrives = ($this->settings->drive_mode ?? 'service_account') !== 'oauth_user';
+            $extraParams = $supportsAllDrives ? '&supportsAllDrives=true' : '';
+
             // Primero obtener los padres actuales si no se proporciona
             if (!$oldParentFolderId) {
                 $fileResponse = Http::withToken($token)
-                    ->get($this->baseUrl . '/files/' . $fileId . '?fields=parents');
-                
+                    ->get($this->baseUrl . '/files/' . $fileId . '?fields=parents' . $extraParams);
                 if ($fileResponse->successful()) {
                     $fileData = $fileResponse->json();
                     $oldParentFolderId = $fileData['parents'][0] ?? null;
@@ -630,13 +632,11 @@ class GoogleDriveService
             }
 
             if ($oldParentFolderId) {
-                // Remover de carpeta antigua y agregar a nueva
                 $response = Http::withToken($token)
-                    ->patch($this->baseUrl . '/files/' . $fileId . '?addParents=' . $newParentFolderId . '&removeParents=' . $oldParentFolderId);
+                    ->patch($this->baseUrl . '/files/' . $fileId . '?addParents=' . $newParentFolderId . '&removeParents=' . $oldParentFolderId . $extraParams);
             } else {
-                // Solo agregar a nueva carpeta
                 $response = Http::withToken($token)
-                    ->patch($this->baseUrl . '/files/' . $fileId . '?addParents=' . $newParentFolderId);
+                    ->patch($this->baseUrl . '/files/' . $fileId . '?addParents=' . $newParentFolderId . $extraParams);
             }
 
             if (!$response->successful()) {

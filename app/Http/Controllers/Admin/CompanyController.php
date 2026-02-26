@@ -38,7 +38,9 @@ class CompanyController extends Controller
 
     public function create()
     {
-        return view('admin.companies.create');
+        $countries = config('countries', []);
+        sort($countries);
+        return view('admin.companies.create', compact('countries'));
     }
 
     public function store(Request $request)
@@ -142,7 +144,9 @@ class CompanyController extends Controller
 
     public function edit(Company $company)
     {
-        return view('admin.companies.edit', compact('company'));
+        $countries = config('countries', []);
+        sort($countries);
+        return view('admin.companies.edit', compact('company', 'countries'));
     }
 
     public function update(Request $request, Company $company)
@@ -160,6 +164,34 @@ class CompanyController extends Controller
             'allows_loans' => 'nullable|boolean',
         ]);
         $validated['allows_loans'] = $request->boolean('allows_loans');
+
+        $oldCountry = trim($company->country ?? '');
+        $newCountry = isset($validated['country']) ? trim($validated['country'] ?? '') : '';
+
+        // Si cambió el país y la empresa tiene carpeta en Drive, mover la carpeta (y todo su contenido) al nuevo país
+        if ($company->drive_folder_id && $oldCountry !== $newCountry) {
+            try {
+                $driveService = app(GoogleDriveService::class);
+                $newParentId = $newCountry !== ''
+                    ? $driveService->getOrCreateCountryFolder($newCountry)
+                    : $driveService->getOrCreateClientsFolder(null);
+                $driveService->moveFile($company->drive_folder_id, $newParentId);
+                Log::info('Carpeta de empresa movida en Drive al cambiar país', [
+                    'company_id' => $company->id,
+                    'new_country' => $newCountry ?: '(sin país)',
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error al mover carpeta de empresa en Drive al cambiar país', [
+                    'company_id' => $company->id,
+                    'error' => $e->getMessage(),
+                ]);
+                return redirect()
+                    ->route('admin.companies.edit', $company)
+                    ->with('error', 'No se pudo mover la carpeta en Google Drive al nuevo país. ' . $e->getMessage())
+                    ->withInput();
+            }
+        }
+
         $company->update($validated);
         app(ActivityLogService::class)->log('updated', 'Actualizó la empresa "' . $company->name . '"', $company);
 
