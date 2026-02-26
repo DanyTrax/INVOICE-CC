@@ -538,7 +538,7 @@ class ProcessController extends Controller
         }
         $originalName = $fileName ?? $file->getClientOriginalName();
         $mimeType = $file->getMimeType() ?: 'application/octet-stream';
-        $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION) : pathinfo($originalName, PATHINFO_EXTENSION);
+        $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
         $baseName = pathinfo($originalName, PATHINFO_FILENAME);
         $safeName = preg_replace('/[^a-zA-Z0-9_\-\pL]/u', '_', $baseName) ?: 'file';
         $uniqueName = Str::uuid() . '_' . $safeName . ($extension ? '.' . $extension : '');

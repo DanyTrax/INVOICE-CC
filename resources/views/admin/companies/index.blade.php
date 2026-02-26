@@ -51,6 +51,7 @@
                     <tr>
                         <th scope="col" class="px-6 py-3">Nombre</th>
                         <th scope="col" class="px-6 py-3">NIT/RUT</th>
+                        <th scope="col" class="px-6 py-3">País</th>
                         <th scope="col" class="px-6 py-3">Contacto</th>
                         <th scope="col" class="px-6 py-3">Email</th>
                         <th scope="col" class="px-6 py-3">Expedientes</th>
@@ -65,6 +66,9 @@
                             </td>
                             <td class="px-6 py-4">
                                 {{ $company->nit_rut }}
+                            </td>
+                            <td class="px-6 py-4">
+                                {{ $company->country ?? '-' }}
                             </td>
                             <td class="px-6 py-4">
                                 {{ $company->contact_person_name ?? '-' }}
@@ -127,7 +131,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
                                 <p>No se encontraron empresas</p>
                                 @if(request('search'))
