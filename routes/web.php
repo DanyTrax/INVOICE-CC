@@ -33,6 +33,14 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+// Páginas legales (públicas, para OAuth y usuarios)
+Route::get('/politica-privacidad', function () {
+    return view('legal.politica-privacidad');
+})->name('legal.privacy');
+Route::get('/terminos-condiciones', function () {
+    return view('legal.terminos-condiciones');
+})->name('legal.terms');
+
 // Establecer/restablecer contraseña (link enviado por admin a agentes)
 Route::get('/establecer-contrasena', [ResetPasswordController::class, 'show'])->name('password.reset');
 Route::post('/establecer-contrasena', [ResetPasswordController::class, 'store'])->name('password.reset.store');
