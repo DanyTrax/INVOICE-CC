@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'avatar_url',
         'is_active',
+        'client_status',
         'phone',
     ];
 
@@ -51,6 +52,23 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
         ];
+    }
+
+    /** Valores válidos para client_status (solo usuarios con rol client). */
+    public const CLIENT_STATUS_ACTIVO = 'activo';
+    public const CLIENT_STATUS_PENDIENTE = 'pendiente';
+    public const CLIENT_STATUS_DESHABILITADO = 'deshabilitado';
+
+    /**
+     * Indica si el cliente puede acceder al portal (estado activo).
+     */
+    public function canAccessPortal(): bool
+    {
+        if (!$this->hasRole('client')) {
+            return true;
+        }
+        // null o 'activo' = puede acceder (retrocompatibilidad con usuarios sin client_status)
+        return in_array($this->client_status, [null, self::CLIENT_STATUS_ACTIVO], true);
     }
 
     /**

@@ -67,7 +67,8 @@ class ClientRegisterController extends Controller
             'name' => $validated['name'],
             'email' => $invite->email,
             'password' => Hash::make($validated['password']),
-            'is_active' => true,
+            'is_active' => false,
+            'client_status' => User::CLIENT_STATUS_DESHABILITADO,
         ]);
 
         $user->companies()->attach($invite->company_id);

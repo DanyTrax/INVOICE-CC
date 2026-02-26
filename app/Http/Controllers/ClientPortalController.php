@@ -40,6 +40,14 @@ class ClientPortalController extends Controller
         }
     }
 
+    /**
+     * Página mostrada cuando el cliente no tiene acceso al portal (estado pendiente o deshabilitado).
+     */
+    public function accountDisabled()
+    {
+        return view('portal.account-disabled');
+    }
+
     public function dashboard(Request $request)
     {
         // Obtener IDs de empresas del cliente autenticado

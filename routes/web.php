@@ -50,7 +50,8 @@ Route::get('/registrarse', [ClientRegisterController::class, 'show'])->name('cli
 Route::post('/registrarse', [ClientRegisterController::class, 'store']);
 
 // Portal Cliente (rol client: solo informativo y descargas)
-Route::middleware(['auth', 'client'])->prefix('portal')->name('portal.')->group(function () {
+Route::middleware(['auth', 'client', 'client.portal.access'])->prefix('portal')->name('portal.')->group(function () {
+    Route::get('/cuenta-deshabilitada', [ClientPortalController::class, 'accountDisabled'])->name('account-disabled');
     Route::get('/', [ClientPortalController::class, 'dashboard'])->name('dashboard');
     Route::get('/registrations', [ClientPortalController::class, 'index'])->name('registrations.index');
     Route::get('/registrations/{registration}', [ClientPortalController::class, 'show'])->name('registrations.show');
@@ -139,6 +140,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     
     // Users
     Route::post('users/{user}/send-access-email', [UserController::class, 'sendAccessEmail'])->name('users.send-access-email');
+    Route::patch('users/{user}/client-status', [UserController::class, 'updateClientStatus'])->name('users.client-status.update');
     Route::resource('users', UserController::class);
     
     // Profile (perfil del usuario autenticado)

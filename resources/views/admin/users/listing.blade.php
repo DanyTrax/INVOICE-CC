@@ -124,10 +124,35 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                @if($user->is_active)
-                                    <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Activo</span>
+                                @if($listingType === 'clients')
+                                    @php
+                                        $status = $user->client_status ?? 'activo';
+                                        $statusLabels = ['activo' => 'Activo', 'pendiente' => 'Pendiente', 'deshabilitado' => 'Deshabilitado'];
+                                        $statusClasses = [
+                                            'activo' => 'bg-green-100 text-green-800',
+                                            'pendiente' => 'bg-amber-100 text-amber-800',
+                                            'deshabilitado' => 'bg-red-100 text-red-800',
+                                        ];
+                                    @endphp
+                                    @if(in_array($user->id, $editableUserIds ?? []))
+                                        <form action="{{ route('admin.users.client-status.update', $user) }}" method="POST" class="inline" onchange="this.submit()">
+                                            @csrf
+                                            @method('PATCH')
+                                            <select name="client_status" class="text-xs font-medium rounded-full border-0 py-1 pr-6 {{ $statusClasses[$status] ?? 'bg-gray-100 text-gray-800' }}">
+                                                <option value="activo" {{ $status === 'activo' ? 'selected' : '' }}>Activo</option>
+                                                <option value="pendiente" {{ $status === 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                                                <option value="deshabilitado" {{ $status === 'deshabilitado' ? 'selected' : '' }}>Deshabilitado</option>
+                                            </select>
+                                        </form>
+                                    @else
+                                        <span class="px-2 py-1 text-xs font-medium {{ $statusClasses[$status] ?? 'bg-gray-100 text-gray-800' }} rounded-full">{{ $statusLabels[$status] ?? $status }}</span>
+                                    @endif
                                 @else
-                                    <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Inactivo</span>
+                                    @if($user->is_active)
+                                        <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Activo</span>
+                                    @else
+                                        <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Inactivo</span>
+                                    @endif
                                 @endif
                             </td>
                             <td class="px-6 py-4">

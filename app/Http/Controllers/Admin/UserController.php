@@ -260,6 +260,7 @@ class UserController extends Controller
         ]);
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
+        $validated['client_status'] = $validated['is_active'] ? User::CLIENT_STATUS_ACTIVO : User::CLIENT_STATUS_DESHABILITADO;
         $user = User::create($validated);
         $user->assignRole('client');
         if ($request->filled('companies')) {
@@ -269,6 +270,27 @@ class UserController extends Controller
         return redirect()
             ->route('admin.clients.index')
             ->with('success', 'Cliente creado exitosamente.');
+    }
+
+    /**
+     * Actualizar estado del cliente (activo, pendiente, deshabilitado).
+     */
+    public function updateClientStatus(Request $request, User $user): RedirectResponse
+    {
+        if (!$user->hasRole('client')) {
+            abort(404, 'El usuario no es un cliente.');
+        }
+        if (!$this->canEditUser($user)) {
+            abort(403, 'No tienes permiso para editar este cliente.');
+        }
+        $validated = $request->validate([
+            'client_status' => 'required|in:activo,pendiente,deshabilitado',
+        ]);
+        $user->client_status = $validated['client_status'];
+        $user->is_active = ($validated['client_status'] === 'activo');
+        $user->save();
+        app(ActivityLogService::class)->log('updated', 'Cambió el estado del cliente "' . $user->name . '" a ' . $validated['client_status'], $user);
+        return back()->with('success', 'Estado del cliente actualizado.');
     }
 
     /**

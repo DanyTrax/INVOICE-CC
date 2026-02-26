@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'client' => \App\Http\Middleware\EnsureUserIsClient::class,
+            'client.portal.access' => \App\Http\Middleware\EnsureClientCanAccessPortal::class,
             'not.client' => \App\Http\Middleware\EnsureUserIsNotClient::class,
             'module.permission' => \App\Http\Middleware\CheckModulePermission::class,
             'admin.no-cache' => \App\Http\Middleware\PreventAdminCache::class,
