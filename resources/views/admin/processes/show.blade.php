@@ -2,7 +2,7 @@
 
 @section('title', 'Expediente - RAMS')
 
-@section('page-title', 'Expediente ' . ($process->expediente_invima ?? 'N/A'))
+@section('page-title', 'Expediente #' . $process->id . ($process->expediente_invima ? ' – ' . $process->expediente_invima : ''))
 
 @section('breadcrumb')
     <li>

@@ -2,7 +2,11 @@
     @php
         $consecutivo = $process->quote?->consecutive ?? $process->quoteItem?->quote?->consecutive ?? '—';
         $tipoTramite = $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '—';
-        $radicadoId = $process->expediente_invima ?? $process->submissions->first()?->radicado_invima ?? $process->submissions->first()?->submission_code ?? '—';
+        $radicadoBase = $process->expediente_invima ?? $process->submissions->first()?->radicado_invima ?? $process->submissions->first()?->submission_code ?? null;
+        $radicadoId = 'Expediente #' . $process->id;
+        if ($radicadoBase) {
+            $radicadoId .= ' · ' . $radicadoBase;
+        }
         $fechaUltimo = null;
         foreach ($process->submissions as $sub) {
             foreach ($sub->regulatoryEvents as $ev) {

@@ -41,7 +41,7 @@
                                     <tr>
                                         <th class="px-4 py-3">Cliente</th>
                                         <th class="px-4 py-3">Tipo servicio</th>
-                                        <th class="px-4 py-3">Expediente INVIMA</th>
+                                        <th class="px-4 py-3">Expediente</th>
                                         <th class="px-4 py-3">Estado</th>
                                         <th class="px-4 py-3">Actualizado</th>
                                         <th class="px-4 py-3">Acciones</th>
@@ -57,7 +57,13 @@
                                             <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
                                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                                                 <td class="px-4 py-3">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</td>
-                                                <td class="px-4 py-3">{{ $process->expediente_invima ?? '-' }}</td>
+                                                <td class="px-4 py-3">
+                                                    <span class="font-mono text-xs text-gray-700">#{{ $process->id }}</span>
+                                                    @if($process->expediente_invima)
+                                                        <span class="text-gray-400 mx-1">·</span>
+                                                        <span class="text-gray-800">{{ $process->expediente_invima }}</span>
+                                                    @endif
+                                                </td>
                                                 <td class="px-4 py-3">
                                                     @php
                                                         $statusStyles = [
@@ -83,7 +89,13 @@
                                         <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
                                             <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                                             <td class="px-4 py-3">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</td>
-                                            <td class="px-4 py-3">{{ $process->expediente_invima ?? '-' }}</td>
+                                            <td class="px-4 py-3">
+                                                <span class="font-mono text-xs text-gray-700">#{{ $process->id }}</span>
+                                                @if($process->expediente_invima)
+                                                    <span class="text-gray-400 mx-1">·</span>
+                                                    <span class="text-gray-800">{{ $process->expediente_invima }}</span>
+                                                @endif
+                                            </td>
                                             <td class="px-4 py-3">
                                                 @php
                                                     $statusStyles = [
