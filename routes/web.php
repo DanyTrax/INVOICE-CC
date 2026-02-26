@@ -125,6 +125,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::post('processes/{process}/link-to-quote', [ProcessController::class, 'linkToQuote'])->name('processes.link-to-quote');
     Route::post('processes/{process}/submissions', [ProcessController::class, 'storeSubmission'])->name('processes.submissions.store');
     Route::post('submissions/{submission}/register-response', [ProcessController::class, 'registerResponse'])->name('submissions.register-response');
+    Route::delete('submissions/{submission}', [ProcessController::class, 'destroySubmission'])->name('submissions.destroy');
     Route::post('processes/{process}/checklist-items', [ProcessController::class, 'storeChecklistItem'])->name('processes.checklist-items.store');
     Route::put('checklist-items/{checklistItem}', [ProcessController::class, 'updateChecklistItem'])->name('checklist-items.update');
     Route::post('processes/{process}/documents', [ProcessController::class, 'uploadDocument'])->name('processes.documents.upload');

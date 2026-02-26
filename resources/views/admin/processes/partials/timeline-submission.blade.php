@@ -58,6 +58,15 @@
             </p>
             <p class="text-xs text-gray-500 mt-1">Aprobar: Radicado y Llave / Resolución o Auto. Rechazar: indicar observación y podrá crear nuevo intento.</p>
         @endif
+        <p class="mt-2 pt-2 border-t border-blue-100 flex flex-wrap gap-2 items-center">
+            <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline" onsubmit="return confirm('¿Eliminar este intento y toda la línea de tiempo hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="text-sm px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-red-200">
+                    <i class="fas fa-trash-alt mr-1"></i> Eliminar intento y línea hacia abajo
+                </button>
+            </form>
+        </p>
     </div>
 
     <ul class="space-y-0 mt-0">

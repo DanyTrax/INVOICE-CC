@@ -391,6 +391,53 @@ class ProcessController extends Controller
     }
 
     /**
+     * Eliminar un sometimiento (intento) y toda su rama: eventos regulatorios e intentos hijos.
+     * Recalcula el estado del proceso según los sometimientos restantes.
+     */
+    public function destroySubmission(Submission $submission): RedirectResponse
+    {
+        $process = $submission->process;
+
+        $this->deleteSubmissionBranch($submission);
+
+        $this->recalculateProcessStatus($process);
+
+        return redirect()
+            ->route('admin.processes.show', $process)
+            ->with('success', 'Intento y línea de tiempo asociada eliminados.');
+    }
+
+    /**
+     * Elimina un sometimiento, sus eventos y recursivamente sus hijos.
+     */
+    private function deleteSubmissionBranch(Submission $submission): void
+    {
+        foreach ($submission->children as $child) {
+            $this->deleteSubmissionBranch($child);
+        }
+        $submission->regulatoryEvents()->delete();
+        $submission->delete();
+    }
+
+    /**
+     * Recalcula el estado del proceso según el último sometimiento restante.
+     */
+    private function recalculateProcessStatus(Process $process): void
+    {
+        $last = $process->submissions()->orderByDesc('id')->first();
+        if (!$last) {
+            $process->update(['status' => Process::STATUS_RECOLECCION]);
+            return;
+        }
+        $status = match ($last->status) {
+            Submission::STATUS_APROBADO => Process::STATUS_FINALIZADO,
+            Submission::STATUS_EN_REQUERIMIENTO => Process::STATUS_EN_REQUERIMIENTO,
+            default => Process::STATUS_RADICADO,
+        };
+        $process->update(['status' => $status]);
+    }
+
+    /**
      * Agregar un documento (ítem) a la checklist del expediente.
      */
     public function storeChecklistItem(Request $request, Process $process): RedirectResponse

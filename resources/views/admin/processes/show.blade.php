@@ -298,10 +298,13 @@
         </div>
     @endif
 
-    {{-- Acciones: Sometimiento, Respuesta INVIMA, Nuevo Intento --}}
+    {{-- Acciones: Sometimiento y Nuevo Intento (respuesta INVIMA se hace con Aprobar/Rechazar en la línea de tiempo) --}}
     @php
         $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE);
-        $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission;
+        $processReachedEnd = $lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_APROBADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]);
+        $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd;
+        $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_RECHAZADO;
+        $submitDisabledTitle = !$allChecklistApproved ? 'Debe aprobar todos los documentos antes de radicar.' : ($hasPendingSubmission ? 'Hay un sometimiento pendiente; use Aprobar o Rechazar en la línea de tiempo.' : ($processReachedEnd ? 'El proceso llegó a resolución aprobatoria o auto; está deshabilitado. Elimine en la línea de tiempo para reanudar.' : ''));
     @endphp
     <div class="mt-6 flex flex-wrap gap-3 items-center">
         @if($canRegisterSubmission)
@@ -310,17 +313,11 @@
                 <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
             </button>
         @else
-            <span class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed" title="{{ !$allChecklistApproved ? 'Debe aprobar todos los documentos antes de radicar.' : 'Hay un sometimiento pendiente de respuesta INVIMA; debe aprobar o rechazar antes de registrar otro.' }}">
+            <span class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed" title="{{ $submitDisabledTitle }}">
                 <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
             </span>
         @endif
-        @if($lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_PENDIENTE, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]))
-            <button type="button" onclick="document.getElementById('modal-response-invima').classList.remove('hidden')"
-                    class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                <i class="fas fa-reply mr-2"></i> Registrar Respuesta INVIMA
-            </button>
-        @endif
-        @if($rejectedSubmissions->isNotEmpty())
+        @if($canCreateNewAttempt)
             <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                     class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                 <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento
@@ -328,6 +325,9 @@
         @endif
         @if(!$allChecklistApproved)
             <p class="text-sm text-amber-700 w-full">Debe aprobar todos los documentos antes de radicar.</p>
+        @endif
+        @if($processReachedEnd)
+            <p class="text-sm text-gray-600 w-full">Proceso en estado final (resolución o auto). Para reanudar acciones, elimine el intento correspondiente en la línea de tiempo.</p>
         @endif
     </div>
 
