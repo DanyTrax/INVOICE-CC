@@ -87,6 +87,8 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::get('clients', [UserController::class, 'clients'])->name('clients.index');
     Route::get('clients/create', [UserController::class, 'createClient'])->name('clients.create');
     Route::post('clients', [UserController::class, 'storeClient'])->name('clients.store');
+    Route::get('clients/{user}/edit', [UserController::class, 'editClient'])->name('clients.edit');
+    Route::put('clients/{user}', [UserController::class, 'updateClient'])->name('clients.update');
     Route::get('agents', [UserController::class, 'agents'])->name('agents.index');
     
     // Registrations (módulo jubilado: se usa Expedientes / Procesos)

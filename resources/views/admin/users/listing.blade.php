@@ -178,7 +178,7 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     @if($canEditThis)
-                                        <a href="{{ route('admin.users.edit', $user) }}"
+                                        <a href="{{ $listingType === 'clients' ? route('admin.clients.edit', $user) : route('admin.users.edit', $user) }}"
                                            class="text-teal-600 hover:text-teal-800" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>

@@ -41,7 +41,7 @@
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <a href="{{ route('admin.users.edit', $user) }}" 
+<a href="{{ $user->hasRole('client') ? route('admin.clients.edit', $user) : route('admin.users.edit', $user) }}"
                            class="px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm">
                             <i class="fas fa-edit mr-1"></i> Editar
                         </a>

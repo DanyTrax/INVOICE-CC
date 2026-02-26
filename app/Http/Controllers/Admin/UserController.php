@@ -294,6 +294,60 @@ class UserController extends Controller
     }
 
     /**
+     * Formulario para editar un cliente (solo datos de cliente, sin roles de admin/agente).
+     */
+    public function editClient(User $user)
+    {
+        if (!$user->hasRole('client')) {
+            abort(404, 'El usuario no es un cliente.');
+        }
+        if (!$this->canEditUser($user)) {
+            abort(403, 'No tienes permiso para editar este cliente.');
+        }
+        $user->load('companies');
+        $companies = Company::orderBy('name')->get();
+        return view('admin.users.edit-client', compact('user', 'companies'));
+    }
+
+    /**
+     * Actualizar un cliente (solo campos de cliente; no se modifica el rol).
+     */
+    public function updateClient(Request $request, User $user): RedirectResponse
+    {
+        if (!$user->hasRole('client')) {
+            abort(404, 'El usuario no es un cliente.');
+        }
+        if (!$this->canEditUser($user)) {
+            abort(403, 'No tienes permiso para editar este cliente.');
+        }
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:50',
+            'client_status' => 'required|in:activo,pendiente,deshabilitado',
+            'companies' => 'array',
+            'companies.*' => 'exists:companies,id',
+        ]);
+        if (empty($validated['password'])) {
+            unset($validated['password']);
+        } else {
+            $validated['password'] = Hash::make($validated['password']);
+        }
+        $validated['is_active'] = ($validated['client_status'] === 'activo');
+        $user->update($validated);
+        if ($request->filled('companies')) {
+            $user->companies()->sync($request->companies);
+        } else {
+            $user->companies()->sync([]);
+        }
+        app(ActivityLogService::class)->log('updated', 'Actualizó el cliente "' . $user->name . '"', $user);
+        return redirect()
+            ->route('admin.clients.index')
+            ->with('success', 'Cliente actualizado correctamente.');
+    }
+
+    /**
      * Lista solo usuarios que no son clientes (agentes, admin, super_admin).
      */
     public function agents(Request $request)
