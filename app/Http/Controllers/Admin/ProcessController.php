@@ -425,9 +425,6 @@ class ProcessController extends Controller
         ]);
 
         $file = $request->file('document');
-        $driveService = app(GoogleDriveService::class);
-        $folderId = $driveService->getOrCreateProcessFolder($process);
-
         $tempDir = storage_path('app/temp');
         if (!is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
@@ -441,6 +438,9 @@ class ProcessController extends Controller
         $fullPath = $tempDir . '/' . $uniqueName;
 
         try {
+            $driveService = app(GoogleDriveService::class);
+            $folderId = $driveService->getOrCreateProcessFolder($process);
+
             $file->move($tempDir, $uniqueName);
             $driveFile = $driveService->uploadFile(
                 $fullPath,
@@ -459,12 +459,18 @@ class ProcessController extends Controller
                 'drive_id' => $driveFile['id'],
             ]);
         } catch (\Exception $e) {
-            if (file_exists($fullPath)) {
+            if (isset($fullPath) && file_exists($fullPath)) {
                 @unlink($fullPath);
             }
             Log::error('Error al subir documento del proceso', ['process_id' => $process->id, 'error' => $e->getMessage()]);
+            $message = $e->getMessage();
+            if (str_contains($message, 'OAuth') || str_contains($message, 'token') || str_contains($message, 'Reautoriza')) {
+                $message = 'Google Drive no está conectado o el acceso ha expirado. Ve a Configuración > Google Drive y haz clic en «Conectar con Google» para reautorizar.';
+            } else {
+                $message = 'No se pudo subir el documento: ' . $message;
+            }
             return redirect()->route('admin.processes.show', $process)
-                ->with('error', 'No se pudo subir el documento: ' . $e->getMessage());
+                ->with('error', $message);
         }
         if (file_exists($fullPath)) {
             @unlink($fullPath);
