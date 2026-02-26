@@ -59,6 +59,17 @@
             <p class="text-xs text-gray-500 mt-1">Aprobar: Radicado y Llave / Resolución o Auto. Rechazar: indicar observación y podrá crear nuevo intento.</p>
         @endif
         <p class="mt-2 pt-2 border-t border-blue-100 flex flex-wrap gap-2 items-center">
+            <button type="button" class="js-edit-submission text-sm px-3 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
+                    data-url="{{ route('admin.submissions.update', $submission) }}"
+                    data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
+                    data-submission-code="{{ $submission->submission_code ?? '' }}"
+                    data-radicado-invima="{{ $submission->radicado_invima ?? '' }}"
+                    data-tracking-id="{{ $submission->tracking_id ?? '' }}"
+                    data-fecha-radicacion="{{ $submission->fecha_radicacion?->format('Y-m-d') }}"
+                    data-status="{{ $submission->status }}"
+                    data-rejection-observation="{{ $submission->rejection_observation ?? '' }}">
+                <i class="fas fa-edit mr-1"></i> Editar
+            </button>
             <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline" onsubmit="return confirm('¿Eliminar este intento y toda la línea de tiempo hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
                 @csrf
                 @method('DELETE')
@@ -102,6 +113,17 @@
                     @if($event->notification_date) Notificación: {{ $event->notification_date->format('d/m/Y') }} @endif
                     @if($event->due_date) · Vence: {{ $event->due_date->format('d/m/Y') }} @endif
                     @if($event->resolution_key) · Llave: {{ $event->resolution_key }} @endif
+                </p>
+                <p class="mt-2">
+                    <button type="button" class="js-edit-event text-xs px-2 py-1 text-teal-600 hover:bg-teal-50 rounded border border-teal-200"
+                            data-url="{{ route('admin.regulatory-events.update', $event) }}"
+                            data-event-type="{{ $event->event_type }}"
+                            data-document-number="{{ $event->document_number ?? '' }}"
+                            data-notification-date="{{ $event->notification_date?->format('Y-m-d') }}"
+                            data-event-date="{{ $event->event_date?->format('Y-m-d') }}"
+                            data-resolution-key="{{ $event->resolution_key ?? '' }}">
+                        <i class="fas fa-edit mr-1"></i> Editar
+                    </button>
                 </p>
             </div>
         </li>

@@ -81,4 +81,42 @@ class RegulatoryEventController extends Controller
             ->route('admin.processes.show', $process)
             ->with('success', 'Resolución registrada. El expediente pasó a estado "Finalizado".');
     }
+
+    /**
+     * Actualizar un evento regulatorio (Auto o Resolución).
+     */
+    public function update(Request $request, RegulatoryEvent $regulatoryEvent): RedirectResponse
+    {
+        $submission = $regulatoryEvent->submission;
+        $process = $submission->process;
+
+        if ($regulatoryEvent->event_type === RegulatoryEvent::EVENT_TYPE_AUTO) {
+            $validated = $request->validate([
+                'document_number' => 'nullable|string|max:64',
+                'notification_date' => 'required|date',
+            ]);
+            $notificationDate = \Carbon\Carbon::parse($validated['notification_date']);
+            $dueDate = $notificationDate->copy()->addWeekdays(90);
+            $regulatoryEvent->update([
+                'document_number' => $validated['document_number'] ?? $regulatoryEvent->document_number,
+                'notification_date' => $validated['notification_date'],
+                'due_date' => $dueDate,
+            ]);
+        } else {
+            $validated = $request->validate([
+                'document_number' => 'nullable|string|max:64',
+                'event_date' => 'nullable|date',
+                'resolution_key' => 'nullable|string|max:64',
+            ]);
+            $regulatoryEvent->update([
+                'document_number' => $validated['document_number'] ?? $regulatoryEvent->document_number,
+                'event_date' => $validated['event_date'] ?? $regulatoryEvent->event_date,
+                'resolution_key' => $validated['resolution_key'] ?? $regulatoryEvent->resolution_key,
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.processes.show', $process)
+            ->with('success', 'Evento actualizado.');
+    }
 }

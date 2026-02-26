@@ -391,6 +391,26 @@ class ProcessController extends Controller
     }
 
     /**
+     * Actualizar datos de un intento (sometimiento).
+     */
+    public function updateSubmission(Request $request, Submission $submission): RedirectResponse
+    {
+        $validated = $request->validate([
+            'submission_date' => 'nullable|date',
+            'submission_code' => 'nullable|string|max:64',
+            'radicado_invima' => 'nullable|string|max:64',
+            'tracking_id' => 'nullable|string|max:64',
+            'fecha_radicacion' => 'nullable|date',
+            'status' => 'required|string|in:' . implode(',', Submission::statuses()),
+            'rejection_observation' => 'nullable|string|max:2000',
+        ]);
+        $submission->update($validated);
+        return redirect()
+            ->route('admin.processes.show', $submission->process)
+            ->with('success', 'Intento actualizado.');
+    }
+
+    /**
      * Eliminar un sometimiento (intento) y toda su rama: eventos regulatorios e intentos hijos.
      * Recalcula el estado del proceso según los sometimientos restantes.
      */

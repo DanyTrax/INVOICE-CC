@@ -384,6 +384,94 @@
         </div>
     </div>
 
+    {{-- Modal: Editar intento (sometimiento) --}}
+    <div id="modal-edit-submission" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-edit-submission').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4"><i class="fas fa-edit text-teal-600 mr-2"></i> Editar intento</h4>
+                <form id="form-edit-submission" method="post" action="">
+                    @csrf
+                    @method('PUT')
+                    <div class="space-y-3 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de sometimiento</label>
+                            <input type="datetime-local" name="submission_date" id="edit_submission_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ID de sometimiento</label>
+                            <input type="text" name="submission_code" id="edit_submission_code" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Radicado</label>
+                            <input type="text" name="radicado_invima" id="edit_radicado_invima" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Llave / Seguimiento</label>
+                            <input type="text" name="tracking_id" id="edit_tracking_id" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de radicación</label>
+                            <input type="date" name="fecha_radicacion" id="edit_fecha_radicacion" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <select name="status" id="edit_status" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                @foreach(\App\Models\Submission::statuses() as $s)
+                                    <option value="{{ $s }}">{{ $s }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Observación rechazo</label>
+                            <textarea name="rejection_observation" id="edit_rejection_observation" rows="2" maxlength="2000" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" onclick="document.getElementById('modal-edit-submission').classList.add('hidden')" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">Cancelar</button>
+                        <button type="submit" class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal: Editar evento (Auto / Resolución) --}}
+    <div id="modal-edit-event" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-edit-event').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4"><i class="fas fa-edit text-teal-600 mr-2"></i> Editar evento</h4>
+                <form id="form-edit-event" method="post" action="">
+                    @csrf
+                    @method('PUT')
+                    <div class="space-y-3 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Número / Documento</label>
+                            <input type="text" name="document_number" id="edit_event_document_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div id="edit-event-field-notification" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de notificación (Auto)</label>
+                            <input type="date" name="notification_date" id="edit_event_notification_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div id="edit-event-field-event-date" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de resolución</label>
+                            <input type="date" name="event_date" id="edit_event_event_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div id="edit-event-field-resolution-key" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Llave</label>
+                            <input type="text" name="resolution_key" id="edit_event_resolution_key" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" onclick="document.getElementById('modal-edit-event').classList.add('hidden')" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">Cancelar</button>
+                        <button type="submit" class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
     function openChecklistModal(id, docName, currentStatus, observation) {
         var baseUrl = '{{ url('admin/checklist-items') }}';
@@ -393,6 +481,35 @@
         document.querySelector('#form-checklist-update textarea[name="observation_agent"]').value = observation || '';
         document.getElementById('modal-checklist-item').classList.remove('hidden');
     }
+    document.querySelectorAll('.js-edit-submission').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var form = document.getElementById('form-edit-submission');
+            form.action = this.dataset.url || '';
+            var fields = ['submission_date', 'submission_code', 'radicado_invima', 'tracking_id', 'fecha_radicacion', 'status', 'rejection_observation'];
+            fields.forEach(function(name) {
+                var camel = name.replace(/_([a-z])/g, function(_, l) { return l.toUpperCase(); });
+                var val = this.dataset[camel] || '';
+                var el = form.querySelector('[name="' + name + '"]');
+                if (el) el.value = val;
+            }.bind(this));
+            document.getElementById('modal-edit-submission').classList.remove('hidden');
+        });
+    });
+    document.querySelectorAll('.js-edit-event').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var form = document.getElementById('form-edit-event');
+            form.action = this.dataset.url || '';
+            document.getElementById('edit_event_document_number').value = this.dataset.documentNumber || '';
+            document.getElementById('edit_event_notification_date').value = this.dataset.notificationDate || '';
+            document.getElementById('edit_event_event_date').value = this.dataset.eventDate || '';
+            document.getElementById('edit_event_resolution_key').value = this.dataset.resolutionKey || '';
+            var type = (this.dataset.eventType || '').toUpperCase();
+            document.getElementById('edit-event-field-notification').classList.toggle('hidden', type !== 'AUTO');
+            document.getElementById('edit-event-field-event-date').classList.toggle('hidden', type !== 'RESOLUCION');
+            document.getElementById('edit-event-field-resolution-key').classList.toggle('hidden', type !== 'RESOLUCION');
+            document.getElementById('modal-edit-event').classList.remove('hidden');
+        });
+    });
     </script>
 
     @include('admin.processes.partials.modal-submission', ['process' => $process, 'rejectedSubmissions' => $rejectedSubmissions])
