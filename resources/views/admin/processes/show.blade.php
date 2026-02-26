@@ -148,6 +148,42 @@
         </div>
     </div>
 
+    @php
+        if (!isset($lastSubmission)) { $lastSubmission = $process->submissions->sortByDesc('id')->first(); }
+        $rejectedSubmissions = $process->submissions->where('status', \App\Models\Submission::STATUS_RECHAZADO);
+        $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
+        $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE);
+        $processReachedEnd = $lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_APROBADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]);
+        $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd;
+        $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_RECHAZADO;
+        $submitDisabledTitle = !$allChecklistApproved ? 'Debe aprobar todos los documentos antes de radicar.' : ($hasPendingSubmission ? 'Hay un sometimiento pendiente; use Aprobar o Rechazar en la línea de tiempo.' : ($processReachedEnd ? 'El proceso llegó a resolución aprobatoria o auto; está deshabilitado. Elimine en la línea de tiempo para reanudar.' : ''));
+    @endphp
+    {{-- Acciones: Sometimiento y Nuevo Intento (debajo de Resumen y Línea de tiempo) --}}
+    <div class="mt-6 flex flex-wrap gap-3 items-center">
+        @if($canRegisterSubmission)
+            <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
+            </button>
+        @else
+            <span class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed" title="{{ $submitDisabledTitle }}">
+                <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
+            </span>
+        @endif
+        @if($canCreateNewAttempt)
+            <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento
+            </button>
+        @endif
+        @if(!$allChecklistApproved)
+            <p class="text-sm text-amber-700 w-full">Debe aprobar todos los documentos antes de radicar.</p>
+        @endif
+        @if($processReachedEnd)
+            <p class="text-sm text-gray-600 w-full">Proceso en estado final (resolución o auto). Para reanudar acciones, elimine el intento correspondiente en la línea de tiempo.</p>
+        @endif
+    </div>
+
     {{-- 2. Gestión Documental --}}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
@@ -275,8 +311,8 @@
     {{-- Alertas: semáforo En Requerimiento (días restantes) --}}
     @php
         if (!isset($lastSubmission)) { $lastSubmission = $process->submissions->sortByDesc('id')->first(); }
-        $rejectedSubmissions = $process->submissions->where('status', \App\Models\Submission::STATUS_RECHAZADO);
-        $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
+        if (!isset($rejectedSubmissions)) { $rejectedSubmissions = $process->submissions->where('status', \App\Models\Submission::STATUS_RECHAZADO); }
+        if (!isset($allChecklistApproved)) { $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO); }
         $latestAutoDue = $process->submissions->flatMap->regulatoryEvents->where('event_type', \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO)->whereNotNull('due_date')->max('due_date');
         $daysLeftRaw = $latestAutoDue ? \Carbon\Carbon::parse($latestAutoDue)->startOfDay()->diffInDays(now()->startOfDay(), false) : null;
         $daysLeft = $daysLeftRaw !== null ? (int) $daysLeftRaw : null;
@@ -298,39 +334,6 @@
             @endif
         </div>
     @endif
-
-    {{-- Acciones: Sometimiento y Nuevo Intento (respuesta INVIMA se hace con Aprobar/Rechazar en la línea de tiempo) --}}
-    @php
-        $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE);
-        $processReachedEnd = $lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_APROBADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]);
-        $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd;
-        $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_RECHAZADO;
-        $submitDisabledTitle = !$allChecklistApproved ? 'Debe aprobar todos los documentos antes de radicar.' : ($hasPendingSubmission ? 'Hay un sometimiento pendiente; use Aprobar o Rechazar en la línea de tiempo.' : ($processReachedEnd ? 'El proceso llegó a resolución aprobatoria o auto; está deshabilitado. Elimine en la línea de tiempo para reanudar.' : ''));
-    @endphp
-    <div class="mt-6 flex flex-wrap gap-3 items-center">
-        @if($canRegisterSubmission)
-            <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
-            </button>
-        @else
-            <span class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed" title="{{ $submitDisabledTitle }}">
-                <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
-            </span>
-        @endif
-        @if($canCreateNewAttempt)
-            <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
-                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento
-            </button>
-        @endif
-        @if(!$allChecklistApproved)
-            <p class="text-sm text-amber-700 w-full">Debe aprobar todos los documentos antes de radicar.</p>
-        @endif
-        @if($processReachedEnd)
-            <p class="text-sm text-gray-600 w-full">Proceso en estado final (resolución o auto). Para reanudar acciones, elimine el intento correspondiente en la línea de tiempo.</p>
-        @endif
-    </div>
 
     {{-- Modal: Cambiar estado de documento --}}
     <div id="modal-checklist-item" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
