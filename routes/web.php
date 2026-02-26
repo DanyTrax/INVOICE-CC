@@ -188,4 +188,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
             // Drive Operations Log
             Route::get('/settings/drive-operations-log', [SettingsController::class, 'getDriveOperationsLog'])->name('settings.drive-operations-log');
             Route::delete('/settings/drive-operations-log', [SettingsController::class, 'deleteDriveOperationsLog'])->name('settings.drive-operations-log.delete');
+
+            // Eliminar usuario por correo (Configuración → Sistema)
+            Route::post('/settings/delete-user-by-email', [SettingsController::class, 'deleteUserByEmail'])->name('settings.delete-user-by-email');
         });

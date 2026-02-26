@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Settings\GeneralSettings;
 use App\Models\EmailTemplate;
 use App\Models\EmailLog;
 use App\Models\QuotePdfTemplate;
+use App\Models\User;
 use App\Services\MailService;
 use App\Services\PermissionService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -99,6 +102,18 @@ class SettingsController extends Controller
             $this->ensureAllPropertiesSet($settings);
             $settings->save();
         }
+
+        $userToDelete = null;
+        if ($section === 'system') {
+            if ($request->query('cancel_delete_user')) {
+                session()->forget('user_to_delete_id');
+            } elseif (session('user_to_delete_id')) {
+                $userToDelete = User::with('roles', 'companies')->find(session('user_to_delete_id'));
+                if (!$userToDelete) {
+                    session()->forget('user_to_delete_id');
+                }
+            }
+        }
         
         return view('admin.settings.index', [
             'settings' => $settings,
@@ -106,7 +121,76 @@ class SettingsController extends Controller
             'emailLogs' => $emailLogs,
             'quotePdfTemplates' => $quotePdfTemplates,
             'activeSection' => $section,
+            'userToDelete' => $userToDelete,
         ]);
+    }
+
+    /**
+     * Buscar usuario por correo para eliminar, o confirmar eliminación (Configuración → Sistema).
+     */
+    public function deleteUserByEmail(Request $request): RedirectResponse
+    {
+        if (!app(PermissionService::class)->userHasPermission('settings_system', 'view')) {
+            abort(403, 'No tienes permiso para esta acción.');
+        }
+
+        $redirectSettings = redirect()->route('admin.settings.section', 'system');
+
+        // Confirmar eliminación (segundo paso)
+        if ($request->filled('user_id')) {
+            $user = User::with('roles', 'companies')->find($request->user_id);
+            if (!$user) {
+                session()->forget('user_to_delete_id');
+                return $redirectSettings->with('error', 'Usuario no encontrado.');
+            }
+            if ($user->id === auth()->id()) {
+                session()->forget('user_to_delete_id');
+                return $redirectSettings->with('error', 'No puedes eliminar tu propio usuario.');
+            }
+            if ($user->assignedRegistrations()->count() > 0) {
+                session()->forget('user_to_delete_id');
+                return $redirectSettings->with('error', 'No se puede eliminar: tiene expedientes asignados.');
+            }
+            $userController = app(AdminUserController::class);
+            if (!$userController->canEditUserPublic($user)) {
+                session()->forget('user_to_delete_id');
+                return $redirectSettings->with('error', 'No tienes permiso para eliminar a este usuario.');
+            }
+            if ((int) session('user_to_delete_id') !== (int) $user->id) {
+                session()->forget('user_to_delete_id');
+                return $redirectSettings->with('error', 'Confirma la eliminación desde el mismo flujo (busca de nuevo por correo).');
+            }
+
+            $name = $user->name;
+            $email = $user->email;
+            $rolesText = $user->roles->pluck('name')->join(', ') ?: 'Sin rol';
+            $companiesText = $user->companies->pluck('name')->join(', ') ?: 'Ninguna';
+            $userController->performUserDeletion($user);
+            session()->forget('user_to_delete_id');
+            return $redirectSettings->with('success', 'Usuario eliminado: ' . $name . ' (' . $email . '). Rol: ' . $rolesText . '. Empresas: ' . $companiesText . '.');
+        }
+
+        // Buscar por correo (primer paso)
+        $request->validate(['email' => 'required|email']);
+        $email = $request->input('email');
+        $user = User::with('roles', 'companies')->where('email', $email)->first();
+
+        if (!$user) {
+            return $redirectSettings->with('error', 'No hay ningún usuario con ese correo en el sistema. No está en la lista.');
+        }
+        if ($user->id === auth()->id()) {
+            return $redirectSettings->with('error', 'No puedes eliminar tu propio usuario.');
+        }
+        if ($user->assignedRegistrations()->count() > 0) {
+            return $redirectSettings->with('error', 'No se puede eliminar: tiene expedientes asignados.');
+        }
+        $userController = app(AdminUserController::class);
+        if (!$userController->canEditUserPublic($user)) {
+            return $redirectSettings->with('error', 'No tienes permiso para eliminar a este usuario.');
+        }
+
+        session()->put('user_to_delete_id', $user->id);
+        return $redirectSettings->with('info', 'Usuario encontrado. Revisa los datos abajo y confirma la eliminación.');
     }
 
     /**

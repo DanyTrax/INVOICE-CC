@@ -525,21 +525,42 @@ class UserController extends Controller
                 ->with('error', 'No puedes eliminar tu propio usuario.');
         }
 
-        // Verificar si tiene registros asignados
+        // Verificar si tiene registros asignados (solo aplica a agentes, no a clientes)
         if ($user->assignedRegistrations()->count() > 0) {
-            return redirect()
-                ->route('admin.agents.index')
+            $redirectTo = $user->hasRole('client') ? route('admin.clients.index') : route('admin.agents.index');
+            return redirect()->to($redirectTo)
                 ->with('error', 'No se puede eliminar el usuario porque tiene expedientes asignados.');
         }
 
+        $isClient = $user->hasRole('client');
+        $this->performUserDeletion($user);
+
+        $redirectTo = $isClient ? route('admin.clients.index') : route('admin.agents.index');
+        return redirect()->to($redirectTo)
+            ->with('success', 'Usuario eliminado exitosamente.');
+    }
+
+    /**
+     * Ejecuta la eliminación real del usuario (roles, empresas, registro). Usado por destroy() y por Settings.
+     */
+    public function performUserDeletion(User $user): void
+    {
         $name = $user->name;
         $email = $user->email;
-        $user->delete();
-        app(ActivityLogService::class)->log('deleted', 'Eliminó el usuario "' . $name . '" (' . $email . ')');
 
-        return redirect()
-            ->route('admin.agents.index')
-            ->with('success', 'Usuario eliminado exitosamente.');
+        $user->syncRoles([]);
+        $user->companies()->sync([]);
+        $user->delete();
+
+        app(ActivityLogService::class)->log('deleted', 'Eliminó el usuario "' . $name . '" (' . $email . ')');
+    }
+
+    /**
+     * Comprueba si el usuario actual puede editar/eliminar al usuario dado. Uso desde otros controladores.
+     */
+    public function canEditUserPublic(User $targetUser): bool
+    {
+        return $this->canEditUser($targetUser);
     }
 
     /**

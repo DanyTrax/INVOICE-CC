@@ -1512,6 +1512,76 @@
         <!-- Tab 6: Sistema (según permiso Config: Sistema) -->
         <div id="panel-system" class="tab-panel {{ $activeSection === 'system' ? '' : 'hidden' }}">
             <div class="space-y-6">
+                @if(session('success') && $activeSection === 'system')
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+                    </div>
+                @endif
+                @if(session('error') && $activeSection === 'system')
+                    <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                        <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+                    </div>
+                @endif
+                @if(session('info') && $activeSection === 'system')
+                    <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
+                        <i class="fas fa-info-circle mr-2"></i>{{ session('info') }}
+                    </div>
+                @endif
+
+                <!-- Eliminar usuario por correo -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-user-minus text-teal-600 mr-2"></i>
+                        Eliminar usuario por correo
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Escribe el correo del usuario a eliminar. Se comprobará si existe en el sistema; si existe, se mostrará su rol y empresas antes de confirmar.
+                    </p>
+
+                    <form action="{{ route('admin.settings.delete-user-by-email') }}" method="POST" class="flex flex-wrap items-end gap-3">
+                        @csrf
+                        <div class="flex-1 min-w-[200px]">
+                            <label for="delete_user_email" class="block mb-1 text-sm font-medium text-gray-700">Correo</label>
+                            <input type="email"
+                                   id="delete_user_email"
+                                   name="email"
+                                   value="{{ old('email') }}"
+                                   required
+                                   placeholder="ejemplo@correo.com"
+                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                        </div>
+                        <button type="submit" class="px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300">
+                            <i class="fas fa-search mr-2"></i> Buscar y eliminar
+                        </button>
+                    </form>
+
+                    @if(isset($userToDelete) && $userToDelete)
+                        <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p class="text-sm font-semibold text-amber-800 mb-2">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> Usuario encontrado — revisa los datos antes de confirmar
+                            </p>
+                            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700 mb-4">
+                                <div><dt class="font-medium text-gray-500">Nombre</dt><dd>{{ $userToDelete->name }}</dd></div>
+                                <div><dt class="font-medium text-gray-500">Correo</dt><dd>{{ $userToDelete->email }}</dd></div>
+                                <div><dt class="font-medium text-gray-500">Rol</dt><dd>{{ $userToDelete->roles->pluck('name')->join(', ') ?: 'Sin rol' }}</dd></div>
+                                <div><dt class="font-medium text-gray-500">Empresas</dt><dd>{{ $userToDelete->companies->pluck('name')->join(', ') ?: 'Ninguna' }}</dd></div>
+                            </dl>
+                            <div class="flex flex-wrap gap-3">
+                                <form action="{{ route('admin.settings.delete-user-by-email') }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar definitivamente a este usuario? Se borrará por completo del sistema.');">
+                                    @csrf
+                                    <input type="hidden" name="user_id" value="{{ $userToDelete->id }}">
+                                    <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
+                                        <i class="fas fa-trash mr-1"></i> Confirmar eliminación
+                                    </button>
+                                </form>
+                                <a href="{{ route('admin.settings.section', 'system') }}?cancel_delete_user=1" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300">
+                                    Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
                 <!-- Git Pull -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
