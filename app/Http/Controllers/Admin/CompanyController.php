@@ -45,17 +45,27 @@ class CompanyController extends Controller
 
     public function store(Request $request)
     {
+        $countriesList = config('countries', []);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'nit_rut' => 'required|string|max:50|unique:companies,nit_rut',
             'address' => 'nullable|string|max:500',
-            'country' => 'nullable|string|max:100',
+            'country' => [
+                'nullable',
+                'string',
+                'max:100',
+                'in:' . implode(',', $countriesList),
+            ],
             'phone' => 'nullable|string|max:50',
             'contact_person_name' => 'nullable|string|max:255',
             'contact_person_email' => 'nullable|email|max:255',
             'logo_path' => 'nullable|string|max:500',
             'drive_folder_id' => 'nullable|string|max:255',
             'allows_loans' => 'nullable|boolean',
+        ], [
+            'country.in' => 'Debe seleccionar un país de la lista (escriba para buscar y elija una opción).',
+        ], [
+            'country' => 'país',
         ]);
         $validated['allows_loans'] = $request->boolean('allows_loans');
 
@@ -151,17 +161,27 @@ class CompanyController extends Controller
 
     public function update(Request $request, Company $company)
     {
+        $countriesList = config('countries', []);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'nit_rut' => 'required|string|max:50|unique:companies,nit_rut,' . $company->id,
             'address' => 'nullable|string|max:500',
-            'country' => 'nullable|string|max:100',
+            'country' => [
+                'nullable',
+                'string',
+                'max:100',
+                'in:' . implode(',', $countriesList),
+            ],
             'phone' => 'nullable|string|max:50',
             'contact_person_name' => 'nullable|string|max:255',
             'contact_person_email' => 'nullable|email|max:255',
             'logo_path' => 'nullable|string|max:500',
             'drive_folder_id' => 'nullable|string|max:255',
             'allows_loans' => 'nullable|boolean',
+        ], [
+            'country.in' => 'Debe seleccionar un país de la lista (escriba para buscar y elija una opción).',
+        ], [
+            'country' => 'país',
         ]);
         $validated['allows_loans'] = $request->boolean('allows_loans');
 

@@ -75,20 +75,11 @@
                     <label for="country" class="block mb-2 text-sm font-medium text-gray-900">
                         País
                     </label>
-                    <input type="text"
-                           id="country"
-                           name="country"
-                           value="{{ old('country', $company->country) }}"
-                           list="country-list"
-                           placeholder="Escriba para buscar (ej: col, mex)"
-                           autocomplete="off"
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                    <datalist id="country-list">
-                        @foreach($countries ?? [] as $c)
-                            <option value="{{ $c }}">
-                        @endforeach
-                    </datalist>
-                    <p class="mt-1 text-xs text-gray-500">Si cambia el país, la carpeta de la empresa en Drive (y todos sus expedientes) se moverá al nuevo país.</p>
+                    @include('admin.companies.partials.country-selector', ['countries' => $countries ?? [], 'value' => old('country', $company->country)])
+                    <p class="mt-1 text-xs text-gray-500">Seleccione un país de la lista. Si cambia el país, la carpeta en Drive (y todos sus expedientes) se moverá al nuevo país.</p>
+                    @error('country')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- Teléfono -->
