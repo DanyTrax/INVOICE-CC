@@ -37,6 +37,7 @@ class Submission extends Model
         'tracking_id',
         'fecha_radicacion',
         'status',
+        'rejection_observation',
         'submission_type',
         'payment_reference',
     ];

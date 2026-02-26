@@ -36,10 +36,10 @@
                     </div>
 
                     <div id="panel-aprobado" class="response-panel hidden space-y-4">
-                        <p class="text-sm text-gray-600">Se registrará la Resolución aprobatoria. El expediente pasará a <strong>Finalizado</strong>.</p>
+                        <p class="text-sm text-gray-600">Se registrará la Resolución aprobatoria. El expediente pasará a <strong>Finalizado</strong>. Complete Radicado y Llave.</p>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de Resolución <span class="text-red-500">*</span></label>
-                            <input type="text" name="resolution_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Radicado <span class="text-red-500">*</span></label>
+                            <input type="text" name="resolution_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Número de radicado">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Resolución <span class="text-red-500">*</span></label>
@@ -55,8 +55,12 @@
                         <input type="file" name="file" accept=".pdf" class="w-full text-sm text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700">
                     </div>
 
-                    <div id="panel-rechazo" class="response-panel hidden">
-                        <p class="text-sm text-gray-600">Se marcará el sometimiento como <strong>Rechazado</strong>. Luego podrá crear un nuevo intento desde &quot;Crear Nuevo Intento&quot;.</p>
+                    <div id="panel-rechazo" class="response-panel hidden space-y-4">
+                        <p class="text-sm text-gray-600">Se marcará el sometimiento como <strong>Rechazado</strong>. Indique el motivo. Luego podrá crear un nuevo intento desde &quot;Crear Nuevo Intento&quot;.</p>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Observación (motivo del rechazo) <span class="text-red-500">*</span></label>
+                            <textarea name="rejection_observation" id="rejection_observation" rows="4" maxlength="2000" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Describa el motivo del rechazo para informar al cliente."></textarea>
+                        </div>
                     </div>
 
                     <div class="mt-6 flex justify-end gap-2">
@@ -85,6 +89,17 @@
         }
         tabs.forEach(function(t) {
             t.addEventListener('click', function() { showPanel(this.dataset.tab); });
+        });
+        form.addEventListener('submit', function(e) {
+            if (typeInput.value === 'rechazo') {
+                var obs = document.getElementById('rejection_observation');
+                if (!obs || !obs.value.trim()) {
+                    e.preventDefault();
+                    alert('Debe indicar la observación (motivo del rechazo).');
+                    obs && obs.focus();
+                    return false;
+                }
+            }
         });
         showPanel('auto');
     })();

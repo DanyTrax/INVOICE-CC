@@ -106,7 +106,7 @@
                     <tr>
                         <th class="px-3 py-2">Documento</th>
                         <th class="px-3 py-2 w-28">Subido</th>
-                        <th class="px-3 py-2 w-40">Acciones</th>
+                        <th class="px-3 py-2">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,12 +115,23 @@
                             <td class="px-3 py-2 font-medium text-gray-900">{{ $doc->file_name }}</td>
                             <td class="px-3 py-2 text-gray-600">{{ $doc->created_at->format('d/m/Y H:i') }}</td>
                             <td class="px-3 py-2">
-                                @if($doc->drive_id)
-                                    <a href="{{ route('admin.processes.documents.view', [$process, $doc]) }}" target="_blank" class="text-teal-600 hover:text-teal-800 mr-3"><i class="fas fa-eye mr-1"></i> Ver</a>
-                                    <a href="{{ route('admin.processes.documents.download', [$process, $doc]) }}" class="text-teal-600 hover:text-teal-800"><i class="fas fa-download mr-1"></i> Descargar</a>
-                                @else
-                                    <span class="text-gray-400">—</span>
-                                @endif
+                                <div class="flex flex-wrap gap-2">
+                                    @if($doc->drive_id)
+                                        <a href="{{ route('admin.processes.documents.view', [$process, $doc]) }}" target="_blank" class="inline-flex items-center px-2.5 py-1.5 bg-teal-600 text-white text-xs font-medium rounded hover:bg-teal-700">
+                                            <i class="fas fa-eye mr-1"></i> Ver
+                                        </a>
+                                        <a href="{{ route('admin.processes.documents.download', [$process, $doc]) }}" class="inline-flex items-center px-2.5 py-1.5 bg-teal-600 text-white text-xs font-medium rounded hover:bg-teal-700">
+                                            <i class="fas fa-download mr-1"></i> Descargar
+                                        </a>
+                                    @endif
+                                    <form action="{{ route('admin.processes.documents.destroy', [$process, $doc]) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este documento? Se borrará también en Google Drive.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center px-2.5 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700">
+                                            <i class="fas fa-trash mr-1"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -330,7 +341,7 @@
                         <select name="status" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                             <option value="Pendiente">Pendiente</option>
                             <option value="Recibido">Recibido</option>
-                            <option value="Traducción">Pedir Traducción</option>
+                            <option value="Traducción">Traducción</option>
                             <option value="Aprobado">Aprobado</option>
                         </select>
                     </div>

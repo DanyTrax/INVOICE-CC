@@ -319,10 +319,16 @@ class ProcessController extends Controller
         $type = $request->input('response_type');
 
         if ($type === 'rechazo') {
-            $submission->update(['status' => Submission::STATUS_RECHAZADO]);
+            $validated = $request->validate([
+                'rejection_observation' => 'required|string|max:2000',
+            ]);
+            $submission->update([
+                'status' => Submission::STATUS_RECHAZADO,
+                'rejection_observation' => $validated['rejection_observation'],
+            ]);
             return redirect()
                 ->route('admin.processes.show', $submission->process)
-                ->with('success', 'Respuesta registrada: Rechazo. Puede crear un nuevo intento desde el expediente.');
+                ->with('success', 'Rechazo registrado. Puede crear un nuevo intento desde "Crear Nuevo Intento".');
         }
 
         if ($type === 'auto') {
@@ -369,7 +375,12 @@ class ProcessController extends Controller
                 'file_path' => $filePath,
             ]);
             $submission->process->update(['status' => Process::STATUS_FINALIZADO]);
-            $submission->update(['status' => Submission::STATUS_APROBADO]);
+            $submission->update([
+                'status' => Submission::STATUS_APROBADO,
+                'radicado_invima' => $validated['resolution_number'],
+                'tracking_id' => $validated['resolution_key'],
+                'fecha_radicacion' => $validated['resolution_date'],
+            ]);
 
             return redirect()
                 ->route('admin.processes.show', $submission->process)
@@ -543,5 +554,29 @@ class ProcessController extends Controller
             Log::error('Error al descargar documento del proceso', ['document_id' => $processDocument->id, 'error' => $e->getMessage()]);
             abort(404, 'No se pudo descargar el documento.');
         }
+    }
+
+    /**
+     * Eliminar documento del expediente (y del archivo en Google Drive si existe).
+     */
+    public function destroyDocument(Process $process, ProcessDocument $processDocument): RedirectResponse
+    {
+        if ($processDocument->process_id !== $process->id) {
+            abort(404);
+        }
+        if ($processDocument->drive_id) {
+            try {
+                app(GoogleDriveService::class)->deleteFile($processDocument->drive_id);
+            } catch (\Exception $e) {
+                Log::warning('No se pudo eliminar archivo de Drive al borrar documento del proceso', [
+                    'process_document_id' => $processDocument->id,
+                    'drive_id' => $processDocument->drive_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+        $processDocument->delete();
+        return redirect()->route('admin.processes.show', $process)
+            ->with('success', 'Documento eliminado.');
     }
 }
