@@ -20,13 +20,13 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\ClientRegisterController;
 use App\Http\Controllers\ClientPortalController;
 
-// Redirigir raíz según rol
+// Página principal: si está autenticado va al panel; si no, muestra información pública de la app (requisito verificación OAuth)
 Route::get('/', function () {
     if (Auth::check()) {
         return Auth::user()->hasRole('client') ? redirect()->route('portal.dashboard') : redirect()->route('admin.dashboard');
     }
-    return redirect()->route('login');
-});
+    return view('home-public');
+})->name('home');
 
 // Autenticación
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
