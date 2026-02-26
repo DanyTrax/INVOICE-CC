@@ -253,10 +253,11 @@
 
                         {{-- 3. Sometimientos y eventos (raíz primero, ordenados por fecha) --}}
                         @php
+                            $lastSubmission = $process->submissions->sortByDesc('id')->first();
                             $rootSubmissions = $process->submissions->where('parent_id', null)->sortBy(fn($s) => $s->submission_date ?? $s->created_at);
                         @endphp
                         @foreach($rootSubmissions as $submission)
-                            @include('admin.processes.partials.timeline-submission', ['submission' => $submission, 'attemptNum' => $loop->iteration])
+                            @include('admin.processes.partials.timeline-submission', ['submission' => $submission, 'attemptNum' => $loop->iteration, 'lastSubmission' => $lastSubmission ?? null])
                         @endforeach
 
                         @if($rootSubmissions->isEmpty() && $process->checklistItems->isEmpty() && !$process->quoteItem?->quote)
@@ -272,7 +273,7 @@
 
     {{-- Alertas: semáforo En Requerimiento (días restantes) --}}
     @php
-        $lastSubmission = $process->submissions->sortByDesc('id')->first();
+        if (!isset($lastSubmission)) { $lastSubmission = $process->submissions->sortByDesc('id')->first(); }
         $rejectedSubmissions = $process->submissions->where('status', \App\Models\Submission::STATUS_RECHAZADO);
         $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
         $latestAutoDue = $process->submissions->flatMap->regulatoryEvents->where('event_type', \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO)->whereNotNull('due_date')->max('due_date');
@@ -298,14 +299,18 @@
     @endif
 
     {{-- Acciones: Sometimiento, Respuesta INVIMA, Nuevo Intento --}}
+    @php
+        $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE);
+        $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission;
+    @endphp
     <div class="mt-6 flex flex-wrap gap-3 items-center">
-        @if($allChecklistApproved)
+        @if($canRegisterSubmission)
             <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                     class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                 <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
             </button>
         @else
-            <span class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed" title="Debe aprobar todos los documentos antes de radicar.">
+            <span class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed" title="{{ !$allChecklistApproved ? 'Debe aprobar todos los documentos antes de radicar.' : 'Hay un sometimiento pendiente de respuesta INVIMA; debe aprobar o rechazar antes de registrar otro.' }}">
                 <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
             </span>
         @endif

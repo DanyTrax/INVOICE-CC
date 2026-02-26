@@ -8,13 +8,13 @@
             </div>
             {{-- Tabs --}}
             <div class="flex border-b border-gray-200">
-                <button type="button" data-tab="auto" class="response-tab flex-1 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 data-[active=true]:bg-teal-50 data-[active=true]:text-teal-700 data-[active=true]:border-b-2 data-[active=true]:border-teal-600">
+                <button type="button" id="tab-auto" data-tab="auto" class="response-tab flex-1 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 data-[active=true]:bg-teal-50 data-[active=true]:text-teal-700 data-[active=true]:border-b-2 data-[active=true]:border-teal-600">
                     Auto / Requerimiento
                 </button>
-                <button type="button" data-tab="aprobado" class="response-tab flex-1 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 data-[active=true]:bg-teal-50 data-[active=true]:text-teal-700 data-[active=true]:border-b-2 data-[active=true]:border-teal-600">
+                <button type="button" id="tab-aprobado" data-tab="aprobado" class="response-tab flex-1 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 data-[active=true]:bg-teal-50 data-[active=true]:text-teal-700 data-[active=true]:border-b-2 data-[active=true]:border-teal-600">
                     Resolución Aprobatoria
                 </button>
-                <button type="button" data-tab="rechazo" class="response-tab flex-1 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 data-[active=true]:bg-teal-50 data-[active=true]:text-teal-700 data-[active=true]:border-b-2 data-[active=true]:border-teal-600">
+                <button type="button" id="tab-rechazo" data-tab="rechazo" class="response-tab flex-1 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 data-[active=true]:bg-teal-50 data-[active=true]:text-teal-700 data-[active=true]:border-b-2 data-[active=true]:border-teal-600">
                     Rechazo
                 </button>
             </div>

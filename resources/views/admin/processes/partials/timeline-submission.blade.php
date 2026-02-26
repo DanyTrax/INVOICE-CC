@@ -45,6 +45,19 @@
                 @endif
             ">{{ $submission->status }}</span>
         </p>
+        @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
+            <p class="mt-2 flex flex-wrap gap-2">
+                <button type="button" onclick="document.getElementById('modal-response-invima').classList.remove('hidden'); var t=document.getElementById('tab-aprobado'); if(t) t.click();"
+                        class="text-sm px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                    <i class="fas fa-check mr-1"></i> Aprobar
+                </button>
+                <button type="button" onclick="document.getElementById('modal-response-invima').classList.remove('hidden'); var t=document.getElementById('tab-rechazo'); if(t) t.click();"
+                        class="text-sm px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <i class="fas fa-times mr-1"></i> Rechazar
+                </button>
+            </p>
+            <p class="text-xs text-gray-500 mt-1">Aprobar: Radicado y Llave / Resolución o Auto. Rechazar: indicar observación y podrá crear nuevo intento.</p>
+        @endif
     </div>
 
     <ul class="space-y-0 mt-0">
@@ -86,7 +99,7 @@
     @endforeach
 
     @foreach($submission->children->sortBy('fecha_radicacion') as $child)
-        @include('admin.processes.partials.timeline-submission', ['submission' => $child, 'attemptNum' => $attemptNum + $loop->iteration])
+        @include('admin.processes.partials.timeline-submission', ['submission' => $child, 'attemptNum' => $attemptNum + $loop->iteration, 'lastSubmission' => $lastSubmission ?? null])
     @endforeach
     </ul>
 </li>
