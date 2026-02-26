@@ -27,7 +27,7 @@
                     <i class="fas fa-clipboard-list text-blue-600 text-xl"></i>
                 </div>
             </div>
-            <a href="{{ route('admin.registrations.index') }}" class="text-sm text-blue-600 hover:text-blue-700 mt-4 inline-flex items-center">
+            <a href="{{ route('admin.processes.index') }}" class="text-sm text-blue-600 hover:text-blue-700 mt-4 inline-flex items-center">
                 Total de registros activos <i class="fas fa-arrow-right ml-2"></i>
             </a>
         </div>
@@ -43,7 +43,7 @@
                     <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
                 </div>
             </div>
-            <a href="{{ route('admin.registrations.index', ['filter' => 'expiring']) }}" class="text-sm text-red-600 hover:text-red-700 mt-4 inline-flex items-center">
+            <a href="{{ route('admin.processes.index', ['filter' => 'expiring']) }}" class="text-sm text-red-600 hover:text-red-700 mt-4 inline-flex items-center">
                 Requieren atención <i class="fas fa-arrow-right ml-2"></i>
             </a>
         </div>
@@ -59,7 +59,7 @@
                     <i class="fas fa-hourglass-half text-teal-600 text-xl"></i>
                 </div>
             </div>
-            <a href="{{ route('admin.registrations.index', ['status' => 'en_tramite']) }}" class="text-sm text-teal-600 hover:text-teal-700 mt-4 inline-flex items-center">
+            <a href="{{ route('admin.processes.index', ['status' => 'en_tramite']) }}" class="text-sm text-teal-600 hover:text-teal-700 mt-4 inline-flex items-center">
                 Pendientes de respuesta <i class="fas fa-arrow-right ml-2"></i>
             </a>
         </div>

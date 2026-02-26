@@ -114,12 +114,7 @@
                             <p>Directorio Clientes</p>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a href="{{ route('admin.registrations.index') }}" class="nav-link {{ request()->routeIs('admin.registrations.*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-clipboard-list"></i>
-                            <p>Registros (Expedientes)</p>
-                        </a>
-                    </li>
+                    {{-- Módulo antiguo de Registros (Expedientes) reemplazado por Expedientes / Procesos --}}
                     <li class="nav-item">
                         <a href="{{ route('admin.quotes.index') }}" class="nav-link {{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-file-invoice-dollar"></i>

@@ -21,7 +21,7 @@
             :value="$stats['active_registrations']"
             icon="clipboard-list"
             color="blue"
-            :link="route('admin.registrations.index')"
+            :link="route('admin.processes.index')"
             subtitle="Total de registros activos"
         />
 
@@ -30,7 +30,7 @@
             :value="$stats['expiring_this_month']"
             icon="exclamation-triangle"
             color="red"
-            :link="route('admin.registrations.index', ['filter' => 'expiring'])"
+            :link="route('admin.processes.index', ['filter' => 'expiring'])"
             subtitle="Requieren atención"
         />
 
@@ -39,7 +39,7 @@
             :value="$stats['in_process_invima']"
             icon="hourglass-half"
             color="teal"
-            :link="route('admin.registrations.index', ['status' => 'en_tramite'])"
+            :link="route('admin.processes.index', ['status' => 'en_tramite'])"
             subtitle="Pendientes de respuesta"
         />
 
