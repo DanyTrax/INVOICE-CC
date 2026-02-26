@@ -20,131 +20,8 @@
 @endsection
 
 @section('content')
-    {{-- Panel prioridad: Gestión Documental --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">
-                <i class="fas fa-folder-open text-teal-600 mr-2"></i> Gestión Documental
-            </h3>
-            <button type="button" onclick="document.getElementById('modal-add-document').classList.remove('hidden')"
-                    class="inline-flex items-center px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
-                <i class="fas fa-plus mr-2"></i> Agregar Documento
-            </button>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                    <tr>
-                        <th class="px-3 py-2">Documento</th>
-                        <th class="px-3 py-2 w-32">Estado</th>
-                        <th class="px-3 py-2">Observación</th>
-                        <th class="px-3 py-2 w-40">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($process->checklistItems as $item)
-                        @php
-                            $badgeClass = match($item->status) {
-                                'Aprobado' => 'bg-green-100 text-green-800',
-                                'Recibido' => 'bg-blue-100 text-blue-800',
-                                'Traducción' => 'bg-yellow-100 text-yellow-800',
-                                default => 'bg-gray-100 text-gray-800',
-                            };
-                        @endphp
-                        <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            <td class="px-3 py-2 font-medium text-gray-900">{{ $item->document_name }}</td>
-                            <td class="px-3 py-2">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badgeClass }}">{{ $item->status }}</span>
-                            </td>
-                            <td class="px-3 py-2 text-gray-600">{{ Str::limit($item->observation_agent ?? '-', 50) }}</td>
-                            <td class="px-3 py-2">
-                                <button type="button" onclick="openChecklistModal({{ $item->id }}, '{{ addslashes($item->document_name) }}', '{{ $item->status }}', '{{ addslashes($item->observation_agent ?? '') }}')"
-                                        class="text-teal-600 hover:text-teal-800 text-sm font-medium">
-                                    <i class="fas fa-edit mr-1"></i> Cambiar estado
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="px-3 py-6 text-center text-gray-500">No hay documentos en la checklist. Use &quot;+ Agregar Documento&quot; para agregar requisitos.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {{-- Documentos en Drive: carpeta, listado y subida --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            <i class="fas fa-cloud-upload-alt text-teal-600 mr-2"></i> Documentos en Drive
-        </h3>
-        @if($process->drive_folder_id)
-            <p class="text-sm text-gray-600 mb-3">
-                <a href="{{ $process->drive_folder_url ?? 'https://drive.google.com/drive/folders/' . $process->drive_folder_id }}" target="_blank" rel="noopener"
-                   class="inline-flex items-center text-teal-600 hover:text-teal-800 font-medium">
-                    <i class="fas fa-external-link-alt mr-2"></i> Abrir carpeta en Google Drive
-                </a>
-            </p>
-        @else
-            <p class="text-sm text-gray-500 mb-3">La carpeta en Drive se creará al subir el primer documento (si está configurado Google Drive en Configuración).</p>
-        @endif
-        <form action="{{ route('admin.processes.documents.upload', $process) }}" method="POST" enctype="multipart/form-data" class="mb-4 flex flex-wrap items-end gap-3">
-            @csrf
-            <div class="flex-1 min-w-[200px]">
-                <label for="process-document-file" class="block text-sm font-medium text-gray-700 mb-1">Subir documento</label>
-                <input type="file" name="document" id="process-document-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" required
-                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
-            </div>
-            <button type="submit" class="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
-                <i class="fas fa-upload mr-2"></i> Subir
-            </button>
-        </form>
-        <div class="border border-gray-200 rounded-lg overflow-hidden">
-            <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                    <tr>
-                        <th class="px-3 py-2">Documento</th>
-                        <th class="px-3 py-2 w-28">Subido</th>
-                        <th class="px-3 py-2">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($process->processDocuments as $doc)
-                        <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            <td class="px-3 py-2 font-medium text-gray-900">{{ $doc->file_name }}</td>
-                            <td class="px-3 py-2 text-gray-600">{{ $doc->created_at->format('d/m/Y H:i') }}</td>
-                            <td class="px-3 py-2">
-                                <div class="flex flex-wrap gap-2">
-                                    @if($doc->drive_id)
-                                        <a href="{{ route('admin.processes.documents.view', [$process, $doc]) }}" target="_blank" class="inline-flex items-center px-2.5 py-1.5 bg-teal-600 text-white text-xs font-medium rounded hover:bg-teal-700">
-                                            <i class="fas fa-eye mr-1"></i> Ver
-                                        </a>
-                                        <a href="{{ route('admin.processes.documents.download', [$process, $doc]) }}" class="inline-flex items-center px-2.5 py-1.5 bg-teal-600 text-white text-xs font-medium rounded hover:bg-teal-700">
-                                            <i class="fas fa-download mr-1"></i> Descargar
-                                        </a>
-                                    @endif
-                                    <form action="{{ route('admin.processes.documents.destroy', [$process, $doc]) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este documento? Se borrará también en Google Drive.');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="inline-flex items-center px-2.5 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700">
-                                            <i class="fas fa-trash mr-1"></i> Eliminar
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="px-3 py-6 text-center text-gray-500">Aún no hay documentos subidos. Use el formulario de arriba para subir archivos a la carpeta de Drive.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {{-- 1. Resumen y Línea de tiempo --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <!-- Resumen del expediente -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4">
@@ -268,6 +145,130 @@
                     </ul>
                 </div>
             </div>
+        </div>
+    </div>
+
+    {{-- 2. Gestión Documental --}}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">
+                <i class="fas fa-folder-open text-teal-600 mr-2"></i> Gestión Documental
+            </h3>
+            <button type="button" onclick="document.getElementById('modal-add-document').classList.remove('hidden')"
+                    class="inline-flex items-center px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
+                <i class="fas fa-plus mr-2"></i> Agregar Documento
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                    <tr>
+                        <th class="px-3 py-2">Documento</th>
+                        <th class="px-3 py-2 w-32">Estado</th>
+                        <th class="px-3 py-2">Observación</th>
+                        <th class="px-3 py-2 w-40">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($process->checklistItems as $item)
+                        @php
+                            $badgeClass = match($item->status) {
+                                'Aprobado' => 'bg-green-100 text-green-800',
+                                'Recibido' => 'bg-blue-100 text-blue-800',
+                                'Traducción' => 'bg-yellow-100 text-yellow-800',
+                                default => 'bg-gray-100 text-gray-800',
+                            };
+                        @endphp
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="px-3 py-2 font-medium text-gray-900">{{ $item->document_name }}</td>
+                            <td class="px-3 py-2">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badgeClass }}">{{ $item->status }}</span>
+                            </td>
+                            <td class="px-3 py-2 text-gray-600">{{ Str::limit($item->observation_agent ?? '-', 50) }}</td>
+                            <td class="px-3 py-2">
+                                <button type="button" onclick="openChecklistModal({{ $item->id }}, '{{ addslashes($item->document_name) }}', '{{ $item->status }}', '{{ addslashes($item->observation_agent ?? '') }}')"
+                                        class="text-teal-600 hover:text-teal-800 text-sm font-medium">
+                                    <i class="fas fa-edit mr-1"></i> Cambiar estado
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-3 py-6 text-center text-gray-500">No hay documentos en la checklist. Use &quot;+ Agregar Documento&quot; para agregar requisitos.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- 3. Documentos en Drive --}}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-cloud-upload-alt text-teal-600 mr-2"></i> Documentos en Drive
+        </h3>
+        @if($process->drive_folder_id)
+            <p class="text-sm text-gray-600 mb-3">
+                <a href="{{ $process->drive_folder_url ?? 'https://drive.google.com/drive/folders/' . $process->drive_folder_id }}" target="_blank" rel="noopener"
+                   class="inline-flex items-center text-teal-600 hover:text-teal-800 font-medium">
+                    <i class="fas fa-external-link-alt mr-2"></i> Abrir carpeta en Google Drive
+                </a>
+            </p>
+        @else
+            <p class="text-sm text-gray-500 mb-3">La carpeta en Drive se creará al subir el primer documento (si está configurado Google Drive en Configuración).</p>
+        @endif
+        <form action="{{ route('admin.processes.documents.upload', $process) }}" method="POST" enctype="multipart/form-data" class="mb-4 flex flex-wrap items-end gap-3">
+            @csrf
+            <div class="flex-1 min-w-[200px]">
+                <label for="process-document-file" class="block text-sm font-medium text-gray-700 mb-1">Subir documento</label>
+                <input type="file" name="document" id="process-document-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" required
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
+                <i class="fas fa-upload mr-2"></i> Subir
+            </button>
+        </form>
+        <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                    <tr>
+                        <th class="px-3 py-2">Documento</th>
+                        <th class="px-3 py-2 w-28">Subido</th>
+                        <th class="px-3 py-2">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($process->processDocuments as $doc)
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="px-3 py-2 font-medium text-gray-900">{{ $doc->file_name }}</td>
+                            <td class="px-3 py-2 text-gray-600">{{ $doc->created_at->format('d/m/Y H:i') }}</td>
+                            <td class="px-3 py-2">
+                                <div class="flex flex-wrap gap-2">
+                                    @if($doc->drive_id)
+                                        <a href="{{ route('admin.processes.documents.view', [$process, $doc]) }}" target="_blank" class="inline-flex items-center px-2.5 py-1.5 bg-teal-600 text-white text-xs font-medium rounded hover:bg-teal-700">
+                                            <i class="fas fa-eye mr-1"></i> Ver
+                                        </a>
+                                        <a href="{{ route('admin.processes.documents.download', [$process, $doc]) }}" class="inline-flex items-center px-2.5 py-1.5 bg-teal-600 text-white text-xs font-medium rounded hover:bg-teal-700">
+                                            <i class="fas fa-download mr-1"></i> Descargar
+                                        </a>
+                                    @endif
+                                    <form action="{{ route('admin.processes.documents.destroy', [$process, $doc]) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este documento? Se borrará también en Google Drive.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center px-2.5 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700">
+                                            <i class="fas fa-trash mr-1"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="px-3 py-6 text-center text-gray-500">Aún no hay documentos subidos. Use el formulario de arriba para subir archivos a la carpeta de Drive.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 
