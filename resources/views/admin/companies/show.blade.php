@@ -131,22 +131,45 @@
 
     {{-- SECCIÓN C: Consolidado de Procesos (Tabla Maestra) --}}
     <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h3 class="text-lg font-semibold text-gray-900">Consolidado de Procesos</h3>
+            <form method="GET" action="{{ route('admin.companies.show', $company) }}" class="flex flex-wrap items-center gap-2">
+                <input type="text"
+                       name="search"
+                       value="{{ request('search') }}"
+                       placeholder="Buscar por origen, producto, nº expediente..."
+                       class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-48 focus:ring-teal-500 focus:border-teal-500">
+                <select name="status_filter" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-teal-500 focus:border-teal-500">
+                    <option value="">Todos los estados</option>
+                    @foreach($availableStatuses ?? [] as $st)
+                        <option value="{{ $st }}" {{ request('status_filter') === $st ? 'selected' : '' }}>{{ $st }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700">
+                    <i class="fas fa-filter mr-1"></i> Filtrar
+                </button>
+                @if(request('search') || request('status_filter'))
+                    <a href="{{ route('admin.companies.show', $company) }}" class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300">
+                        Limpiar
+                    </a>
+                @endif
+            </form>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-500">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
+                        <th class="px-4 py-3">Nº Expediente</th>
                         <th class="px-4 py-3">Origen</th>
                         <th class="px-4 py-3">Proceso / Producto</th>
+                        <th class="px-4 py-3">Estado</th>
                         <th class="px-4 py-3">Hito actual</th>
                         <th class="px-4 py-3">Barra de vida</th>
                         <th class="px-4 py-3 w-28">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($company->processes as $process)
+                    @forelse($processes as $process)
                         @php
                             $origen = $process->quote?->consecutive ?? $process->quoteItem?->quote?->consecutive ?? '-';
                             $producto = $process->product_reference ?: ($process->expediente_invima ?: ($process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? 'Expediente #' . $process->id));
@@ -170,8 +193,21 @@
                             $paso = $tieneResolucion || $process->status === \App\Models\Process::STATUS_FINALIZADO ? 4 : ($tieneAuto ? 3 : ($process->submissions->isNotEmpty() ? 2 : 1));
                         @endphp
                         <tr class="bg-white border-b hover:bg-gray-50">
+                            <td class="px-4 py-3 font-medium text-gray-900">{{ $process->expediente_invima ?? '-' }}</td>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $origen }}</td>
                             <td class="px-4 py-3">{{ $producto }}</td>
+                            <td class="px-4 py-3">
+                                @php
+                                    $statusStyles = [
+                                        'Recolección' => 'bg-yellow-100 text-yellow-800',
+                                        'Radicado' => 'bg-blue-100 text-blue-800',
+                                        'En Requerimiento' => 'bg-orange-100 text-orange-800',
+                                        'Finalizado' => 'bg-green-100 text-green-800',
+                                    ];
+                                    $statusStyle = $statusStyles[$process->status ?? ''] ?? 'bg-gray-100 text-gray-800';
+                                @endphp
+                                <span class="px-2 py-0.5 text-xs font-medium rounded {{ $statusStyle }}">{{ $process->status ?? '-' }}</span>
+                            </td>
                             <td class="px-4 py-3 text-gray-700">{{ $hito }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-0.5" title="Inicio → Radicado → Auto → Fin">
@@ -193,7 +229,14 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-500">No hay expedientes para este cliente.</td>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                @if(request('search') || request('status_filter'))
+                                    No hay expedientes que coincidan con el filtro.
+                                    <a href="{{ route('admin.companies.show', $company) }}" class="text-teal-600 hover:underline ml-1">Ver todos</a>
+                                @else
+                                    No hay expedientes para este cliente.
+                                @endif
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

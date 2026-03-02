@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanyInvite;
+use App\Models\Process;
 use App\Models\EmailLog;
 use App\Services\GoogleDriveService;
 use App\Services\MailService;
@@ -29,7 +30,7 @@ class CompanyController extends Controller
             });
         }
 
-        $companies = $query->withCount('registrations')
+        $companies = $query->withCount('processes')
             ->orderBy('name')
             ->paginate(15);
 
@@ -117,7 +118,7 @@ class CompanyController extends Controller
             ->with('success', 'Empresa creada exitosamente.');
     }
 
-    public function show(Company $company)
+    public function show(Request $request, Company $company)
     {
         // 1. Cargar procesos con sus relaciones clave para la trazabilidad
         $company->load(['processes' => function ($q) {
@@ -134,22 +135,45 @@ class CompanyController extends Controller
 
         $processes = $company->processes;
 
-        // 2. Calcular Estadísticas (KPIs)
-        $total_processes = $processes->count();
+        // 2. Filtro por búsqueda (origen, producto, nº expediente, tipo de trámite, etc.)
+        $search = $request->filled('search') ? trim($request->search) : null;
+        if ($search !== null && $search !== '') {
+            $searchLower = mb_strtolower($search);
+            $processes = $processes->filter(function ($p) use ($searchLower) {
+                $origen = $p->quote?->consecutive ?? $p->quoteItem?->quote?->consecutive ?? '';
+                $producto = $p->product_reference ?: ($p->expediente_invima ?? '') ?: ($p->quoteItem?->serviceType?->name ?? $p->serviceType?->name ?? '');
+                $expediente = $p->expediente_invima ?? '';
+                $tipoTramite = $p->quoteItem?->serviceType?->name ?? $p->serviceType?->name ?? '';
+                return str_contains(mb_strtolower($origen), $searchLower)
+                    || str_contains(mb_strtolower($producto), $searchLower)
+                    || str_contains(mb_strtolower((string) $expediente), $searchLower)
+                    || str_contains(mb_strtolower($tipoTramite), $searchLower);
+            })->values();
+        }
 
+        // 3. Filtro por estado actual
+        $statusFilter = $request->filled('status_filter') ? $request->status_filter : null;
+        if ($statusFilter !== null && $statusFilter !== '') {
+            $processes = $processes->filter(function ($p) use ($statusFilter) {
+                return $p->status === $statusFilter;
+            })->values();
+        }
+
+        // 4. Calcular estadísticas sobre el total (sin filtrar) para los KPIs
+        $total_processes = $company->processes->count();
         $stats = [
-            'recoleccion' => $processes->where('status', 'Recolección')->count(),
-            'radicado' => $processes->where('status', 'Radicado')->count(),
-            'requerimiento' => $processes->where('status', 'En Requerimiento')->count(),
-            'finalizado' => $processes->where('status', 'Finalizado')->count(),
+            'recoleccion' => $company->processes->where('status', 'Recolección')->count(),
+            'radicado' => $company->processes->where('status', 'Radicado')->count(),
+            'requerimiento' => $company->processes->where('status', 'En Requerimiento')->count(),
+            'finalizado' => $company->processes->where('status', 'Finalizado')->count(),
         ];
-
-        // 3. Detectar Alertas (procesos en requerimiento que requieren atención)
-        $alerts = $processes->filter(function ($p) {
+        $alerts = $company->processes->filter(function ($p) {
             return $p->status === 'En Requerimiento';
         })->count();
 
-        return view('admin.companies.show', compact('company', 'total_processes', 'stats', 'alerts'));
+        $availableStatuses = Process::statuses();
+
+        return view('admin.companies.show', compact('company', 'processes', 'total_processes', 'stats', 'alerts', 'availableStatuses'));
     }
 
     public function edit(Company $company)
