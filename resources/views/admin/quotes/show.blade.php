@@ -200,6 +200,25 @@
         @endif
     </div>
 
+    {{-- Pie de página del PDF (editable) --}}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Pie de página del PDF</h3>
+        <p class="text-sm text-gray-600 mb-3">Este texto se muestra en la parte inferior de la cotización al descargar el PDF. Si está vacío, se usará el pie definido en la plantilla o en Configuración.</p>
+        <form action="{{ route('admin.quotes.pdf-footer.update', $quote) }}" method="POST" class="flex flex-col gap-3">
+            @csrf
+            @method('PATCH')
+            <textarea name="pdf_footer" rows="3" maxlength="1000" placeholder="Ej: RAMS - Regulatory Affairs Management System"
+                      class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ old('pdf_footer', $quote->pdf_footer ?? '') }}</textarea>
+            @error('pdf_footer')
+                <p class="text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            <p class="text-xs text-gray-500">Máximo 1000 caracteres.</p>
+            <button type="submit" class="self-start inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium text-sm">
+                <i class="fas fa-save mr-2"></i> Guardar pie de página
+            </button>
+        </form>
+    </div>
+
     <div class="flex gap-3">
         <a href="{{ route('admin.quotes.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
             <i class="fas fa-arrow-left mr-2"></i> Volver al listado

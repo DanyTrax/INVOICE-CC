@@ -207,6 +207,21 @@ class QuoteController extends Controller
     }
 
     /**
+     * Actualizar solo el texto del pie de página del PDF de la cotización.
+     */
+    public function updatePdfFooter(Request $request, Quote $quote): RedirectResponse
+    {
+        $validated = $request->validate([
+            'pdf_footer' => 'nullable|string|max:1000',
+        ]);
+        $quote->update([
+            'pdf_footer' => $validated['pdf_footer'] ?? null,
+        ]);
+        return redirect()->route('admin.quotes.show', $quote)
+            ->with('success', 'Pie de página del PDF actualizado.');
+    }
+
+    /**
      * Anular cotización (oferta rechazada por el cliente).
      */
     public function anular(Request $request, Quote $quote): RedirectResponse

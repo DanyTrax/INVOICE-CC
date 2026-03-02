@@ -65,6 +65,9 @@
                 ? $settings->quote_pdf_footer_text
                 : ($settings->footer_text ?? 'RAMS - Regulatory Affairs Management System');
         }
+        if (!empty(trim($quote->pdf_footer ?? ''))) {
+            $footerText = trim($quote->pdf_footer);
+        }
     @endphp
 
     {{-- Encabezado fijo: logo, nombre y NIT (se repite en cada página, 10px margen al top) --}}

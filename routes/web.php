@@ -109,6 +109,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::put('quotes/{quote}', [QuoteController::class, 'update'])->name('quotes.update');
     Route::post('quotes/{quote}/approve', [QuoteController::class, 'approve'])->name('quotes.approve');
     Route::get('quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->name('quotes.pdf');
+    Route::patch('quotes/{quote}/pdf-footer', [QuoteController::class, 'updatePdfFooter'])->name('quotes.pdf-footer.update');
     Route::post('quotes/{quote}/anular', [QuoteController::class, 'anular'])->name('quotes.anular');
 
     // Tipos de Trámite (ServiceTypes)

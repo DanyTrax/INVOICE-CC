@@ -18,6 +18,7 @@ class Quote extends Model
         'show_raa_column',
         'status',
         'cancellation_note',
+        'pdf_footer',
         'total_professional_fees',
         'total_invima_fees',
         'total_loans',
