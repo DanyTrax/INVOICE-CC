@@ -74,12 +74,9 @@
             </span>
         @endif
         @if(!in_array($quote->status, ['Aprobada', 'Anulada']))
-            <form action="{{ route('admin.quotes.anular', $quote) }}" method="POST" class="inline" onsubmit="return confirm('¿Está seguro de anular esta cotización?');">
-                @csrf
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">
-                    <i class="fas fa-times-circle mr-2"></i> Anular
-                </button>
-            </form>
+            <button type="button" onclick="document.getElementById('modal-anular-cotizacion').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">
+                <i class="fas fa-times-circle mr-2"></i> Cancelar cotización
+            </button>
         @endif
     </div>
 
@@ -113,6 +110,12 @@
                 @endphp
                 <span class="inline-block px-2 py-1 text-xs font-medium rounded-full {{ $style }}">{{ $quote->status }}</span>
             </div>
+            @if($quote->status === 'Anulada' && $quote->cancellation_note)
+                <div class="md:col-span-2 lg:col-span-4">
+                    <p class="text-xs text-gray-500 uppercase">Motivo de cancelación</p>
+                    <p class="mt-1 text-sm text-gray-800 bg-red-50 border border-red-100 rounded-lg p-3">{{ $quote->cancellation_note }}</p>
+                </div>
+            @endif
             @if($quote->exchange_rate)
                 <div>
                     <p class="text-xs text-gray-500 uppercase">Tasa de cambio</p>
@@ -201,5 +204,37 @@
         <a href="{{ route('admin.quotes.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
             <i class="fas fa-arrow-left mr-2"></i> Volver al listado
         </a>
+    </div>
+
+    {{-- Modal: Cancelar cotización con motivo --}}
+    <div id="modal-anular-cotizacion" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-anular-cotizacion').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-2">Cancelar cotización</h4>
+                <p class="text-sm text-gray-600 mb-4">Indique el motivo por el cual se cancela esta cotización. Este texto quedará registrado.</p>
+                <form action="{{ route('admin.quotes.anular', $quote) }}" method="POST">
+                    @csrf
+                    <div class="mb-4">
+                        <label for="cancellation_note" class="block text-sm font-medium text-gray-700 mb-1">Motivo de cancelación <span class="text-red-500">*</span></label>
+                        <textarea id="cancellation_note" name="cancellation_note" rows="4" required maxlength="2000"
+                                  class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-red-500 focus:border-red-500"
+                                  placeholder="Ej: Cliente desistió del trámite / Error en datos / Duplicado..."></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Máximo 2000 caracteres.</p>
+                        @error('cancellation_note')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" onclick="document.getElementById('modal-anular-cotizacion').classList.add('hidden')" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Cerrar
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
+                            <i class="fas fa-times-circle mr-1"></i> Confirmar cancelación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 @endsection

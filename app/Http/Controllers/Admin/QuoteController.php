@@ -209,13 +209,19 @@ class QuoteController extends Controller
     /**
      * Anular cotización (oferta rechazada por el cliente).
      */
-    public function anular(Quote $quote): RedirectResponse
+    public function anular(Request $request, Quote $quote): RedirectResponse
     {
         if ($quote->status === self::STATUS_APROBADA) {
             return redirect()->route('admin.quotes.show', $quote)
                 ->with('error', 'No se puede anular una cotización ya aprobada.');
         }
-        $quote->update(['status' => self::STATUS_ANULADA]);
+        $validated = $request->validate([
+            'cancellation_note' => 'required|string|max:2000',
+        ]);
+        $quote->update([
+            'status' => self::STATUS_ANULADA,
+            'cancellation_note' => $validated['cancellation_note'],
+        ]);
         return redirect()->route('admin.quotes.show', $quote)
             ->with('success', 'Cotización anulada.');
     }

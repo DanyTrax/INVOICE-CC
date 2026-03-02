@@ -17,10 +17,19 @@ class EnsureClientCanAccessPortal
         if (!$user || !$user->hasRole('client')) {
             return $next($request);
         }
-        if ($request->routeIs('portal.account-disabled')) {
+
+        // Si el cliente YA tiene acceso activo y está en la pantalla de cuenta deshabilitada,
+        // redirigirlo automáticamente al dashboard del portal.
+        if ($user->canAccessPortal()) {
+            if ($request->routeIs('portal.account-disabled')) {
+                return redirect()->route('portal.dashboard');
+            }
             return $next($request);
         }
-        if (!$user->canAccessPortal()) {
+
+        // Si NO tiene acceso activo, permitir solo la vista de cuenta deshabilitada;
+        // cualquier otra ruta del portal se redirige a esa pantalla.
+        if (!$request->routeIs('portal.account-disabled')) {
             return redirect()->route('portal.account-disabled');
         }
 
