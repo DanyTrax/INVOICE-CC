@@ -64,6 +64,79 @@
         </dl>
     </div>
 
+    @php
+        $assignedClients = $company->users->filter(fn($u) => $u->hasRole('client'));
+        $assignedAgents = $company->users->filter(fn($u) => !$u->hasRole('client'));
+    @endphp
+    {{-- Clientes y agentes asignados --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <h3 class="text-sm font-semibold text-gray-900">Clientes asignados</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Usuarios del portal con acceso a esta empresa</p>
+            </div>
+            <div class="p-4">
+                @forelse($assignedClients as $user)
+                    <div class="flex items-center justify-between py-2 {{ !$loop->first ? 'border-t border-gray-100' : '' }}">
+                        <div>
+                            <p class="font-medium text-gray-900">{{ $user->name }}</p>
+                            <p class="text-sm text-gray-600">
+                                <a href="mailto:{{ $user->email }}" class="text-teal-600 hover:underline">{{ $user->email }}</a>
+                            </p>
+                            @if($user->phone)
+                                <p class="text-xs text-gray-500">{{ $user->phone }}</p>
+                            @endif
+                        </div>
+                        <div>
+                            @php
+                                $statusLabels = [
+                                    'activo' => 'bg-green-100 text-green-800',
+                                    'pendiente' => 'bg-amber-100 text-amber-800',
+                                    'deshabilitado' => 'bg-red-100 text-red-800',
+                                ];
+                                $cs = $user->client_status ?? 'activo';
+                                $statusStyle = $statusLabels[$cs] ?? 'bg-gray-100 text-gray-800';
+                            @endphp
+                            <span class="px-2 py-0.5 text-xs font-medium rounded {{ $statusStyle }}">{{ $cs }}</span>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-500 py-2">Ningún cliente asignado.</p>
+                @endforelse
+            </div>
+        </div>
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <h3 class="text-sm font-semibold text-gray-900">Agentes asignados</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Usuarios del panel que gestionan esta empresa</p>
+            </div>
+            <div class="p-4">
+                @forelse($assignedAgents as $user)
+                    <div class="flex items-center justify-between py-2 {{ !$loop->first ? 'border-t border-gray-100' : '' }}">
+                        <div>
+                            <p class="font-medium text-gray-900">{{ $user->name }}</p>
+                            <p class="text-sm text-gray-600">
+                                <a href="mailto:{{ $user->email }}" class="text-teal-600 hover:underline">{{ $user->email }}</a>
+                            </p>
+                            @if($user->phone)
+                                <p class="text-xs text-gray-500">{{ $user->phone }}</p>
+                            @endif
+                        </div>
+                        <div>
+                            @php
+                                $roleNames = $user->getRoleNames();
+                                $roleLabel = $roleNames->isNotEmpty() ? $roleNames->first() : '-';
+                            @endphp
+                            <span class="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">{{ $roleLabel }}</span>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-500 py-2">Ningún agente asignado.</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
     {{-- SECCIÓN A: Tarjetas de Estado (KPIs) --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">

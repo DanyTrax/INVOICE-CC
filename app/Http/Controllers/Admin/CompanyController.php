@@ -120,6 +120,11 @@ class CompanyController extends Controller
 
     public function show(Request $request, Company $company)
     {
+        // 0. Cargar usuarios asignados (clientes y agentes) con sus roles
+        $company->load(['users' => function ($q) {
+            $q->with('roles')->orderBy('name');
+        }]);
+
         // 1. Cargar procesos con sus relaciones clave para la trazabilidad
         $company->load(['processes' => function ($q) {
             $q->with([
