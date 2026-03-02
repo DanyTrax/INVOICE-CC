@@ -171,7 +171,8 @@
                 <tbody>
                     @forelse($processes as $process)
                         @php
-                            $origen = $process->quote?->consecutive ?? $process->quoteItem?->quote?->consecutive ?? '-';
+                            $quoteForProcess = $process->quote ?: $process->quoteItem?->quote;
+                            $origen = $quoteForProcess?->consecutive ?? '-';
                             $producto = $process->product_reference ?: ($process->expediente_invima ?: ($process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? 'Expediente #' . $process->id));
                             $eventos = $process->submissions->flatMap->regulatoryEvents->sortByDesc('event_date');
                             $ultimoEvento = $eventos->first();
@@ -200,7 +201,16 @@
                                     <span class="text-gray-800">{{ $process->expediente_invima }}</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 font-medium text-gray-900">{{ $origen }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-900">
+                                @if($quoteForProcess && $origen !== '-')
+                                    <a href="{{ route('admin.quotes.show', $quoteForProcess) }}"
+                                       class="text-teal-700 hover:text-teal-900 hover:underline">
+                                        {{ $origen }}
+                                    </a>
+                                @else
+                                    {{ $origen }}
+                                @endif
+                            </td>
                             <td class="px-4 py-3">{{ $producto }}</td>
                             <td class="px-4 py-3">
                                 @php
