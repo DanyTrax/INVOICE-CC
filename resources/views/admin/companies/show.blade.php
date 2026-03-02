@@ -193,7 +193,13 @@
                             $paso = $tieneResolucion || $process->status === \App\Models\Process::STATUS_FINALIZADO ? 4 : ($tieneAuto ? 3 : ($process->submissions->isNotEmpty() ? 2 : 1));
                         @endphp
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td class="px-4 py-3 font-medium text-gray-900">{{ $process->expediente_invima ?? '-' }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-900">
+                                <span class="font-mono text-xs text-gray-700">#{{ $process->id }}</span>
+                                @if($process->expediente_invima)
+                                    <span class="text-gray-400 mx-1">·</span>
+                                    <span class="text-gray-800">{{ $process->expediente_invima }}</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $origen }}</td>
                             <td class="px-4 py-3">{{ $producto }}</td>
                             <td class="px-4 py-3">
