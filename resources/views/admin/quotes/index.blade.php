@@ -84,7 +84,7 @@
                                 @endphp
                                 <span class="px-2 py-1 text-xs font-medium rounded-full {{ $style }}">{{ $quote->status ?? '-' }}</span>
                             </td>
-                            <td class="px-4 py-3">{{ $quote->currency ?? 'COP' }} {{ number_format($quote->apply_tax && $quote->tax_percentage !== null ? $quote->total_with_tax : $quote->subtotal, 2) }}</td>
+                            <td class="px-4 py-3">{{ $quote->currency ?? 'COP' }} {{ number_format($quote->total_with_tax, 2) }}</td>
                             <td class="px-4 py-3">
                                 <a href="{{ route('admin.processes.index', ['open_quote' => $quote->id]) }}" class="inline-flex items-center gap-1 text-teal-600 hover:text-teal-700 font-medium" title="Ver Expedientes">
                                     <i class="fas fa-folder-open"></i> Ver Expedientes

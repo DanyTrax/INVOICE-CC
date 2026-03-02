@@ -7,8 +7,9 @@
         @page { size: letter; margin: 28mm 12mm 14mm 12mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; }
         .pdf-page-header { position: fixed; top: -28mm; left: 0; right: 0; z-index: 1; background: #fff; padding: 10px 0 0 0; }
-        .pdf-page-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1; background: #fff; padding: 6px 0 2px 0; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
-        .pdf-body-content { padding-top: 0; padding-bottom: 24px; }
+        .pdf-page-footer { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; box-sizing: border-box; z-index: 1; background: #fff; padding: 8px 12mm 10px 12mm; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: left; min-height: 28mm; }
+        .pdf-page-footer-content { width: 100%; white-space: pre-line; word-wrap: break-word; line-height: 1.4; }
+        .pdf-body-content { padding-top: 0; padding-bottom: 80px; }
         .header { overflow: visible; }
         .header-left { float: left; width: 28%; }
         .header-right { float: right; width: 70%; text-align: right; }
@@ -93,8 +94,8 @@
         </div>
     </div>
 
-    {{-- Pie de página fijo --}}
-    <div class="pdf-page-footer">{{ $footerText }}</div>
+    {{-- Pie de página fijo (ancho completo, hasta 4 párrafos) --}}
+    <div class="pdf-page-footer"><div class="pdf-page-footer-content">{{ $footerText }}</div></div>
 
     {{-- Cuerpo: toda la información después del encabezado (flujo normal, sin páginas en blanco) --}}
     <div class="pdf-body-content">
@@ -164,9 +165,15 @@
                     <td style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->tax_amount, 2) }}</td>
                 </tr>
             @endif
+            @if($quote->apply_bank_fee && $quote->bank_fee_value !== null)
+                <tr>
+                    <td class="label">Gasto bancario</td>
+                    <td style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->bank_fee_amount, 2) }}</td>
+                </tr>
+            @endif
             <tr>
                 <td class="label grand">Total</td>
-                <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ $quote->apply_tax && $quote->tax_percentage !== null ? number_format($quote->total_with_tax, 2) : number_format($quote->subtotal, 2) }}</td>
+                <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->total_with_tax, 2) }}</td>
             </tr>
         </table>
     </div>

@@ -189,13 +189,23 @@
                 <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->subtotal, 2) }}</p>
                 <p class="text-sm text-gray-600 mt-2">IVA ({{ number_format($quote->tax_percentage, 2) }}%)</p>
                 <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->tax_amount, 2) }}</p>
+                @if($quote->apply_bank_fee && $quote->bank_fee_value !== null)
+                    <p class="text-sm text-gray-600 mt-2">Gasto bancario</p>
+                    <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->bank_fee_amount, 2) }}</p>
+                @endif
                 <p class="text-sm text-gray-600 mt-2">Total</p>
                 <p class="text-2xl font-bold text-teal-800">{{ $quote->currency }} {{ number_format($quote->total_with_tax, 2) }}</p>
             </div>
         @else
             <div class="mt-4 pt-4 border-t border-gray-200">
-                <p class="text-sm text-gray-600">Total</p>
-                <p class="text-2xl font-bold text-teal-800">{{ $quote->currency }} {{ number_format($quote->subtotal, 2) }}</p>
+                @if($quote->apply_bank_fee && $quote->bank_fee_value !== null)
+                    <p class="text-sm text-gray-600">Subtotal</p>
+                    <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->subtotal, 2) }}</p>
+                    <p class="text-sm text-gray-600 mt-2">Gasto bancario</p>
+                    <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->bank_fee_amount, 2) }}</p>
+                @endif
+                <p class="text-sm text-gray-600 mt-2">Total</p>
+                <p class="text-2xl font-bold text-teal-800">{{ $quote->currency }} {{ number_format($quote->total_with_tax, 2) }}</p>
             </div>
         @endif
     </div>

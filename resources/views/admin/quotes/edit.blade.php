@@ -117,6 +117,15 @@
                     <input type="number" name="tax_percentage" id="tax_percentage" value="{{ old('tax_percentage', $quote->tax_percentage ?? '19') }}" min="0" max="100" step="0.01" placeholder="%"
                            class="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm"> %
                 </span>
+                <label class="inline-flex items-center gap-2 ml-4">
+                    <input type="checkbox" name="apply_bank_fee" id="toggle-bank-fee" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('apply_bank_fee', $quote->apply_bank_fee) ? 'checked' : '' }}>
+                    <span>Gasto bancario</span>
+                </label>
+                <span id="bank-fee-wrap" class="{{ old('apply_bank_fee', $quote->apply_bank_fee) ? '' : 'hidden' }}">
+                    <label for="bank_fee_value" class="sr-only">Valor gasto bancario</label>
+                    <input type="number" name="bank_fee_value" id="bank_fee_value" value="{{ old('bank_fee_value', $quote->bank_fee_value ?? '0') }}" min="0" step="0.01" placeholder="Valor"
+                           class="w-28 border border-gray-300 rounded-lg px-2 py-1 text-sm">
+                </span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-700 min-w-[900px]" id="items-table">
@@ -220,7 +229,11 @@
                 </div>
             </div>
             <div id="resumen-sin-iva" class="mt-4 pt-4 border-t border-gray-200 {{ old('apply_tax', $quote->apply_tax) ? 'hidden' : '' }}">
-                <p class="text-sm text-gray-600">Total</p>
+                <p id="sin-iva-subtotal-label" class="text-sm text-gray-600 hidden">Subtotal</p>
+                <p id="sin-iva-subtotal-value" class="text-xl font-semibold text-gray-900 hidden">0</p>
+                <p id="sin-iva-bank-fee-wrap" class="text-sm text-gray-600 mt-2 hidden">Gasto bancario</p>
+                <p id="sin-iva-bank-fee-value" class="text-xl font-semibold text-gray-900 hidden">0</p>
+                <p class="text-sm text-gray-600 mt-2">Total</p>
                 <p class="text-2xl font-bold text-teal-800" id="display-grand-total">0</p>
             </div>
             <div id="resumen-con-iva" class="mt-4 pt-4 border-t border-gray-200 {{ old('apply_tax', $quote->apply_tax) ? '' : 'hidden' }}">
@@ -228,6 +241,8 @@
                 <p class="text-xl font-semibold text-gray-900" id="display-subtotal">0</p>
                 <p class="text-sm text-gray-600 mt-2">IVA (<span id="display-iva-pct">0</span>%)</p>
                 <p class="text-xl font-semibold text-gray-900" id="display-iva-amount">0</p>
+                <p id="con-iva-bank-fee-wrap" class="text-sm text-gray-600 mt-2 hidden">Gasto bancario</p>
+                <p id="con-iva-bank-fee-value" class="text-xl font-semibold text-gray-900 hidden">0</p>
                 <p class="text-sm text-gray-600 mt-2">Total</p>
                 <p class="text-2xl font-bold text-teal-800" id="display-total-with-tax">0</p>
             </div>
@@ -354,6 +369,12 @@
             if (conIva) conIva.classList.toggle('hidden', !applyTax);
             updateTotals();
         }
+        function updateBankFeeVisibility() {
+            const wrap = document.getElementById('bank-fee-wrap');
+            const applyBankFee = document.getElementById('toggle-bank-fee')?.checked;
+            if (wrap) wrap.classList.toggle('hidden', !applyBankFee);
+            updateTotals();
+        }
 
         function updateLoanButtonVisibility() {
             const opt = clientSelect?.options[clientSelect.selectedIndex];
@@ -423,7 +444,9 @@
             const applyTax = toggleApplyTax?.checked;
             const taxPct = parseFloat(document.getElementById('tax_percentage')?.value || 0) || 0;
             const ivaAmount = applyTax ? Math.round(subtotal * taxPct / 100 * 100) / 100 : 0;
-            const totalWithTax = subtotal + ivaAmount;
+            const applyBankFee = document.getElementById('toggle-bank-fee')?.checked;
+            const bankFee = applyBankFee ? (parseFloat(document.getElementById('bank_fee_value')?.value || 0) || 0) : 0;
+            const totalWithTax = subtotal + ivaAmount + bankFee;
             const fmt = function(n) { return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n); };
             const feesEl = document.getElementById('display-total-fees');
             const loansEl = document.getElementById('display-total-loans');
@@ -436,13 +459,25 @@
             const ivaPctEl = document.getElementById('display-iva-pct');
             const ivaAmountEl = document.getElementById('display-iva-amount');
             const totalWithTaxEl = document.getElementById('display-total-with-tax');
+            const sinIvaSubtotalLabel = document.getElementById('sin-iva-subtotal-label');
+            const sinIvaSubtotalValue = document.getElementById('sin-iva-subtotal-value');
+            const sinIvaBankFeeWrap = document.getElementById('sin-iva-bank-fee-wrap');
+            const sinIvaBankFeeValue = document.getElementById('sin-iva-bank-fee-value');
+            const conIvaBankFeeWrap = document.getElementById('con-iva-bank-fee-wrap');
+            const conIvaBankFeeValue = document.getElementById('con-iva-bank-fee-value');
             if (applyTax) {
                 if (subtotalEl) subtotalEl.textContent = fmt(subtotal);
                 if (ivaPctEl) ivaPctEl.textContent = fmt(taxPct);
                 if (ivaAmountEl) ivaAmountEl.textContent = fmt(ivaAmount);
+                if (conIvaBankFeeWrap) conIvaBankFeeWrap.classList.toggle('hidden', !applyBankFee);
+                if (conIvaBankFeeValue) { conIvaBankFeeValue.textContent = fmt(bankFee); conIvaBankFeeValue.classList.toggle('hidden', !applyBankFee); }
                 if (totalWithTaxEl) totalWithTaxEl.textContent = fmt(totalWithTax);
             } else {
-                if (grandEl) grandEl.textContent = fmt(subtotal);
+                if (sinIvaSubtotalLabel) sinIvaSubtotalLabel.classList.toggle('hidden', !applyBankFee);
+                if (sinIvaSubtotalValue) { sinIvaSubtotalValue.textContent = fmt(subtotal); sinIvaSubtotalValue.classList.toggle('hidden', !applyBankFee); }
+                if (sinIvaBankFeeWrap) sinIvaBankFeeWrap.classList.toggle('hidden', !applyBankFee);
+                if (sinIvaBankFeeValue) { sinIvaBankFeeValue.textContent = fmt(bankFee); sinIvaBankFeeValue.classList.toggle('hidden', !applyBankFee); }
+                if (grandEl) grandEl.textContent = fmt(subtotal + bankFee);
             }
         }
         clientSelect?.addEventListener('change', updateLoanButtonVisibility);
@@ -451,6 +486,8 @@
         if (togglePrev) togglePrev.addEventListener('change', updateColumnVisibility);
         if (toggleRaa) toggleRaa.addEventListener('change', updateColumnVisibility);
         if (toggleApplyTax) toggleApplyTax.addEventListener('change', updateTaxSectionVisibility);
+        document.getElementById('toggle-bank-fee')?.addEventListener('change', updateBankFeeVisibility);
+        document.getElementById('bank_fee_value')?.addEventListener('input', updateTotals);
         document.getElementById('tax_percentage')?.addEventListener('input', updateTotals);
         document.getElementById('form-quote')?.addEventListener('submit', syncColumnHiddenInputs);
         tbody.querySelectorAll('.item-row').forEach(function(row) {

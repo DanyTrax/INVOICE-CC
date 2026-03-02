@@ -80,6 +80,8 @@ class QuoteController extends Controller
             'show_raa_column' => 'nullable|boolean',
             'apply_tax' => 'nullable|boolean',
             'tax_percentage' => 'nullable|numeric|min:0|max:100',
+            'apply_bank_fee' => 'nullable|boolean',
+            'bank_fee_value' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
@@ -121,6 +123,8 @@ class QuoteController extends Controller
             'total_loans' => round($totalLoans, 2),
             'apply_tax' => !empty($validated['apply_tax']),
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
+            'apply_bank_fee' => !empty($validated['apply_bank_fee']),
+            'bank_fee_value' => !empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
         ]);
 
         $existingIds = [];
@@ -309,6 +313,8 @@ class QuoteController extends Controller
             'show_raa_column' => 'nullable|boolean',
             'apply_tax' => 'nullable|boolean',
             'tax_percentage' => 'nullable|numeric|min:0|max:100',
+            'apply_bank_fee' => 'nullable|boolean',
+            'bank_fee_value' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
             'items.*.service_type_name' => 'required|string|max:255',
@@ -350,6 +356,8 @@ class QuoteController extends Controller
             'total_loans' => round($totalLoans, 2),
             'apply_tax' => !empty($validated['apply_tax']),
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
+            'apply_bank_fee' => !empty($validated['apply_bank_fee']),
+            'bank_fee_value' => !empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
         ]);
 
         foreach ($validated['items'] as $pos => $row) {

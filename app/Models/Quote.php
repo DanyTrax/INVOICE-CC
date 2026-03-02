@@ -24,6 +24,8 @@ class Quote extends Model
         'total_loans',
         'apply_tax',
         'tax_percentage',
+        'apply_bank_fee',
+        'bank_fee_value',
     ];
 
     protected function casts(): array
@@ -38,6 +40,8 @@ class Quote extends Model
             'show_raa_column' => 'boolean',
             'apply_tax' => 'boolean',
             'tax_percentage' => 'decimal:2',
+            'apply_bank_fee' => 'boolean',
+            'bank_fee_value' => 'decimal:2',
         ];
     }
 
@@ -61,11 +65,22 @@ class Quote extends Model
     }
 
     /**
-     * Total con IVA cuando apply_tax es true; si no, igual al subtotal.
+     * Gasto bancario efectivo (solo si apply_bank_fee y valor definido).
+     */
+    public function getBankFeeAmountAttribute(): float
+    {
+        if (!$this->apply_bank_fee || $this->bank_fee_value === null) {
+            return 0.0;
+        }
+        return round((float) $this->bank_fee_value, 2);
+    }
+
+    /**
+     * Total final: subtotal + IVA (si aplica) + Gasto bancario (si aplica).
      */
     public function getTotalWithTaxAttribute(): float
     {
-        return round($this->subtotal + $this->tax_amount, 2);
+        return round($this->subtotal + $this->tax_amount + $this->bank_fee_amount, 2);
     }
 
     public function client(): BelongsTo
