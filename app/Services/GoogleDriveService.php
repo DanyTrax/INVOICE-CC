@@ -952,6 +952,36 @@ class GoogleDriveService
     }
 
     /**
+     * Obtener o crear carpeta para un video de capacitación específico.
+     * Estructura: Base → Capacitaciones → {titulo} - {fecha}
+     */
+    public function getOrCreateCapacitacionVideoFolder(string $titulo, string $fechaSubido): string
+    {
+        $baseFolderId = $this->settings->drive_folder_id;
+        if (empty($baseFolderId)) {
+            throw new \Exception('No está configurado el ID de Carpeta Base de Drive en Configuración.');
+        }
+
+        try {
+            // Carpeta fija \"Capacitaciones\" bajo la base
+            $capacitacionesFolderId = $this->findOrCreateFolderUnder($baseFolderId, 'Capacitaciones');
+
+            $titulo = trim($titulo) !== '' ? trim($titulo) : 'Capacitacion';
+            $folderName = $titulo . ' - ' . $fechaSubido;
+
+            // Carpeta por capacitación dentro de Capacitaciones
+            return $this->findOrCreateFolderUnder($capacitacionesFolderId, $folderName);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error al obtener/crear carpeta de video de capacitación en Drive', [
+                'titulo' => $titulo,
+                'fecha' => $fechaSubido,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Obtener o crear carpeta "Clientes" bajo base (o bajo país si se pasa).
      * Solo se usa cuando la empresa no tiene país: Base → Clientes → carpeta empresa.
      */
@@ -1079,6 +1109,64 @@ class GoogleDriveService
         }
         $folder = $this->createFolder($folderName, $parentId);
         return $folder['id'];
+    }
+
+    /**
+     * Renombrar un archivo o carpeta en Drive (no lanza excepción si falla).
+     */
+    public function renameFileOrFolder(string $driveId, string $newName): void
+    {
+        try {
+            $token = $this->getAccessToken();
+            $response = Http::withToken($token)
+                ->patch($this->baseUrl . '/files/' . $driveId . '?' . http_build_query([
+                    'supportsAllDrives' => 'true',
+                ]), [
+                    'name' => $newName,
+                ]);
+
+            if (!$response->successful()) {
+                Log::warning('Error al renombrar archivo/carpeta en Drive', [
+                    'drive_id' => $driveId,
+                    'new_name' => $newName,
+                    'response' => $response->body(),
+                    'status' => $response->status(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Excepción al renombrar archivo/carpeta en Drive', [
+                'drive_id' => $driveId,
+                'new_name' => $newName,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Eliminar un archivo o carpeta en Drive (no lanza excepción si falla).
+     */
+    public function deleteFileOrFolder(string $driveId): void
+    {
+        try {
+            $token = $this->getAccessToken();
+            $response = Http::withToken($token)
+                ->delete($this->baseUrl . '/files/' . $driveId, [
+                    'supportsAllDrives' => 'true',
+                ]);
+
+            if (!$response->successful() && $response->status() !== 404) {
+                Log::warning('Error al eliminar archivo/carpeta en Drive', [
+                    'drive_id' => $driveId,
+                    'response' => $response->body(),
+                    'status' => $response->status(),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Excepción al eliminar archivo/carpeta en Drive', [
+                'drive_id' => $driveId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

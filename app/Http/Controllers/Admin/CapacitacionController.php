@@ -85,7 +85,8 @@ class CapacitacionController extends Controller
         $fechaSubida = now()->format('Y-m-d');
         try {
             $drive = app(GoogleDriveService::class);
-            $folderId = $drive->getOrCreateCapacitacionesFolder($fechaSubida);
+            // Carpeta específica por capacitación: Base → Capacitaciones → {titulo} - {fecha}
+            $folderId = $drive->getOrCreateCapacitacionVideoFolder($validated['titulo'], $fechaSubida);
             $tempPath = $file->getRealPath();
             $fileName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
             if (!str_ends_with(strtolower($fileName), '.mp4')) {
@@ -137,12 +138,21 @@ class CapacitacionController extends Controller
         $capacitacionVideo->titulo = $validated['titulo'];
         $capacitacionVideo->descripcion = $validated['descripcion'] ?? null;
 
+        $drive = app(GoogleDriveService::class);
+        $fechaOriginal = optional($capacitacionVideo->created_at)->format('Y-m-d') ?? now()->format('Y-m-d');
+
+        // Renombrar carpeta en Drive cuando cambie el título
+        if ($capacitacionVideo->drive_folder_id) {
+            $nuevoNombreCarpeta = ($capacitacionVideo->titulo ?: 'Capacitacion') . ' - ' . $fechaOriginal;
+            $drive->renameFileOrFolder($capacitacionVideo->drive_folder_id, $nuevoNombreCarpeta);
+        }
+
         if ($request->hasFile('video')) {
             $file = $request->file('video');
-            $fechaSubida = now()->format('Y-m-d');
             try {
-                $drive = app(GoogleDriveService::class);
-                $folderId = $drive->getOrCreateCapacitacionesFolder($fechaSubida);
+                // Usar la misma carpeta si ya existe; si no, crearla
+                $folderId = $capacitacionVideo->drive_folder_id
+                    ?: $drive->getOrCreateCapacitacionVideoFolder($capacitacionVideo->titulo, $fechaOriginal);
                 $tempPath = $file->getRealPath();
                 $fileName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
                 if (!str_ends_with(strtolower($fileName), '.mp4')) {
@@ -170,6 +180,19 @@ class CapacitacionController extends Controller
         if (!$this->canManage()) {
             abort(403, 'No tienes permiso para eliminar videos de capacitación.');
         }
+        // Eliminar archivo y carpeta en Drive (si existen)
+        try {
+            $drive = app(GoogleDriveService::class);
+            if ($capacitacionVideo->drive_file_id) {
+                $drive->deleteFileOrFolder($capacitacionVideo->drive_file_id);
+            }
+            if ($capacitacionVideo->drive_folder_id) {
+                $drive->deleteFileOrFolder($capacitacionVideo->drive_folder_id);
+            }
+        } catch (\Exception $e) {
+            // No interrumpir el flujo si falla el borrado en Drive
+        }
+
         $capacitacionVideo->delete();
         return redirect()->route('admin.capacitaciones.index')
             ->with('success', 'Video eliminado.');
