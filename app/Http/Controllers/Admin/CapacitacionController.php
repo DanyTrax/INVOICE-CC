@@ -204,10 +204,17 @@ class CapacitacionController extends Controller
         $drive = app(GoogleDriveService::class);
         $token = $drive->getAccessToken();
         $url = 'https://www.googleapis.com/drive/v3/files/' . $capacitacionVideo->drive_file_id . '?alt=media';
-        return response()->streamDownload(function () use ($url, $token) {
-            $response = Http::withToken($token)->get($url);
-            echo $response->body();
-        }, $capacitacionVideo->nombre_archivo ?? 'video.mp4', [
+        // Usar streaming por chunks para no agotar memoria en archivos grandes
+        return response()->stream(function () use ($url, $token) {
+            $response = Http::withToken($token)->withOptions(['stream' => true])->get($url);
+            foreach ($response->stream() as $chunk) {
+                echo $chunk;
+                if (function_exists('ob_flush')) {
+                    @ob_flush();
+                }
+                flush();
+            }
+        }, 200, [
             'Content-Type' => 'video/mp4',
         ]);
     }
