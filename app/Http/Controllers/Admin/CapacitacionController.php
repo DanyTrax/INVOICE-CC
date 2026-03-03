@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
+use Illuminate\Database\QueryException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CapacitacionController extends Controller
@@ -30,19 +31,27 @@ class CapacitacionController extends Controller
         return $user && ($user->hasRole('super_admin') || !empty($user->manage_capacitaciones));
     }
 
-    public function index(): View
+    public function index(): View|RedirectResponse
     {
         $this->requireActiveUser();
-        $videos = CapacitacionVideo::with(['completions.user', 'createdByUser'])
-            ->orderBy('orden')
-            ->orderBy('created_at', 'desc')
-            ->get();
 
-        // Agentes activos (no clientes) para mostrar checks
-        $agentes = User::where('is_active', true)
-            ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'client'))
-            ->orderBy('name')
-            ->get();
+        try {
+            $videos = CapacitacionVideo::with(['completions.user', 'createdByUser'])
+                ->orderBy('orden')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $agentes = User::where('is_active', true)
+                ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'client'))
+                ->orderBy('name')
+                ->get();
+        } catch (QueryException $e) {
+            if (str_contains($e->getMessage(), "doesn't exist") || str_contains($e->getMessage(), 'no existe')) {
+                return redirect()->route('admin.dashboard')
+                    ->with('error', 'El módulo Capacitaciones requiere ejecutar las migraciones en el servidor. Ejecuta: php artisan migrate --force');
+            }
+            throw $e;
+        }
 
         return view('admin.capacitaciones.index', [
             'videos' => $videos,
