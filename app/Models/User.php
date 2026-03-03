@@ -27,6 +27,7 @@ class User extends Authenticatable
         'avatar_url',
         'is_active',
         'client_status',
+        'manage_capacitaciones',
         'phone',
     ];
 
@@ -51,6 +52,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'manage_capacitaciones' => 'boolean',
         ];
     }
 
@@ -93,5 +95,13 @@ class User extends Authenticatable
     public function uploadedDocuments(): HasMany
     {
         return $this->hasMany(Document::class, 'uploaded_by_id');
+    }
+
+    /**
+     * Completaciones de videos de capacitación (vistos al 100%).
+     */
+    public function capacitacionCompletions(): HasMany
+    {
+        return $this->hasMany(CapacitacionCompletion::class);
     }
 }

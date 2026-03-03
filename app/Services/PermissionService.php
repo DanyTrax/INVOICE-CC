@@ -22,6 +22,7 @@ class PermissionService
             'companies' => 'Empresas',
             'registrations' => 'Registros (Expedientes)',
             'processes' => 'Expedientes INVIMA',
+            'capacitaciones' => 'Capacitaciones',
             'users' => 'Usuarios',
             // Configuración por secciones
             'settings_agency' => 'Config: Datos Empresa',

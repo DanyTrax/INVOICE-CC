@@ -22,11 +22,11 @@ class GoogleDriveService
     }
 
     /**
-     * Obtener token de acceso.
+     * Obtener token de acceso (público para uso interno, ej. streaming de videos de capacitación).
      * Modo oauth_user: usa refresh_token de tu cuenta Google (Mi unidad).
      * Modo service_account: usa JSON de Service Account (Shared Drive).
      */
-    protected function getAccessToken()
+    public function getAccessToken()
     {
         if ($this->accessToken) {
             return $this->accessToken;
@@ -924,6 +924,34 @@ class GoogleDriveService
     }
 
     /**
+     * Obtener o crear carpeta para videos de capacitación.
+     * Nueva estructura: Base → Capacitaciones → {fecha YYYY-MM-DD}
+     */
+    public function getOrCreateCapacitacionesFolder(string $fechaSubido): string
+    {
+        $baseFolderId = $this->settings->drive_folder_id;
+        if (empty($baseFolderId)) {
+            throw new \Exception('No está configurado el ID de Carpeta Base de Drive en Configuración.');
+        }
+
+        try {
+            // 1) Carpeta fija \"Capacitaciones\" bajo la base
+            $capacitacionesFolderId = $this->findOrCreateFolderUnder($baseFolderId, 'Capacitaciones');
+
+            // 2) Subcarpeta por fecha dentro de Capacitaciones (ej. 2026-03-15)
+            $fechaFolderId = $this->findOrCreateFolderUnder($capacitacionesFolderId, $fechaSubido);
+
+            return $fechaFolderId;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error al obtener/crear carpeta Capacitaciones en Drive', [
+                'fecha' => $fechaSubido,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Obtener o crear carpeta "Clientes" bajo base (o bajo país si se pasa).
      * Solo se usa cuando la empresa no tiene país: Base → Clientes → carpeta empresa.
      */
@@ -1008,12 +1036,49 @@ class GoogleDriveService
             'tar' => 'application/x-tar',
             'gz' => 'application/gzip',
             
+            // Video
+            'mp4' => 'video/mp4',
+
             // Otros
             'rtf' => 'application/rtf',
             'xps' => 'application/vnd.ms-xpsdocument',
         ];
-        
+
         return $mimeTypes[strtolower($extension)] ?? 'application/octet-stream';
+    }
+
+    /**
+     * Obtener o crear carpeta para videos de capacitación.
+     * Alias del método principal, mantiene compatibilidad.
+     *
+     * @param string $fechaSubida Fecha en formato Y-m-d (ej. 2026-03-15)
+     */
+    public function getOrCreateCapacitacionesFolderForDate(string $fechaSubida): string
+    {
+        return $this->getOrCreateCapacitacionesFolder($fechaSubida);
+    }
+
+    /**
+     * Buscar carpeta por nombre bajo un padre; crearla si no existe.
+     */
+    protected function findOrCreateFolderUnder(string $parentId, string $folderName): string
+    {
+        $token = $this->getAccessToken();
+        $safeName = str_replace("'", "\\'", $folderName);
+        $query = "name='{$safeName}' and mimeType='application/vnd.google-apps.folder' and trashed=false and '{$parentId}' in parents";
+        $response = Http::withToken($token)
+            ->get($this->baseUrl . '/files', [
+                'q' => $query,
+                'fields' => 'files(id, name)',
+            ]);
+        if ($response->successful()) {
+            $files = $response->json()['files'] ?? [];
+            if (!empty($files)) {
+                return $files[0]['id'];
+            }
+        }
+        $folder = $this->createFolder($folderName, $parentId);
+        return $folder['id'];
     }
 
     /**

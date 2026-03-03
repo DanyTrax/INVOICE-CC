@@ -1,0 +1,261 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\CapacitacionCompletion;
+use App\Models\CapacitacionVideo;
+use App\Models\User;
+use App\Services\GoogleDriveService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Http;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class CapacitacionController extends Controller
+{
+    protected function requireActiveUser(): void
+    {
+        $user = auth()->user();
+        if (!$user || !$user->is_active) {
+            abort(403, 'Solo los agentes activos pueden acceder a Capacitaciones.');
+        }
+    }
+
+    protected function canManage(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->hasRole('super_admin') || !empty($user->manage_capacitaciones));
+    }
+
+    public function index(): View
+    {
+        $this->requireActiveUser();
+        $videos = CapacitacionVideo::with(['completions.user', 'createdByUser'])
+            ->orderBy('orden')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Agentes activos (no clientes) para mostrar checks
+        $agentes = User::where('is_active', true)
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'client'))
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.capacitaciones.index', [
+            'videos' => $videos,
+            'agentes' => $agentes,
+            'canManage' => $this->canManage(),
+        ]);
+    }
+
+    public function create(): View|RedirectResponse
+    {
+        $this->requireActiveUser();
+        if (!$this->canManage()) {
+            abort(403, 'No tienes permiso para subir videos de capacitación.');
+        }
+        return view('admin.capacitaciones.create');
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $this->requireActiveUser();
+        if (!$this->canManage()) {
+            abort(403, 'No tienes permiso para subir videos de capacitación.');
+        }
+        $validated = $request->validate([
+            'titulo' => 'required|string|max:255',
+            'descripcion' => 'nullable|string|max:5000',
+            'video' => 'required|file|mimes:mp4|max:512000', // max 512MB
+        ]);
+
+        $file = $request->file('video');
+        $fechaSubida = now()->format('Y-m-d');
+        try {
+            $drive = app(GoogleDriveService::class);
+            $folderId = $drive->getOrCreateCapacitacionesFolder($fechaSubida);
+            $tempPath = $file->getRealPath();
+            $fileName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+            if (!str_ends_with(strtolower($fileName), '.mp4')) {
+                $fileName .= '.mp4';
+            }
+            $result = $drive->uploadFile($tempPath, $fileName, $folderId, 'video/mp4');
+
+            $orden = (int) CapacitacionVideo::max('orden') + 1;
+            CapacitacionVideo::create([
+                'titulo' => $validated['titulo'],
+                'descripcion' => $validated['descripcion'] ?? null,
+                'drive_file_id' => $result['id'],
+                'drive_folder_id' => $folderId,
+                'nombre_archivo' => $fileName,
+                'orden' => $orden,
+                'created_by' => auth()->id(),
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->route('admin.capacitaciones.create')
+                ->withInput()
+                ->with('error', 'Error al subir a Drive: ' . $e->getMessage());
+        }
+
+        return redirect()->route('admin.capacitaciones.index')
+            ->with('success', 'Video de capacitación subido correctamente.');
+    }
+
+    public function edit(CapacitacionVideo $capacitacionVideo): View|RedirectResponse
+    {
+        $this->requireActiveUser();
+        if (!$this->canManage()) {
+            abort(403, 'No tienes permiso para editar videos de capacitación.');
+        }
+        return view('admin.capacitaciones.edit', ['video' => $capacitacionVideo]);
+    }
+
+    public function update(Request $request, CapacitacionVideo $capacitacionVideo): RedirectResponse
+    {
+        $this->requireActiveUser();
+        if (!$this->canManage()) {
+            abort(403, 'No tienes permiso para editar videos de capacitación.');
+        }
+        $validated = $request->validate([
+            'titulo' => 'required|string|max:255',
+            'descripcion' => 'nullable|string|max:5000',
+            'video' => 'nullable|file|mimes:mp4|max:512000',
+        ]);
+
+        $capacitacionVideo->titulo = $validated['titulo'];
+        $capacitacionVideo->descripcion = $validated['descripcion'] ?? null;
+
+        if ($request->hasFile('video')) {
+            $file = $request->file('video');
+            $fechaSubida = now()->format('Y-m-d');
+            try {
+                $drive = app(GoogleDriveService::class);
+                $folderId = $drive->getOrCreateCapacitacionesFolder($fechaSubida);
+                $tempPath = $file->getRealPath();
+                $fileName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+                if (!str_ends_with(strtolower($fileName), '.mp4')) {
+                    $fileName .= '.mp4';
+                }
+                $result = $drive->uploadFile($tempPath, $fileName, $folderId, 'video/mp4');
+                $capacitacionVideo->drive_file_id = $result['id'];
+                $capacitacionVideo->drive_folder_id = $folderId;
+                $capacitacionVideo->nombre_archivo = $fileName;
+            } catch (\Exception $e) {
+                return redirect()->route('admin.capacitaciones.edit', $capacitacionVideo)
+                    ->withInput()
+                    ->with('error', 'Error al subir el nuevo video a Drive: ' . $e->getMessage());
+            }
+        }
+        $capacitacionVideo->save();
+
+        return redirect()->route('admin.capacitaciones.index')
+            ->with('success', 'Video actualizado correctamente.');
+    }
+
+    public function destroy(CapacitacionVideo $capacitacionVideo): RedirectResponse
+    {
+        $this->requireActiveUser();
+        if (!$this->canManage()) {
+            abort(403, 'No tienes permiso para eliminar videos de capacitación.');
+        }
+        $capacitacionVideo->delete();
+        return redirect()->route('admin.capacitaciones.index')
+            ->with('success', 'Video eliminado.');
+    }
+
+    public function ver(CapacitacionVideo $capacitacionVideo): View|RedirectResponse
+    {
+        $this->requireActiveUser();
+        if (!$capacitacionVideo->drive_file_id) {
+            return redirect()->route('admin.capacitaciones.index')
+                ->with('error', 'Este video no tiene archivo asociado.');
+        }
+        $completion = CapacitacionCompletion::where('capacitacion_video_id', $capacitacionVideo->id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        return view('admin.capacitaciones.ver', [
+            'video' => $capacitacionVideo,
+            'yaCompleto' => (bool) $completion,
+        ]);
+    }
+
+    /**
+     * Stream del video desde Drive (para reproductor HTML5).
+     */
+    public function stream(CapacitacionVideo $capacitacionVideo): StreamedResponse
+    {
+        $this->requireActiveUser();
+        if (!$capacitacionVideo->drive_file_id) {
+            abort(404);
+        }
+        $drive = app(GoogleDriveService::class);
+        $token = $drive->getAccessToken();
+        $url = 'https://www.googleapis.com/drive/v3/files/' . $capacitacionVideo->drive_file_id . '?alt=media';
+        return response()->streamDownload(function () use ($url, $token) {
+            $response = Http::withToken($token)->get($url);
+            echo $response->body();
+        }, $capacitacionVideo->nombre_archivo ?? 'video.mp4', [
+            'Content-Type' => 'video/mp4',
+        ]);
+    }
+
+    public function completar(Request $request, CapacitacionVideo $capacitacionVideo): RedirectResponse
+    {
+        $this->requireActiveUser();
+        $user = auth()->user();
+        CapacitacionCompletion::updateOrCreate(
+            [
+                'capacitacion_video_id' => $capacitacionVideo->id,
+                'user_id' => $user->id,
+            ],
+            ['completed_at' => now()]
+        );
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+        return redirect()->route('admin.capacitaciones.index')
+            ->with('success', 'Visualización registrada.');
+    }
+
+    public function reportePdf(): \Illuminate\Http\Response|RedirectResponse
+    {
+        $this->requireActiveUser();
+        if (!$this->canManage()) {
+            abort(403, 'No tienes permiso para descargar el reporte.');
+        }
+        $videos = CapacitacionVideo::with(['completions.user'])->orderBy('orden')->get();
+        $agentes = User::where('is_active', true)
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'client'))
+            ->orderBy('name')
+            ->get();
+
+        $pdf = Pdf::loadView('admin.capacitaciones.reporte-pdf', [
+            'videos' => $videos,
+            'agentes' => $agentes,
+            'tituloReporte' => 'Reporte de capacitaciones - Todos los videos',
+        ]);
+        return $pdf->download('reporte-capacitaciones-' . now()->format('Y-m-d-His') . '.pdf');
+    }
+
+    public function reporteVideoPdf(CapacitacionVideo $capacitacionVideo): \Illuminate\Http\Response|RedirectResponse
+    {
+        $this->requireActiveUser();
+        if (!$this->canManage()) {
+            abort(403, 'No tienes permiso para descargar el reporte.');
+        }
+        $capacitacionVideo->load(['completions.user']);
+        $agentes = $capacitacionVideo->completions->map(fn ($c) => $c->user)->filter()->sortBy('name')->values();
+
+        $pdf = Pdf::loadView('admin.capacitaciones.reporte-video-pdf', [
+            'video' => $capacitacionVideo,
+            'completions' => $capacitacionVideo->completions,
+            'tituloReporte' => 'Reporte - ' . $capacitacionVideo->titulo,
+        ]);
+        $slug = preg_replace('/[^a-z0-9-]/', '-', strtolower($capacitacionVideo->titulo));
+        return $pdf->download('reporte-capacitacion-' . $slug . '-' . now()->format('Y-m-d-His') . '.pdf');
+    }
+}

@@ -477,6 +477,7 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
+            'manage_capacitaciones' => 'nullable|boolean',
             'role' => 'nullable|string|max:255',
             'companies' => 'array',
             'companies.*' => 'exists:companies,id',
@@ -493,6 +494,7 @@ class UserController extends Controller
         }
 
         $validated['is_active'] = $request->has('is_active');
+        $validated['manage_capacitaciones'] = $request->boolean('manage_capacitaciones');
 
         $user->update($validated);
 

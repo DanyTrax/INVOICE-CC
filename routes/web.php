@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ServiceTypeController;
 use App\Http\Controllers\Admin\QuoteController;
 use App\Http\Controllers\Admin\QuotePdfTemplateController;
 use App\Http\Controllers\Admin\RegulatoryEventController;
+use App\Http\Controllers\Admin\CapacitacionController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\ClientRegisterController;
@@ -140,7 +141,20 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::delete('processes/{process}/documents/{processDocument}', [ProcessController::class, 'destroyDocument'])->name('processes.documents.destroy');
     Route::post('submissions/{submission}/events/auto', [RegulatoryEventController::class, 'storeAuto'])->name('submissions.events.store-auto');
     Route::post('submissions/{submission}/events/resolution', [RegulatoryEventController::class, 'storeResolution'])->name('submissions.events.store-resolution');
-    
+
+    // Capacitaciones (videos para agentes; solo activos pueden ver; gestor puede subir/editar/borrar y descargar reporte)
+    Route::get('capacitaciones', [CapacitacionController::class, 'index'])->name('capacitaciones.index');
+    Route::get('capacitaciones/create', [CapacitacionController::class, 'create'])->name('capacitaciones.create');
+    Route::post('capacitaciones', [CapacitacionController::class, 'store'])->name('capacitaciones.store');
+    Route::get('capacitaciones/{capacitacionVideo}/edit', [CapacitacionController::class, 'edit'])->name('capacitaciones.edit');
+    Route::put('capacitaciones/{capacitacionVideo}', [CapacitacionController::class, 'update'])->name('capacitaciones.update');
+    Route::delete('capacitaciones/{capacitacionVideo}', [CapacitacionController::class, 'destroy'])->name('capacitaciones.destroy');
+    Route::get('capacitaciones/{capacitacionVideo}/ver', [CapacitacionController::class, 'ver'])->name('capacitaciones.ver');
+    Route::get('capacitaciones/stream/{capacitacionVideo}', [CapacitacionController::class, 'stream'])->name('capacitaciones.stream');
+    Route::post('capacitaciones/{capacitacionVideo}/completar', [CapacitacionController::class, 'completar'])->name('capacitaciones.completar');
+    Route::get('capacitaciones/reporte/pdf', [CapacitacionController::class, 'reportePdf'])->name('capacitaciones.reporte.pdf');
+    Route::get('capacitaciones/reporte/video/{capacitacionVideo}/pdf', [CapacitacionController::class, 'reporteVideoPdf'])->name('capacitaciones.reporte.video.pdf');
+
     // Users
     Route::post('users/{user}/send-access-email', [UserController::class, 'sendAccessEmail'])->name('users.send-access-email');
     Route::patch('users/{user}/client-status', [UserController::class, 'updateClientStatus'])->name('users.client-status.update');
