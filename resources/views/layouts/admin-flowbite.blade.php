@@ -237,7 +237,6 @@
                             <span class="ms-3">Monitor de Operaciones</span>
                         </a>
                     </li>
-                    @if($permService->userHasPermission('capacitaciones', 'view'))
                     <li>
                         <a href="{{ route('admin.capacitaciones.index') }}"
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.capacitaciones.*') ? 'bg-teal-700' : '' }}">
@@ -245,7 +244,6 @@
                             <span class="ms-3">Capacitaciones</span>
                         </a>
                     </li>
-                    @endif
                     <!-- SISTEMA -->
                     @if($permService->userHasPermission('users', 'view')
                         || $permService->userHasPermission('settings_agency', 'view') 

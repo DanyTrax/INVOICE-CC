@@ -24,8 +24,9 @@ class CheckModulePermission
         if (str_starts_with($routeName, 'admin.companies')) {
             return ['companies', 'view'];
         }
+        // Capacitaciones: visible para cualquier usuario admin/no-cliente (solo se restringen acciones desde el controlador)
         if (str_starts_with($routeName, 'admin.capacitaciones')) {
-            return ['capacitaciones', 'view'];
+            return null;
         }
         if (str_starts_with($routeName, 'admin.registrations')) {
             return ['registrations', 'view'];
