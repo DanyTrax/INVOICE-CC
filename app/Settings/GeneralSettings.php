@@ -51,6 +51,7 @@ class GeneralSettings extends Settings
     // Sistema y Personalización
     public string $footer_text = 'RAMS - Regulatory Affairs Management System';
     public string $system_name = 'Sistema de Gestión Regulatoria';
+    public string $timezone = 'America/Bogota';
 
     // Plantilla PDF de cotizaciones (cabecera y pie editables)
     public string $quote_pdf_header_subtitle = 'RAMS - Regulatory Affairs Management System';

@@ -1719,6 +1719,22 @@
                                     Este nombre aparecerá en las plantillas de correo electrónico donde se mencione "Sistema de Gestión Regulatoria".
                                 </p>
                             </div>
+
+                            <!-- Zona horaria del sistema -->
+                            <div>
+                                <label for="timezone" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Zona horaria del sistema
+                                </label>
+                                <input type="text"
+                                       id="timezone"
+                                       name="timezone"
+                                       value="{{ old('timezone', $settings->timezone ?? config('app.timezone')) }}"
+                                       placeholder="Ej: America/Bogota, Europe/Madrid"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Se usará para todas las fechas y horas del sistema. Debe ser un identificador de zona horaria PHP válido (por ejemplo: <code>America/Bogota</code>, <code>America/Mexico_City</code>, <code>Europe/Madrid</code>).
+                                </p>
+                            </div>
                         </div>
 
                         <div class="mt-6 flex justify-end">

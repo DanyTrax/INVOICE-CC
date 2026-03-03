@@ -1200,6 +1200,7 @@ class SettingsController extends Controller
         $request->validate([
             'footer_text' => 'nullable|string|max:255',
             'system_name' => 'nullable|string|max:255',
+            'timezone' => 'nullable|string|max:64',
         ]);
         
         if ($request->has('footer_text')) {
@@ -1208,6 +1209,13 @@ class SettingsController extends Controller
         
         if ($request->has('system_name')) {
             $settings->system_name = $request->input('system_name');
+        }
+
+        if ($request->has('timezone')) {
+            $tz = trim((string) $request->input('timezone'));
+            if ($tz !== '') {
+                $settings->timezone = $tz;
+            }
         }
         
         $this->ensureAllPropertiesSet($settings);
