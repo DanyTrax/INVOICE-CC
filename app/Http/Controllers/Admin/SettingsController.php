@@ -514,6 +514,7 @@ class SettingsController extends Controller
             'zoho_from_email' => '',
             'footer_text' => 'RAMS - Regulatory Affairs Management System',
             'system_name' => 'Sistema de Gestión Regulatoria',
+            'timezone' => 'America/Bogota',
             'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
             'quote_pdf_footer_text' => '',
             'drive_folder_name_no_client' => 'Expedientes Sin Cliente',
