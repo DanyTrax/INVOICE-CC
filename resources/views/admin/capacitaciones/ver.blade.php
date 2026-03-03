@@ -67,9 +67,8 @@
         });
 
         video.addEventListener('seeking', function() {
-            if (video.currentTime > lastValidTime) {
-                video.currentTime = lastValidTime;
-            }
+            // Bloquear cualquier intento de mover la barra (adelantar o atrasar)
+            video.currentTime = lastValidTime;
         });
 
         video.addEventListener('ended', function() {

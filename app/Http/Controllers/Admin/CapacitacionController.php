@@ -207,8 +207,9 @@ class CapacitacionController extends Controller
         // Usar streaming por chunks para no agotar memoria en archivos grandes
         return response()->stream(function () use ($url, $token) {
             $response = Http::withToken($token)->withOptions(['stream' => true])->get($url);
-            foreach ($response->stream() as $chunk) {
-                echo $chunk;
+            $stream = $response->toPsrResponse()->getBody();
+            while (!$stream->eof()) {
+                echo $stream->read(1024 * 1024); // 1 MB por chunk
                 if (function_exists('ob_flush')) {
                     @ob_flush();
                 }
