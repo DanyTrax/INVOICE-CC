@@ -106,9 +106,19 @@
             panels.forEach(function(p) {
                 var id = p.id;
                 var show = (id === 'panel-auto' && type === 'auto') || (id === 'panel-aprobado' && type === 'aprobado') || (id === 'panel-rechazo' && type === 'rechazo') || (id === 'panel-radicado' && type === 'radicado');
-                if (show) p.classList.remove('hidden'); else p.classList.add('hidden');
+                if (show) {
+                    p.classList.remove('hidden');
+                    [].forEach.call(p.querySelectorAll('input, textarea, select'), function(el) { el.disabled = false; });
+                } else {
+                    p.classList.add('hidden');
+                    [].forEach.call(p.querySelectorAll('input, textarea, select'), function(el) { el.disabled = true; });
+                }
             });
-            if (panelFile) panelFile.classList.toggle('hidden', type === 'rechazo' || type === 'radicado');
+            if (panelFile) {
+                panelFile.classList.toggle('hidden', type === 'rechazo' || type === 'radicado');
+                var fileInput = panelFile && panelFile.querySelector('input[name="file"]');
+                if (fileInput) fileInput.disabled = (type === 'rechazo' || type === 'radicado');
+            }
         }
         if (tabs && tabs.length) tabs.forEach(function(t) {
             t.addEventListener('click', function() { showPanel(this.dataset.tab); });

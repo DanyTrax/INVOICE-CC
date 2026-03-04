@@ -99,56 +99,50 @@
                             </li>
                         @endif
 
-                        {{-- 2. Ciclos de trámite: cada ciclo = Checklist documental → Sometimiento → Eventos (línea de tiempo completa) --}}
+                        {{-- 2. Ciclos de trámite: un ciclo = una raíz + todos sus intentos (hijos). Nuevo ciclo solo al registrar REQUERIMIENTO AUTO desde Radicado. --}}
                         @php
                             $lastSubmission = $process->submissions->sortByDesc('id')->first();
                             $roots = $process->submissions->where('parent_id', null)->sortBy(fn($s) => $s->submission_date ?? $s->created_at);
-                            $cycles = collect();
-                            $addToCycles = function ($sub) use (&$addToCycles, &$cycles) {
-                                $cycles->push($sub);
-                                foreach ($sub->children->sortBy('fecha_radicacion') as $child) {
-                                    $addToCycles($child);
-                                }
-                            };
-                            foreach ($roots as $root) {
-                                $addToCycles($root);
-                            }
                             $rejectedSubmissions = $process->submissions->filter(fn ($s) => in_array($s->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]));
                             $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
                             $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE);
                             $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO;
                             $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd;
-                            $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]);
+                            $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_RECHAZADO;
                         @endphp
-                        @foreach($cycles as $cycleIndex => $submission)
+                        @foreach($roots as $cycleIndex => $rootSubmission)
                             @php
                                 $cycleNum = $loop->iteration;
-                                $isClosed = in_array($submission->status, [\App\Models\Submission::STATUS_APROBADO, \App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO], true);
-                                $statusBadgeClass = match($submission->status) {
+                                $attemptsInCycle = collect([$rootSubmission])->merge($rootSubmission->children->sortBy(fn($c) => $c->submission_date ?? $c->created_at));
+                                $lastInCycle = $attemptsInCycle->last();
+                                $isClosed = in_array($lastInCycle->status, [\App\Models\Submission::STATUS_APROBADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO], true);
+                                $statusBadgeClass = match($lastInCycle->status) {
                                     'Aprobado' => 'bg-green-100 text-green-800',
                                     'Rechazado' => 'bg-red-100 text-red-800',
                                     'En Requerimiento' => 'bg-yellow-100 text-yellow-800',
+                                    'Radicado' => 'bg-teal-100 text-teal-800',
                                     default => 'bg-blue-100 text-blue-800',
                                 };
                             @endphp
                             <li class="relative pl-12 pb-4">
-                                <div class="absolute left-0 w-8 h-8 rounded-full {{ $submission->status === \App\Models\Submission::STATUS_RECHAZADO ? 'bg-red-500' : ($submission->status === \App\Models\Submission::STATUS_APROBADO ? 'bg-green-500' : 'bg-blue-500') }} flex items-center justify-center text-white text-xs">
+                                <div class="absolute left-0 w-8 h-8 rounded-full {{ $lastInCycle->status === \App\Models\Submission::STATUS_RECHAZADO ? 'bg-red-500' : ($lastInCycle->status === \App\Models\Submission::STATUS_APROBADO ? 'bg-green-500' : ($lastInCycle->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO ? 'bg-yellow-500' : 'bg-blue-500')) }} flex items-center justify-center text-white text-xs">
                                     <i class="fas fa-layer-group"></i>
                                 </div>
                                 <details class="group border border-gray-200 rounded-lg overflow-hidden" @if(!$isClosed) open @endif>
                                     <summary class="flex items-center gap-2 flex-wrap px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                                         <span class="font-semibold text-gray-900">Ciclo {{ $cycleNum }}</span>
                                         <span class="text-sm text-gray-600">
-                                            {{ $submission->submission_date ? $submission->submission_date->format('d/m/Y') : ($submission->created_at?->format('d/m/Y') ?? '-') }}
+                                            {{ $attemptsInCycle->count() }} intento(s)
+                                            · {{ $rootSubmission->submission_date ? $rootSubmission->submission_date->format('d/m/Y') : ($rootSubmission->created_at?->format('d/m/Y') ?? '-') }}
                                         </span>
-                                        <span class="px-2 py-0.5 rounded text-xs font-medium {{ $statusBadgeClass }}">{{ $submission->status }}</span>
-                                        @if($submission->quote)
-                                            <a href="{{ route('admin.quotes.show', $submission->quote) }}" class="text-sm text-teal-600 hover:underline" onclick="event.stopPropagation()">Cot. {{ $submission->quote->consecutive ?? $submission->quote->id }}</a>
+                                        <span class="px-2 py-0.5 rounded text-xs font-medium {{ $statusBadgeClass }}">{{ $lastInCycle->status }}</span>
+                                        @if($rootSubmission->quote)
+                                            <a href="{{ route('admin.quotes.show', $rootSubmission->quote) }}" class="text-sm text-teal-600 hover:underline" onclick="event.stopPropagation()">Cot. {{ $rootSubmission->quote->consecutive ?? $rootSubmission->quote->id }}</a>
                                         @endif
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>
                                     <div class="p-4 bg-white border-t border-gray-200 space-y-6">
-                                        {{-- Inicio de línea de tiempo del ciclo: Checklist documental --}}
+                                        {{-- Checklist documental (una vez por ciclo) --}}
                                         @if($process->checklistItems->isNotEmpty())
                                             <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                                                 <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Checklist documental</p>
@@ -171,15 +165,22 @@
                                                 </ul>
                                             </div>
                                         @endif
-                                        {{-- Sometimiento y eventos del ciclo --}}
-                                        @include('admin.processes.partials.timeline-cycle-content', ['submission' => $submission, 'lastSubmission' => $lastSubmission ?? null, 'quotesForClient' => $quotesForClient ?? collect()])
+                                        {{-- Intentos del ciclo: raíz + hijos (todos en el mismo ciclo) --}}
+                                        @foreach($attemptsInCycle as $attemptIndex => $submission)
+                                            <div class="{{ $attemptIndex > 0 ? 'mt-6 pt-4 border-t border-gray-200' : '' }}">
+                                                @if($attemptsInCycle->count() > 1)
+                                                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Intento {{ $attemptIndex + 1 }}</p>
+                                                @endif
+                                                @include('admin.processes.partials.timeline-cycle-content', ['submission' => $submission, 'lastSubmission' => $lastSubmission ?? null, 'quotesForClient' => $quotesForClient ?? collect()])
+                                            </div>
+                                        @endforeach
                                     </div>
                                 </details>
                             </li>
                         @endforeach
 
                         {{-- Sin sometimientos aún: primer ciclo (Ciclo 1) para cargar check docs y luego registrar sometimiento --}}
-                        @if($cycles->isEmpty())
+                        @if($roots->isEmpty())
                             <li class="relative pl-12 pb-4">
                                 <div class="absolute left-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
                                     <i class="fas fa-layer-group"></i>
@@ -233,19 +234,20 @@
                         @endif
 
                         {{-- Botón Registrar Sometimiento / Crear Nuevo Intento: debajo del último ciclo cuando hay rechazo o requerimiento --}}
-                        @if(($canRegisterSubmission || $canCreateNewAttempt) && $cycles->isNotEmpty())
+                        @if(($canRegisterSubmission || $canCreateNewAttempt) && $roots->isNotEmpty())
                             <li class="relative pl-12 pb-4">
                                 <div class="absolute left-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
                                     <i class="fas fa-paper-plane"></i>
                                 </div>
                                 <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                                    <p class="text-sm text-gray-700 mb-3">Puede registrar un nuevo sometimiento para continuar (nuevo intento en el mismo ciclo o nuevo ciclo según el caso).</p>
                                     @if($canCreateNewAttempt)
+                                        <p class="text-sm text-gray-700 mb-3">El último intento fue <strong>rechazado</strong>. Puede crear otro intento en el <strong>mismo ciclo</strong> vinculándolo al intento rechazado.</p>
                                         <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                                                 class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700">
-                                            <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento
+                                            <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento (mismo ciclo)
                                         </button>
                                     @else
+                                        <p class="text-sm text-gray-700 mb-3">Registre un nuevo sometimiento para iniciar un ciclo o continuar tras un requerimiento AUTO.</p>
                                         <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                                                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
                                             <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
