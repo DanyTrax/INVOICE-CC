@@ -85,7 +85,7 @@ class QuoteController extends Controller
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
-            'items.*.service_type_name' => 'required|string|max:255',
+            'items.*.service_type_name' => 'nullable|string|max:255',
             'items.*.description' => 'nullable|string|max:500',
             'items.*.previous_license' => 'nullable|string|max:64',
             'items.*.raa_code' => 'nullable|string|max:64',
@@ -129,8 +129,12 @@ class QuoteController extends Controller
 
         $existingIds = [];
         foreach ($validated['items'] as $pos => $row) {
+            $serviceTypeName = trim($row['service_type_name'] ?? '');
+            if ($serviceTypeName === '') {
+                $serviceTypeName = 'Sin trámite especificado';
+            }
             $serviceType = ServiceType::firstOrCreate(
-                ['name' => $row['service_type_name']],
+                ['name' => $serviceTypeName],
                 ['is_active' => true]
             );
             $itemId = $row['id'] ?? null;
@@ -302,7 +306,7 @@ class QuoteController extends Controller
             'bank_fee_value' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
-            'items.*.service_type_name' => 'required|string|max:255',
+            'items.*.service_type_name' => 'nullable|string|max:255',
             'items.*.description' => 'nullable|string|max:500',
             'items.*.previous_license' => 'nullable|string|max:64',
             'items.*.raa_code' => 'nullable|string|max:64',
@@ -346,9 +350,13 @@ class QuoteController extends Controller
         ]);
 
         foreach ($validated['items'] as $pos => $row) {
-            // Resolver o crear el tipo de trámite a partir del texto libre
+            // Resolver o crear el tipo de trámite a partir del texto libre (opcional).
+            $serviceTypeName = trim($row['service_type_name'] ?? '');
+            if ($serviceTypeName === '') {
+                $serviceTypeName = 'Sin trámite especificado';
+            }
             $serviceType = ServiceType::firstOrCreate(
-                ['name' => $row['service_type_name']],
+                ['name' => $serviceTypeName],
                 ['is_active' => true]
             );
 
