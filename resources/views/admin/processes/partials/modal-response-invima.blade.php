@@ -23,7 +23,24 @@
                     @csrf
                     <input type="hidden" name="response_type" id="response_type" value="auto">
 
-                    <div id="panel-auto" class="response-panel space-y-4">
+                    {{-- Aprobar (Pendiente): registrar datos del radicado; se crea línea "Radicado" en la timeline con los dos botones --}}
+                    <div id="panel-radicado" class="response-panel hidden space-y-4">
+                        <p class="text-sm text-gray-600">Se aprobará el sometimiento y se creará una línea <strong>Radicado</strong> en la línea de tiempo con los datos que ingrese. Luego podrá registrar REQUERIMIENTO AUTO o RESOLUCIÓN desde esa línea.</p>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de radicado <span class="text-red-500">*</span></label>
+                            <input type="text" name="radicado_invima" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Número de radicado INVIMA">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de radicado <span class="text-red-500">*</span></label>
+                            <input type="date" name="fecha_radicacion" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" value="{{ now()->format('Y-m-d') }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Llave / Campo de registro <span class="text-red-500">*</span></label>
+                            <input type="text" name="resolution_key" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Registro / Llave">
+                        </div>
+                    </div>
+
+                    <div id="panel-auto" class="response-panel hidden space-y-4">
                         <p class="text-sm text-gray-600">Se registrará un Requerimiento AUTO. Se cierra este ciclo y se crea uno nuevo. El expediente pasará a <strong>En Requerimiento</strong>.</p>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Número de AUTO <span class="text-red-500">*</span></label>
@@ -60,7 +77,7 @@
                     </div>
 
                     <div id="panel-rechazo" class="response-panel hidden space-y-4">
-                        <p class="text-sm text-gray-600">Se marcará el sometimiento como <strong>Rechazado</strong>. Indique el motivo. Al guardar podrá <strong>volver a intentar</strong> el proceso de sometimiento desde &quot;Crear Nuevo Intento&quot; (vinculando a este intento).</p>
+                        <p class="text-sm text-gray-600">Se marcará el sometimiento como <strong>Rechazado</strong>. Indique el motivo. Puede crear <strong>más intentos en el mismo ciclo</strong> desde &quot;Crear Nuevo Intento&quot; (vinculando a este intento).</p>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Observación (motivo del rechazo) <span class="text-red-500">*</span></label>
                             <textarea name="rejection_observation" id="rejection_observation" rows="4" maxlength="2000" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Describa el motivo del rechazo para informar al cliente."></textarea>
@@ -88,20 +105,35 @@
             if (tabs) tabs.forEach(function(t) { t.dataset.active = t.dataset.tab === type ? 'true' : 'false'; });
             panels.forEach(function(p) {
                 var id = p.id;
-                if ((id === 'panel-auto' && type === 'auto') || (id === 'panel-aprobado' && type === 'aprobado') || (id === 'panel-rechazo' && type === 'rechazo')) p.classList.remove('hidden'); else p.classList.add('hidden');
+                var show = (id === 'panel-auto' && type === 'auto') || (id === 'panel-aprobado' && type === 'aprobado') || (id === 'panel-rechazo' && type === 'rechazo') || (id === 'panel-radicado' && type === 'radicado');
+                if (show) p.classList.remove('hidden'); else p.classList.add('hidden');
             });
-            if (panelFile) panelFile.classList.toggle('hidden', type === 'rechazo');
+            if (panelFile) panelFile.classList.toggle('hidden', type === 'rechazo' || type === 'radicado');
         }
         if (tabs && tabs.length) tabs.forEach(function(t) {
             t.addEventListener('click', function() { showPanel(this.dataset.tab); });
         });
         form.addEventListener('submit', function(e) {
+            if (!typeInput.value || !['rechazo','aprobado','auto','radicado'].includes(typeInput.value)) {
+                e.preventDefault();
+                return false;
+            }
             if (typeInput.value === 'rechazo') {
                 var obs = document.getElementById('rejection_observation');
                 if (!obs || !obs.value.trim()) {
                     e.preventDefault();
                     alert('Debe indicar la observación (motivo del rechazo).');
                     obs && obs.focus();
+                    return false;
+                }
+            }
+            if (typeInput.value === 'radicado') {
+                var rad = form.querySelector('input[name="radicado_invima"]');
+                var fec = form.querySelector('input[name="fecha_radicacion"]');
+                var key = form.querySelector('input[name="resolution_key"]');
+                if (!rad || !rad.value.trim() || !fec || !fec.value.trim() || !key || !key.value.trim()) {
+                    e.preventDefault();
+                    alert('Complete número de radicado, fecha y llave/campo de registro.');
                     return false;
                 }
             }

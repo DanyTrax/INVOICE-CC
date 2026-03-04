@@ -322,6 +322,28 @@ class ProcessController extends Controller
     {
         $type = $request->input('response_type');
 
+        if ($type === 'radicado') {
+            if ($submission->status !== Submission::STATUS_PENDIENTE) {
+                return redirect()->route('admin.processes.show', $submission->process)
+                    ->with('error', 'Solo se puede registrar radicado en un sometimiento Pendiente.');
+            }
+            $validated = $request->validate([
+                'radicado_invima' => 'required|string|max:64',
+                'fecha_radicacion' => 'required|date',
+                'resolution_key' => 'required|string|max:64',
+            ]);
+            $submission->update([
+                'status' => Submission::STATUS_RADICADO,
+                'radicado_invima' => $validated['radicado_invima'],
+                'fecha_radicacion' => $validated['fecha_radicacion'],
+                'tracking_id' => $validated['resolution_key'],
+            ]);
+            $submission->process->update(['status' => Process::STATUS_RADICADO]);
+            return redirect()
+                ->route('admin.processes.show', $submission->process)
+                ->with('success', 'Radicado registrado. En la línea de tiempo use REQUERIMIENTO AUTO o RESOLUCIÓN según corresponda.');
+        }
+
         if ($type === 'rechazo') {
             $validated = $request->validate([
                 'rejection_observation' => 'required|string|max:2000',
@@ -336,6 +358,10 @@ class ProcessController extends Controller
         }
 
         if ($type === 'auto') {
+            if ($submission->status !== Submission::STATUS_RADICADO) {
+                return redirect()->route('admin.processes.show', $submission->process)
+                    ->with('error', 'Solo se puede registrar Requerimiento AUTO cuando el sometimiento está en estado Radicado.');
+            }
             $validated = $request->validate([
                 'document_number' => 'required|string|max:64',
                 'notification_date' => 'required|date',
@@ -378,6 +404,10 @@ class ProcessController extends Controller
         }
 
         if ($type === 'aprobado') {
+            if ($submission->status !== Submission::STATUS_RADICADO) {
+                return redirect()->route('admin.processes.show', $submission->process)
+                    ->with('error', 'Solo se puede registrar RESOLUCIÓN cuando el sometimiento está en estado Radicado.');
+            }
             $validated = $request->validate([
                 'resolution_number' => 'required|string|max:64',
                 'resolution_date' => 'required|date',

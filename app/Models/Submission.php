@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Submission extends Model
 {
     public const STATUS_PENDIENTE = 'Pendiente';
+    public const STATUS_RADICADO = 'Radicado';
     public const STATUS_EN_REQUERIMIENTO = 'En Requerimiento';
     public const STATUS_APROBADO = 'Aprobado';
     public const STATUS_RECHAZADO = 'Rechazado';
@@ -22,6 +23,7 @@ class Submission extends Model
     {
         return [
             self::STATUS_PENDIENTE,
+            self::STATUS_RADICADO,
             self::STATUS_EN_REQUERIMIENTO,
             self::STATUS_APROBADO,
             self::STATUS_RECHAZADO,

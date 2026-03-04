@@ -34,6 +34,7 @@
             · <span class="px-2 py-0.5 rounded text-xs font-medium
                 @if($submission->status === 'Aprobado') bg-green-100 text-green-800
                 @elseif($submission->status === 'Rechazado') bg-red-100 text-red-800
+                @elseif($submission->status === \App\Models\Submission::STATUS_RADICADO) bg-teal-100 text-teal-800
                 @elseif($submission->status === 'En Requerimiento') bg-yellow-100 text-yellow-800
                 @else bg-blue-100 text-blue-800
                 @endif
@@ -41,7 +42,7 @@
         </p>
         @if(isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id && $submission->status === \App\Models\Submission::STATUS_PENDIENTE)
             <p class="mt-2 flex flex-wrap gap-2">
-                <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('aprobado')"
+                <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('radicado')"
                         class="text-sm px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
                     <i class="fas fa-check mr-1"></i> Aprobar
                 </button>
@@ -49,12 +50,8 @@
                         class="text-sm px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
                     <i class="fas fa-times mr-1"></i> Rechazar
                 </button>
-                <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
-                        class="text-sm px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700">
-                    <i class="fas fa-gavel mr-1"></i> Requerimiento AUTO
-                </button>
             </p>
-            <p class="text-xs text-gray-500 mt-1">Aprobar: Radicado y Llave / Resolución o Auto. Rechazar: indicar observación y podrá crear nuevo ciclo.</p>
+            <p class="text-xs text-gray-500 mt-1">Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones REQUERIMIENTO AUTO y RESOLUCIÓN. Rechazar: indicar observación; puede crear más intentos en el mismo ciclo.</p>
         @endif
         <p class="mt-2 pt-2 border-t border-blue-100 flex flex-wrap gap-2 items-center">
             @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
@@ -83,6 +80,32 @@
             </form>
         </p>
     </div>
+
+    @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
+        <div class="flex gap-3 items-start">
+            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center text-white text-xs">
+                <i class="fas fa-stamp"></i>
+            </div>
+            <div class="flex-1 border border-teal-200 bg-teal-50 rounded-lg p-3 text-sm">
+                <p class="text-xs font-medium text-teal-700 uppercase">Radicado</p>
+                <p class="font-medium text-gray-900">Radicado: {{ $submission->radicado_invima ?? '—' }}</p>
+                <p class="text-gray-600 mt-1">
+                    @if($submission->fecha_radicacion) Fecha: {{ $submission->fecha_radicacion->format('d/m/Y') }} @endif
+                    @if($submission->tracking_id) · Llave: {{ $submission->tracking_id }} @endif
+                </p>
+                <p class="mt-2 flex flex-wrap gap-2">
+                    <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
+                            class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                        <i class="fas fa-gavel mr-1"></i> REQUERIMIENTO AUTO
+                    </button>
+                    <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('aprobado')"
+                            class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN
+                    </button>
+                </p>
+            </div>
+        </div>
+    @endif
 
     @foreach($submission->regulatoryEvents->sortBy('notification_date') as $event)
         @php
