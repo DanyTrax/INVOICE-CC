@@ -31,6 +31,8 @@ class Submission extends Model
     protected $fillable = [
         'process_id',
         'parent_id',
+        'quote_id',
+        'quote_item_id',
         'submission_date',
         'submission_code',
         'radicado_invima',
@@ -57,6 +59,16 @@ class Submission extends Model
     public function process(): BelongsTo
     {
         return $this->belongsTo(Process::class);
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
+    }
+
+    public function quoteItem(): BelongsTo
+    {
+        return $this->belongsTo(QuoteItem::class);
     }
 
     /** Relación recursiva: sometimiento padre (rechazo anterior). */

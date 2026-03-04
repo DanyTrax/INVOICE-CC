@@ -260,7 +260,14 @@ class ProcessController extends Controller
             Log::debug('No se pudo crear/obtener carpeta Drive del proceso', ['process_id' => $process->id, 'error' => $e->getMessage()]);
         }
 
-        return view('admin.processes.show', compact('process'));
+        // Cotizaciones del mismo cliente para poder vincular ciclos a una cotización/ítem
+        $quotesForClient = Quote::with(['quoteItems.serviceType'])
+            ->where('client_id', $process->client_id)
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('admin.processes.show', compact('process', 'quotesForClient'));
     }
 
     /**
@@ -290,13 +297,36 @@ class ProcessController extends Controller
             'filing_date' => 'nullable|date',
             'filing_number' => 'nullable|string|max:64',
             'parent_id' => 'nullable|exists:submissions,id',
+            'quote_id' => 'nullable|exists:quotes,id',
+            'quote_item_id' => 'nullable|exists:quote_items,id',
         ]);
 
         $parentId = $validated['parent_id'] ?? null;
+        $quoteId = $validated['quote_id'] ?? null;
+        $quoteItemId = $validated['quote_item_id'] ?? null;
+
+        // Normalizar vínculos a cotización / ítem a nivel de ciclo,
+        // y validar que pertenezcan al mismo cliente del expediente.
+        if ($quoteItemId) {
+            $quoteItem = QuoteItem::with('quote')->find($quoteItemId);
+            if ($quoteItem && $quoteItem->quote && $quoteItem->quote->client_id === $process->client_id) {
+                $quoteId = $quoteItem->quote_id;
+            } else {
+                $quoteId = null;
+                $quoteItemId = null;
+            }
+        } elseif ($quoteId) {
+            $quote = Quote::find($quoteId);
+            if (!$quote || $quote->client_id !== $process->client_id) {
+                $quoteId = null;
+            }
+        }
 
         Submission::create([
             'process_id' => $process->id,
             'parent_id' => $parentId,
+            'quote_id' => $quoteId,
+            'quote_item_id' => $quoteItemId,
             'submission_date' => $validated['submission_date'],
             'submission_code' => $validated['submission_code'],
             'fecha_radicacion' => $validated['filing_date'] ?? null,
@@ -304,6 +334,14 @@ class ProcessController extends Controller
             'status' => Submission::STATUS_PENDIENTE,
             'submission_type' => $parentId ? 'Subsanación / Nuevo intento' : 'Inicial',
         ]);
+
+        // Si el expediente todavía no está vinculado a una cotización, usar la del primer ciclo asociado
+        if ($quoteId && !$process->quote_id) {
+            $process->update([
+                'quote_id' => $quoteId,
+                'quote_item_id' => $quoteItemId ?? $process->quote_item_id,
+            ]);
+        }
 
         $process->update(['status' => Process::STATUS_RADICADO]);
 

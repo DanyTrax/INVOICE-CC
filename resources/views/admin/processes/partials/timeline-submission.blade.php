@@ -37,6 +37,12 @@
         <p class="text-sm text-gray-600 mt-1">
             {{ $submission->submission_code ?? $submission->radicado_invima ?? 'Sin código' }}
             @if($submission->tracking_id) · Seguimiento: {{ $submission->tracking_id }} @endif
+            @if($submission->quote)
+                · Cotización: {{ $submission->quote->consecutive ?? $submission->quote->id }}
+            @endif
+            @if($submission->quoteItem)
+                · Ítem: #{{ $submission->quoteItem->item_position }} ({{ $submission->quoteItem->serviceType->name ?? 'Servicio' }})
+            @endif
             · <span class="px-2 py-0.5 rounded text-xs font-medium
                 @if($submission->status === 'Aprobado') bg-green-100 text-green-800
                 @elseif($submission->status === 'Rechazado') bg-red-100 text-red-800

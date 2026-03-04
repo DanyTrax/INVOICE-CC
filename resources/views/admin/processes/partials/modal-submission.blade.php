@@ -8,7 +8,11 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
                         <i class="fas fa-paper-plane text-blue-500 mr-2"></i> Registrar Sometimiento
                     </h3>
-                    <p class="text-sm text-gray-600 mb-4">Todos los ítems de la checklist deben estar en estado <strong>Aprobado</strong>. El expediente pasará a <strong>Radicado</strong>. Si hay un rechazo anterior, puede vincular este sometimiento como nuevo intento.</p>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Todos los ítems de la checklist deben estar en estado <strong>Aprobado</strong>.
+                        El expediente pasará a <strong>Radicado</strong>. Si hay un intento anterior cerrado
+                        (rechazo o AUTO), puede vincular este sometimiento como nuevo ciclo.
+                    </p>
                     <div class="space-y-4">
                         <div>
                             <label for="submission_date" class="block text-sm font-medium text-gray-700">Fecha de Sometimiento <span class="text-red-500">*</span></label>
@@ -24,17 +28,55 @@
                         </div>
                         @if($rejectedSubmissions->isNotEmpty())
                             <div>
-                                <label for="submission_parent_id" class="block text-sm font-medium text-gray-700">Vincular a rechazo anterior (nuevo intento)</label>
+                                <label for="submission_parent_id" class="block text-sm font-medium text-gray-700">
+                                    Vincular a intento anterior (nuevo ciclo)
+                                </label>
                                 <select name="parent_id" id="submission_parent_id"
                                         class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
                                     <option value="">— Nuevo sometimiento (sin rechazo previo) —</option>
                                     @foreach($rejectedSubmissions as $rej)
                                         <option value="{{ $rej->id }}" {{ (string) old('parent_id') === (string) $rej->id ? 'selected' : '' }}>
-                                            Rechazado · {{ $rej->submission_code ?? $rej->radicado_invima ?? 'ID ' . $rej->id }} · {{ $rej->submission_date?->format('d/m/Y') ?? '-' }}
+                                            {{ $rej->status }} · {{ $rej->submission_code ?? $rej->radicado_invima ?? 'ID ' . $rej->id }} · {{ $rej->submission_date?->format('d/m/Y') ?? '-' }}
                                         </option>
                                     @endforeach
                                 </select>
                                 @error('parent_id')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        @endif
+                        {{-- Vinculación opcional a cotización / ítem (por ciclo completo de trámite) --}}
+                        @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
+                            <div>
+                                <label for="submission_quote_id" class="block text-sm font-medium text-gray-700">
+                                    Vincular a cotización (opcional)
+                                </label>
+                                <select name="quote_id" id="submission_quote_id"
+                                        class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                                    <option value="">— Sin vincular —</option>
+                                    @foreach($quotesForClient as $q)
+                                        <option value="{{ $q->id }}" {{ (string) old('quote_id') === (string) $q->id ? 'selected' : '' }}>
+                                            {{ $q->consecutive }} · {{ $q->date?->format('d/m/Y') ?? '-' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="submission_quote_item_id" class="block text-sm font-medium text-gray-700">
+                                    Ítem / servicio de la cotización (opcional)
+                                </label>
+                                <select name="quote_item_id" id="submission_quote_item_id"
+                                        class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                                    <option value="">— Sin ítem específico —</option>
+                                    @foreach($quotesForClient as $q)
+                                        @foreach($q->quoteItems as $qi)
+                                            <option value="{{ $qi->id }}" data-quote="{{ $q->id }}" {{ (string) old('quote_item_id') === (string) $qi->id ? 'selected' : '' }}>
+                                                {{ $q->consecutive }} · #{{ $qi->item_position }} · {{ $qi->serviceType->name ?? 'Servicio' }}
+                                            </option>
+                                        @endforeach
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Se recomienda seleccionar primero la cotización y luego el ítem correspondiente.
+                                </p>
                             </div>
                         @endif
                     </div>

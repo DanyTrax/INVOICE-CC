@@ -150,13 +150,24 @@
 
     @php
         if (!isset($lastSubmission)) { $lastSubmission = $process->submissions->sortByDesc('id')->first(); }
-        $rejectedSubmissions = $process->submissions->where('status', \App\Models\Submission::STATUS_RECHAZADO);
+        // Intentos anteriores que ya cerraron un ciclo: Rechazado o En Requerimiento (AUTO)
+        $rejectedSubmissions = $process->submissions->filter(fn ($s) => in_array($s->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]));
         $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
         $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE);
-        $processReachedEnd = $lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_APROBADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]);
+        // Solo la resolución aprobatoria cierra definitivamente el expediente
+        $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO;
         $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd;
-        $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_RECHAZADO;
-        $submitDisabledTitle = !$allChecklistApproved ? 'Debe aprobar todos los documentos antes de radicar.' : ($hasPendingSubmission ? 'Hay un sometimiento pendiente; use Aprobar o Rechazar en la línea de tiempo.' : ($processReachedEnd ? 'El proceso llegó a resolución aprobatoria o auto; está deshabilitado. Elimine en la línea de tiempo para reanudar.' : ''));
+        // Se puede crear nuevo ciclo cuando el último intento fue Rechazado o quedó En Requerimiento (AUTO)
+        $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty()
+            && $lastSubmission
+            && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]);
+        $submitDisabledTitle = !$allChecklistApproved
+            ? 'Debe aprobar todos los documentos antes de radicar.'
+            : ($hasPendingSubmission
+                ? 'Hay un sometimiento pendiente; use Aprobar, Rechazar o registrar Auto/Resolución en la línea de tiempo.'
+                : ($processReachedEnd
+                    ? 'El proceso llegó a resolución aprobatoria; está deshabilitado. Elimine en la línea de tiempo para reanudar.'
+                    : ''));
     @endphp
     {{-- Acciones: Sometimiento y Nuevo Intento (debajo de Resumen y Línea de tiempo) --}}
     <div class="mt-6 flex flex-wrap gap-3 items-center">
@@ -516,7 +527,11 @@
     });
     </script>
 
-    @include('admin.processes.partials.modal-submission', ['process' => $process, 'rejectedSubmissions' => $rejectedSubmissions])
+    @include('admin.processes.partials.modal-submission', [
+        'process' => $process,
+        'rejectedSubmissions' => $rejectedSubmissions,
+        'quotesForClient' => $quotesForClient ?? collect(),
+    ])
     @if($lastSubmission)
         @include('admin.processes.partials.modal-response-invima', ['submission' => $lastSubmission])
     @endif

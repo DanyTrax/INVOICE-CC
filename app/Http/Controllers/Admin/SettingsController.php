@@ -1342,6 +1342,7 @@ class SettingsController extends Controller
             'route:clear',
             'optimize:clear',
             'migrate --force',
+            'settings:migrate --force',
         ];
         
         // Si el comando contiene &&, dividirlo en múltiples comandos
