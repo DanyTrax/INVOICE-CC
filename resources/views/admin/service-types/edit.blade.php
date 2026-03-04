@@ -1,14 +1,14 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Editar Tipo de Trámite - RAMS')
+@section('title', 'Editar Trámite - RAMS')
 
-@section('page-title', 'Editar Tipo de Trámite')
+@section('page-title', 'Editar Trámite')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.service-types.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Tipos de Trámite</a>
+            <a href="{{ route('admin.service-types.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Trámite</a>
         </div>
     </li>
     <li>

@@ -133,7 +133,7 @@
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                     <tr>
                         <th class="px-2 py-2 w-12">#</th>
-                        <th class="px-2 py-2">Tipo de trámite</th>
+                        <th class="px-2 py-2">Trámite</th>
                         <th class="px-2 py-2">Producto / Descripción</th>
                         @if($quote->show_prev_license_column)
                             <th class="px-2 py-2">Expediente / INVIMA</th>

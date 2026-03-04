@@ -317,7 +317,14 @@
                         <a href="{{ route('admin.service-types.index') }}" 
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.service-types.*') ? 'bg-teal-700' : '' }}">
                             <i class="fas fa-list-alt w-5 h-5"></i>
-                            <span class="ms-3">Tipos de Trámite</span>
+                            <span class="ms-3">Trámite</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.services.index') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.services.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-concierge-bell w-5 h-5"></i>
+                            <span class="ms-3">Servicios</span>
                         </a>
                     </li>
                     @if($permService->userHasPermission('backups', 'view'))

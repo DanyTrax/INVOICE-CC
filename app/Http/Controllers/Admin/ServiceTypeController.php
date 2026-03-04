@@ -37,7 +37,7 @@ class ServiceTypeController extends Controller
 
         return redirect()
             ->route('admin.service-types.index')
-            ->with('success', 'Tipo de trámite creado correctamente.');
+            ->with('success', 'Trámite creado correctamente.');
     }
 
     public function edit(ServiceType $serviceType)
@@ -61,6 +61,6 @@ class ServiceTypeController extends Controller
 
         return redirect()
             ->route('admin.service-types.index')
-            ->with('success', 'Tipo de trámite actualizado correctamente.');
+            ->with('success', 'Trámite actualizado correctamente.');
     }
 }

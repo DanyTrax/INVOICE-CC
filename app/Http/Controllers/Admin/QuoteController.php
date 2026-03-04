@@ -8,6 +8,7 @@ use App\Models\Process;
 use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\QuotePdfTemplate;
+use App\Models\Service;
 use App\Models\ServiceType;
 use App\Settings\GeneralSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -54,10 +55,11 @@ class QuoteController extends Controller
             return redirect()->route('admin.quotes.show', $quote)
                 ->with('error', 'La cotización está aprobada y no puede editarse.');
         }
-        $quote->load(['client', 'quoteItems.serviceType']);
+        $quote->load(['client', 'quoteItems.serviceType', 'quoteItems.service']);
         $companies = Company::orderBy('name')->get();
         $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
-        return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes'));
+        $services = Service::where('is_active', true)->orderBy('name')->get();
+        return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services'));
     }
 
     /**
@@ -85,6 +87,7 @@ class QuoteController extends Controller
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
+            'items.*.service_id' => 'nullable|exists:services,id',
             'items.*.service_type_name' => 'nullable|string|max:255',
             'items.*.description' => 'nullable|string|max:500',
             'items.*.previous_license' => 'nullable|string|max:64',
@@ -140,6 +143,7 @@ class QuoteController extends Controller
             $itemId = $row['id'] ?? null;
             $itemData = [
                 'item_position' => (int) ($row['item_position'] ?? $pos + 1),
+                'service_id' => $row['service_id'] ?? null,
                 'service_type_id' => $serviceType->id,
                 'raa_code' => $row['raa_code'] ?? null,
                 'previous_license' => $row['previous_license'] ?? null,
@@ -280,9 +284,11 @@ class QuoteController extends Controller
         }
         $suggestedConsecutive = sprintf('%03d-%s', $nextNumber, $yearSuffix);
 
+        $services = Service::where('is_active', true)->orderBy('name')->get();
         return view('admin.quotes.create', [
             'companies' => $companies,
             'serviceTypes' => $serviceTypes,
+            'services' => $services,
             'suggestedConsecutive' => $suggestedConsecutive,
         ]);
     }
@@ -306,6 +312,7 @@ class QuoteController extends Controller
             'bank_fee_value' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
+            'items.*.service_id' => 'nullable|exists:services,id',
             'items.*.service_type_name' => 'nullable|string|max:255',
             'items.*.description' => 'nullable|string|max:500',
             'items.*.previous_license' => 'nullable|string|max:64',
@@ -362,6 +369,7 @@ class QuoteController extends Controller
 
             QuoteItem::create([
                 'quote_id' => $quote->id,
+                'service_id' => $row['service_id'] ?? null,
                 'item_position' => (int) ($row['item_position'] ?? $pos + 1),
                 'service_type_id' => $serviceType->id,
                 'raa_code' => $row['raa_code'] ?? null,

@@ -132,7 +132,8 @@
                     <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                         <tr>
                             <th class="px-2 py-2 w-12">#</th>
-                            <th class="px-2 py-2">Tipo de trámite</th>
+                            <th class="px-2 py-2">Servicio</th>
+                            <th class="px-2 py-2">Trámite (opcional)</th>
                             <th class="px-2 py-2">Producto / Descripción</th>
                             <th class="px-2 py-2" data-col="prev-license">Expediente / INVIMA</th>
                             <th class="px-2 py-2 w-20" data-col="raa">RAA</th>
@@ -149,6 +150,7 @@
                                     return [
                                         'id' => $qi->id,
                                         'item_position' => $qi->item_position,
+                                        'service_id' => $qi->service_id ?? '',
                                         'service_type_name' => $qi->serviceType->name ?? '',
                                         'description' => $qi->description ?? '',
                                         'previous_license' => $qi->previous_license ?? '',
@@ -162,12 +164,20 @@
                                 })->toArray();
                             }
                             if (empty($oldItems)) {
-                                $oldItems = [['id' => '', 'item_position' => 1, 'service_type_name' => '', 'description' => '', 'previous_license' => '', 'raa_code' => '', 'scope' => '', 'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '', 'is_loan' => 0]];
+                                $oldItems = [['id' => '', 'item_position' => 1, 'service_id' => '', 'service_type_name' => '', 'description' => '', 'previous_license' => '', 'raa_code' => '', 'scope' => '', 'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '', 'is_loan' => 0]];
                             }
                         @endphp
                         @foreach($oldItems as $idx => $item)
                             <tr class="item-row border-b border-gray-200 {{ !empty($item['is_loan']) ? 'bg-amber-50' : '' }}" data-is-loan="{{ !empty($item['is_loan']) ? '1' : '0' }}">
                                 <td class="px-2 py-2 item-num">{{ $idx + 1 }}</td>
+                                <td class="px-2 py-2">
+                                    <select name="items[{{ $idx }}][service_id]" class="item-service-select border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
+                                        <option value="">—</option>
+                                        @foreach($services as $s)
+                                            <option value="{{ $s->id }}" data-name="{{ e($s->name) }}" data-scope="{{ e($s->default_scope ?? '') }}" {{ (string)($item['service_id'] ?? '') === (string)$s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
                                 <td class="px-2 py-2">
                                     <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item['id'] ?? '' }}">
                                     <input type="hidden" name="items[{{ $idx }}][item_position]" value="{{ $idx + 1 }}">
@@ -176,12 +186,12 @@
                                         name="items[{{ $idx }}][service_type_name]"
                                         list="service_types_datalist"
                                         rows="2"
-                                        placeholder="Tipo de trámite"
+                                        placeholder="Trámite (opcional)"
                                         class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
                                 </td>
                                 <td class="px-2 py-2">
                                     <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Producto / Descripción" maxlength="500"
-                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm item-description-input">
                                 </td>
                                 <td class="px-2 py-2" data-col="prev-license">
                                     <input type="text" name="items[{{ $idx }}][previous_license]" value="{{ $item['previous_license'] ?? '' }}" placeholder="Ej: 2021DM-0006049" maxlength="64"
@@ -193,7 +203,7 @@
                                 </td>
                                 <td class="px-2 py-2">
                                     <textarea name="items[{{ $idx }}][scope]" rows="2" placeholder="Alcance" maxlength="1000"
-                                              class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['scope'] ?? '' }}</textarea>
+                                              class="js-autoresize item-scope-input border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['scope'] ?? '' }}</textarea>
                                 </td>
                                 <td class="px-2 py-2">
                                     <input type="number" name="items[{{ $idx }}][fee_value]" value="{{ $item['fee_value'] ?? '' }}" placeholder="0" min="0" step="0.01" required
@@ -268,15 +278,23 @@
         <tr class="item-row border-b border-gray-200" data-is-loan="0">
             <td class="px-2 py-2 item-num"></td>
             <td class="px-2 py-2">
+                <select name="items[__INDEX__][service_id]" class="item-service-select border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
+                    <option value="">—</option>
+                    @foreach($services as $s)
+                        <option value="{{ $s->id }}" data-name="{{ e($s->name) }}" data-scope="{{ e($s->default_scope ?? '') }}">{{ $s->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td class="px-2 py-2">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="0" class="item-is-loan-input">
-                <textarea name="items[__INDEX__][service_type_name]" list="service_types_datalist" rows="2" placeholder="Tipo de trámite"
+                <textarea name="items[__INDEX__][service_type_name]" list="service_types_datalist" rows="2" placeholder="Trámite (opcional)"
                           class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Producto / Descripción" maxlength="500"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm item-description-input">
             </td>
             <td class="px-2 py-2" data-col="prev-license">
                 <input type="text" name="items[__INDEX__][previous_license]" placeholder="Ej: 2021DM-0006049" maxlength="64"
@@ -288,7 +306,7 @@
             </td>
             <td class="px-2 py-2">
                 <textarea name="items[__INDEX__][scope]" rows="2" placeholder="Alcance" maxlength="1000"
-                          class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
+                          class="js-autoresize item-scope-input border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
                 <input type="number" name="items[__INDEX__][fee_value]" placeholder="0" min="0" step="0.01" required
@@ -305,15 +323,23 @@
         <tr class="item-row border-b border-gray-200 bg-amber-50" data-is-loan="1">
             <td class="px-2 py-2 item-num"></td>
             <td class="px-2 py-2">
+                <select name="items[__INDEX__][service_id]" class="item-service-select border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
+                    <option value="">—</option>
+                    @foreach($services as $s)
+                        <option value="{{ $s->id }}" data-name="{{ e($s->name) }}" data-scope="{{ e($s->default_scope ?? '') }}">{{ $s->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td class="px-2 py-2">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="1" class="item-is-loan-input">
-                <textarea name="items[__INDEX__][service_type_name]" list="service_types_datalist" rows="2" placeholder="Tipo de trámite (préstamo)"
+                <textarea name="items[__INDEX__][service_type_name]" list="service_types_datalist" rows="2" placeholder="Trámite (opcional)"
                           class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Préstamo / Suplido" maxlength="500"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 item-description-input">
             </td>
             <td class="px-2 py-2" data-col="prev-license">
                 <input type="text" name="items[__INDEX__][previous_license]" placeholder="-" maxlength="64"
@@ -325,7 +351,7 @@
             </td>
             <td class="px-2 py-2">
                 <textarea name="items[__INDEX__][scope]" rows="2" placeholder="Alcance" maxlength="1000"
-                          class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
+                          class="js-autoresize item-scope-input border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
                 <input type="number" name="items[__INDEX__][fee_value]" placeholder="0" min="0" step="0.01" required
@@ -490,6 +516,17 @@
         document.getElementById('bank_fee_value')?.addEventListener('input', updateTotals);
         document.getElementById('tax_percentage')?.addEventListener('input', updateTotals);
         document.getElementById('form-quote')?.addEventListener('submit', syncColumnHiddenInputs);
+        tbody.addEventListener('change', function(e) {
+            if (!e.target.matches('.item-service-select')) return;
+            const row = e.target.closest('tr');
+            const opt = e.target.selectedOptions[0];
+            if (opt && opt.value) {
+                const desc = row.querySelector('.item-description-input');
+                const scope = row.querySelector('.item-scope-input');
+                if (desc) desc.value = opt.getAttribute('data-name') || '';
+                if (scope) scope.value = opt.getAttribute('data-scope') || '';
+            }
+        });
         tbody.querySelectorAll('.item-row').forEach(function(row) {
             const removeBtn = row.querySelector('.btn-remove-row');
             if (removeBtn) removeBtn.addEventListener('click', function() {

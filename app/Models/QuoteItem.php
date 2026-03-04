@@ -10,6 +10,7 @@ class QuoteItem extends Model
 {
     protected $fillable = [
         'quote_id',
+        'service_id',
         'item_position',
         'service_type_id',
         'raa_code',
@@ -34,6 +35,11 @@ class QuoteItem extends Model
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class);
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
     }
 
     public function serviceType(): BelongsTo

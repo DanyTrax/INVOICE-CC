@@ -122,7 +122,7 @@
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 22%;">Tipo de trámite</th>
+                <th style="width: 22%;">Trámite</th>
                 <th style="width: 22%;">Producto / Descripción</th>
                 @if($quote->show_prev_license_column)
                     <th style="width: 12%;">Expediente / INVIMA</th>

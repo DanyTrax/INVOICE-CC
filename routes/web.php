@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ProcessController;
 use App\Http\Controllers\Admin\ServiceTypeController;
+use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\QuoteController;
 use App\Http\Controllers\Admin\QuotePdfTemplateController;
 use App\Http\Controllers\Admin\RegulatoryEventController;
@@ -113,12 +114,20 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::patch('quotes/{quote}/pdf-footer', [QuoteController::class, 'updatePdfFooter'])->name('quotes.pdf-footer.update');
     Route::post('quotes/{quote}/anular', [QuoteController::class, 'anular'])->name('quotes.anular');
 
-    // Tipos de Trámite (ServiceTypes)
+    // Tipos de Trámite (ServiceTypes) — módulo "Trámite"
     Route::get('service-types', [ServiceTypeController::class, 'index'])->name('service-types.index');
     Route::get('service-types/create', [ServiceTypeController::class, 'create'])->name('service-types.create');
     Route::post('service-types', [ServiceTypeController::class, 'store'])->name('service-types.store');
     Route::get('service-types/{serviceType}/edit', [ServiceTypeController::class, 'edit'])->name('service-types.edit');
     Route::put('service-types/{serviceType}', [ServiceTypeController::class, 'update'])->name('service-types.update');
+
+    // Servicios (catálogo para cotizaciones: nombre + alcance por defecto)
+    Route::get('services', [ServiceController::class, 'index'])->name('services.index');
+    Route::get('services/create', [ServiceController::class, 'create'])->name('services.create');
+    Route::post('services', [ServiceController::class, 'store'])->name('services.store');
+    Route::get('services/{service}/edit', [ServiceController::class, 'edit'])->name('services.edit');
+    Route::put('services/{service}', [ServiceController::class, 'update'])->name('services.update');
+    Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
 
     // Expedientes (processes) y eventos regulatorios
     Route::get('processes', [ProcessController::class, 'index'])->name('processes.index');
