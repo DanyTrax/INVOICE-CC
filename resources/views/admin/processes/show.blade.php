@@ -103,7 +103,10 @@
                         @php
                             $lastSubmission = $process->submissions->sortByDesc('id')->first();
                             $roots = $process->submissions->where('parent_id', null)->sortBy(fn($s) => $s->submission_date ?? $s->created_at);
-                            $rejectedSubmissions = $process->submissions->filter(fn ($s) => in_array($s->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]));
+                            // Intentos rechazados: solo se usan para permitir "Crear Nuevo Intento" en el mismo ciclo
+                            // y para ofrecer la lista de vínculo en el modal de sometimiento.
+                            $rejectedSubmissions = $process->submissions
+                                ->filter(fn ($s) => $s->status === \App\Models\Submission::STATUS_RECHAZADO);
                             $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
                             $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO;
                             // Registrar Sometimiento:
@@ -119,7 +122,15 @@
                         @foreach($roots as $cycleIndex => $rootSubmission)
                             @php
                                 $cycleNum = $loop->iteration;
-                                $attemptsInCycle = collect([$rootSubmission])->merge($rootSubmission->children->sortBy(fn($c) => $c->submission_date ?? $c->created_at));
+                                // Intentos en el ciclo: raíz + todos sus descendientes (hijos, nietos, etc.) en orden cronológico.
+                                $attemptsInCycle = collect();
+                                $addAttempt = function ($sub) use (&$addAttempt, &$attemptsInCycle) {
+                                    $attemptsInCycle->push($sub);
+                                    foreach ($sub->children->sortBy(fn($c) => $c->submission_date ?? $c->created_at) as $child) {
+                                        $addAttempt($child);
+                                    }
+                                };
+                                $addAttempt($rootSubmission);
                                 $lastInCycle = $attemptsInCycle->last();
                                 $isClosed = in_array($lastInCycle->status, [\App\Models\Submission::STATUS_APROBADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO], true);
                                 $statusBadgeClass = match($lastInCycle->status) {
@@ -288,7 +299,10 @@
 
     @php
         if (!isset($lastSubmission)) { $lastSubmission = $process->submissions->sortByDesc('id')->first(); }
-        if (!isset($rejectedSubmissions)) { $rejectedSubmissions = $process->submissions->filter(fn ($s) => in_array($s->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO])); }
+        if (!isset($rejectedSubmissions)) {
+            $rejectedSubmissions = $process->submissions
+                ->filter(fn ($s) => $s->status === \App\Models\Submission::STATUS_RECHAZADO);
+        }
         if (!isset($allChecklistApproved)) { $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO); }
         if (!isset($canRegisterSubmission)) {
             $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO;
@@ -724,6 +738,7 @@
         'process' => $process,
         'rejectedSubmissions' => $rejectedSubmissions,
         'quotesForClient' => $quotesForClient ?? collect(),
+        'canCreateNewAttempt' => $canCreateNewAttempt ?? false,
     ])
     @if($lastSubmission)
         @include('admin.processes.partials.modal-response-invima', ['submission' => $lastSubmission])
