@@ -24,30 +24,34 @@
                     <input type="hidden" name="response_type" id="response_type" value="auto">
 
                     <div id="panel-auto" class="response-panel space-y-4">
-                        <p class="text-sm text-gray-600">Se registrará un Auto. Fecha límite = notificación + 90 días hábiles. El expediente pasará a <strong>En Requerimiento</strong>.</p>
+                        <p class="text-sm text-gray-600">Se registrará un Requerimiento AUTO. Se cierra este ciclo y se crea uno nuevo. El expediente pasará a <strong>En Requerimiento</strong>.</p>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Número del Auto <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de AUTO <span class="text-red-500">*</span></label>
                             <input type="text" name="document_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Ej: AUTO-2025-123">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de notificación <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de AUTO <span class="text-red-500">*</span></label>
                             <input type="date" name="notification_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" value="{{ now()->format('Y-m-d') }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de vencimiento <span class="text-red-500">*</span></label>
+                            <input type="date" name="due_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Fecha límite">
                         </div>
                     </div>
 
                     <div id="panel-aprobado" class="response-panel hidden space-y-4">
-                        <p class="text-sm text-gray-600">Se registrará la Resolución aprobatoria. El expediente pasará a <strong>Finalizado</strong>. Complete Radicado y Llave.</p>
+                        <p class="text-sm text-gray-600">Se registrará la Resolución aprobatoria. El expediente pasará a <strong>Finalizado</strong>.</p>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Radicado <span class="text-red-500">*</span></label>
-                            <input type="text" name="resolution_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Número de radicado">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de resolución <span class="text-red-500">*</span></label>
+                            <input type="text" name="resolution_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Número de resolución">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Resolución <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de resolución <span class="text-red-500">*</span></label>
                             <input type="date" name="resolution_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Llave <span class="text-red-500">*</span></label>
-                            <input type="text" name="resolution_key" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Ej: 2025-12345">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Campo de registro <span class="text-red-500">*</span></label>
+                            <input type="text" name="resolution_key" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Registro / Llave">
                         </div>
                     </div>
                     <div id="panel-file" class="mt-4">
@@ -56,7 +60,7 @@
                     </div>
 
                     <div id="panel-rechazo" class="response-panel hidden space-y-4">
-                        <p class="text-sm text-gray-600">Se marcará el sometimiento como <strong>Rechazado</strong>. Indique el motivo. Luego podrá crear un nuevo intento desde &quot;Crear Nuevo Intento&quot;.</p>
+                        <p class="text-sm text-gray-600">Se marcará el sometimiento como <strong>Rechazado</strong>. Indique el motivo. Al guardar podrá <strong>volver a intentar</strong> el proceso de sometimiento desde &quot;Crear Nuevo Intento&quot; (vinculando a este intento).</p>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Observación (motivo del rechazo) <span class="text-red-500">*</span></label>
                             <textarea name="rejection_observation" id="rejection_observation" rows="4" maxlength="2000" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Describa el motivo del rechazo para informar al cliente."></textarea>
@@ -97,6 +101,15 @@
                     e.preventDefault();
                     alert('Debe indicar la observación (motivo del rechazo).');
                     obs && obs.focus();
+                    return false;
+                }
+            }
+            if (typeInput.value === 'auto') {
+                var due = form.querySelector('input[name="due_date"]');
+                if (due && !due.value.trim()) {
+                    e.preventDefault();
+                    alert('Debe indicar la Fecha de vencimiento.');
+                    due.focus();
                     return false;
                 }
             }

@@ -166,7 +166,7 @@
                                             </div>
                                         @endif
                                         {{-- Sometimiento y eventos del ciclo --}}
-                                        @include('admin.processes.partials.timeline-cycle-content', ['submission' => $submission, 'lastSubmission' => $lastSubmission ?? null])
+                                        @include('admin.processes.partials.timeline-cycle-content', ['submission' => $submission, 'lastSubmission' => $lastSubmission ?? null, 'quotesForClient' => $quotesForClient ?? collect()])
                                     </div>
                                 </details>
                             </li>
@@ -522,7 +522,78 @@
         </div>
     </div>
 
+    {{-- Modal: Vincular ciclo a cotización e ítem --}}
+    @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
+    <div id="modal-link-quote" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75" onclick="document.getElementById('modal-link-quote').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4">Vincular ciclo a cotización</h4>
+                <p class="text-sm text-gray-600 mb-4">Seleccione la cotización y luego el ítem (servicio) al que vincula este ciclo.</p>
+                <form id="form-link-quote" method="post" action="">
+                    @csrf
+                    @method('PUT')
+                    <div class="space-y-4">
+                        <div>
+                            <label for="link-quote-quote_id" class="block text-sm font-medium text-gray-700">Cotización <span class="text-red-500">*</span></label>
+                            <select name="quote_id" id="link-quote-quote_id" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                                <option value="">— Buscar / seleccionar cotización —</option>
+                                @foreach($quotesForClient as $q)
+                                    <option value="{{ $q->id }}">{{ $q->consecutive }} · {{ $q->date?->format('d/m/Y') ?? '-' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="link-quote-quote_item_id" class="block text-sm font-medium text-gray-700">Ítem de la cotización <span class="text-red-500">*</span></label>
+                            <select name="quote_item_id" id="link-quote-quote_item_id" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                                <option value="">— Primero seleccione una cotización —</option>
+                                @foreach($quotesForClient as $q)
+                                    @foreach($q->quoteItems as $qi)
+                                        <option value="{{ $qi->id }}" data-quote="{{ $q->id }}">{{ $q->consecutive }} · #{{ $qi->item_position }} · {{ $qi->serviceType->name ?? 'Servicio' }}</option>
+                                    @endforeach
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-2">
+                        <button type="button" onclick="document.getElementById('modal-link-quote').classList.add('hidden')"
+                                class="px-3 py-2 border border-gray-300 rounded-lg text-sm">Cancelar</button>
+                        <button type="submit" class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700">Vincular</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <script>
+    var linkQuoteBaseUrl = '{{ url("admin/submissions") }}';
+    function openLinkQuoteModal(submissionId) {
+        var form = document.getElementById('form-link-quote');
+        if (!form) return;
+        form.action = linkQuoteBaseUrl + '/' + submissionId + '/link-quote';
+        var quoteSelect = document.getElementById('link-quote-quote_id');
+        var itemSelect = document.getElementById('link-quote-quote_item_id');
+        if (quoteSelect) quoteSelect.value = '';
+        if (itemSelect) {
+            itemSelect.value = '';
+            var opts = itemSelect.querySelectorAll('option[data-quote]');
+            opts.forEach(function(opt) { opt.style.display = 'none'; });
+        }
+        document.getElementById('modal-link-quote').classList.remove('hidden');
+    }
+    document.getElementById('link-quote-quote_id') && document.getElementById('link-quote-quote_id').addEventListener('change', function() {
+        var quoteId = this.value;
+        var itemSelect = document.getElementById('link-quote-quote_item_id');
+        if (!itemSelect) return;
+        itemSelect.value = '';
+        var opts = itemSelect.querySelectorAll('option[data-quote]');
+        opts.forEach(function(opt) {
+            opt.style.display = opt.getAttribute('data-quote') === quoteId ? '' : 'none';
+        });
+    });
     function openChecklistModal(id, docName, currentStatus, observation) {
         var baseUrl = '{{ url('admin/checklist-items') }}';
         document.getElementById('form-checklist-update').action = baseUrl + '/' + id;

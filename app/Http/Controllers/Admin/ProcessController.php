@@ -294,54 +294,19 @@ class ProcessController extends Controller
         $validated = $request->validate([
             'submission_date' => 'required|date',
             'submission_code' => 'required|string|max:64',
-            'filing_date' => 'nullable|date',
-            'filing_number' => 'nullable|string|max:64',
             'parent_id' => 'nullable|exists:submissions,id',
-            'quote_id' => 'nullable|exists:quotes,id',
-            'quote_item_id' => 'nullable|exists:quote_items,id',
         ]);
 
         $parentId = $validated['parent_id'] ?? null;
-        $quoteId = $validated['quote_id'] ?? null;
-        $quoteItemId = $validated['quote_item_id'] ?? null;
-
-        // Normalizar vínculos a cotización / ítem a nivel de ciclo,
-        // y validar que pertenezcan al mismo cliente del expediente.
-        if ($quoteItemId) {
-            $quoteItem = QuoteItem::with('quote')->find($quoteItemId);
-            if ($quoteItem && $quoteItem->quote && $quoteItem->quote->client_id === $process->client_id) {
-                $quoteId = $quoteItem->quote_id;
-            } else {
-                $quoteId = null;
-                $quoteItemId = null;
-            }
-        } elseif ($quoteId) {
-            $quote = Quote::find($quoteId);
-            if (!$quote || $quote->client_id !== $process->client_id) {
-                $quoteId = null;
-            }
-        }
 
         Submission::create([
             'process_id' => $process->id,
             'parent_id' => $parentId,
-            'quote_id' => $quoteId,
-            'quote_item_id' => $quoteItemId,
             'submission_date' => $validated['submission_date'],
             'submission_code' => $validated['submission_code'],
-            'fecha_radicacion' => $validated['filing_date'] ?? null,
-            'radicado_invima' => $validated['filing_number'] ?? null,
             'status' => Submission::STATUS_PENDIENTE,
             'submission_type' => $parentId ? 'Subsanación / Nuevo intento' : 'Inicial',
         ]);
-
-        // Si el expediente todavía no está vinculado a una cotización, usar la del primer ciclo asociado
-        if ($quoteId && !$process->quote_id) {
-            $process->update([
-                'quote_id' => $quoteId,
-                'quote_item_id' => $quoteItemId ?? $process->quote_item_id,
-            ]);
-        }
 
         $process->update(['status' => Process::STATUS_RADICADO]);
 
@@ -367,13 +332,14 @@ class ProcessController extends Controller
             ]);
             return redirect()
                 ->route('admin.processes.show', $submission->process)
-                ->with('success', 'Rechazo registrado. Puede crear un nuevo intento desde "Crear Nuevo Intento".');
+                ->with('success', 'Rechazo registrado. Observación guardada. Puede volver a intentar el proceso de sometimiento desde "Crear Nuevo Intento" (vinculando a este intento).');
         }
 
         if ($type === 'auto') {
             $validated = $request->validate([
                 'document_number' => 'required|string|max:64',
                 'notification_date' => 'required|date',
+                'due_date' => 'required|date',
                 'file' => 'nullable|file|mimes:pdf|max:10240',
             ]);
             $filePath = null;
@@ -393,8 +359,7 @@ class ProcessController extends Controller
                     return redirect()->route('admin.processes.show', $submission->process)->with('error', $msg);
                 }
             }
-            $notificationDate = \Carbon\Carbon::parse($validated['notification_date']);
-            $dueDate = $notificationDate->copy()->addWeekdays(90);
+            $dueDate = \Carbon\Carbon::parse($validated['due_date']);
 
             RegulatoryEvent::create([
                 'submission_id' => $submission->id,
@@ -409,7 +374,7 @@ class ProcessController extends Controller
 
             return redirect()
                 ->route('admin.processes.show', $submission->process)
-                ->with('success', 'Auto registrado. Fecha límite: ' . $dueDate->format('d/m/Y') . ' (90 días hábiles).');
+                ->with('success', 'Requerimiento AUTO registrado. Ciclo cerrado. Fecha de vencimiento: ' . $dueDate->format('d/m/Y') . '. Puede crear un nuevo ciclo.');
         }
 
         if ($type === 'aprobado') {
@@ -479,6 +444,44 @@ class ProcessController extends Controller
         return redirect()
             ->route('admin.processes.show', $submission->process)
             ->with('success', 'Intento actualizado.');
+    }
+
+    /**
+     * Vincular un ciclo (sometimiento) a una cotización y un ítem. La cotización y el ítem deben ser del cliente del expediente.
+     */
+    public function linkSubmissionQuote(Request $request, Submission $submission): RedirectResponse
+    {
+        $validated = $request->validate([
+            'quote_id' => 'required|exists:quotes,id',
+            'quote_item_id' => 'required|exists:quote_items,id',
+        ]);
+
+        $process = $submission->process;
+        $quoteItem = QuoteItem::with('quote')->findOrFail($validated['quote_item_id']);
+        if (!$quoteItem->quote || $quoteItem->quote_id != $validated['quote_id']) {
+            return redirect()->route('admin.processes.show', $process)
+                ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
+        }
+        if ($quoteItem->quote->client_id !== $process->client_id) {
+            return redirect()->route('admin.processes.show', $process)
+                ->with('error', 'La cotización debe ser del mismo cliente del expediente.');
+        }
+
+        $submission->update([
+            'quote_id' => $quoteItem->quote_id,
+            'quote_item_id' => $quoteItem->id,
+        ]);
+
+        if (!$process->quote_id) {
+            $process->update([
+                'quote_id' => $quoteItem->quote_id,
+                'quote_item_id' => $quoteItem->id,
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.processes.show', $process)
+            ->with('success', 'Ciclo vinculado a la cotización e ítem seleccionados.');
     }
 
     /**

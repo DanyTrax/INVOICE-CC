@@ -53,6 +53,12 @@
             <p class="text-xs text-gray-500 mt-1">Aprobar: Radicado y Llave / Resolución o Auto. Rechazar: indicar observación y podrá crear nuevo ciclo.</p>
         @endif
         <p class="mt-2 pt-2 border-t border-blue-100 flex flex-wrap gap-2 items-center">
+            @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
+            <button type="button" onclick="typeof openLinkQuoteModal === 'function' && openLinkQuoteModal({{ $submission->id }})"
+                    class="text-sm px-3 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200">
+                <i class="fas fa-link mr-1"></i> {{ $submission->quote_id ? 'Cambiar cotización' : 'Vincular cotización' }}
+            </button>
+            @endif
             <button type="button" class="js-edit-submission text-sm px-3 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
                     data-url="{{ route('admin.submissions.update', $submission) }}"
                     data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
