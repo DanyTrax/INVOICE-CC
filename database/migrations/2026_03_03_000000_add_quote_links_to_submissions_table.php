@@ -1,8 +1,10 @@
+<?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class AddQuoteLinksToSubmissionsTable extends Migration
 {
     public function up(): void
     {
@@ -16,6 +18,7 @@ return new class extends Migration
                     ->nullOnDelete();
             });
         }
+
         if (!Schema::hasColumn('submissions', 'quote_item_id')) {
             Schema::table('submissions', function (Blueprint $table) {
                 $table->foreignId('quote_item_id')
@@ -35,6 +38,7 @@ return new class extends Migration
                 $table->dropColumn('quote_item_id');
             });
         }
+
         if (Schema::hasColumn('submissions', 'quote_id')) {
             Schema::table('submissions', function (Blueprint $table) {
                 $table->dropForeign(['quote_id']);
@@ -42,5 +46,5 @@ return new class extends Migration
             });
         }
     }
-};
+}
 
