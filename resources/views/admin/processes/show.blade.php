@@ -128,16 +128,56 @@
                             </li>
                         @endif
 
-                        {{-- 3. Sometimientos y eventos (raíz primero, ordenados por fecha) --}}
+                        {{-- 3. Ciclos de trámite (acordeones: cada sometimiento = un ciclo) --}}
                         @php
                             $lastSubmission = $process->submissions->sortByDesc('id')->first();
-                            $rootSubmissions = $process->submissions->where('parent_id', null)->sortBy(fn($s) => $s->submission_date ?? $s->created_at);
+                            $roots = $process->submissions->where('parent_id', null)->sortBy(fn($s) => $s->submission_date ?? $s->created_at);
+                            $cycles = collect();
+                            $addToCycles = function ($sub) use (&$addToCycles, &$cycles) {
+                                $cycles->push($sub);
+                                foreach ($sub->children->sortBy('fecha_radicacion') as $child) {
+                                    $addToCycles($child);
+                                }
+                            };
+                            foreach ($roots as $root) {
+                                $addToCycles($root);
+                            }
                         @endphp
-                        @foreach($rootSubmissions as $submission)
-                            @include('admin.processes.partials.timeline-submission', ['submission' => $submission, 'attemptNum' => $loop->iteration, 'lastSubmission' => $lastSubmission ?? null])
+                        @foreach($cycles as $cycleIndex => $submission)
+                            @php
+                                $cycleNum = $loop->iteration;
+                                $isClosed = in_array($submission->status, [\App\Models\Submission::STATUS_APROBADO, \App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO], true);
+                                $statusBadgeClass = match($submission->status) {
+                                    'Aprobado' => 'bg-green-100 text-green-800',
+                                    'Rechazado' => 'bg-red-100 text-red-800',
+                                    'En Requerimiento' => 'bg-yellow-100 text-yellow-800',
+                                    default => 'bg-blue-100 text-blue-800',
+                                };
+                            @endphp
+                            <li class="relative pl-12 pb-4">
+                                <div class="absolute left-0 w-8 h-8 rounded-full {{ $submission->status === \App\Models\Submission::STATUS_RECHAZADO ? 'bg-red-500' : ($submission->status === \App\Models\Submission::STATUS_APROBADO ? 'bg-green-500' : 'bg-blue-500') }} flex items-center justify-center text-white text-xs">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                                <details class="group border border-gray-200 rounded-lg overflow-hidden" @if(!$isClosed) open @endif>
+                                    <summary class="flex items-center gap-2 flex-wrap px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                                        <span class="font-semibold text-gray-900">Ciclo {{ $cycleNum }}</span>
+                                        <span class="text-sm text-gray-600">
+                                            {{ $submission->submission_date ? $submission->submission_date->format('d/m/Y') : ($submission->created_at?->format('d/m/Y') ?? '-') }}
+                                        </span>
+                                        <span class="px-2 py-0.5 rounded text-xs font-medium {{ $statusBadgeClass }}">{{ $submission->status }}</span>
+                                        @if($submission->quote)
+                                            <a href="{{ route('admin.quotes.show', $submission->quote) }}" class="text-sm text-teal-600 hover:underline" onclick="event.stopPropagation()">Cot. {{ $submission->quote->consecutive ?? $submission->quote->id }}</a>
+                                        @endif
+                                        <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
+                                    </summary>
+                                    <div class="p-4 bg-white border-t border-gray-200">
+                                        @include('admin.processes.partials.timeline-cycle-content', ['submission' => $submission, 'lastSubmission' => $lastSubmission ?? null])
+                                    </div>
+                                </details>
+                            </li>
                         @endforeach
 
-                        @if($rootSubmissions->isEmpty() && $process->checklistItems->isEmpty() && !$process->quoteItem?->quote)
+                        @if($cycles->isEmpty() && $process->checklistItems->isEmpty() && !$process->quoteItem?->quote)
                             <li class="relative pl-12 pb-4 text-sm text-gray-500">
                                 Sin eventos aún en la línea de tiempo.
                             </li>
