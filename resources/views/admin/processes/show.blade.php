@@ -113,6 +113,12 @@
                             foreach ($roots as $root) {
                                 $addToCycles($root);
                             }
+                            $rejectedSubmissions = $process->submissions->filter(fn ($s) => in_array($s->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]));
+                            $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
+                            $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE);
+                            $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO;
+                            $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd;
+                            $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]);
                         @endphp
                         @foreach($cycles as $cycleIndex => $submission)
                             @php
@@ -206,13 +212,46 @@
                                                         </li>
                                                     @endforeach
                                                 </ul>
-                                                <p class="text-sm text-gray-500 mt-3">Cuando todos los documentos estén en <strong>Aprobado</strong>, use <strong>Registrar Sometimiento</strong> para continuar con este ciclo.</p>
+                                                <p class="text-sm text-gray-500 mt-3">Cuando todos los documentos estén en <strong>Aprobado</strong>, use el botón debajo para continuar con este ciclo.</p>
+                                                @if($canRegisterSubmission)
+                                                    <div class="mt-4 pt-3 border-t border-gray-200">
+                                                        <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                                                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                                            <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
+                                                        </button>
+                                                    </div>
+                                                @elseif($process->checklistItems->isNotEmpty())
+                                                    <p class="text-sm text-amber-700 mt-3">Debe aprobar todos los documentos antes de poder registrar el sometimiento.</p>
+                                                @endif
                                             @else
                                                 <p class="text-sm text-gray-500 mt-2">No hay documentos. Use <strong>Gestión Documental</strong> → Agregar Documento para cargar los requisitos; luego apruebe cada uno y registre el sometimiento.</p>
                                             @endif
                                         </div>
                                     </div>
                                 </details>
+                            </li>
+                        @endif
+
+                        {{-- Botón Registrar Sometimiento / Crear Nuevo Intento: debajo del último ciclo cuando hay rechazo o requerimiento --}}
+                        @if(($canRegisterSubmission || $canCreateNewAttempt) && $cycles->isNotEmpty())
+                            <li class="relative pl-12 pb-4">
+                                <div class="absolute left-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+                                    <i class="fas fa-paper-plane"></i>
+                                </div>
+                                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                                    <p class="text-sm text-gray-700 mb-3">Puede registrar un nuevo sometimiento para continuar (nuevo intento en el mismo ciclo o nuevo ciclo según el caso).</p>
+                                    @if($canCreateNewAttempt)
+                                        <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                                                class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700">
+                                            <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento
+                                        </button>
+                                    @else
+                                        <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                            <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
+                                        </button>
+                                    @endif
+                                </div>
                             </li>
                         @endif
                     </ul>
@@ -223,50 +262,11 @@
 
     @php
         if (!isset($lastSubmission)) { $lastSubmission = $process->submissions->sortByDesc('id')->first(); }
-        // Intentos anteriores que ya cerraron un ciclo: Rechazado o En Requerimiento (AUTO)
-        $rejectedSubmissions = $process->submissions->filter(fn ($s) => in_array($s->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]));
-        $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
-        $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE);
-        // Solo la resolución aprobatoria cierra definitivamente el expediente
-        $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO;
-        $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd;
-        // Se puede crear nuevo ciclo cuando el último intento fue Rechazado o quedó En Requerimiento (AUTO)
-        $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty()
-            && $lastSubmission
-            && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]);
-        $submitDisabledTitle = !$allChecklistApproved
-            ? 'Debe aprobar todos los documentos antes de radicar.'
-            : ($hasPendingSubmission
-                ? 'Hay un sometimiento pendiente; use Aprobar, Rechazar o registrar Auto/Resolución en la línea de tiempo.'
-                : ($processReachedEnd
-                    ? 'El proceso llegó a resolución aprobatoria; está deshabilitado. Elimine en la línea de tiempo para reanudar.'
-                    : ''));
+        if (!isset($rejectedSubmissions)) { $rejectedSubmissions = $process->submissions->filter(fn ($s) => in_array($s->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO])); }
+        if (!isset($allChecklistApproved)) { $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO); }
+        if (!isset($canRegisterSubmission)) { $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE); $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO; $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd; }
+        if (!isset($canCreateNewAttempt)) { $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]); }
     @endphp
-    {{-- Acciones: Sometimiento y Nuevo Intento (debajo de Resumen y Línea de tiempo) --}}
-    <div class="mt-6 flex flex-wrap gap-3 items-center">
-        @if($canRegisterSubmission)
-            <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
-            </button>
-        @else
-            <span class="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed" title="{{ $submitDisabledTitle }}">
-                <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
-            </span>
-        @endif
-        @if($canCreateNewAttempt)
-            <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
-                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento
-            </button>
-        @endif
-        @if(!$allChecklistApproved)
-            <p class="text-sm text-amber-700 w-full">Debe aprobar todos los documentos antes de radicar.</p>
-        @endif
-        @if($processReachedEnd)
-            <p class="text-sm text-gray-600 w-full">Proceso en estado final (resolución o auto). Para reanudar acciones, elimine el intento correspondiente en la línea de tiempo.</p>
-        @endif
-    </div>
 
     {{-- 2. Gestión Documental --}}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
