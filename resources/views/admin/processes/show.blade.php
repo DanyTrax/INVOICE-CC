@@ -448,8 +448,14 @@
         if (!isset($lastSubmission)) { $lastSubmission = $process->submissions->sortByDesc('id')->first(); }
         if (!isset($rejectedSubmissions)) { $rejectedSubmissions = $process->submissions->where('status', \App\Models\Submission::STATUS_RECHAZADO); }
         if (!isset($allChecklistApproved)) { $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO); }
-        $latestAutoDue = $process->submissions->flatMap->regulatoryEvents->where('event_type', \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO)->whereNotNull('due_date')->max('due_date');
-        $daysLeftRaw = $latestAutoDue ? \Carbon\Carbon::parse($latestAutoDue)->startOfDay()->diffInDays(now()->startOfDay(), false) : null;
+        $latestAutoDue = $process->submissions->flatMap->regulatoryEvents
+            ->where('event_type', \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO)
+            ->whereNotNull('due_date')
+            ->max('due_date');
+        // Días hasta el vencimiento (positivo = falta X días, 0 = hoy, negativo = ya venció).
+        $daysLeftRaw = $latestAutoDue
+            ? now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($latestAutoDue)->startOfDay(), false)
+            : null;
         $daysLeft = $daysLeftRaw !== null ? (int) $daysLeftRaw : null;
     @endphp
     @if($process->status === 'En Requerimiento' && $daysLeft !== null)
