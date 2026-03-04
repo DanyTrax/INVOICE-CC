@@ -172,9 +172,47 @@
                             </li>
                         @endforeach
 
-                        @if($cycles->isEmpty() && $process->checklistItems->isEmpty() && !$process->quoteItem?->quote)
-                            <li class="relative pl-12 pb-4 text-sm text-gray-500">
-                                Sin eventos aún en la línea de tiempo.
+                        {{-- Sin sometimientos aún: primer ciclo (Ciclo 1) para cargar check docs y luego registrar sometimiento --}}
+                        @if($cycles->isEmpty())
+                            <li class="relative pl-12 pb-4">
+                                <div class="absolute left-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                                <details class="group border border-gray-200 rounded-lg overflow-hidden" open>
+                                    <summary class="flex items-center gap-2 flex-wrap px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                                        <span class="font-semibold text-gray-900">Ciclo 1</span>
+                                        <span class="text-sm text-gray-600">Documentación</span>
+                                        <span class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">En curso</span>
+                                        <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
+                                    </summary>
+                                    <div class="p-4 bg-white border-t border-gray-200 space-y-6">
+                                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Checklist documental</p>
+                                            @if($process->checklistItems->isNotEmpty())
+                                                <ul class="mt-2 space-y-1 text-sm">
+                                                    @foreach($process->checklistItems as $item)
+                                                        @php
+                                                            $itemStyle = match($item->status) {
+                                                                'Aprobado' => 'text-green-700',
+                                                                'Traducción' => 'text-yellow-700',
+                                                                'Recibido' => 'text-blue-700',
+                                                                default => 'text-gray-700',
+                                                            };
+                                                        @endphp
+                                                        <li class="flex items-center gap-2 {{ $itemStyle }}">
+                                                            <i class="fas fa-{{ $item->status === 'Aprobado' ? 'check-circle' : 'circle' }} text-xs"></i>
+                                                            {{ $item->document_name }}
+                                                            <span class="text-xs">({{ $item->status }})</span>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                                <p class="text-sm text-gray-500 mt-3">Cuando todos los documentos estén en <strong>Aprobado</strong>, use <strong>Registrar Sometimiento</strong> para continuar con este ciclo.</p>
+                                            @else
+                                                <p class="text-sm text-gray-500 mt-2">No hay documentos. Use <strong>Gestión Documental</strong> → Agregar Documento para cargar los requisitos; luego apruebe cada uno y registre el sometimiento.</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </details>
                             </li>
                         @endif
                     </ul>
@@ -262,7 +300,10 @@
                             };
                         @endphp
                         <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            <td class="px-3 py-2 font-medium text-gray-900">{{ $item->document_name }}</td>
+                            <td class="px-3 py-2 font-medium text-gray-900">
+                                <i class="fas {{ $item->status === 'Aprobado' ? 'fa-check-circle text-green-600' : 'fa-circle text-gray-400' }} mr-2"></i>
+                                {{ $item->document_name }}
+                            </td>
                             <td class="px-3 py-2">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badgeClass }}">{{ $item->status }}</span>
                             </td>
