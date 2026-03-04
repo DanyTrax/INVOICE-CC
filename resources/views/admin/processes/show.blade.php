@@ -105,9 +105,15 @@
                             $roots = $process->submissions->where('parent_id', null)->sortBy(fn($s) => $s->submission_date ?? $s->created_at);
                             $rejectedSubmissions = $process->submissions->filter(fn ($s) => in_array($s->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]));
                             $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
-                            $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE);
                             $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO;
-                            $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd;
+                            // Registrar Sometimiento:
+                            //  - Caso 1: no hay sometimientos aún (primer ciclo) y checklist aprobada.
+                            //  - Caso 2: último sometimiento quedó En Requerimiento (AUTO) y checklist aprobada.
+                            $canRegisterSubmission = $allChecklistApproved && !$processReachedEnd && (
+                                $process->submissions->isEmpty()
+                                || ($lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
+                            );
+                            // Crear Nuevo Intento (mismo ciclo) solo si el último sometimiento del proceso está Rechazado.
                             $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_RECHAZADO;
                         @endphp
                         @foreach($roots as $cycleIndex => $rootSubmission)
@@ -247,11 +253,29 @@
                                             <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento (mismo ciclo)
                                         </button>
                                     @else
-                                        <p class="text-sm text-gray-700 mb-3">Registre un nuevo sometimiento para iniciar un ciclo o continuar tras un requerimiento AUTO.</p>
-                                        <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
-                                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
-                                            <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
-                                        </button>
+                                        @if($lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO && $allChecklistApproved)
+                                            <p id="auto-checklist-warning" class="text-sm text-amber-700 mb-3">
+                                                El expediente quedó en estado <strong>En Requerimiento (AUTO)</strong>. Revise que la documentación siga vigente y completa.
+                                                Si no hace falta cargar nada más y todos los documentos están en <strong>Aprobado</strong>, haga clic en <strong>Aceptar</strong> para continuar con un nuevo sometimiento en este expediente.
+                                            </p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <button type="button" id="btn-auto-accept-checklist"
+                                                        class="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700">
+                                                    <i class="fas fa-check mr-2"></i> Aceptar
+                                                </button>
+                                                <button type="button" id="btn-register-submission-after-auto"
+                                                        onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                                                        class="hidden inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                                    <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
+                                                </button>
+                                            </div>
+                                        @else
+                                            <p class="text-sm text-gray-700 mb-3">Registre un nuevo sometimiento para iniciar un ciclo o continuar tras un requerimiento AUTO.</p>
+                                            <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                                                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                                <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
+                                            </button>
+                                        @endif
                                     @endif
                                 </div>
                             </li>
@@ -266,8 +290,16 @@
         if (!isset($lastSubmission)) { $lastSubmission = $process->submissions->sortByDesc('id')->first(); }
         if (!isset($rejectedSubmissions)) { $rejectedSubmissions = $process->submissions->filter(fn ($s) => in_array($s->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO])); }
         if (!isset($allChecklistApproved)) { $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO); }
-        if (!isset($canRegisterSubmission)) { $hasPendingSubmission = $process->submissions->contains('status', \App\Models\Submission::STATUS_PENDIENTE); $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO; $canRegisterSubmission = $allChecklistApproved && !$hasPendingSubmission && !$processReachedEnd; }
-        if (!isset($canCreateNewAttempt)) { $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && in_array($lastSubmission->status, [\App\Models\Submission::STATUS_RECHAZADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO]); }
+        if (!isset($canRegisterSubmission)) {
+            $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO;
+            $canRegisterSubmission = $allChecklistApproved && !$processReachedEnd && (
+                $process->submissions->isEmpty()
+                || ($lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
+            );
+        }
+        if (!isset($canCreateNewAttempt)) {
+            $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_RECHAZADO;
+        }
     @endphp
 
     {{-- 2. Gestión Documental --}}
@@ -674,6 +706,18 @@
             document.getElementById('modal-edit-event').classList.remove('hidden');
         });
     });
+    // Paso intermedio tras REQUERIMIENTO AUTO: advertencia y botón Aceptar antes de permitir "Registrar Sometimiento".
+    (function() {
+        var acceptBtn = document.getElementById('btn-auto-accept-checklist');
+        if (!acceptBtn) return;
+        acceptBtn.addEventListener('click', function() {
+            var warning = document.getElementById('auto-checklist-warning');
+            var registerBtn = document.getElementById('btn-register-submission-after-auto');
+            if (warning) warning.classList.add('hidden');
+            acceptBtn.classList.add('hidden');
+            if (registerBtn) registerBtn.classList.remove('hidden');
+        });
+    })();
     </script>
 
     @include('admin.processes.partials.modal-submission', [
