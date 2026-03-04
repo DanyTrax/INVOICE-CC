@@ -6,8 +6,8 @@
                 <h3 class="text-lg font-semibold text-gray-900"><i class="fas fa-reply text-teal-600 mr-2"></i> Registrar Respuesta INVIMA</h3>
                 <p class="text-sm text-gray-500 mt-1">Sometimiento: {{ $submission->submission_code ?? $submission->radicado_invima ?? '#' . $submission->id }}</p>
             </div>
-            {{-- Tabs --}}
-            <div class="flex border-b border-gray-200">
+            {{-- Tabs (ocultos al abrir desde Aprobar/Rechazar/Auto: solo se muestra la opción elegida) --}}
+            <div id="response-modal-tabs" class="flex border-b border-gray-200" style="display: none;">
                 <button type="button" id="tab-auto" data-tab="auto" class="response-tab flex-1 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 data-[active=true]:bg-teal-50 data-[active=true]:text-teal-700 data-[active=true]:border-b-2 data-[active=true]:border-teal-600">
                     Auto / Requerimiento
                 </button>
@@ -79,19 +79,20 @@
     (function() {
         var form = document.getElementById('form-response-invima');
         var typeInput = document.getElementById('response_type');
+        var tabsContainer = document.getElementById('response-modal-tabs');
         var tabs = document.querySelectorAll('.response-tab');
         var panels = document.querySelectorAll('.response-panel');
         var panelFile = document.getElementById('panel-file');
         function showPanel(type) {
             typeInput.value = type;
-            tabs.forEach(function(t) { t.dataset.active = t.dataset.tab === type ? 'true' : 'false'; });
+            if (tabs) tabs.forEach(function(t) { t.dataset.active = t.dataset.tab === type ? 'true' : 'false'; });
             panels.forEach(function(p) {
                 var id = p.id;
                 if ((id === 'panel-auto' && type === 'auto') || (id === 'panel-aprobado' && type === 'aprobado') || (id === 'panel-rechazo' && type === 'rechazo')) p.classList.remove('hidden'); else p.classList.add('hidden');
             });
             if (panelFile) panelFile.classList.toggle('hidden', type === 'rechazo');
         }
-        tabs.forEach(function(t) {
+        if (tabs && tabs.length) tabs.forEach(function(t) {
             t.addEventListener('click', function() { showPanel(this.dataset.tab); });
         });
         form.addEventListener('submit', function(e) {
@@ -114,6 +115,11 @@
                 }
             }
         });
+        window.openResponseModal = function(type) {
+            if (tabsContainer) tabsContainer.style.display = 'none';
+            showPanel(type);
+            document.getElementById('modal-response-invima').classList.remove('hidden');
+        };
         showPanel('auto');
     })();
     </script>
