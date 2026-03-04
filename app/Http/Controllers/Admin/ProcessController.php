@@ -163,6 +163,9 @@ class ProcessController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        } else {
+            // Por defecto, el Monitor solo muestra expedientes activos (excluye Finalizados).
+            $query->where('status', '!=', Process::STATUS_FINALIZADO);
         }
 
         if ($request->filled('date_from')) {
@@ -194,6 +197,49 @@ class ProcessController extends Controller
 
         $companies = Company::orderBy('name')->get();
         return view('admin.processes.monitor', compact('processes', 'companies'));
+    }
+
+    /**
+     * Historial de Expedientes: solo expedientes Finalizados.
+     */
+    public function history(Request $request)
+    {
+        $query = Process::with([
+            'client',
+            'quoteItem.quote',
+            'quoteItem.serviceType',
+            'quote',
+            'serviceType',
+            'submissions.regulatoryEvents',
+        ])->where('status', Process::STATUS_FINALIZADO);
+
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->client_id);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('updated_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('updated_at', '<=', $request->date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('product_reference', 'like', "%{$search}%")
+                    ->orWhere('expediente_invima', 'like', "%{$search}%")
+                    ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"))
+                    ->orWhereHas('quoteItem.quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"));
+            });
+        }
+
+        $processes = $query->orderBy('updated_at', 'desc')->paginate(25)->withQueryString();
+        $companies = Company::orderBy('name')->get();
+
+        return view('admin.processes.history', compact('processes', 'companies'));
     }
 
     /**

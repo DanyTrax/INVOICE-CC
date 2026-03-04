@@ -123,6 +123,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     // Expedientes (processes) y eventos regulatorios
     Route::get('processes', [ProcessController::class, 'index'])->name('processes.index');
     Route::get('processes/monitor', [ProcessController::class, 'masterList'])->name('processes.monitor');
+    Route::get('processes/history', [ProcessController::class, 'history'])->name('processes.history');
     Route::get('processes/export', [ProcessController::class, 'export'])->name('processes.export');
     Route::get('processes/create', [ProcessController::class, 'create'])->name('processes.create');
     Route::post('processes', [ProcessController::class, 'store'])->name('processes.store');

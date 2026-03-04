@@ -238,6 +238,13 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.processes.history') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.history') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-clock-rotate-left w-5 h-5"></i>
+                            <span class="ms-3">Historial de Expedientes</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.capacitaciones.index') }}"
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.capacitaciones.*') ? 'bg-teal-700' : '' }}">
                             <i class="fas fa-video w-5 h-5"></i>
