@@ -22,16 +22,12 @@
         @endif
     </div>
     
-    <div class="mb-4 flex items-center space-x-4">
-        <span class="inline-flex items-center text-sm text-gray-600">
-            <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-            Vencimientos
-        </span>
-        <span class="inline-flex items-center text-sm text-gray-600">
-            <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-            Límites de Respuesta
-        </span>
-    </div>
+        <div class="mb-4 flex items-center space-x-4">
+            <span class="inline-flex items-center text-sm text-gray-600">
+                <span class="w-3 h-3 bg-amber-500 rounded-full mr-2"></span>
+                Vencimientos de AUTO (Requerimiento)
+            </span>
+        </div>
     
     <div id="{{ $calendarId }}" class="w-full" style="min-height: 400px;"></div>
 </div>
@@ -132,15 +128,16 @@
                 },
                 events: events || [],
                 eventClick: function(info) {
-                    var type = info.event.extendedProps.type === 'expiration' ? 'Vencimiento' : 'Límite de Respuesta';
+                    var type = 'Vencimiento de AUTO';
                     var message = '<strong>' + type + '</strong><br>' +
-                                 'Producto: ' + info.event.title + '<br>' +
-                                 'Cliente: ' + (info.event.extendedProps.company || 'N/A') + '<br>' +
-                                 'Fecha: ' + info.event.start.toLocaleDateString('es-ES');
+                                 'AUTO: ' + (info.event.extendedProps.auto_number || 'N/A') + '<br>' +
+                                 'Expediente: #' + (info.event.extendedProps.process_id || 'N/A') + '<br>' +
+                                 'Cliente: ' + (info.event.extendedProps.client || 'N/A') + '<br>' +
+                                 'Fecha de vencimiento: ' + info.event.start.toLocaleDateString('es-ES');
                     
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Detalles del Evento',
+                            title: 'Detalles del AUTO',
                             html: message,
                             icon: 'info',
                             confirmButtonText: 'Ver Expediente',
@@ -148,8 +145,8 @@
                             cancelButtonText: 'Cerrar',
                             confirmButtonColor: '#0f766e'
                         }).then((result) => {
-                            if (result.isConfirmed && info.event.extendedProps.registration_id) {
-                                window.location.href = '/admin/registrations/' + info.event.extendedProps.registration_id + '/edit';
+                            if (result.isConfirmed && info.event.extendedProps.process_id) {
+                                window.location.href = '/admin/processes/' + info.event.extendedProps.process_id;
                             }
                         });
                     } else {

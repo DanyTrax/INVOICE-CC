@@ -14,45 +14,74 @@
 @endsection
 
 @section('content')
-    <!-- Estadísticas Cards -->
+    <!-- Estadísticas por etapa del flujo -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <x-widgets.stats-card 
             title="EXPEDIENTES ACTIVOS"
-            :value="$stats['active_registrations']"
+            :value="$stats['total_active']"
             icon="clipboard-list"
             color="blue"
-            :link="route('admin.processes.index')"
-            subtitle="Total de registros activos"
+            :link="route('admin.processes.monitor')"
+            subtitle="En Recolección, Sometimiento, Radicado o Auto"
         />
 
         <x-widgets.stats-card 
-            title="VENCEN ESTE MES"
-            :value="$stats['expiring_this_month']"
-            icon="exclamation-triangle"
-            color="red"
-            :link="route('admin.processes.index', ['filter' => 'expiring'])"
-            subtitle="Requieren atención"
+            title="EN RECOLECCIÓN"
+            :value="$stats['recoleccion']"
+            icon="folder-open"
+            color="yellow"
+            :link="route('admin.processes.monitor', ['status' => \App\Models\Process::STATUS_RECOLECCION])"
+            subtitle="Checklist en curso, sin sometimiento"
         />
 
         <x-widgets.stats-card 
-            title="EN TRÁMITE INVIMA"
-            :value="$stats['in_process_invima']"
-            icon="hourglass-half"
+            title="EN SOMETIMIENTO (TURNO)"
+            :value="$stats['sometimiento']"
+            icon="paper-plane"
             color="teal"
-            :link="route('admin.processes.index', ['status' => 'en_tramite'])"
-            subtitle="Pendientes de respuesta"
+            :link="route('admin.processes.monitor', ['status' => \App\Models\Process::STATUS_RADICADO])"
+            subtitle="Sometido, pendiente de radicado INVIMA"
+        />
+
+        <x-widgets.stats-card 
+            title="RADICADOS INVIMA"
+            :value="$stats['radicado']"
+            icon="stamp"
+            color="blue"
+            :link="route('admin.processes.monitor', ['status' => \App\Models\Process::STATUS_RADICADO])"
+            subtitle="Radicado, listo para Resolución o AUTO"
+        />
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <x-widgets.stats-card 
+            title="EN REQUERIMIENTO (AUTO)"
+            :value="$stats['en_requerimiento']"
+            icon="exclamation-triangle"
+            color="yellow"
+            :link="route('admin.processes.monitor', ['status' => \App\Models\Process::STATUS_EN_REQUERIMIENTO])"
+            subtitle="Con requerimiento AUTO vigente"
+        />
+
+        <x-widgets.stats-card 
+            title="FINALIZADOS (HISTORIAL)"
+            :value="$stats['finalizados']"
+            icon="flag-checkered"
+            color="green"
+            :link="route('admin.processes.history')"
+            subtitle="Ver expedientes aprobados"
         />
 
         <x-widgets.stats-card 
             title="CLIENTES TOTALES"
             :value="$stats['total_companies']"
             icon="building"
-            color="green"
+            color="teal"
             :link="route('admin.companies.index')"
             subtitle="Empresas registradas"
         />
     </div>
 
-    <!-- Calendario -->
+    <!-- Calendario de vencimientos de AUTO -->
     <x-widgets.calendar :events="$events" />
 @endsection
