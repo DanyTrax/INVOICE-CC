@@ -160,7 +160,7 @@ class QuoteController extends Controller
     }
 
     /**
-     * Aprobar cotización y crear procesos (uno por ítem que no sea préstamo).
+     * Aprobar cotización (sin crear procesos automáticamente).
      */
     public function approve(Quote $quote): RedirectResponse
     {
@@ -171,24 +171,9 @@ class QuoteController extends Controller
 
         $quote->update(['status' => self::STATUS_APROBADA]);
 
-        $itemsNoLoan = $quote->quoteItems()->where('is_loan', false)->orderBy('item_position')->get();
-        $created = 0;
-        foreach ($itemsNoLoan as $item) {
-            if ($item->process()->exists()) {
-                continue;
-            }
-            Process::create([
-                'quote_item_id' => $item->id,
-                'client_id' => $quote->client_id,
-                'status' => Process::STATUS_RECOLECCION,
-                'expediente_invima' => null,
-            ]);
-            $created++;
-        }
-
         return redirect()
-            ->route('admin.processes.index')
-            ->with('success', "Cotización aprobada y {$created} proceso(s) creado(s).");
+            ->route('admin.quotes.show', $quote)
+            ->with('success', 'Cotización aprobada. Ahora puedes crear y vincular expedientes desde el módulo Expedientes / Procesos.');
     }
 
     /**
