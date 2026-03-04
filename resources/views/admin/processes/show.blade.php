@@ -99,36 +99,7 @@
                             </li>
                         @endif
 
-                        {{-- 2. Checklist documental --}}
-                        @if($process->checklistItems->isNotEmpty())
-                            <li class="relative pl-12 pb-8">
-                                <div class="absolute left-0 w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center text-white text-xs">
-                                    <i class="fas fa-tasks"></i>
-                                </div>
-                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                    <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Checklist documental</p>
-                                    <ul class="mt-2 space-y-1 text-sm">
-                                        @foreach($process->checklistItems as $item)
-                                            @php
-                                                $itemStyle = match($item->status) {
-                                                    'Aprobado' => 'text-green-700',
-                                                    'Traducción' => 'text-yellow-700',
-                                                    'Recibido' => 'text-blue-700',
-                                                    default => 'text-gray-700',
-                                                };
-                                            @endphp
-                                            <li class="flex items-center gap-2 {{ $itemStyle }}">
-                                                <i class="fas fa-{{ $item->status === 'Aprobado' ? 'check-circle' : 'circle' }} text-xs"></i>
-                                                {{ $item->document_name }}
-                                                <span class="text-xs">({{ $item->status }})</span>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            </li>
-                        @endif
-
-                        {{-- 3. Ciclos de trámite (acordeones: cada sometimiento = un ciclo) --}}
+                        {{-- 2. Ciclos de trámite: cada ciclo = Checklist documental → Sometimiento → Eventos (línea de tiempo completa) --}}
                         @php
                             $lastSubmission = $process->submissions->sortByDesc('id')->first();
                             $roots = $process->submissions->where('parent_id', null)->sortBy(fn($s) => $s->submission_date ?? $s->created_at);
@@ -170,7 +141,31 @@
                                         @endif
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>
-                                    <div class="p-4 bg-white border-t border-gray-200">
+                                    <div class="p-4 bg-white border-t border-gray-200 space-y-6">
+                                        {{-- Inicio de línea de tiempo del ciclo: Checklist documental --}}
+                                        @if($process->checklistItems->isNotEmpty())
+                                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                                <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Checklist documental</p>
+                                                <ul class="mt-2 space-y-1 text-sm">
+                                                    @foreach($process->checklistItems as $item)
+                                                        @php
+                                                            $itemStyle = match($item->status) {
+                                                                'Aprobado' => 'text-green-700',
+                                                                'Traducción' => 'text-yellow-700',
+                                                                'Recibido' => 'text-blue-700',
+                                                                default => 'text-gray-700',
+                                                            };
+                                                        @endphp
+                                                        <li class="flex items-center gap-2 {{ $itemStyle }}">
+                                                            <i class="fas fa-{{ $item->status === 'Aprobado' ? 'check-circle' : 'circle' }} text-xs"></i>
+                                                            {{ $item->document_name }}
+                                                            <span class="text-xs">({{ $item->status }})</span>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @endif
+                                        {{-- Sometimiento y eventos del ciclo --}}
                                         @include('admin.processes.partials.timeline-cycle-content', ['submission' => $submission, 'lastSubmission' => $lastSubmission ?? null])
                                     </div>
                                 </details>
