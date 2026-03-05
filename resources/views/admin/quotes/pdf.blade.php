@@ -125,7 +125,9 @@
                 @if($quote->show_service_type_column)
                     <th style="width: 22%;">Trámite</th>
                 @endif
-                <th style="width: 22%;">Producto / Descripción</th>
+                @if($quote->show_description_column ?? true)
+                    <th style="width: 22%;">Producto / Descripción</th>
+                @endif
                 @if($quote->show_prev_license_column)
                     <th style="width: 12%;">Expediente / INVIMA</th>
                 @endif
@@ -143,7 +145,9 @@
                     @if($quote->show_service_type_column)
                         <td>{{ $item->process?->serviceType?->name ?? '-' }}</td>
                     @endif
-                    <td>{{ $item->description ?? '-' }}</td>
+                    @if($quote->show_description_column ?? true)
+                        <td>{{ $item->description ?? '-' }}</td>
+                    @endif
                     @if($quote->show_prev_license_column)
                         <td>{{ $item->previous_license ?? '-' }}</td>
                     @endif

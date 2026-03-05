@@ -36,6 +36,7 @@
         <input type="hidden" name="show_prev_license_column" id="input-show-prev-license" value="0">
         <input type="hidden" name="show_raa_column" id="input-show-raa" value="0">
         <input type="hidden" name="show_service_type_column" id="input-show-tramite" value="0">
+        <input type="hidden" name="show_description_column" id="input-show-description" value="1">
 
         {{-- Cabecera --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -104,6 +105,10 @@
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                     <span>Usar columna RAA</span>
                 </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" id="toggle-description" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked>
+                    <span>Usar columna Producto / Descripción</span>
+                </label>
                 <label class="inline-flex items-center gap-2" title="Se activa al vincular un expediente a un ítem">
                     <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" disabled>
                     <span class="text-gray-400">Usar columna Trámite</span>
@@ -134,7 +139,7 @@
                             <th class="px-2 py-2 w-12">#</th>
                             <th class="px-2 py-2">Servicio</th>
                             <th class="px-2 py-2" data-col="tramite">Trámite</th>
-                            <th class="px-2 py-2">Producto / Descripción</th>
+                            <th class="px-2 py-2" data-col="description">Producto / Descripción</th>
                             <th class="px-2 py-2" data-col="prev-license">Expediente / INVIMA</th>
                             <th class="px-2 py-2 w-20" data-col="raa">RAA</th>
                             <th class="px-2 py-2">Alcance</th>
@@ -155,7 +160,7 @@
                         @foreach($oldItems as $idx => $item)
                             <tr class="item-row border-b border-gray-200 {{ !empty($item['is_loan']) ? 'bg-amber-50' : '' }}" data-is-loan="{{ !empty($item['is_loan']) ? '1' : '0' }}">
                                 <td class="px-2 py-2 item-num">{{ $idx + 1 }}</td>
-                                <td class="px-2 py-2">
+                                <td class="px-2 py-2" data-col="description">
                                     @php $selectedService = $services->firstWhere('id', $item['service_id'] ?? null); @endphp
                                     <input type="text" value="{{ $selectedService ? $selectedService->name : '' }}" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off"
                                            class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
@@ -266,7 +271,7 @@
     <template id="row-template-normal">
         <tr class="item-row border-b border-gray-200" data-is-loan="0">
             <td class="px-2 py-2 item-num"></td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="description">
                 <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off"
                        class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
                 <input type="hidden" name="items[__INDEX__][service_id]" class="item-service-id-input" value="">
@@ -281,7 +286,7 @@
                     placeholder="Trámite (se activa al vincular expediente)"
                     class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="description">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Producto / Descripción" maxlength="500"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm item-description-input">
             </td>
@@ -365,10 +370,12 @@
         const clientSelect = document.getElementById('client_id');
         const togglePrev = document.getElementById('toggle-prev-license');
         const toggleRaa = document.getElementById('toggle-raa');
+        const toggleDescription = document.getElementById('toggle-description');
         const toggleApplyTax = document.getElementById('toggle-apply-tax');
         const taxPctWrap = document.getElementById('tax-pct-wrap');
         const inputShowPrevLicense = document.getElementById('input-show-prev-license');
         const inputShowRaa = document.getElementById('input-show-raa');
+        const inputShowDescription = document.getElementById('input-show-description');
         let rowIndex = {{ count($oldItems) }};
 
         function syncColumnHiddenInputs() {
@@ -376,6 +383,7 @@
             if (inputShowRaa) inputShowRaa.value = toggleRaa?.checked ? '1' : '0';
             const inputTramite = document.getElementById('input-show-tramite');
             if (inputTramite) inputTramite.value = document.getElementById('toggle-tramite')?.checked ? '1' : '0';
+            if (inputShowDescription && toggleDescription) inputShowDescription.value = toggleDescription.checked ? '1' : '0';
         }
 
         function updateTaxSectionVisibility() {
@@ -418,10 +426,10 @@
         }
 
         function updateColumnVisibility() {
-            if (!togglePrev || !toggleRaa) return;
-            setColumnEnabled('prev-license', togglePrev.checked);
-            setColumnEnabled('raa', toggleRaa.checked);
+            if (togglePrev) setColumnEnabled('prev-license', togglePrev.checked);
+            if (toggleRaa) setColumnEnabled('raa', toggleRaa.checked);
             setColumnEnabled('tramite', false);
+            if (toggleDescription) setColumnEnabled('description', toggleDescription.checked);
             syncColumnHiddenInputs();
         }
 
@@ -543,6 +551,7 @@
         btnAddLoan.addEventListener('click', function() { addRow(true); });
         if (togglePrev) togglePrev.addEventListener('change', updateColumnVisibility);
         if (toggleRaa) toggleRaa.addEventListener('change', updateColumnVisibility);
+        if (toggleDescription) toggleDescription.addEventListener('change', updateColumnVisibility);
         if (toggleApplyTax) toggleApplyTax.addEventListener('change', updateTaxSectionVisibility);
         document.getElementById('toggle-bank-fee')?.addEventListener('change', updateBankFeeVisibility);
         document.getElementById('bank_fee_value')?.addEventListener('input', updateTotals);
