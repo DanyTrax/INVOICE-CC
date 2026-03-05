@@ -314,6 +314,7 @@ class ProcessController extends Controller
     {
         $process->load([
             'client',
+            'quote',
             'quoteItem.quote',
             'quoteItem.serviceType',
             'serviceType',

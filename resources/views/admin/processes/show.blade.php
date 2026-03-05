@@ -64,10 +64,13 @@
                         <dt class="text-gray-500">Expediente INVIMA</dt>
                         <dd class="font-medium text-gray-900">{{ $process->expediente_invima ?? '-' }}</dd>
                     </div>
-                    @if($process->quoteItem->quote ?? null)
+                    @if($process->quote)
                         <div>
                             <dt class="text-gray-500">Cotización</dt>
-                            <dd class="font-medium text-gray-900">{{ $process->quoteItem->quote->consecutive ?? '-' }} ({{ $process->quoteItem->quote->date?->format('d/m/Y') }})</dd>
+                            <dd class="font-medium text-gray-900">
+                                <a href="{{ route('admin.quotes.show', $process->quote) }}" class="text-teal-600 hover:text-teal-800 hover:underline">{{ $process->quote->consecutive }}</a>
+                                ({{ $process->quote->date?->format('d/m/Y') }})
+                            </dd>
                         </div>
                     @endif
                 </dl>
@@ -92,17 +95,17 @@
 
                     <ul class="space-y-0">
                         {{-- 1. Cotización --}}
-                        @if($process->quoteItem?->quote)
-                            @php $quote = $process->quoteItem->quote; @endphp
+                        @if($process->quote)
+                            @php $quote = $process->quote; @endphp
                             <li class="relative pl-12 pb-8">
                                 <div class="absolute left-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
                                     <i class="fas fa-file-invoice-dollar"></i>
                                 </div>
-                                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                                <a href="{{ route('admin.quotes.show', $quote) }}" class="block bg-blue-50 border border-blue-100 rounded-lg p-4 hover:bg-blue-100 transition-colors">
                                     <p class="text-xs font-medium text-blue-600 uppercase tracking-wide">Cotización</p>
                                     <p class="font-semibold text-gray-900">{{ $quote->consecutive }}</p>
-                                    <p class="text-sm text-gray-600 mt-1">{{ $quote->date->format('d/m/Y') }} · {{ $quote->status }}</p>
-                                </div>
+                                    <p class="text-sm text-gray-600 mt-1">{{ $quote->date?->format('d/m/Y') }} · {{ $quote->status }}</p>
+                                </a>
                             </li>
                         @endif
 
@@ -252,6 +255,13 @@
                                                 <p class="text-sm text-gray-500 mt-2">No hay documentos. Use <strong>Gestión Documental</strong> → Agregar Documento para cargar los requisitos; luego apruebe cada uno y registre el sometimiento.</p>
                                             @endif
                                         </div>
+                                        @if($process->quote_id && $process->quote)
+                                            <p class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-2 items-center">
+                                                <a href="{{ route('admin.quotes.show', $process->quote) }}" class="text-sm px-3 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center">
+                                                    <i class="fas fa-file-invoice mr-1"></i> Ver cotización {{ $process->quote->consecutive }}
+                                                </a>
+                                            </p>
+                                        @endif
                                         @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
                                         <p class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-2 items-center">
                                             <button type="button" onclick="typeof openLinkQuoteModalForProcess === 'function' && openLinkQuoteModalForProcess()"

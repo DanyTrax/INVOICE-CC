@@ -161,7 +161,13 @@
                         <tr class="border-b border-gray-200 {{ $item->is_loan ? 'bg-amber-50' : '' }}">
                             <td class="px-2 py-2">{{ $item->item_position }}</td>
                             @if($quote->show_service_type_column)
-                                <td class="px-2 py-2">{{ $item->process?->serviceType?->name ?? '-' }}</td>
+                                <td class="px-2 py-2">
+                                    @if($item->process)
+                                        <a href="{{ route('admin.processes.show', $item->process) }}" class="text-teal-600 hover:text-teal-800 hover:underline">{{ $item->process->serviceType?->name ?? 'Expediente' }}</a>
+                                    @else
+                                        –
+                                    @endif
+                                </td>
                             @endif
                             @if($quote->show_description_column)
                                 <td class="px-2 py-2">{{ $item->description ?? '-' }}</td>
