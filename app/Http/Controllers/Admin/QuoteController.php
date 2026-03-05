@@ -37,7 +37,7 @@ class QuoteController extends Controller
      */
     public function show(Quote $quote): View
     {
-        $quote->load(['client', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
+        $quote->load(['client', 'quoteItems.service', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
         try {
             $quotePdfTemplates = QuotePdfTemplate::orderByRaw('is_default DESC')->orderBy('name')->get();
         } catch (\Throwable $e) {
@@ -197,7 +197,7 @@ class QuoteController extends Controller
      */
     public function pdf(Quote $quote, \Illuminate\Http\Request $request)
     {
-        $quote->load(['client', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
+        $quote->load(['client', 'quoteItems.service', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
         $template = null;
         if ($request->filled('template_id')) {
             $template = QuotePdfTemplate::find($request->template_id);

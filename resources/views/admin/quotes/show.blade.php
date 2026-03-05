@@ -140,6 +140,7 @@
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                     <tr>
                         <th class="px-2 py-2 w-12">#</th>
+                        <th class="px-2 py-2">Servicio</th>
                         @if($quote->show_service_type_column)
                             <th class="px-2 py-2">Trámite</th>
                         @endif
@@ -160,6 +161,7 @@
                     @foreach($quote->quoteItems as $item)
                         <tr class="border-b border-gray-200 {{ $item->is_loan ? 'bg-amber-50' : '' }}">
                             <td class="px-2 py-2">{{ $item->item_position }}</td>
+                            <td class="px-2 py-2">{{ $item->service?->name ?? '-' }}</td>
                             @if($quote->show_service_type_column)
                                 <td class="px-2 py-2">
                                     @if($item->process)

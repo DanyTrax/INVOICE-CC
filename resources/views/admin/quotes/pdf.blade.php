@@ -122,8 +122,9 @@
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
+                <th style="width: 18%;">Servicio</th>
                 @if($quote->show_service_type_column)
-                    <th style="width: 22%;">Trámite</th>
+                    <th style="width: 18%;">Trámite</th>
                 @endif
                 @if($quote->show_description_column ?? true)
                     <th style="width: 22%;">Producto / Descripción</th>
@@ -142,6 +143,7 @@
             @foreach($quote->quoteItems as $item)
                 <tr class="{{ $loop->iteration % 2 === 0 ? 'alt' : '' }}">
                     <td>{{ $item->item_position }}</td>
+                    <td>{{ $item->service?->name ?? '-' }}</td>
                     @if($quote->show_service_type_column)
                         <td>{{ $item->process?->serviceType?->name ?? '-' }}</td>
                     @endif
