@@ -123,6 +123,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::put('service-types/{serviceType}', [ServiceTypeController::class, 'update'])->name('service-types.update');
 
     // Servicios (catálogo para cotizaciones: nombre + alcance por defecto)
+    Route::get('services/list-for-quotes', [ServiceController::class, 'listForQuotes'])->name('services.list-for-quotes');
     Route::get('services', [ServiceController::class, 'index'])->name('services.index');
     Route::get('services/create', [ServiceController::class, 'create'])->name('services.create');
     Route::post('services', [ServiceController::class, 'store'])->name('services.store');

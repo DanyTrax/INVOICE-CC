@@ -4,12 +4,29 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Service;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ServiceController extends Controller
 {
+    /**
+     * Lista de servicios activos para uso en cotizaciones (JSON).
+     */
+    public function listForQuotes(): JsonResponse
+    {
+        $services = Service::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'default_scope'])
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'default_scope' => $s->default_scope ?? '',
+            ]);
+        return response()->json($services->values()->all());
+    }
+
     public function index(): View
     {
         $services = Service::orderBy('name')->paginate(20);

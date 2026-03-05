@@ -559,6 +559,13 @@
         document.getElementById('form-quote').addEventListener('submit', syncColumnHiddenInputs);
 
         var servicesData = @json($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'default_scope' => $s->default_scope ?? ''])->values());
+        var servicesListUrl = @json(route('admin.services.list-for-quotes'));
+        (function loadServicesList() {
+            fetch(servicesListUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function(r) { return r.ok ? r.json() : []; })
+                .then(function(list) { if (Array.isArray(list) && list.length) servicesData = list; })
+                .catch(function() {});
+        })();
         var serviceDropdown = null;
         var serviceDropdownHideTimer = null;
         function ensureServiceDropdown() {
