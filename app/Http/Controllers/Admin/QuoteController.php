@@ -37,7 +37,7 @@ class QuoteController extends Controller
      */
     public function show(Quote $quote): View
     {
-        $quote->load(['client', 'quoteItems.serviceType']);
+        $quote->load(['client', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
         try {
             $quotePdfTemplates = QuotePdfTemplate::orderByRaw('is_default DESC')->orderBy('name')->get();
         } catch (\Throwable $e) {
@@ -55,11 +55,12 @@ class QuoteController extends Controller
             return redirect()->route('admin.quotes.show', $quote)
                 ->with('error', 'La cotización está aprobada y no puede editarse.');
         }
-        $quote->load(['client', 'quoteItems.serviceType', 'quoteItems.service']);
+        $quote->load(['client', 'quoteItems.serviceType', 'quoteItems.service', 'quoteItems.process.serviceType']);
         $companies = Company::orderBy('name')->get();
         $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
-        return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services'));
+        $has_any_item_with_process = $quote->quoteItems->contains(fn ($i) => $i->process !== null);
+        return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services', 'has_any_item_with_process'));
     }
 
     /**
@@ -80,6 +81,7 @@ class QuoteController extends Controller
             'consecutive' => 'required|string|max:32|unique:quotes,consecutive,' . $quote->id,
             'show_prev_license_column' => 'nullable|boolean',
             'show_raa_column' => 'nullable|boolean',
+            'show_service_type_column' => 'nullable|boolean',
             'apply_tax' => 'nullable|boolean',
             'tax_percentage' => 'nullable|numeric|min:0|max:100',
             'apply_bank_fee' => 'nullable|boolean',
@@ -121,6 +123,7 @@ class QuoteController extends Controller
             'exchange_rate' => $validated['exchange_rate'] ?? null,
             'show_prev_license_column' => !empty($validated['show_prev_license_column']),
             'show_raa_column' => !empty($validated['show_raa_column']),
+            'show_service_type_column' => !empty($validated['show_service_type_column']),
             'total_professional_fees' => round($totalFees, 2),
             'total_invima_fees' => round($totalInvima, 2),
             'total_loans' => round($totalLoans, 2),
@@ -189,7 +192,7 @@ class QuoteController extends Controller
      */
     public function pdf(Quote $quote, \Illuminate\Http\Request $request)
     {
-        $quote->load(['client', 'quoteItems.serviceType']);
+        $quote->load(['client', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
         $template = null;
         if ($request->filled('template_id')) {
             $template = QuotePdfTemplate::find($request->template_id);
@@ -306,6 +309,7 @@ class QuoteController extends Controller
             'consecutive' => 'required|string|max:32|unique:quotes,consecutive',
             'show_prev_license_column' => 'nullable|boolean',
             'show_raa_column' => 'nullable|boolean',
+            'show_service_type_column' => 'nullable|boolean',
             'apply_tax' => 'nullable|boolean',
             'tax_percentage' => 'nullable|numeric|min:0|max:100',
             'apply_bank_fee' => 'nullable|boolean',
@@ -346,6 +350,7 @@ class QuoteController extends Controller
             'exchange_rate' => $validated['exchange_rate'] ?? null,
             'show_prev_license_column' => !empty($validated['show_prev_license_column']),
             'show_raa_column' => !empty($validated['show_raa_column']),
+            'show_service_type_column' => !empty($validated['show_service_type_column']),
             'status' => 'Borrador',
             'total_professional_fees' => round($totalFees, 2),
             'total_invima_fees' => round($totalInvima, 2),

@@ -43,10 +43,15 @@ class ProcessController extends Controller
                 'quote_item_id' => $item->id,
                 'quote_id' => $quote->id,
                 'client_id' => $quote->client_id,
+                'service_type_id' => $item->service_type_id,
                 'status' => Process::STATUS_RECOLECCION,
                 'expediente_invima' => null,
             ]);
             $created++;
+        }
+
+        if ($created > 0) {
+            $quote->update(['show_service_type_column' => true]);
         }
 
         return $created;
@@ -262,24 +267,44 @@ class ProcessController extends Controller
     }
 
     /**
-     * Vincular un proceso a una cotización (organización en acordeones). Actualiza quote_id y client_id.
+     * Vincular un proceso (expediente) a una cotización y opcionalmente a un ítem.
+     * Si se envía quote_item_id, el expediente queda vinculado a ese ítem y la cotización muestra la columna Trámite.
      */
     public function linkToQuote(Request $request, Process $process): RedirectResponse
     {
         $validated = $request->validate([
             'quote_id' => 'required|exists:quotes,id',
+            'quote_item_id' => 'nullable|exists:quote_items,id',
         ]);
 
         $quote = Quote::findOrFail($validated['quote_id']);
+        if ($quote->client_id !== $process->client_id) {
+            return redirect()
+                ->route('admin.processes.show', $process)
+                ->with('error', 'La cotización debe ser del mismo cliente del expediente.');
+        }
 
-        $process->update([
+        $data = [
             'quote_id' => $quote->id,
             'client_id' => $quote->client_id,
-        ]);
+        ];
+        if (!empty($validated['quote_item_id'])) {
+            $quoteItem = QuoteItem::with('quote')->findOrFail($validated['quote_item_id']);
+            if (!$quoteItem->quote || $quoteItem->quote_id != $quote->id) {
+                return redirect()->route('admin.processes.show', $process)
+                    ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
+            }
+            $data['quote_item_id'] = $quoteItem->id;
+            $quote->update(['show_service_type_column' => true]);
+        } else {
+            $data['quote_item_id'] = null;
+        }
+
+        $process->update($data);
 
         return redirect()
-            ->route('admin.processes.index', ['open_quote' => $quote->id])
-            ->with('success', 'Expediente asignado a la cotización.');
+            ->route('admin.processes.show', $process)
+            ->with('success', empty($validated['quote_item_id']) ? 'Expediente asignado a la cotización.' : 'Expediente vinculado a la cotización e ítem seleccionados.');
     }
 
     /**
@@ -344,6 +369,7 @@ class ProcessController extends Controller
         ]);
 
         $parentId = $validated['parent_id'] ?? null;
+        $isFirstSubmission = $process->submissions()->count() === 0;
 
         Submission::create([
             'process_id' => $process->id,
@@ -352,6 +378,8 @@ class ProcessController extends Controller
             'submission_code' => $validated['submission_code'],
             'status' => Submission::STATUS_PENDIENTE,
             'submission_type' => $parentId ? 'Subsanación / Nuevo intento' : 'Inicial',
+            'quote_id' => $isFirstSubmission && $process->quote_id ? $process->quote_id : null,
+            'quote_item_id' => $isFirstSubmission && $process->quote_item_id ? $process->quote_item_id : null,
         ]);
 
         $process->update(['status' => Process::STATUS_RADICADO]);
@@ -554,6 +582,8 @@ class ProcessController extends Controller
                 'quote_item_id' => $quoteItem->id,
             ]);
         }
+
+        $quoteItem->quote->update(['show_service_type_column' => true]);
 
         return redirect()
             ->route('admin.processes.show', $process)

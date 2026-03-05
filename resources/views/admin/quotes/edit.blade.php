@@ -42,6 +42,7 @@
         @method('PUT')
         <input type="hidden" name="show_prev_license_column" id="input-show-prev-license" value="{{ old('show_prev_license_column', $quote->show_prev_license_column) ? '1' : '0' }}">
         <input type="hidden" name="show_raa_column" id="input-show-raa" value="{{ old('show_raa_column', $quote->show_raa_column) ? '1' : '0' }}">
+        <input type="hidden" name="show_service_type_column" id="input-show-tramite" value="{{ old('show_service_type_column', $quote->show_service_type_column) ? '1' : '0' }}">
 
         {{-- Cabecera --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -108,6 +109,10 @@
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_raa_column', $quote->show_raa_column) ? 'checked' : '' }}>
                     <span>Usar columna RAA</span>
                 </label>
+                <label class="inline-flex items-center gap-2 {{ $has_any_item_with_process ? '' : 'opacity-60' }}" title="{{ $has_any_item_with_process ? 'Mostrar columna Trámite (vinculado a expedientes)' : 'Se activa al vincular un expediente a un ítem' }}">
+                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_service_type_column', $quote->show_service_type_column) ? 'checked' : '' }} {{ $has_any_item_with_process ? '' : 'disabled' }}>
+                    <span>Usar columna Trámite</span>
+                </label>
                 <label class="inline-flex items-center gap-2 ml-4">
                     <input type="checkbox" name="apply_tax" id="toggle-apply-tax" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('apply_tax', $quote->apply_tax) ? 'checked' : '' }}>
                     <span>Aplicar impuesto (IVA)</span>
@@ -133,7 +138,7 @@
                         <tr>
                             <th class="px-2 py-2 w-12">#</th>
                             <th class="px-2 py-2">Servicio</th>
-                            <th class="px-2 py-2">Trámite (opcional)</th>
+                            <th class="px-2 py-2" data-col="tramite">Trámite (opcional)</th>
                             <th class="px-2 py-2">Producto / Descripción</th>
                             <th class="px-2 py-2" data-col="prev-license">Expediente / INVIMA</th>
                             <th class="px-2 py-2 w-20" data-col="raa">RAA</th>
@@ -152,6 +157,8 @@
                                         'item_position' => $qi->item_position,
                                         'service_id' => $qi->service_id ?? '',
                                         'service_type_name' => $qi->serviceType->name ?? '',
+                                        'has_process' => $qi->process !== null,
+                                        'process_tramite_name' => $qi->process?->serviceType?->name ?? '',
                                         'description' => $qi->description ?? '',
                                         'previous_license' => $qi->previous_license ?? '',
                                         'raa_code' => $qi->raa_code ?? '',
@@ -164,7 +171,7 @@
                                 })->toArray();
                             }
                             if (empty($oldItems)) {
-                                $oldItems = [['id' => '', 'item_position' => 1, 'service_id' => '', 'service_type_name' => '', 'description' => '', 'previous_license' => '', 'raa_code' => '', 'scope' => '', 'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '', 'is_loan' => 0]];
+                                $oldItems = [['id' => '', 'item_position' => 1, 'service_id' => '', 'service_type_name' => '', 'has_process' => false, 'process_tramite_name' => '', 'description' => '', 'previous_license' => '', 'raa_code' => '', 'scope' => '', 'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '', 'is_loan' => 0]];
                             }
                         @endphp
                         @foreach($oldItems as $idx => $item)
@@ -178,16 +185,21 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td class="px-2 py-2">
+                                <td class="px-2 py-2" data-col="tramite">
                                     <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item['id'] ?? '' }}">
                                     <input type="hidden" name="items[{{ $idx }}][item_position]" value="{{ $idx + 1 }}">
                                     <input type="hidden" name="items[{{ $idx }}][is_loan]" value="{{ !empty($item['is_loan']) ? '1' : '0' }}" class="item-is-loan-input">
-                                    <textarea
-                                        name="items[{{ $idx }}][service_type_name]"
-                                        list="service_types_datalist"
-                                        rows="2"
-                                        placeholder="Trámite (opcional)"
-                                        class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
+                                    @if(!empty($item['has_process']) && !empty($item['process_tramite_name']))
+                                        <span class="text-sm text-gray-700">{{ $item['process_tramite_name'] }}</span>
+                                        <input type="hidden" name="items[{{ $idx }}][service_type_name]" value="{{ $item['process_tramite_name'] }}">
+                                    @else
+                                        <textarea
+                                            name="items[{{ $idx }}][service_type_name]"
+                                            list="service_types_datalist"
+                                            rows="2"
+                                            placeholder="Trámite (opcional)"
+                                            class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
+                                    @endif
                                 </td>
                                 <td class="px-2 py-2">
                                     <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Producto / Descripción" maxlength="500"
@@ -285,7 +297,7 @@
                     @endforeach
                 </select>
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="0" class="item-is-loan-input">
@@ -330,7 +342,7 @@
                     @endforeach
                 </select>
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="1" class="item-is-loan-input">
@@ -376,6 +388,8 @@
         const clientSelect = document.getElementById('client_id');
         const togglePrev = document.getElementById('toggle-prev-license');
         const toggleRaa = document.getElementById('toggle-raa');
+        const toggleTramite = document.getElementById('toggle-tramite');
+        const inputShowTramite = document.getElementById('input-show-tramite');
         const toggleApplyTax = document.getElementById('toggle-apply-tax');
         const taxPctWrap = document.getElementById('tax-pct-wrap');
         const inputShowPrevLicense = document.getElementById('input-show-prev-license');
@@ -385,6 +399,7 @@
         function syncColumnHiddenInputs() {
             if (inputShowPrevLicense) inputShowPrevLicense.value = togglePrev?.checked ? '1' : '0';
             if (inputShowRaa) inputShowRaa.value = toggleRaa?.checked ? '1' : '0';
+            if (inputShowTramite && toggleTramite && !toggleTramite.disabled) inputShowTramite.value = toggleTramite.checked ? '1' : '0';
         }
         function updateTaxSectionVisibility() {
             const applyTax = toggleApplyTax?.checked;
@@ -417,6 +432,7 @@
         function updateColumnVisibility() {
             if (togglePrev) setColumnEnabled('prev-license', togglePrev.checked);
             if (toggleRaa) setColumnEnabled('raa', toggleRaa.checked);
+            setColumnEnabled('tramite', toggleTramite && !toggleTramite.disabled && toggleTramite.checked);
             syncColumnHiddenInputs();
         }
         function addRow(isLoan) {
@@ -511,6 +527,7 @@
         btnAddLoan?.addEventListener('click', function() { addRow(true); });
         if (togglePrev) togglePrev.addEventListener('change', updateColumnVisibility);
         if (toggleRaa) toggleRaa.addEventListener('change', updateColumnVisibility);
+        if (toggleTramite) toggleTramite.addEventListener('change', updateColumnVisibility);
         if (toggleApplyTax) toggleApplyTax.addEventListener('change', updateTaxSectionVisibility);
         document.getElementById('toggle-bank-fee')?.addEventListener('change', updateBankFeeVisibility);
         document.getElementById('bank_fee_value')?.addEventListener('input', updateTotals);

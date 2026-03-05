@@ -245,6 +245,15 @@
                                                 <p class="text-sm text-gray-500 mt-2">No hay documentos. Use <strong>Gestión Documental</strong> → Agregar Documento para cargar los requisitos; luego apruebe cada uno y registre el sometimiento.</p>
                                             @endif
                                         </div>
+                                        @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
+                                        <p class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-2 items-center">
+                                            <button type="button" onclick="typeof openLinkQuoteModalForProcess === 'function' && openLinkQuoteModalForProcess()"
+                                                    class="text-sm px-3 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200">
+                                                <i class="fas fa-link mr-1"></i> {{ $process->quote_item_id ? 'Cambiar cotización / ítem' : 'Vincular a cotización e ítem' }}
+                                            </button>
+                                            <span class="text-xs text-gray-500">Este ciclo (y el expediente) quedarán vinculados al ítem elegido; en la cotización se mostrará el trámite de este expediente.</span>
+                                        </p>
+                                        @endif
                                     </div>
                                 </details>
                             </li>
@@ -665,10 +674,29 @@
 
     <script>
     var linkQuoteBaseUrl = '{{ url("admin/submissions") }}';
+    var processLinkQuoteUrl = '{{ route("admin.processes.link-to-quote", $process) }}';
     function openLinkQuoteModal(submissionId) {
         var form = document.getElementById('form-link-quote');
         if (!form) return;
         form.action = linkQuoteBaseUrl + '/' + submissionId + '/link-quote';
+        var methodInput = form.querySelector('input[name="_method"]');
+        if (methodInput) methodInput.value = 'PUT';
+        var quoteSelect = document.getElementById('link-quote-quote_id');
+        var itemSelect = document.getElementById('link-quote-quote_item_id');
+        if (quoteSelect) quoteSelect.value = '';
+        if (itemSelect) {
+            itemSelect.value = '';
+            var opts = itemSelect.querySelectorAll('option[data-quote]');
+            opts.forEach(function(opt) { opt.style.display = 'none'; });
+        }
+        document.getElementById('modal-link-quote').classList.remove('hidden');
+    }
+    function openLinkQuoteModalForProcess() {
+        var form = document.getElementById('form-link-quote');
+        if (!form) return;
+        form.action = processLinkQuoteUrl;
+        var methodInput = form.querySelector('input[name="_method"]');
+        if (methodInput) methodInput.value = 'POST';
         var quoteSelect = document.getElementById('link-quote-quote_id');
         var itemSelect = document.getElementById('link-quote-quote_item_id');
         if (quoteSelect) quoteSelect.value = '';

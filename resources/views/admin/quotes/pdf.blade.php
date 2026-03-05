@@ -122,7 +122,9 @@
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 22%;">Trámite</th>
+                @if($quote->show_service_type_column)
+                    <th style="width: 22%;">Trámite</th>
+                @endif
                 <th style="width: 22%;">Producto / Descripción</th>
                 @if($quote->show_prev_license_column)
                     <th style="width: 12%;">Expediente / INVIMA</th>
@@ -138,7 +140,9 @@
             @foreach($quote->quoteItems as $item)
                 <tr class="{{ $loop->iteration % 2 === 0 ? 'alt' : '' }}">
                     <td>{{ $item->item_position }}</td>
-                    <td>{{ $item->serviceType->name ?? '-' }}</td>
+                    @if($quote->show_service_type_column)
+                        <td>{{ $item->process?->serviceType?->name ?? '-' }}</td>
+                    @endif
                     <td>{{ $item->description ?? '-' }}</td>
                     @if($quote->show_prev_license_column)
                         <td>{{ $item->previous_license ?? '-' }}</td>

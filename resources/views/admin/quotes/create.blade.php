@@ -35,6 +35,7 @@
         @csrf
         <input type="hidden" name="show_prev_license_column" id="input-show-prev-license" value="0">
         <input type="hidden" name="show_raa_column" id="input-show-raa" value="0">
+        <input type="hidden" name="show_service_type_column" id="input-show-tramite" value="0">
 
         {{-- Cabecera --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -103,6 +104,10 @@
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                     <span>Usar columna RAA</span>
                 </label>
+                <label class="inline-flex items-center gap-2" title="Se activa al vincular un expediente a un ítem">
+                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" disabled>
+                    <span class="text-gray-400">Usar columna Trámite</span>
+                </label>
                 <label class="inline-flex items-center gap-2 ml-4">
                     <input type="checkbox" name="apply_tax" id="toggle-apply-tax" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                     <span>Aplicar impuesto (IVA)</span>
@@ -128,7 +133,7 @@
                         <tr>
                             <th class="px-2 py-2 w-12">#</th>
                             <th class="px-2 py-2">Servicio</th>
-                            <th class="px-2 py-2">Trámite (opcional)</th>
+                            <th class="px-2 py-2" data-col="tramite">Trámite</th>
                             <th class="px-2 py-2">Producto / Descripción</th>
                             <th class="px-2 py-2" data-col="prev-license">Expediente / INVIMA</th>
                             <th class="px-2 py-2 w-20" data-col="raa">RAA</th>
@@ -158,14 +163,14 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td class="px-2 py-2">
+                                <td class="px-2 py-2" data-col="tramite">
                                     <input type="hidden" name="items[{{ $idx }}][item_position]" value="{{ $idx + 1 }}">
                                     <input type="hidden" name="items[{{ $idx }}][is_loan]" value="{{ !empty($item['is_loan']) ? '1' : '0' }}" class="item-is-loan-input">
                                     <textarea
                                         name="items[{{ $idx }}][service_type_name]"
                                         list="service_types_datalist"
                                         rows="2"
-                                        placeholder="Trámite (opcional)"
+                                        placeholder="Trámite (se activa al vincular expediente)"
                                         class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
                                 </td>
                                 <td class="px-2 py-2">
@@ -265,14 +270,14 @@
                     @endforeach
                 </select>
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="0" class="item-is-loan-input">
                 <textarea
                     name="items[__INDEX__][service_type_name]"
                     list="service_types_datalist"
                     rows="2"
-                    placeholder="Trámite (opcional)"
+                    placeholder="Trámite (se activa al vincular expediente)"
                     class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
@@ -313,14 +318,14 @@
                     @endforeach
                 </select>
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
                 <input type="hidden" name="items[__INDEX__][is_loan]" value="1" class="item-is-loan-input">
                 <textarea
                     name="items[__INDEX__][service_type_name]"
                     list="service_types_datalist"
                     rows="2"
-                    placeholder="Trámite (opcional)"
+                    placeholder="Trámite (se activa al vincular expediente)"
                     class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 resize-y"></textarea>
             </td>
             <td class="px-2 py-2">
@@ -371,6 +376,8 @@
         function syncColumnHiddenInputs() {
             if (inputShowPrevLicense) inputShowPrevLicense.value = togglePrev?.checked ? '1' : '0';
             if (inputShowRaa) inputShowRaa.value = toggleRaa?.checked ? '1' : '0';
+            const inputTramite = document.getElementById('input-show-tramite');
+            if (inputTramite) inputTramite.value = document.getElementById('toggle-tramite')?.checked ? '1' : '0';
         }
 
         function updateTaxSectionVisibility() {
@@ -416,6 +423,7 @@
             if (!togglePrev || !toggleRaa) return;
             setColumnEnabled('prev-license', togglePrev.checked);
             setColumnEnabled('raa', toggleRaa.checked);
+            setColumnEnabled('tramite', false);
             syncColumnHiddenInputs();
         }
 
