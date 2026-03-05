@@ -178,12 +178,10 @@
                             <tr class="item-row border-b border-gray-200 {{ !empty($item['is_loan']) ? 'bg-amber-50' : '' }}" data-is-loan="{{ !empty($item['is_loan']) ? '1' : '0' }}">
                                 <td class="px-2 py-2 item-num">{{ $idx + 1 }}</td>
                                 <td class="px-2 py-2">
-                                    <select name="items[{{ $idx }}][service_id]" class="item-service-select border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
-                                        <option value="">—</option>
-                                        @foreach($services as $s)
-                                            <option value="{{ $s->id }}" data-name="{{ e($s->name) }}" data-scope="{{ e($s->default_scope ?? '') }}" {{ (string)($item['service_id'] ?? '') === (string)$s->id ? 'selected' : '' }}>{{ $s->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    @php $selectedService = $services->firstWhere('id', $item['service_id'] ?? null); @endphp
+                                    <input type="text" value="{{ $selectedService ? $selectedService->name : '' }}" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off"
+                                           class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
+                                    <input type="hidden" name="items[{{ $idx }}][service_id]" class="item-service-id-input" value="{{ $item['service_id'] ?? '' }}">
                                 </td>
                                 <td class="px-2 py-2" data-col="tramite">
                                     <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item['id'] ?? '' }}">
@@ -285,17 +283,19 @@
             <option value="{{ $st->name }}"></option>
         @endforeach
     </datalist>
+    <datalist id="services_datalist">
+        @foreach($services as $s)
+            <option value="{{ $s->name }}"></option>
+        @endforeach
+    </datalist>
 
     <template id="row-template-normal">
         <tr class="item-row border-b border-gray-200" data-is-loan="0">
             <td class="px-2 py-2 item-num"></td>
             <td class="px-2 py-2">
-                <select name="items[__INDEX__][service_id]" class="item-service-select border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
-                    <option value="">—</option>
-                    @foreach($services as $s)
-                        <option value="{{ $s->id }}" data-name="{{ e($s->name) }}" data-scope="{{ e($s->default_scope ?? '') }}">{{ $s->name }}</option>
-                    @endforeach
-                </select>
+                <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off"
+                       class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
+                <input type="hidden" name="items[__INDEX__][service_id]" class="item-service-id-input" value="">
             </td>
             <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
@@ -335,12 +335,9 @@
         <tr class="item-row border-b border-gray-200 bg-amber-50" data-is-loan="1">
             <td class="px-2 py-2 item-num"></td>
             <td class="px-2 py-2">
-                <select name="items[__INDEX__][service_id]" class="item-service-select border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
-                    <option value="">—</option>
-                    @foreach($services as $s)
-                        <option value="{{ $s->id }}" data-name="{{ e($s->name) }}" data-scope="{{ e($s->default_scope ?? '') }}">{{ $s->name }}</option>
-                    @endforeach
-                </select>
+                <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off"
+                       class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
+                <input type="hidden" name="items[__INDEX__][service_id]" class="item-service-id-input" value="">
             </td>
             <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
@@ -533,17 +530,29 @@
         document.getElementById('bank_fee_value')?.addEventListener('input', updateTotals);
         document.getElementById('tax_percentage')?.addEventListener('input', updateTotals);
         document.getElementById('form-quote')?.addEventListener('submit', syncColumnHiddenInputs);
-        tbody.addEventListener('change', function(e) {
-            if (!e.target.matches('.item-service-select')) return;
-            const row = e.target.closest('tr');
-            const opt = e.target.selectedOptions[0];
-            if (opt && opt.value) {
-                const desc = row.querySelector('.item-description-input');
-                const scope = row.querySelector('.item-scope-input');
-                if (desc) desc.value = opt.getAttribute('data-name') || '';
-                if (scope) scope.value = opt.getAttribute('data-scope') || '';
+        var servicesDataEdit = @json($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'default_scope' => $s->default_scope ?? ''])->values());
+        function syncServiceInputEdit(row) {
+            var input = row.querySelector('.item-service-input');
+            var hidden = row.querySelector('.item-service-id-input');
+            if (!input || !hidden) return;
+            var val = (input.value || '').trim();
+            var found = servicesDataEdit.find(function(s) { return s.name === val; });
+            if (found) {
+                hidden.value = found.id;
+                var desc = row.querySelector('.item-description-input');
+                var scope = row.querySelector('.item-scope-input');
+                if (desc) desc.value = found.name;
+                if (scope) scope.value = found.default_scope || '';
+            } else {
+                hidden.value = '';
             }
+        }
+        tbody.addEventListener('input', function(e) {
+            if (e.target.matches('.item-service-input')) syncServiceInputEdit(e.target.closest('tr'));
         });
+        tbody.addEventListener('blur', function(e) {
+            if (e.target.matches('.item-service-input')) syncServiceInputEdit(e.target.closest('tr'));
+        }, true);
         tbody.querySelectorAll('.item-row').forEach(function(row) {
             const removeBtn = row.querySelector('.btn-remove-row');
             if (removeBtn) removeBtn.addEventListener('click', function() {

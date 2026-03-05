@@ -89,7 +89,7 @@ class QuoteController extends Controller
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
-            'items.*.service_id' => 'nullable|exists:services,id',
+            'items.*.service_id' => 'required|exists:services,id',
             'items.*.service_type_name' => 'nullable|string|max:255',
             'items.*.description' => 'nullable|string|max:500',
             'items.*.previous_license' => 'nullable|string|max:64',
@@ -99,6 +99,9 @@ class QuoteController extends Controller
             'items.*.invima_rate_code' => 'nullable|string|max:32',
             'items.*.invima_rate_value' => 'nullable|numeric|min:0',
             'items.*.is_loan' => 'nullable|boolean',
+        ], [
+            'items.*.service_id.required' => 'Cada ítem debe tener un servicio elegido de la lista (escriba y seleccione uno existente).',
+            'items.*.service_id.exists' => 'El servicio no es válido. Debe elegirse exactamente uno de la lista de servicios.',
         ]);
 
         $totalFees = 0;
@@ -242,6 +245,18 @@ class QuoteController extends Controller
     }
 
     /**
+     * Eliminar cotización (en cualquier estado). Se eliminan también sus ítems.
+     * Los expedientes vinculados a ítems de esta cotización quedan sin cotización (quote_id/quote_item_id a null).
+     */
+    public function destroy(Quote $quote): RedirectResponse
+    {
+        $quote->delete();
+        return redirect()
+            ->route('admin.quotes.index')
+            ->with('success', 'Cotización eliminada.');
+    }
+
+    /**
      * Listado de cotizaciones.
      */
     public function index(Request $request)
@@ -316,7 +331,7 @@ class QuoteController extends Controller
             'bank_fee_value' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
-            'items.*.service_id' => 'nullable|exists:services,id',
+            'items.*.service_id' => 'required|exists:services,id',
             'items.*.service_type_name' => 'nullable|string|max:255',
             'items.*.description' => 'nullable|string|max:500',
             'items.*.previous_license' => 'nullable|string|max:64',
@@ -326,6 +341,9 @@ class QuoteController extends Controller
             'items.*.invima_rate_code' => 'nullable|string|max:32',
             'items.*.invima_rate_value' => 'nullable|numeric|min:0',
             'items.*.is_loan' => 'nullable|boolean',
+        ], [
+            'items.*.service_id.required' => 'Cada ítem debe tener un servicio elegido de la lista (escriba y seleccione uno existente).',
+            'items.*.service_id.exists' => 'El servicio no es válido. Debe elegirse exactamente uno de la lista de servicios.',
         ]);
 
         $totalFees = 0;

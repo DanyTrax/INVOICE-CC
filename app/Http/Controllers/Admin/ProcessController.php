@@ -813,6 +813,32 @@ class ProcessController extends Controller
     }
 
     /**
+     * Eliminar expediente (en cualquier estado). Se eliminan sometimientos, eventos, checklist, documentos y el proceso.
+     * Los archivos en Drive de los documentos se intentan eliminar.
+     */
+    public function destroy(Process $process): RedirectResponse
+    {
+        $process->load('processDocuments');
+        foreach ($process->processDocuments as $doc) {
+            if ($doc->drive_id) {
+                try {
+                    app(GoogleDriveService::class)->deleteFile($doc->drive_id);
+                } catch (\Exception $e) {
+                    Log::warning('No se pudo eliminar archivo de Drive al eliminar expediente', [
+                        'process_id' => $process->id,
+                        'drive_id' => $doc->drive_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+        $process->delete();
+        return redirect()
+            ->route('admin.processes.index')
+            ->with('success', 'Expediente eliminado.');
+    }
+
+    /**
      * Eliminar documento del expediente (y del archivo en Google Drive si existe).
      */
     public function destroyDocument(Process $process, ProcessDocument $processDocument): RedirectResponse

@@ -16,7 +16,7 @@
 @section('content')
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <a href="{{ route('admin.processes.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 whitespace-nowrap">
-            <i class="fas fa-plus mr-2"></i> Nuevo Proceso
+            <i class="fas fa-plus mr-2"></i> Nuevo Expediente
         </a>
     </div>
 
@@ -78,9 +78,12 @@
                                                 </td>
                                                 <td class="px-4 py-3">{{ $process->updated_at->format('d/m/Y H:i') }}</td>
                                                 <td class="px-4 py-3">
-                                                    <a href="{{ route('admin.processes.show', $process) }}" class="text-teal-600 hover:text-teal-700 font-medium">
-                                                        <i class="fas fa-eye mr-1"></i> Ver
-                                                    </a>
+                                                    <a href="{{ route('admin.processes.show', $process) }}" class="text-teal-600 hover:text-teal-700 font-medium"><i class="fas fa-eye mr-1"></i> Ver</a>
+                                                    <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline ml-2" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-trash-alt mr-1"></i> Eliminar</button>
+                                                    </form>
                                                 </td>
                                             </tr>
                                         @endif
@@ -110,9 +113,12 @@
                                             </td>
                                             <td class="px-4 py-3">{{ $process->updated_at->format('d/m/Y H:i') }}</td>
                                             <td class="px-4 py-3">
-                                                <a href="{{ route('admin.processes.show', $process) }}" class="text-teal-600 hover:text-teal-700 font-medium">
-                                                    <i class="fas fa-eye mr-1"></i> Ver
-                                                </a>
+                                                <a href="{{ route('admin.processes.show', $process) }}" class="text-teal-600 hover:text-teal-700 font-medium"><i class="fas fa-eye mr-1"></i> Ver</a>
+                                                <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline ml-2" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-trash-alt mr-1"></i> Eliminar</button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -168,19 +174,22 @@
                                 <span class="px-2 py-1 text-xs font-medium rounded-full {{ $style }}">{{ $process->status }}</span>
                             </td>
                             <td class="px-4 py-3">
-                                <a href="{{ route('admin.processes.show', $process) }}" class="text-teal-600 hover:text-teal-700 font-medium mr-3">
-                                    <i class="fas fa-eye mr-1"></i> Ver
-                                </a>
+                                <a href="{{ route('admin.processes.show', $process) }}" class="text-teal-600 hover:text-teal-700 font-medium mr-3"><i class="fas fa-eye mr-1"></i> Ver</a>
                                 <button type="button"
                                         onclick="openAssignModal({{ $process->id }}, '{{ addslashes($process->client->name ?? 'Expediente') }}')"
-                                        class="text-amber-700 hover:text-amber-800 font-medium">
+                                        class="text-amber-700 hover:text-amber-800 font-medium mr-3">
                                     <i class="fas fa-link mr-1"></i> Asignar a Cotización
                                 </button>
+                                <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-800 font-medium"><i class="fas fa-trash-alt mr-1"></i> Eliminar</button>
+                                </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-500">No hay procesos huérfanos.</td>
+                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">No hay procesos huérfanos.</td>
                         </tr>
                     @endforelse
                 </tbody>

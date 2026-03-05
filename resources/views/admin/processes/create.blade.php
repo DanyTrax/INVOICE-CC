@@ -1,8 +1,8 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Nuevo Proceso (Directo) - RAMS')
+@section('title', 'Nuevo Expediente - RAMS')
 
-@section('page-title', 'Nuevo Proceso')
+@section('page-title', 'Nuevo Expediente')
 
 @section('breadcrumb')
     <li>
@@ -14,7 +14,7 @@
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Nuevo proceso</span>
+            <span class="text-sm font-medium text-gray-500">Nuevo expediente</span>
         </div>
     </li>
 @endsection
@@ -34,7 +34,7 @@
     <form action="{{ route('admin.processes.store') }}" method="POST">
         @csrf
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Datos del expediente (proceso directo, sin cotización)</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Datos del expediente (sin cotización)</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                     <label for="client_id" class="block mb-2 text-sm font-medium text-gray-900">Cliente <span class="text-red-500">*</span></label>

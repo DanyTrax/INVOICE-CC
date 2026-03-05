@@ -86,9 +86,13 @@
                             </td>
                             <td class="px-4 py-3">{{ $quote->currency ?? 'COP' }} {{ number_format($quote->total_with_tax, 2) }}</td>
                             <td class="px-4 py-3">
-                                <a href="{{ route('admin.processes.index', ['open_quote' => $quote->id]) }}" class="inline-flex items-center gap-1 text-teal-600 hover:text-teal-700 font-medium" title="Ver Expedientes">
-                                    <i class="fas fa-folder-open"></i> Ver Expedientes
-                                </a>
+                                <a href="{{ route('admin.quotes.show', $quote) }}" class="inline-flex items-center gap-1 text-teal-600 hover:text-teal-700 font-medium" title="Ver"><i class="fas fa-eye"></i></a>
+                                <a href="{{ route('admin.processes.index', ['open_quote' => $quote->id]) }}" class="inline-flex items-center gap-1 text-teal-600 hover:text-teal-700 font-medium ml-2" title="Ver Expedientes"><i class="fas fa-folder-open"></i></a>
+                                <form action="{{ route('admin.quotes.destroy', $quote) }}" method="POST" class="inline ml-2" onsubmit="return confirm('¿Eliminar esta cotización? No se puede deshacer.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-800 font-medium" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                                </form>
                             </td>
                         </tr>
                     @empty

@@ -71,6 +71,13 @@
                         </div>
                     @endif
                 </dl>
+                <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="mt-4 pt-4 border-t border-gray-200" onsubmit="return confirm('¿Eliminar este expediente y toda su información (sometimientos, documentos, checklist)? No se puede deshacer.');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full inline-flex items-center justify-center px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">
+                        <i class="fas fa-trash-alt mr-2"></i> Eliminar expediente
+                    </button>
+                </form>
             </div>
         </div>
 

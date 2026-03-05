@@ -58,7 +58,10 @@
                        class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">
             </div>
         </div>
-        <div class="mt-3 flex justify-end">
+        <div class="mt-3 flex flex-wrap justify-end gap-2">
+            <a href="{{ route('admin.processes.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
+                <i class="fas fa-plus mr-2"></i> Nuevo Expediente
+            </a>
             <a href="#" id="monitor-export-btn" class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700">
                 <i class="fas fa-file-excel mr-2"></i> Exportar Vista Actual
             </a>

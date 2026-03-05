@@ -113,6 +113,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::get('quotes/{quote}/pdf', [QuoteController::class, 'pdf'])->name('quotes.pdf');
     Route::patch('quotes/{quote}/pdf-footer', [QuoteController::class, 'updatePdfFooter'])->name('quotes.pdf-footer.update');
     Route::post('quotes/{quote}/anular', [QuoteController::class, 'anular'])->name('quotes.anular');
+    Route::delete('quotes/{quote}', [QuoteController::class, 'destroy'])->name('quotes.destroy');
 
     // Tipos de Trámite (ServiceTypes) — módulo "Trámite"
     Route::get('service-types', [ServiceTypeController::class, 'index'])->name('service-types.index');
@@ -137,6 +138,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::get('processes/create', [ProcessController::class, 'create'])->name('processes.create');
     Route::post('processes', [ProcessController::class, 'store'])->name('processes.store');
     Route::get('processes/{process}', [ProcessController::class, 'show'])->name('processes.show');
+    Route::delete('processes/{process}', [ProcessController::class, 'destroy'])->name('processes.destroy');
     Route::post('processes/{process}/link-to-quote', [ProcessController::class, 'linkToQuote'])->name('processes.link-to-quote');
     Route::post('processes/{process}/submissions', [ProcessController::class, 'storeSubmission'])->name('processes.submissions.store');
     Route::post('submissions/{submission}/register-response', [ProcessController::class, 'registerResponse'])->name('submissions.register-response');

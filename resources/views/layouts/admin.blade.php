@@ -114,7 +114,7 @@
                             <p>Directorio Clientes</p>
                         </a>
                     </li>
-                    {{-- Módulo antiguo de Registros (Expedientes) reemplazado por Expedientes / Procesos --}}
+                    {{-- Módulo Expedientes / Cotización --}}
                     <li class="nav-item">
                         <a href="{{ route('admin.quotes.index') }}" class="nav-link {{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-file-invoice-dollar"></i>
@@ -124,7 +124,7 @@
                     <li class="nav-item">
                         <a href="{{ route('admin.processes.index') }}" class="nav-link {{ request()->routeIs('admin.processes.*') || request()->routeIs('admin.submissions.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-folder"></i>
-                            <p>Expedientes / Procesos</p>
+                            <p>Expedientes / Cotización</p>
                         </a>
                     </li>
 

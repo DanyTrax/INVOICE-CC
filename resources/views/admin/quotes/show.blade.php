@@ -78,6 +78,13 @@
                 <i class="fas fa-times-circle mr-2"></i> Cancelar cotización
             </button>
         @endif
+        <form action="{{ route('admin.quotes.destroy', $quote) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta cotización y todos sus ítems? Los expedientes vinculados quedarán sin cotización. Esta acción no se puede deshacer.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-medium border border-red-800">
+                <i class="fas fa-trash-alt mr-2"></i> Eliminar cotización
+            </button>
+        </form>
     </div>
 
     {{-- Datos de la cotización --}}

@@ -215,7 +215,7 @@
                             </a>
                         </li>
                     @endif
-                    {{-- Módulo Registrations jubilado: se usa Expedientes / Procesos --}}
+                    {{-- Módulo Expedientes / Cotización --}}
                     <li>
                         <a href="{{ route('admin.quotes.index') }}" 
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.quotes.*') ? 'bg-teal-700' : '' }}">
@@ -227,7 +227,7 @@
                         <a href="{{ route('admin.processes.index') }}" 
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.index') || request()->routeIs('admin.processes.show') || request()->routeIs('admin.processes.create') || request()->routeIs('admin.submissions.*') ? 'bg-teal-700' : '' }}">
                             <i class="fas fa-folder w-5 h-5"></i>
-                            <span class="ms-3">Expedientes / Procesos</span>
+                            <span class="ms-3">Expedientes / Cotización</span>
                         </a>
                     </li>
                     <li>
