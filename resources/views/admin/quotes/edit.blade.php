@@ -182,7 +182,7 @@
                         @foreach($oldItems as $idx => $item)
                             <tr class="item-row border-b border-gray-200 {{ !empty($item['is_loan']) ? 'bg-amber-50' : '' }}" data-is-loan="{{ !empty($item['is_loan']) ? '1' : '0' }}">
                                 <td class="px-2 py-2 item-num">{{ $idx + 1 }}</td>
-                                <td class="px-2 py-2" data-col="description">
+                                <td class="px-2 py-2">
                                     @php $selectedService = $services->firstWhere('id', $item['service_id'] ?? null); @endphp
                                     <input type="text" value="{{ $selectedService ? $selectedService->name : '' }}" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off"
                                            class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
@@ -204,7 +204,7 @@
                                             class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
                                     @endif
                                 </td>
-                                <td class="px-2 py-2">
+                                <td class="px-2 py-2" data-col="description">
                                     <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Producto / Descripción" maxlength="500"
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm item-description-input">
                                 </td>

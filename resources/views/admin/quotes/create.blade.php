@@ -160,7 +160,7 @@
                         @foreach($oldItems as $idx => $item)
                             <tr class="item-row border-b border-gray-200 {{ !empty($item['is_loan']) ? 'bg-amber-50' : '' }}" data-is-loan="{{ !empty($item['is_loan']) ? '1' : '0' }}">
                                 <td class="px-2 py-2 item-num">{{ $idx + 1 }}</td>
-                                <td class="px-2 py-2" data-col="description">
+                                <td class="px-2 py-2">
                                     @php $selectedService = $services->firstWhere('id', $item['service_id'] ?? null); @endphp
                                     <input type="text" value="{{ $selectedService ? $selectedService->name : '' }}" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off" data-services-list="1"
                                            class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
@@ -176,7 +176,7 @@
                                         placeholder="Trámite (se activa al vincular expediente)"
                                         class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
                                 </td>
-                                <td class="px-2 py-2">
+                                <td class="px-2 py-2" data-col="description">
                                     <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Producto / Descripción" maxlength="500"
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm item-description-input">
                                 </td>
@@ -271,7 +271,7 @@
     <template id="row-template-normal">
         <tr class="item-row border-b border-gray-200" data-is-loan="0">
             <td class="px-2 py-2 item-num"></td>
-            <td class="px-2 py-2" data-col="description">
+            <td class="px-2 py-2">
                 <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off" data-services-list="1"
                        class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
                 <input type="hidden" name="items[__INDEX__][service_id]" class="item-service-id-input" value="">
@@ -331,7 +331,7 @@
                     placeholder="Trámite (se activa al vincular expediente)"
                     class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 resize-y"></textarea>
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="description">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Préstamo / Suplido" maxlength="500"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 item-description-input">
             </td>
