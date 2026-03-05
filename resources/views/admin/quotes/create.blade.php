@@ -36,7 +36,7 @@
         <input type="hidden" name="show_prev_license_column" id="input-show-prev-license" value="0">
         <input type="hidden" name="show_raa_column" id="input-show-raa" value="0">
         <input type="hidden" name="show_service_type_column" id="input-show-tramite" value="0">
-        <input type="hidden" name="show_description_column" id="input-show-description" value="1">
+        <input type="hidden" name="show_description_column" id="input-show-description" value="0">
 
         {{-- Cabecera --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -106,7 +106,7 @@
                     <span>Usar columna RAA</span>
                 </label>
                 <label class="inline-flex items-center gap-2">
-                    <input type="checkbox" id="toggle-description" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" checked>
+                    <input type="checkbox" id="toggle-description" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                     <span>Usar columna Producto / Descripción</span>
                 </label>
                 <label class="inline-flex items-center gap-2" title="Se activa al vincular un expediente a un ítem">
