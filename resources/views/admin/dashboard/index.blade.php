@@ -30,8 +30,8 @@
             :value="$stats['recoleccion']"
             icon="folder-open"
             color="yellow"
-            :link="route('admin.processes.monitor', ['status' => \App\Models\Process::STATUS_RECOLECCION])"
-            subtitle="Checklist en curso, sin sometimiento"
+            :link="route('admin.processes.monitor', ['step' => \App\Models\Process::STEP_RECOLECCION])"
+            subtitle="Checklist en curso o rechazo; sin sometimiento pendiente"
         />
 
         <x-widgets.stats-card 
@@ -39,7 +39,7 @@
             :value="$stats['sometimiento']"
             icon="paper-plane"
             color="teal"
-            :link="route('admin.processes.monitor', ['status' => \App\Models\Process::STATUS_RADICADO])"
+            :link="route('admin.processes.monitor', ['step' => \App\Models\Process::STEP_SOMETIMIENTO])"
             subtitle="Sometido, pendiente de radicado INVIMA"
         />
 
@@ -48,7 +48,7 @@
             :value="$stats['radicado']"
             icon="stamp"
             color="blue"
-            :link="route('admin.processes.monitor', ['status' => \App\Models\Process::STATUS_RADICADO])"
+            :link="route('admin.processes.monitor', ['step' => \App\Models\Process::STEP_RADICADO])"
             subtitle="Radicado, listo para Resolución o AUTO"
         />
     </div>
@@ -59,7 +59,7 @@
             :value="$stats['en_requerimiento']"
             icon="exclamation-triangle"
             color="yellow"
-            :link="route('admin.processes.monitor', ['status' => \App\Models\Process::STATUS_EN_REQUERIMIENTO])"
+            :link="route('admin.processes.monitor', ['step' => \App\Models\Process::STEP_AUTO])"
             subtitle="Con requerimiento AUTO vigente"
         />
 

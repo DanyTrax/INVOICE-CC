@@ -166,7 +166,10 @@ class ProcessController extends Controller
             $query->where('client_id', $request->client_id);
         }
 
-        if ($request->filled('status')) {
+        $stepFilter = $request->filled('step') ? (int) $request->step : null;
+        if ($stepFilter !== null && $stepFilter >= 1 && $stepFilter <= 5) {
+            $query->whereStep($stepFilter);
+        } elseif ($request->filled('status')) {
             $query->where('status', $request->status);
         } else {
             // Por defecto, el Monitor solo muestra expedientes activos (excluye Finalizados).
@@ -254,6 +257,7 @@ class ProcessController extends Controller
     {
         $filters = [
             'client_id' => $request->filled('client_id') ? $request->client_id : null,
+            'step' => $request->filled('step') ? (int) $request->step : null,
             'status' => $request->filled('status') ? $request->status : null,
             'date_from' => $request->filled('date_from') ? $request->date_from : null,
             'date_to' => $request->filled('date_to') ? $request->date_to : null,
@@ -383,11 +387,13 @@ class ProcessController extends Controller
             'quote_item_id' => $isFirstSubmission && $process->quote_item_id ? $process->quote_item_id : null,
         ]);
 
-        $process->update(['status' => Process::STATUS_RADICADO]);
+        // El proceso sigue en Recolección hasta que se registre la respuesta "Radicado" del INVIMA.
+        // Flujo: Recolección → Someter (Pendiente) → registrar Radicado → Radicado → AUTO o Resolución → En Requerimiento / Finalizado.
+        $process->update(['status' => Process::STATUS_RECOLECCION]);
 
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', 'Sometimiento registrado correctamente.');
+            ->with('success', 'Sometimiento registrado correctamente. Cuando INVIMA responda, registre Radicado, AUTO o Resolución según corresponda.');
     }
 
     /**
@@ -427,6 +433,7 @@ class ProcessController extends Controller
                 'status' => Submission::STATUS_RECHAZADO,
                 'rejection_observation' => $validated['rejection_observation'],
             ]);
+            $this->recalculateProcessStatus($submission->process);
             return redirect()
                 ->route('admin.processes.show', $submission->process)
                 ->with('success', 'Rechazo registrado. Observación guardada. Puede volver a intentar el proceso de sometimiento desde "Crear Nuevo Intento" (vinculando a este intento).');
@@ -633,7 +640,8 @@ class ProcessController extends Controller
         $status = match ($last->status) {
             Submission::STATUS_APROBADO => Process::STATUS_FINALIZADO,
             Submission::STATUS_EN_REQUERIMIENTO => Process::STATUS_EN_REQUERIMIENTO,
-            default => Process::STATUS_RADICADO,
+            Submission::STATUS_RADICADO => Process::STATUS_RADICADO,
+            default => Process::STATUS_RECOLECCION, // Pendiente o Rechazado: proceso sigue en Recolección
         };
         $process->update(['status' => $status]);
     }

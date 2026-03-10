@@ -22,13 +22,9 @@
         if ($fechaUltimo === null) {
             $fechaUltimo = $process->updated_at;
         }
-        $statusStyles = [
-            'Recolección' => 'bg-gray-100 text-gray-800',
-            'Radicado' => 'bg-blue-100 text-blue-800',
-            'En Requerimiento' => 'bg-yellow-100 text-yellow-800',
-            'Finalizado' => 'bg-green-100 text-green-800',
-        ];
-        $statusClass = $statusStyles[$process->status] ?? 'bg-gray-100 text-gray-800';
+        $paso = $process->getCurrentStep();
+        $stepStyles = [1 => 'bg-gray-100 text-gray-800', 2 => 'bg-teal-100 text-teal-800', 3 => 'bg-blue-100 text-blue-800', 4 => 'bg-yellow-100 text-yellow-800', 5 => 'bg-green-100 text-green-800'];
+        $stepClass = $stepStyles[$paso] ?? 'bg-gray-100 text-gray-800';
     @endphp
     <tr class="bg-white border-b border-gray-200 hover:bg-gray-50">
         <td class="px-4 py-3 text-sm text-gray-900">{{ $consecutivo }}</td>
@@ -37,7 +33,7 @@
         <td class="px-4 py-3 text-sm text-gray-700">{{ $process->product_reference ?? '—' }}</td>
         <td class="px-4 py-3 text-sm text-gray-700">{{ $radicadoId }}</td>
         <td class="px-4 py-3">
-            <span class="px-2 py-1 text-xs font-medium rounded-full {{ $statusClass }}">{{ $process->status }}</span>
+            <span class="px-2 py-1 text-xs font-medium rounded-full {{ $stepClass }}" title="Paso {{ $paso }}">{{ $process->getCurrentStepLabel() }}</span>
         </td>
         <td class="px-4 py-3 text-sm text-gray-600">{{ $fechaUltimo ? (\Carbon\Carbon::parse($fechaUltimo)->format('d/m/Y')) : '—' }}</td>
         <td class="px-4 py-3">

@@ -34,7 +34,10 @@ class GeneralProcessExport implements FromQuery, WithMapping, WithHeadings
             $query->where('client_id', $this->filters['client_id']);
         }
 
-        if (!empty($this->filters['status'])) {
+        $step = isset($this->filters['step']) ? (int) $this->filters['step'] : null;
+        if ($step !== null && $step >= 1 && $step <= 5) {
+            $query->whereStep($step);
+        } elseif (!empty($this->filters['status'])) {
             $query->where('status', $this->filters['status']);
         }
 

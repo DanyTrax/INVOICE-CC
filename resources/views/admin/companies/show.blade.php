@@ -137,27 +137,49 @@
         </div>
     </div>
 
-    {{-- SECCIÓN A: Tarjetas de Estado (KPIs) --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    {{-- SECCIÓN A: Tarjetas por paso del flujo (KPIs) --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <div class="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
             <div class="flex items-center">
                 <div class="p-2 rounded-lg bg-blue-100">
                     <i class="fas fa-folder-open text-blue-600 text-xl"></i>
                 </div>
                 <div class="ml-3">
-                    <p class="text-sm font-medium text-gray-500">Total Casos Activos</p>
+                    <p class="text-sm font-medium text-gray-500">Total Casos</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $total_processes }}</p>
                 </div>
             </div>
         </div>
         <div class="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
             <div class="flex items-center">
-                <div class="p-2 rounded-lg bg-yellow-100">
-                    <i class="fas fa-clipboard-list text-yellow-600 text-xl"></i>
+                <div class="p-2 rounded-lg bg-gray-100">
+                    <i class="fas fa-clipboard-list text-gray-600 text-xl"></i>
                 </div>
                 <div class="ml-3">
-                    <p class="text-sm font-medium text-gray-500">En Recolección / Checklist</p>
+                    <p class="text-sm font-medium text-gray-500">Recolección</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $stats['recoleccion'] ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div class="flex items-center">
+                <div class="p-2 rounded-lg bg-teal-100">
+                    <i class="fas fa-paper-plane text-teal-600 text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Sometimiento</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $stats['sometimiento'] ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div class="flex items-center">
+                <div class="p-2 rounded-lg bg-blue-100">
+                    <i class="fas fa-stamp text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Radicado</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $stats['radicado'] ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -167,7 +189,7 @@
                     <i class="fas fa-exclamation-triangle text-orange-600 text-xl"></i>
                 </div>
                 <div class="ml-3">
-                    <p class="text-sm font-medium text-gray-500">En Requerimiento</p>
+                    <p class="text-sm font-medium text-gray-500">AUTO (En Requerimiento)</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $stats['requerimiento'] ?? 0 }}</p>
                 </div>
             </div>
@@ -178,7 +200,7 @@
                     <i class="fas fa-check-circle text-green-600 text-xl"></i>
                 </div>
                 <div class="ml-3">
-                    <p class="text-sm font-medium text-gray-500">Finalizados / Aprobados</p>
+                    <p class="text-sm font-medium text-gray-500">Finalizados</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $stats['finalizado'] ?? 0 }}</p>
                 </div>
             </div>
@@ -212,16 +234,16 @@
                        value="{{ request('search') }}"
                        placeholder="Buscar por origen, producto, nº expediente..."
                        class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-48 focus:ring-teal-500 focus:border-teal-500">
-                <select name="status_filter" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-teal-500 focus:border-teal-500">
-                    <option value="">Todos los estados</option>
-                    @foreach($availableStatuses ?? [] as $st)
-                        <option value="{{ $st }}" {{ request('status_filter') === $st ? 'selected' : '' }}>{{ $st }}</option>
+                <select name="step_filter" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-teal-500 focus:border-teal-500">
+                    <option value="">Todos los pasos</option>
+                    @foreach($availableSteps ?? [] as $num => $label)
+                        <option value="{{ $num }}" {{ request('step_filter') == $num ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
                 <button type="submit" class="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700">
                     <i class="fas fa-filter mr-1"></i> Filtrar
                 </button>
-                @if(request('search') || request('status_filter'))
+                @if(request('search') || request('step_filter'))
                     <a href="{{ route('admin.companies.show', $company) }}" class="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300">
                         Limpiar
                     </a>
@@ -262,9 +284,7 @@
                             } else {
                                 $hito = $process->status ?: 'En recolección';
                             }
-                            $tieneResolucion = $eventos->contains('event_type', \App\Models\RegulatoryEvent::EVENT_TYPE_RESOLUCION);
-                            $tieneAuto = $eventos->contains('event_type', \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO);
-                            $paso = $tieneResolucion || $process->status === \App\Models\Process::STATUS_FINALIZADO ? 4 : ($tieneAuto ? 3 : ($process->submissions->isNotEmpty() ? 2 : 1));
+                            $paso = $process->getCurrentStep();
                         @endphp
                         <tr class="bg-white border-b hover:bg-gray-50">
                             <td class="px-4 py-3 font-medium text-gray-900">
@@ -287,26 +307,18 @@
                             <td class="px-4 py-3">{{ $producto }}</td>
                             <td class="px-4 py-3">
                                 @php
-                                    $statusStyles = [
-                                        'Recolección' => 'bg-yellow-100 text-yellow-800',
-                                        'Radicado' => 'bg-blue-100 text-blue-800',
-                                        'En Requerimiento' => 'bg-orange-100 text-orange-800',
-                                        'Finalizado' => 'bg-green-100 text-green-800',
-                                    ];
-                                    $statusStyle = $statusStyles[$process->status ?? ''] ?? 'bg-gray-100 text-gray-800';
+                                    $stepStyles = [1 => 'bg-gray-100 text-gray-800', 2 => 'bg-teal-100 text-teal-800', 3 => 'bg-blue-100 text-blue-800', 4 => 'bg-orange-100 text-orange-800', 5 => 'bg-green-100 text-green-800'];
+                                    $stepStyle = $stepStyles[$paso] ?? 'bg-gray-100 text-gray-800';
                                 @endphp
-                                <span class="px-2 py-0.5 text-xs font-medium rounded {{ $statusStyle }}">{{ $process->status ?? '-' }}</span>
+                                <span class="px-2 py-0.5 text-xs font-medium rounded {{ $stepStyle }}" title="Paso {{ $paso }}">{{ $process->getCurrentStepLabel() }}</span>
                             </td>
                             <td class="px-4 py-3 text-gray-700">{{ $hito }}</td>
                             <td class="px-4 py-3">
-                                <div class="flex items-center gap-0.5" title="Inicio → Radicado → Auto → Fin">
-                                    <span class="px-1.5 py-0.5 text-xs rounded {{ $paso >= 1 ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-500' }}">Inicio</span>
-                                    <span class="text-gray-300">→</span>
-                                    <span class="px-1.5 py-0.5 text-xs rounded {{ $paso >= 2 ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-500' }}">Radicado</span>
-                                    <span class="text-gray-300">→</span>
-                                    <span class="px-1.5 py-0.5 text-xs rounded {{ $paso >= 3 ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-500' }}">Auto</span>
-                                    <span class="text-gray-300">→</span>
-                                    <span class="px-1.5 py-0.5 text-xs rounded {{ $paso >= 4 ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-500' }}">Fin</span>
+                                <div class="flex items-center gap-0.5 flex-wrap" title="Recolección → Sometimiento → Radicado → AUTO → Finalizado">
+                                    @foreach([1 => 'Rec.', 2 => 'Somet.', 3 => 'Radic.', 4 => 'AUTO', 5 => 'Fin'] as $n => $short)
+                                        @if($n > 1)<span class="text-gray-300">→</span>@endif
+                                        <span class="px-1.5 py-0.5 text-xs rounded {{ $paso >= $n ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-500' }}">{{ $short }}</span>
+                                    @endforeach
                                 </div>
                             </td>
                             <td class="px-4 py-3">
@@ -319,7 +331,7 @@
                     @empty
                         <tr>
                             <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                                @if(request('search') || request('status_filter'))
+                                @if(request('search') || request('step_filter'))
                                     No hay expedientes que coincidan con el filtro.
                                     <a href="{{ route('admin.companies.show', $company) }}" class="text-teal-600 hover:underline ml-1">Ver todos</a>
                                 @else

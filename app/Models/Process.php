@@ -23,6 +23,72 @@ class Process extends Model
         ];
     }
 
+    /** Pasos del flujo del expediente para mostrar en qué etapa está. */
+    public const STEP_RECOLECCION = 1;
+    public const STEP_SOMETIMIENTO = 2;
+    public const STEP_RADICADO = 3;
+    public const STEP_AUTO = 4;
+    public const STEP_FINALIZADO = 5;
+
+    public static function stepLabels(): array
+    {
+        return [
+            self::STEP_RECOLECCION => 'Recolección',
+            self::STEP_SOMETIMIENTO => 'Sometimiento',
+            self::STEP_RADICADO => 'Radicado',
+            self::STEP_AUTO => 'AUTO (si aplica)',
+            self::STEP_FINALIZADO => 'Finalizado',
+        ];
+    }
+
+    /**
+     * Devuelve el paso actual del expediente (1-5) según el último sometimiento.
+     */
+    public function getCurrentStep(): int
+    {
+        $last = $this->relationLoaded('submissions')
+            ? $this->submissions->sortByDesc('id')->first()
+            : $this->submissions()->orderByDesc('id')->first();
+        if (!$last) {
+            return self::STEP_RECOLECCION;
+        }
+        return match ($last->status) {
+            \App\Models\Submission::STATUS_APROBADO => self::STEP_FINALIZADO,
+            \App\Models\Submission::STATUS_EN_REQUERIMIENTO => self::STEP_AUTO,
+            \App\Models\Submission::STATUS_RADICADO => self::STEP_RADICADO,
+            \App\Models\Submission::STATUS_PENDIENTE => self::STEP_SOMETIMIENTO,
+            default => self::STEP_RECOLECCION, // Rechazado u otro
+        };
+    }
+
+    /**
+     * Etiqueta del paso actual (ej. "Sometimiento").
+     */
+    public function getCurrentStepLabel(): string
+    {
+        $labels = self::stepLabels();
+        return $labels[$this->getCurrentStep()] ?? 'Recolección';
+    }
+
+    /**
+     * Filtra procesos por paso del flujo (1-5). Para listados y Monitor.
+     */
+    public function scopeWhereStep($query, int $step): void
+    {
+        $subLastStatus = '(SELECT status FROM submissions WHERE process_id = processes.id ORDER BY id DESC LIMIT 1)';
+        match ($step) {
+            self::STEP_RECOLECCION => $query->where(function ($q) use ($subLastStatus) {
+                $q->whereDoesntHave('submissions')
+                    ->orWhereRaw($subLastStatus . ' = ?', [\App\Models\Submission::STATUS_RECHAZADO]);
+            }),
+            self::STEP_SOMETIMIENTO => $query->whereRaw($subLastStatus . ' = ?', [\App\Models\Submission::STATUS_PENDIENTE]),
+            self::STEP_RADICADO => $query->where('status', self::STATUS_RADICADO),
+            self::STEP_AUTO => $query->where('status', self::STATUS_EN_REQUERIMIENTO),
+            self::STEP_FINALIZADO => $query->where('status', self::STATUS_FINALIZADO),
+            default => null,
+        };
+    }
+
     protected $fillable = [
         'quote_item_id',
         'quote_id',

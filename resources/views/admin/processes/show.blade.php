@@ -60,6 +60,23 @@
                             <span class="px-2 py-1 text-xs font-medium rounded-full {{ $style }}">{{ $process->status }}</span>
                         </dd>
                     </div>
+                    @php
+                        $currentStep = $process->getCurrentStep();
+                        $stepLabels = \App\Models\Process::stepLabels();
+                    @endphp
+                    <div class="pt-2 border-t border-gray-100">
+                        <dt class="text-gray-500 mb-1">Paso actual</dt>
+                        <dd class="text-xs text-gray-600 leading-relaxed">
+                            @foreach($stepLabels as $num => $label)
+                                @if($num > 1)<span class="text-gray-300 mx-0.5">→</span>@endif
+                                @if($num === $currentStep)
+                                    <span class="font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">{{ $label }}</span>
+                                @else
+                                    <span class="{{ $num < $currentStep ? 'text-gray-500' : 'text-gray-400' }}">{{ $label }}</span>
+                                @endif
+                            @endforeach
+                        </dd>
+                    </div>
                     <div>
                         <dt class="text-gray-500">Expediente INVIMA</dt>
                         <dd class="font-medium text-gray-900">{{ $process->expediente_invima ?? '-' }}</dd>
@@ -87,7 +104,18 @@
         <!-- Timeline vertical -->
         <div class="lg:col-span-2">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-6">Línea de tiempo</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Línea de tiempo</h3>
+                {{-- Indicador de paso actual: Recolección → Sometimiento → Radicado → AUTO → Finalizado --}}
+                <div class="flex flex-wrap items-center gap-1 mb-6 text-xs">
+                    @foreach(\App\Models\Process::stepLabels() as $num => $label)
+                        @if($num > 1)<span class="text-gray-300 px-0.5">→</span>@endif
+                        @if($num === $process->getCurrentStep())
+                            <span class="font-semibold text-teal-700 bg-teal-100 px-2 py-1 rounded">{{ $label }}</span>
+                        @else
+                            <span class="text-gray-400">{{ $label }}</span>
+                        @endif
+                    @endforeach
+                </div>
 
                 <div class="relative">
                     <!-- Línea vertical -->

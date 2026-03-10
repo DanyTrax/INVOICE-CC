@@ -39,11 +39,11 @@
                 </select>
             </div>
             <div>
-                <label for="monitor-status" class="block text-xs font-medium text-gray-600 mb-1">Estado</label>
-                <select id="monitor-status" name="status" class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">
+                <label for="monitor-step" class="block text-xs font-medium text-gray-600 mb-1">Paso</label>
+                <select id="monitor-step" name="step" class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">
                     <option value="">Todos</option>
-                    @foreach(\App\Models\Process::statuses() as $s)
-                        <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                    @foreach(\App\Models\Process::stepLabels() as $num => $label)
+                        <option value="{{ $num }}" {{ request('step') == $num ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
@@ -87,7 +87,7 @@
                         <th class="px-4 py-3">Tipo de Trámite</th>
                         <th class="px-4 py-3">Producto / Referencia</th>
                         <th class="px-4 py-3">Radicado / ID</th>
-                        <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3">Paso</th>
                         <th class="px-4 py-3">Fecha Último Evento</th>
                         <th class="px-4 py-3 w-32">Acciones</th>
                     </tr>
@@ -118,7 +118,7 @@
             return {
                 search: document.getElementById('monitor-search').value.trim() || undefined,
                 client_id: document.getElementById('monitor-client').value || undefined,
-                status: document.getElementById('monitor-status').value || undefined,
+                step: document.getElementById('monitor-step').value || undefined,
                 date_from: document.getElementById('monitor-date-from').value || undefined,
                 date_to: document.getElementById('monitor-date-to').value || undefined,
             };
@@ -159,7 +159,7 @@
             });
         }
 
-        var inputs = ['monitor-search', 'monitor-client', 'monitor-status', 'monitor-date-from', 'monitor-date-to'];
+        var inputs = ['monitor-search', 'monitor-client', 'monitor-step', 'monitor-date-from', 'monitor-date-to'];
         var timeoutId = null;
 
         function scheduleLoad() {

@@ -12,33 +12,31 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Procesos/Expedientes y etapas del flujo
-        $totalActive = Process::where('status', '!=', Process::STATUS_FINALIZADO)->count();
-        $recoleccion = Process::where('status', Process::STATUS_RECOLECCION)->count();
-        $enRequerimiento = Process::where('status', Process::STATUS_EN_REQUERIMIENTO)->count();
-        $finalizados = Process::where('status', Process::STATUS_FINALIZADO)->count();
-
-        // Cargar procesos con sometimientos para separar Sometimiento (turno) vs Radicado INVIMA
+        // Procesos/Expedientes por paso del flujo (Recolección, Sometimiento, Radicado, AUTO, Finalizado)
         $processesWithSubs = Process::with(['submissions' => fn ($q) => $q->orderByDesc('id')])->get();
+        $recoleccion = 0;
         $sometimiento = 0;
-        $radicadoInvima = 0;
+        $radicado = 0;
+        $enRequerimiento = 0;
+        $finalizados = 0;
         foreach ($processesWithSubs as $process) {
-            $lastSub = $process->submissions->first();
-            if (!$lastSub) {
-                continue;
-            }
-            if ($lastSub->status === Submission::STATUS_PENDIENTE) {
-                $sometimiento++;
-            } elseif ($lastSub->status === Submission::STATUS_RADICADO) {
-                $radicadoInvima++;
-            }
+            $step = $process->getCurrentStep();
+            match ($step) {
+                Process::STEP_RECOLECCION => $recoleccion++,
+                Process::STEP_SOMETIMIENTO => $sometimiento++,
+                Process::STEP_RADICADO => $radicado++,
+                Process::STEP_AUTO => $enRequerimiento++,
+                Process::STEP_FINALIZADO => $finalizados++,
+                default => null,
+            };
         }
+        $totalActive = $recoleccion + $sometimiento + $radicado + $enRequerimiento;
 
         $stats = [
             'total_active' => $totalActive,
             'recoleccion' => $recoleccion,
             'sometimiento' => $sometimiento,
-            'radicado' => $radicadoInvima,
+            'radicado' => $radicado,
             'en_requerimiento' => $enRequerimiento,
             'finalizados' => $finalizados,
             'total_companies' => Company::count(),

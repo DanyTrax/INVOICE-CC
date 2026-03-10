@@ -156,29 +156,28 @@ class CompanyController extends Controller
             })->values();
         }
 
-        // 3. Filtro por estado actual
-        $statusFilter = $request->filled('status_filter') ? $request->status_filter : null;
-        if ($statusFilter !== null && $statusFilter !== '') {
-            $processes = $processes->filter(function ($p) use ($statusFilter) {
-                return $p->status === $statusFilter;
+        // 3. Filtro por paso del flujo (Recolección, Sometimiento, Radicado, AUTO, Finalizado)
+        $stepFilter = $request->filled('step_filter') ? (int) $request->step_filter : null;
+        if ($stepFilter !== null && $stepFilter >= 1 && $stepFilter <= 5) {
+            $processes = $processes->filter(function ($p) use ($stepFilter) {
+                return $p->getCurrentStep() === $stepFilter;
             })->values();
         }
 
-        // 4. Calcular estadísticas sobre el total (sin filtrar) para los KPIs
+        // 4. Calcular estadísticas por paso (sin filtrar) para los KPIs
         $total_processes = $company->processes->count();
         $stats = [
-            'recoleccion' => $company->processes->where('status', 'Recolección')->count(),
-            'radicado' => $company->processes->where('status', 'Radicado')->count(),
-            'requerimiento' => $company->processes->where('status', 'En Requerimiento')->count(),
-            'finalizado' => $company->processes->where('status', 'Finalizado')->count(),
+            'recoleccion' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_RECOLECCION)->count(),
+            'sometimiento' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_SOMETIMIENTO)->count(),
+            'radicado' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_RADICADO)->count(),
+            'requerimiento' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_AUTO)->count(),
+            'finalizado' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_FINALIZADO)->count(),
         ];
-        $alerts = $company->processes->filter(function ($p) {
-            return $p->status === 'En Requerimiento';
-        })->count();
+        $alerts = $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_AUTO)->count();
 
-        $availableStatuses = Process::statuses();
+        $availableSteps = Process::stepLabels();
 
-        return view('admin.companies.show', compact('company', 'processes', 'total_processes', 'stats', 'alerts', 'availableStatuses'));
+        return view('admin.companies.show', compact('company', 'processes', 'total_processes', 'stats', 'alerts', 'availableSteps'));
     }
 
     public function edit(Company $company)
