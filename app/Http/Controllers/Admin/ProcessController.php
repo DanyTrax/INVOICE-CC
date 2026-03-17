@@ -658,6 +658,7 @@ class ProcessController extends Controller
             'process_id' => $process->id,
             'document_name' => $validated['document_name'],
             'status' => ChecklistItem::STATUS_PENDIENTE,
+            'is_for_auto' => $request->boolean('is_for_auto', false),
         ]);
         return redirect()
             ->route('admin.processes.show', $process)

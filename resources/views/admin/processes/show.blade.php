@@ -371,12 +371,17 @@
     @endphp
 
     {{-- 2. Gestión Documental --}}
+    @php
+        $normalItems = $process->checklistItems->where('is_for_auto', false);
+        $autoItems = $process->checklistItems->where('is_for_auto', true);
+    @endphp
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">
                 <i class="fas fa-folder-open text-teal-600 mr-2"></i> Gestión Documental
             </h3>
-            <button type="button" onclick="document.getElementById('modal-add-document').classList.remove('hidden')"
+            <button type="button"
+                    onclick="document.getElementById('add-doc-is-for-auto').value='0';document.getElementById('modal-add-document').classList.remove('hidden')"
                     class="inline-flex items-center px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
                 <i class="fas fa-plus mr-2"></i> Agregar Documento
             </button>
@@ -392,7 +397,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($process->checklistItems as $item)
+                    @forelse($normalItems as $item)
                         @php
                             $badgeClass = match($item->status) {
                                 'Aprobado' => 'bg-green-100 text-green-800',
@@ -420,6 +425,64 @@
                     @empty
                         <tr>
                             <td colspan="4" class="px-3 py-6 text-center text-gray-500">No hay documentos en la checklist. Use &quot;+ Agregar Documento&quot; para agregar requisitos.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- 2.b Gestión Documental AUTO (solo para requisitos asociados a requerimientos AUTO) --}}
+    <div class="bg-white rounded-lg shadow-sm border border-amber-200 p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">
+                <i class="fas fa-folder-open text-amber-600 mr-2"></i> Gestión Documental AUTO
+            </h3>
+            <button type="button"
+                    onclick="document.getElementById('add-doc-is-for-auto').value='1';document.getElementById('modal-add-document').classList.remove('hidden')"
+                    class="inline-flex items-center px-3 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700">
+                <i class="fas fa-plus mr-2"></i> Agregar Documento AUTO
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                    <tr>
+                        <th class="px-3 py-2">Documento</th>
+                        <th class="px-3 py-2 w-32">Estado</th>
+                        <th class="px-3 py-2">Observación</th>
+                        <th class="px-3 py-2 w-40">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($autoItems as $item)
+                        @php
+                            $badgeClass = match($item->status) {
+                                'Aprobado' => 'bg-green-100 text-green-800',
+                                'Recibido' => 'bg-blue-100 text-blue-800',
+                                'Traducción' => 'bg-yellow-100 text-yellow-800',
+                                default => 'bg-gray-100 text-gray-800',
+                            };
+                        @endphp
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="px-3 py-2 font-medium text-gray-900">
+                                <i class="fas {{ $item->status === 'Aprobado' ? 'fa-check-circle text-green-600' : 'fa-circle text-gray-400' }} mr-2"></i>
+                                {{ $item->document_name }}
+                            </td>
+                            <td class="px-3 py-2">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badgeClass }}">{{ $item->status }}</span>
+                            </td>
+                            <td class="px-3 py-2 text-gray-600">{{ Str::limit($item->observation_agent ?? '-', 50) }}</td>
+                            <td class="px-3 py-2">
+                                <button type="button" onclick="openChecklistModal({{ $item->id }}, '{{ addslashes($item->document_name) }}', '{{ $item->status }}', '{{ addslashes($item->observation_agent ?? '') }}')"
+                                        class="text-teal-600 hover:text-teal-800 text-sm font-medium">
+                                    <i class="fas fa-edit mr-1"></i> Cambiar estado
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-3 py-6 text-center text-gray-500">No hay documentos AUTO. Use &quot;Agregar Documento AUTO&quot; para registrar requisitos de un requerimiento AUTO.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -570,6 +633,7 @@
                 <h4 class="text-lg font-semibold text-gray-900 mb-4">Agregar Documento</h4>
                 <form action="{{ route('admin.processes.checklist-items.store', $process) }}" method="post">
                     @csrf
+                    <input type="hidden" name="is_for_auto" id="add-doc-is-for-auto" value="0">
                     <div class="mb-4">
                         <label for="document_name" class="block text-sm font-medium text-gray-700 mb-1">Nombre del documento / requisito</label>
                         <input type="text" name="document_name" id="document_name" required maxlength="255" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Ej: Certificado de Buenas Prácticas">

@@ -26,6 +26,7 @@ class ChecklistItem extends Model
         'process_id',
         'document_name',
         'status',
+        'is_for_auto',
         'is_translation_required',
         'observation_agent',
         'observation_client',
@@ -38,6 +39,7 @@ class ChecklistItem extends Model
     protected function casts(): array
     {
         return [
+            'is_for_auto' => 'boolean',
             'is_translation_required' => 'boolean',
         ];
     }
