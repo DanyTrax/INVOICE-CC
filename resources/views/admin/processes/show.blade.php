@@ -145,11 +145,21 @@
                             // y para ofrecer la lista de vínculo en el modal de sometimiento.
                             $rejectedSubmissions = $process->submissions
                                 ->filter(fn ($s) => $s->status === \App\Models\Submission::STATUS_RECHAZADO);
-                            $allChecklistApproved = $process->checklistItems->isNotEmpty() && $process->checklistItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
+                            // Checklist normal vs AUTO
+                            $normalItems = $process->checklistItems->where('is_for_auto', false);
+                            $autoItems = $process->checklistItems->where('is_for_auto', true);
+                            $allNormalApproved = $normalItems->isNotEmpty() && $normalItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
+                            $allAutoApproved = $autoItems->isNotEmpty() && $autoItems->every(fn ($i) => $i->status === \App\Models\ChecklistItem::STATUS_APROBADO);
+                            // Antes de AUTO se exige checklist normal; después de AUTO (En Requerimiento) se exige checklist AUTO.
+                            if ($lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO) {
+                                $allChecklistApproved = $allAutoApproved;
+                            } else {
+                                $allChecklistApproved = $allNormalApproved;
+                            }
                             $processReachedEnd = $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_APROBADO;
                             // Registrar Sometimiento:
-                            //  - Caso 1: no hay sometimientos aún (primer ciclo) y checklist aprobada.
-                            //  - Caso 2: último sometimiento quedó En Requerimiento (AUTO) y checklist aprobada.
+                            //  - Caso 1: no hay sometimientos aún (primer ciclo) y checklist apropiada aprobada.
+                            //  - Caso 2: último sometimiento quedó En Requerimiento (AUTO) y checklist AUTO aprobada.
                             $canRegisterSubmission = $allChecklistApproved && !$processReachedEnd && (
                                 $process->submissions->isEmpty()
                                 || ($lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
@@ -198,11 +208,15 @@
                                     </summary>
                                     <div class="p-4 bg-white border-t border-gray-200 space-y-6">
                                         {{-- Checklist documental (una vez por ciclo) --}}
-                                        @if($process->checklistItems->isNotEmpty())
+                                        @php
+                                            // Ciclo 1 usa checklist normal; Ciclo 2 (si existe) usa checklist AUTO.
+                                            $itemsForThisCycle = $cycleNum === 1 ? $normalItems : $autoItems;
+                                        @endphp
+                                        @if($itemsForThisCycle->isNotEmpty())
                                             <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                                                 <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Checklist documental</p>
                                                 <ul class="mt-2 space-y-1 text-sm">
-                                                    @foreach($process->checklistItems as $item)
+                                                    @foreach($itemsForThisCycle as $item)
                                                         @php
                                                             $itemStyle = match($item->status) {
                                                                 'Aprobado' => 'text-green-700',
@@ -250,9 +264,9 @@
                                     <div class="p-4 bg-white border-t border-gray-200 space-y-6">
                                         <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                                             <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Checklist documental</p>
-                                            @if($process->checklistItems->isNotEmpty())
+                                            @if($normalItems->isNotEmpty())
                                                 <ul class="mt-2 space-y-1 text-sm">
-                                                    @foreach($process->checklistItems as $item)
+                                                    @foreach($normalItems as $item)
                                                         @php
                                                             $itemStyle = match($item->status) {
                                                                 'Aprobado' => 'text-green-700',
@@ -371,10 +385,6 @@
     @endphp
 
     {{-- 2. Gestión Documental --}}
-    @php
-        $normalItems = $process->checklistItems->where('is_for_auto', false);
-        $autoItems = $process->checklistItems->where('is_for_auto', true);
-    @endphp
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">
