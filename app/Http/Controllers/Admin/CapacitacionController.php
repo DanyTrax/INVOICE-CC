@@ -21,7 +21,7 @@ class CapacitacionController extends Controller
     {
         $user = auth()->user();
         if (!$user || !$user->is_active) {
-            abort(403, 'Solo los agentes activos pueden acceder a Capacitaciones.');
+            abort(403, 'Solo los especialistas activos pueden acceder a Capacitaciones.');
         }
     }
 
@@ -41,7 +41,7 @@ class CapacitacionController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            $agentes = User::where('is_active', true)
+            $especialistas = User::where('is_active', true)
                 ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'client'))
                 ->orderBy('name')
                 ->get();
@@ -55,7 +55,7 @@ class CapacitacionController extends Controller
 
         return view('admin.capacitaciones.index', [
             'videos' => $videos,
-            'agentes' => $agentes,
+            'especialistas' => $especialistas,
             'canManage' => $this->canManage(),
         ]);
     }
@@ -268,14 +268,14 @@ class CapacitacionController extends Controller
             abort(403, 'No tienes permiso para descargar el reporte.');
         }
         $videos = CapacitacionVideo::with(['completions.user'])->orderBy('orden')->get();
-        $agentes = User::where('is_active', true)
+        $especialistas = User::where('is_active', true)
             ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'client'))
             ->orderBy('name')
             ->get();
 
         $pdf = Pdf::loadView('admin.capacitaciones.reporte-pdf', [
             'videos' => $videos,
-            'agentes' => $agentes,
+            'especialistas' => $especialistas,
             'tituloReporte' => 'Reporte de capacitaciones - Todos los videos',
         ]);
         return $pdf->download('reporte-capacitaciones-' . now()->format('Y-m-d-His') . '.pdf');
@@ -288,7 +288,7 @@ class CapacitacionController extends Controller
             abort(403, 'No tienes permiso para descargar el reporte.');
         }
         $capacitacionVideo->load(['completions.user']);
-        $agentes = $capacitacionVideo->completions->map(fn ($c) => $c->user)->filter()->sortBy('name')->values();
+        $especialistas = $capacitacionVideo->completions->map(fn ($c) => $c->user)->filter()->sortBy('name')->values();
 
         $pdf = Pdf::loadView('admin.capacitaciones.reporte-video-pdf', [
             'video' => $capacitacionVideo,

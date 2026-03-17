@@ -68,7 +68,7 @@
         $assignedClients = $company->users->filter(fn($u) => $u->hasRole('client'));
         $assignedAgents = $company->users->filter(fn($u) => !$u->hasRole('client'));
     @endphp
-    {{-- Clientes y agentes asignados --}}
+    {{-- Clientes y especialistas asignados --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
@@ -107,7 +107,7 @@
         </div>
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                <h3 class="text-sm font-semibold text-gray-900">Agentes asignados</h3>
+                <h3 class="text-sm font-semibold text-gray-900">Especialistas asignados</h3>
                 <p class="text-xs text-gray-500 mt-0.5">Usuarios del panel que gestionan esta empresa</p>
             </div>
             <div class="p-4">

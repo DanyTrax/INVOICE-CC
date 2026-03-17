@@ -72,7 +72,7 @@
 
                 <a @click="currentTab = 'agents'" :class="currentTab === 'agents' ? 'bg-primary' : 'hover:bg-gray-800'" class="flex items-center px-3 py-2 rounded-md cursor-pointer transition-colors group">
                     <i class="fas fa-users w-6 text-center text-gray-400 group-hover:text-white"></i>
-                    <span x-show="sidebarOpen" class="ml-3 text-sm">Agentes / Usuarios</span>
+                    <span x-show="sidebarOpen" class="ml-3 text-sm">Especialistas / Usuarios</span>
                 </a>
 
                 <a @click="currentTab = 'settings'" :class="currentTab === 'settings' ? 'bg-primary' : 'hover:bg-gray-800'" class="flex items-center px-3 py-2 rounded-md cursor-pointer transition-colors group">
@@ -209,14 +209,14 @@
                             <h2 class="text-2xl font-bold text-gray-800">Equipo de Trabajo</h2>
                             <p class="text-sm text-gray-500">Gestión de Especialistas y Permisos.</p>
                         </div>
-                        <button class="bg-primary text-white px-4 py-2 rounded text-sm shadow hover:bg-teal-700">+ Nuevo Agente</button>
+                        <button class="bg-primary text-white px-4 py-2 rounded text-sm shadow hover:bg-teal-700">+ Nuevo Especialista</button>
                     </div>
 
                     <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                         <table class="w-full text-sm text-left">
                             <thead class="bg-gray-50 border-b text-xs uppercase text-gray-500">
                                 <tr>
-                                    <th class="p-4">Agente</th>
+                                    <th class="p-4">Especialista</th>
                                     <th class="p-4">Rol</th>
                                     <th class="p-4">Carga Laboral</th>
                                     <th class="p-4">Estado</th>

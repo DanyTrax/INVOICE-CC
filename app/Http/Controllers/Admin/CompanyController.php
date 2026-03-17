@@ -120,7 +120,7 @@ class CompanyController extends Controller
 
     public function show(Request $request, Company $company)
     {
-        // 0. Cargar usuarios asignados (clientes y agentes) con sus roles
+        // 0. Cargar usuarios asignados (clientes y especialistas) con sus roles
         $company->load(['users' => function ($q) {
             $q->with('roles')->orderBy('name');
         }]);

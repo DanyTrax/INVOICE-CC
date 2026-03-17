@@ -25,7 +25,7 @@
                         <li>Organizar y subir documentos en Google Drive, integrado con la estructura de carpetas del servicio.</li>
                         <li>Consultar estados, líneas de tiempo y documentación asociada a cada expediente.</li>
                     </ul>
-                    <p class="mt-4 text-sm">El acceso a la aplicación está restringido a usuarios autorizados por Doble Vía (administradores, agentes y clientes según corresponda).</p>
+                    <p class="mt-4 text-sm">El acceso a la aplicación está restringido a usuarios autorizados por Doble Vía (administradores, especialistas y clientes según corresponda).</p>
                 </section>
 
                 <section class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">

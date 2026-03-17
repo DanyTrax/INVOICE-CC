@@ -1,14 +1,14 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', $listingType === 'clients' ? 'Clientes - RAMS' : 'Agentes - RAMS')
+@section('title', $listingType === 'clients' ? 'Clientes - RAMS' : 'Especialistas - RAMS')
 
-@section('page-title', $listingType === 'clients' ? 'Clientes' : 'Agentes')
+@section('page-title', $listingType === 'clients' ? 'Clientes' : 'Especialistas')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">{{ $listingType === 'clients' ? 'Clientes' : 'Agentes' }}</span>
+            <span class="text-sm font-medium text-gray-500">{{ $listingType === 'clients' ? 'Clientes' : 'Especialistas' }}</span>
         </div>
     </li>
 @endsection
@@ -68,7 +68,7 @@
             @endphp
             @if($canCreateAgents)
                 <a href="{{ route('admin.users.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                    <i class="fas fa-plus mr-2"></i> Nuevo Agente
+                    <i class="fas fa-plus mr-2"></i> Nuevo Especialista
                 </a>
             @endif
         @endif
@@ -202,7 +202,7 @@
                         <tr>
                             <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
-                                <p>{{ $listingType === 'clients' ? 'No se encontraron clientes.' : 'No se encontraron agentes.' }}</p>
+                                <p>{{ $listingType === 'clients' ? 'No se encontraron clientes.' : 'No se encontraron especialistas.' }}</p>
                                 @if(request('search') || request('role'))
                                     <a href="{{ route($indexRoute) }}" class="text-teal-600 hover:text-teal-700 mt-2 inline-block">
                                         Ver todos

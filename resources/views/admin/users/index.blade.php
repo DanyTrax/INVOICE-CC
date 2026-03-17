@@ -1,8 +1,8 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Agentes / Usuarios - RAMS')
+@section('title', 'Especialistas / Usuarios - RAMS')
 
-@section('page-title', 'Agentes / Usuarios')
+@section('page-title', 'Especialistas / Usuarios')
 
 @section('breadcrumb')
     <li>

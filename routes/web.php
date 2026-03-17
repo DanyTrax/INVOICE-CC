@@ -43,7 +43,7 @@ Route::get('/terminos-condiciones', function () {
     return view('legal.terminos-condiciones');
 })->name('legal.terms');
 
-// Establecer/restablecer contraseña (link enviado por admin a agentes)
+// Establecer/restablecer contraseña (link enviado por admin a especialistas)
 Route::get('/establecer-contrasena', [ResetPasswordController::class, 'show'])->name('password.reset');
 Route::post('/establecer-contrasena', [ResetPasswordController::class, 'store'])->name('password.reset.store');
 
@@ -156,7 +156,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::post('submissions/{submission}/events/auto', [RegulatoryEventController::class, 'storeAuto'])->name('submissions.events.store-auto');
     Route::post('submissions/{submission}/events/resolution', [RegulatoryEventController::class, 'storeResolution'])->name('submissions.events.store-resolution');
 
-    // Capacitaciones (videos para agentes; solo activos pueden ver; gestor puede subir/editar/borrar y descargar reporte)
+    // Capacitaciones (videos para especialistas; solo activos pueden ver; gestor puede subir/editar/borrar y descargar reporte)
     Route::get('capacitaciones', [CapacitacionController::class, 'index'])->name('capacitaciones.index');
     Route::get('capacitaciones/create', [CapacitacionController::class, 'create'])->name('capacitaciones.create');
     Route::post('capacitaciones', [CapacitacionController::class, 'store'])->name('capacitaciones.store');

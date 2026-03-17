@@ -11,7 +11,7 @@
             @if($user->hasRole('client'))
                 <a href="{{ route('admin.clients.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Clientes</a>
             @else
-                <a href="{{ route('admin.agents.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Agentes</a>
+                <a href="{{ route('admin.agents.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Especialistas</a>
             @endif
         </div>
     </li>

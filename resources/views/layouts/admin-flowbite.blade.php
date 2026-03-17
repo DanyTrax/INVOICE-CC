@@ -291,7 +291,7 @@
                                         <a href="{{ route('admin.agents.index') }}"
                                            class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700/50 text-white' : '' }}">
                                             <i class="fas fa-user-tie w-4 h-4"></i>
-                                            <span class="ms-2 text-sm">Agentes</span>
+                                            <span class="ms-2 text-sm">Especialistas</span>
                                         </a>
                                     </li>
                                 </ul>

@@ -19,7 +19,7 @@
     <table>
         <thead>
             <tr>
-                <th>Agente</th>
+                <th>Especialista</th>
                 <th>Email</th>
                 @foreach($videos as $v)
                     <th>{{ $v->titulo }}</th>
@@ -27,7 +27,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($agentes as $agente)
+            @foreach($especialistas as $agente)
                 <tr>
                     <td>{{ $agente->name }}</td>
                     <td>{{ $agente->email }}</td>

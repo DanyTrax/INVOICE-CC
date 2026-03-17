@@ -133,7 +133,7 @@
                     <li class="nav-item">
                         <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users"></i>
-                            <p>Agentes / Usuarios</p>
+                            <p>Especialistas / Usuarios</p>
                         </a>
                     </li>
                     <li class="nav-item">

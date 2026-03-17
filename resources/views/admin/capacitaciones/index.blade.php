@@ -65,11 +65,11 @@
                         @endif
                     </div>
                 </div>
-                @if($canManage && $agentes->isNotEmpty())
+                @if($canManage && $especialistas->isNotEmpty())
                     <div class="border-t border-gray-100 px-4 py-3 bg-gray-50">
                         <p class="text-xs font-medium text-gray-500 uppercase mb-2">Quién vio este video (check y fecha)</p>
                         <div class="flex flex-wrap gap-2">
-                            @foreach($agentes as $agente)
+                            @foreach($especialistas as $agente)
                                 @php $comp = $video->completions->firstWhere('user_id', $agente->id); @endphp
                                 <span class="inline-flex items-center px-2 py-1 rounded text-xs {{ $comp ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
                                     {{ $agente->name }}

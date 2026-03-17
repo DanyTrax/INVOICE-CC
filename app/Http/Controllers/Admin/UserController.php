@@ -348,7 +348,7 @@ class UserController extends Controller
     }
 
     /**
-     * Lista solo usuarios que no son clientes (agentes, admin, super_admin).
+     * Lista solo usuarios que no son clientes (especialistas, admin, super_admin).
      */
     public function agents(Request $request)
     {
@@ -358,7 +358,7 @@ class UserController extends Controller
         $allowedToView = $this->getAllowedRolesToView();
         $query->where(function ($q) use ($allowedToView) {
             $q->whereHas('roles', fn ($r) => $r->whereIn('name', $allowedToView));
-            $q->orWhereDoesntHave('roles'); // usuarios sin rol siempre se muestran en la lista de agentes
+            $q->orWhereDoesntHave('roles'); // usuarios sin rol siempre se muestran en la lista de especialistas
         });
 
         if ($request->filled('search')) {
@@ -399,7 +399,7 @@ class UserController extends Controller
 
     public function create()
     {
-        // En Agentes no se muestra el rol "client"; solo se crean agentes (otros roles).
+        // En Agentes no se muestra el rol "client"; solo se crean especialistas (otros roles).
         $allowedRoles = array_values(array_filter($this->getAllowedRolesToCreate(), fn ($n) => $n !== 'client'));
         $noRole = PermissionService::NO_ROLE;
         $canAssignNoRole = in_array($noRole, $allowedRoles, true);
@@ -455,7 +455,7 @@ class UserController extends Controller
             abort(403, 'No tienes permiso para editar este usuario.');
         }
 
-        // En Agentes no se muestra el rol "client"; solo roles de agentes.
+        // En Agentes no se muestra el rol "client"; solo roles de especialistas.
         $allowedRoles = array_values(array_filter($this->getAllowedRolesToCreate(), fn ($n) => $n !== 'client'));
         $noRole = PermissionService::NO_ROLE;
         $canAssignNoRole = in_array($noRole, $allowedRoles, true);
@@ -527,7 +527,7 @@ class UserController extends Controller
                 ->with('error', 'No puedes eliminar tu propio usuario.');
         }
 
-        // Verificar si tiene registros asignados (solo aplica a agentes, no a clientes)
+        // Verificar si tiene registros asignados (solo aplica a especialistas, no a clientes)
         if ($user->assignedRegistrations()->count() > 0) {
             $redirectTo = $user->hasRole('client') ? route('admin.clients.index') : route('admin.agents.index');
             return redirect()->to($redirectTo)

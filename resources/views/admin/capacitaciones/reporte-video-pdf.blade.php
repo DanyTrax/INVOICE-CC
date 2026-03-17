@@ -18,7 +18,7 @@
     <table>
         <thead>
             <tr>
-                <th>Agente</th>
+                <th>Especialista</th>
                 <th>Email</th>
                 <th>Fecha de visualización</th>
             </tr>
@@ -32,7 +32,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3">Ningún agente ha completado este video.</td>
+                    <td colspan="3">Ningún especialista ha completado este video.</td>
                 </tr>
             @endforelse
         </tbody>
