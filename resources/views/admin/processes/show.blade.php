@@ -442,7 +442,8 @@
         </div>
     </div>
 
-    {{-- 2.b Gestión Documental AUTO (solo para requisitos asociados a requerimientos AUTO) --}}
+    {{-- 2.b Gestión Documental AUTO (solo visible cuando el expediente está En Requerimiento / AUTO) --}}
+    @if(isset($lastSubmission) && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
     <div class="bg-white rounded-lg shadow-sm border border-amber-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">
@@ -499,6 +500,7 @@
             </table>
         </div>
     </div>
+    @endif
 
     {{-- 3. Documentos en Drive --}}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
