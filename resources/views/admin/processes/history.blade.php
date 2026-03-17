@@ -66,7 +66,7 @@
             <h2 class="text-sm font-semibold text-gray-700">Expedientes Finalizados</h2>
             <p class="text-xs text-gray-500">
                 Solo se muestran expedientes en estado <strong>Finalizado</strong>. Si edita un expediente y cambia su estado,
-                volverá a aparecer en el <strong>Monitor de Operaciones</strong>.
+                volverá a aparecer en el módulo de <strong>Expedientes</strong>.
             </p>
         </div>
         <div class="overflow-x-auto">

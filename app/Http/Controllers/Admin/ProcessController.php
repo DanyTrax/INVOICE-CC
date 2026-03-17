@@ -149,7 +149,7 @@ class ProcessController extends Controller
     }
 
     /**
-     * Monitor de Operaciones (Master List): listado plano con filtros. Soporta respuesta AJAX (solo filas).
+     * Expedientes (Master List): listado plano con filtros. Soporta respuesta AJAX (solo filas).
      */
     public function masterList(Request $request)
     {

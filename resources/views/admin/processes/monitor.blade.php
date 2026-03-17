@@ -1,8 +1,8 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Monitor de Operaciones - RAMS')
+@section('title', 'Expedientes - RAMS')
 
-@section('page-title', 'Monitor de Operaciones')
+@section('page-title', 'Expedientes')
 
 @section('breadcrumb')
     <li>
@@ -14,7 +14,7 @@
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Monitor de Operaciones</span>
+            <span class="text-sm font-medium text-gray-500">Expedientes</span>
         </div>
     </li>
 @endsection
