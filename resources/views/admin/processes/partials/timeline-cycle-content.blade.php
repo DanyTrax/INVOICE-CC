@@ -75,7 +75,11 @@
         </p>
     </div>
 
-    @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
+    @php
+        $hasRadicadoData = $submission->radicado_invima || $submission->fecha_radicacion || $submission->tracking_id;
+    @endphp
+
+    @if($hasRadicadoData)
         <div class="flex gap-3 items-start">
             <div class="flex-shrink-0 w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center text-white text-xs">
                 <i class="fas fa-stamp"></i>
@@ -87,16 +91,18 @@
                     @if($submission->fecha_radicacion) Fecha: {{ $submission->fecha_radicacion->format('d/m/Y') }} @endif
                     @if($submission->tracking_id) · Llave: {{ $submission->tracking_id }} @endif
                 </p>
-                <p class="mt-2 flex flex-wrap gap-2">
-                    <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
-                            class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-                        <i class="fas fa-gavel mr-1"></i> REQUERIMIENTO AUTO
-                    </button>
-                    <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('aprobado')"
-                            class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                        <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN
-                    </button>
-                </p>
+                @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
+                    <p class="mt-2 flex flex-wrap gap-2">
+                        <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
+                                class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                            <i class="fas fa-gavel mr-1"></i> REQUERIMIENTO AUTO
+                        </button>
+                        <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('aprobado')"
+                                class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN
+                        </button>
+                    </p>
+                @endif
             </div>
         </div>
     @endif
