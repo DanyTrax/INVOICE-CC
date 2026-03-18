@@ -321,19 +321,19 @@
                         {{-- Ciclo 2: se muestra en cuanto el expediente pasa a AUTO (En Requerimiento) --}}
                         @if($roots->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
                             <li class="relative pl-12 pb-4">
-                                <div class="absolute left-0 w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs">
+                                <div class="absolute left-0 w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center text-white text-xs">
                                     <i class="fas fa-layer-group"></i>
                                 </div>
-                                <details class="group border border-amber-200 rounded-lg overflow-hidden bg-amber-50/30" open>
-                                    <summary class="flex items-center gap-2 flex-wrap px-4 py-3 bg-amber-50 hover:bg-amber-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                                <details class="group border border-gray-200 rounded-lg overflow-hidden" open>
+                                    <summary class="flex items-center gap-2 flex-wrap px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                                         <span class="font-semibold text-gray-900">Ciclo 2</span>
                                         <span class="text-sm text-gray-600">Checklist AUTO · Registrar sometimiento</span>
-                                        <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">En curso</span>
+                                        <span class="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">En curso</span>
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>
-                                    <div class="p-4 bg-white border-t border-amber-200 space-y-6">
-                                        <div class="bg-amber-50/50 border border-amber-200 rounded-lg p-4">
-                                            <p class="text-xs font-medium text-amber-800 uppercase tracking-wide">Checklist documental AUTO</p>
+                                    <div class="p-4 bg-white border-t border-gray-200 space-y-6">
+                                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Checklist documental AUTO</p>
                                             @if($autoItems->isNotEmpty())
                                                 <ul class="mt-2 space-y-1 text-sm">
                                                     @foreach($autoItems as $item)
@@ -356,17 +356,17 @@
                                             @else
                                                 <p class="text-sm text-gray-600 mt-2">Use <strong>Gestión Documental AUTO</strong> (más abajo) para agregar y aprobar los documentos; luego registre el sometimiento.</p>
                                             @endif
-                                            <div class="mt-4 pt-3 border-t border-amber-200">
+                                            <div class="mt-4 pt-3 border-t border-gray-200">
                                                 @if($allChecklistApproved)
                                                     <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                                                             class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
-                                                        <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento (Ciclo 2)
+                                                        <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
                                                     </button>
                                                 @else
-                                                    <p class="text-sm text-amber-700">Debe aprobar todos los documentos de Gestión Documental AUTO para poder registrar el sometimiento.</p>
+                                                    <p class="text-sm text-gray-700">Debe aprobar todos los documentos de Gestión Documental AUTO para poder registrar el sometimiento.</p>
                                                     <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                                                             class="mt-2 inline-flex items-center px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-lg cursor-not-allowed" disabled title="Aprobé todos los documentos AUTO primero">
-                                                        <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento (Ciclo 2)
+                                                        <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
                                                     </button>
                                                 @endif
                                             </div>
