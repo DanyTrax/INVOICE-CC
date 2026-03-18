@@ -630,6 +630,36 @@ class ProcessController extends Controller
     }
 
     /**
+     * Quitar los datos de Radicado de un sometimiento y eliminar todo lo que cuelga debajo (eventos e intentos hijos).
+     * El intento vuelve a estado Pendiente y el proceso regresa a su estado previo (Recolección / Sometimiento).
+     */
+    public function destroyRadicado(Submission $submission): RedirectResponse
+    {
+        $process = $submission->process;
+
+        // Eliminar intentos hijos y eventos asociados (ciclos posteriores, AUTO, Resolución, etc.)
+        foreach ($submission->children as $child) {
+            $this->deleteSubmissionBranch($child);
+        }
+        // Eliminar eventos regulatorios ligados a este intento (AUTO, Resolución, etc.)
+        $submission->regulatoryEvents()->delete();
+
+        // Limpiar campos de radicado y volver a Pendiente
+        $submission->update([
+            'radicado_invima' => null,
+            'tracking_id' => null,
+            'fecha_radicacion' => null,
+            'status' => Submission::STATUS_PENDIENTE,
+        ]);
+
+        $this->recalculateProcessStatus($process);
+
+        return redirect()
+            ->route('admin.processes.show', $process)
+            ->with('success', 'Radicado y eventos posteriores eliminados. El sometimiento volvió a estado Pendiente.');
+    }
+
+    /**
      * Recalcula el estado del proceso según el último sometimiento restante.
      */
     private function recalculateProcessStatus(Process $process): void

@@ -119,4 +119,50 @@ class RegulatoryEventController extends Controller
             ->route('admin.processes.show', $process)
             ->with('success', 'Evento actualizado.');
     }
+
+    /**
+     * Eliminar un evento regulatorio.
+     * Si es una Resolución, el expediente deja de estar Finalizado y vuelve a Radicado.
+     */
+    public function destroy(RegulatoryEvent $regulatoryEvent): RedirectResponse
+    {
+        $submission = $regulatoryEvent->submission;
+        $process = $submission->process;
+
+        if ($regulatoryEvent->event_type === RegulatoryEvent::EVENT_TYPE_RESOLUCION) {
+            // Borrar la resolución y devolver el intento / proceso a estado Radicado.
+            $regulatoryEvent->delete();
+            $submission->update([
+                'status' => Submission::STATUS_RADICADO,
+            ]);
+            $process->update([
+                'status' => Process::STATUS_RADICADO,
+            ]);
+
+            return redirect()
+                ->route('admin.processes.show', $process)
+                ->with('success', 'Resolución eliminada. El expediente volvió a estado Radicado.');
+        }
+
+        // Otros eventos (por ahora solo AUTO) simplemente se eliminan.
+        $regulatoryEvent->delete();
+
+        // Recalcular estado del proceso por si era el único evento que marcaba En Requerimiento.
+        $last = $process->submissions()->orderByDesc('id')->first();
+        if ($last) {
+            $status = match ($last->status) {
+                Submission::STATUS_APROBADO => Process::STATUS_FINALIZADO,
+                Submission::STATUS_EN_REQUERIMIENTO => Process::STATUS_EN_REQUERIMIENTO,
+                Submission::STATUS_RADICADO => Process::STATUS_RADICADO,
+                default => Process::STATUS_RECOLECCION,
+            };
+            $process->update(['status' => $status]);
+        } else {
+            $process->update(['status' => Process::STATUS_RECOLECCION]);
+        }
+
+        return redirect()
+            ->route('admin.processes.show', $process)
+            ->with('success', 'Evento eliminado.');
+    }
 }

@@ -85,22 +85,38 @@
                 <i class="fas fa-stamp"></i>
             </div>
             <div class="flex-1 border border-teal-200 bg-teal-50 rounded-lg p-3 text-sm">
-                <p class="text-xs font-medium text-teal-700 uppercase">Radicado</p>
-                <p class="font-medium text-gray-900">Radicado: {{ $submission->radicado_invima ?? '—' }}</p>
-                <p class="text-gray-600 mt-1">
-                    @if($submission->fecha_radicacion) Fecha: {{ $submission->fecha_radicacion->format('d/m/Y') }} @endif
-                    @if($submission->tracking_id) · Llave: {{ $submission->tracking_id }} @endif
-                </p>
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <p class="text-xs font-medium text-teal-700 uppercase">Radicado</p>
+                        <p class="font-medium text-gray-900">Radicado: {{ $submission->radicado_invima ?? '—' }}</p>
+                        <p class="text-gray-600 mt-1">
+                            @if($submission->fecha_radicacion) Fecha: {{ $submission->fecha_radicacion->format('d/m/Y') }} @endif
+                            @if($submission->tracking_id) · Detalle: {{ $submission->tracking_id }} @endif
+                        </p>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
+                        Guardado:
+                        {{ optional($submission->fecha_radicacion ?? $submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
+                    </p>
+                </div>
                 @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
                     <p class="mt-2 flex flex-wrap gap-2">
                         <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
                                 class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-                            <i class="fas fa-gavel mr-1"></i> REQUERIMIENTO AUTO
+                            <i class="fas fa-gavel mr-1"></i> AUTO
                         </button>
                         <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('aprobado')"
                                 class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
                             <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN
                         </button>
+                        <form action="{{ route('admin.submissions.destroy-radicado', $submission) }}" method="post" class="inline-flex ml-auto"
+                              onsubmit="return confirm('¿Quitar Radicado y eliminar AUTO / Resolución y ciclos posteriores? Esta acción no se puede deshacer.');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-xs px-3 py-1.5 text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+                                <i class="fas fa-trash-alt mr-1"></i> Quitar Radicado
+                            </button>
+                        </form>
                     </p>
                 @endif
             </div>
@@ -133,14 +149,22 @@
                 <i class="fas {{ $eventIcon }}"></i>
             </div>
             <div class="flex-1 border {{ $eventBg }} rounded-lg p-3 text-sm">
-                <p class="text-xs font-medium text-gray-600 uppercase">{{ $event->event_type }}</p>
-                <p class="font-medium text-gray-900">{{ $event->document_number ?? 'Sin número' }}</p>
-                <p class="text-gray-600 mt-1">
-                    @if($event->notification_date) Notificación: {{ $event->notification_date->format('d/m/Y') }} @endif
-                    @if($event->due_date) · Vence: {{ $event->due_date->format('d/m/Y') }} @endif
-                    @if($event->resolution_key) · Llave: {{ $event->resolution_key }} @endif
-                </p>
-                <p class="mt-2">
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <p class="text-xs font-medium text-gray-600 uppercase">{{ $event->event_type }}</p>
+                        <p class="font-medium text-gray-900">{{ $event->document_number ?? 'Sin número' }}</p>
+                        <p class="text-gray-600 mt-1">
+                            @if($event->notification_date) Notificación: {{ $event->notification_date->format('d/m/Y') }} @endif
+                            @if($event->due_date) · Vence: {{ $event->due_date->format('d/m/Y') }} @endif
+                            @if($event->resolution_key) · Detalle: {{ $event->resolution_key }} @endif
+                        </p>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
+                        Guardado:
+                        {{ optional($event->created_at ?? $event->event_date ?? $event->notification_date)->format('d/m/Y H:i') }}
+                    </p>
+                </div>
+                <p class="mt-2 flex flex-wrap gap-2">
                     <button type="button" class="js-edit-event text-xs px-2 py-1 text-teal-600 hover:bg-teal-50 rounded border border-teal-200"
                             data-url="{{ route('admin.regulatory-events.update', $event) }}"
                             data-event-type="{{ $event->event_type }}"
@@ -150,6 +174,14 @@
                             data-resolution-key="{{ $event->resolution_key ?? '' }}">
                         <i class="fas fa-edit mr-1"></i> Editar
                     </button>
+                    <form action="{{ route('admin.regulatory-events.destroy', $event) }}" method="post" class="inline-flex"
+                          onsubmit="return confirm('¿Eliminar este evento y devolver el proceso a su estado anterior si aplica? Esta acción no se puede deshacer.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-xs px-2 py-1 text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+                            <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                        </button>
+                    </form>
                 </p>
             </div>
         </div>

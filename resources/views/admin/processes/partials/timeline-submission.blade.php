@@ -34,24 +34,30 @@
                 → Esperando respuesta INVIMA
             @endif
         </p>
-        <p class="text-sm text-gray-600 mt-1">
-            {{ $submission->submission_code ?? $submission->radicado_invima ?? 'Sin código' }}
-            @if($submission->tracking_id) · Seguimiento: {{ $submission->tracking_id }} @endif
-            @if($submission->quote)
-                · Cotización: {{ $submission->quote->consecutive ?? $submission->quote->id }}
-            @endif
-            @if($submission->quoteItem)
-                · Ítem: #{{ $submission->quoteItem->item_position }} ({{ $submission->quoteItem->serviceType->name ?? 'Servicio' }})
-            @endif
-            · <span class="px-2 py-0.5 rounded text-xs font-medium
-                @if($submission->status === 'Aprobado') bg-green-100 text-green-800
-                @elseif($submission->status === 'Rechazado') bg-red-100 text-red-800
-                @elseif($submission->status === \App\Models\Submission::STATUS_RADICADO) bg-teal-100 text-teal-800
-                @elseif($submission->status === 'En Requerimiento') bg-yellow-100 text-yellow-800
-                @else bg-blue-100 text-blue-800
+        <div class="flex items-start justify-between gap-2 mt-1">
+            <p class="text-sm text-gray-600">
+                {{ $submission->submission_code ?? $submission->radicado_invima ?? 'Sin código' }}
+                @if($submission->tracking_id) · Seguimiento: {{ $submission->tracking_id }} @endif
+                @if($submission->quote)
+                    · Cotización: {{ $submission->quote->consecutive ?? $submission->quote->id }}
                 @endif
-            ">{{ $submission->status }}</span>
-        </p>
+                @if($submission->quoteItem)
+                    · Ítem: #{{ $submission->quoteItem->item_position }} ({{ $submission->quoteItem->serviceType->name ?? 'Servicio' }})
+                @endif
+                · <span class="px-2 py-0.5 rounded text-xs font-medium
+                    @if($submission->status === 'Aprobado') bg-green-100 text-green-800
+                    @elseif($submission->status === 'Rechazado') bg-red-100 text-red-800
+                    @elseif($submission->status === \App\Models\Submission::STATUS_RADICADO) bg-teal-100 text-teal-800
+                    @elseif($submission->status === 'En Requerimiento') bg-yellow-100 text-yellow-800
+                    @else bg-blue-100 text-blue-800
+                    @endif
+                ">{{ $submission->status }}</span>
+            </p>
+            <p class="text-[11px] text-gray-500 whitespace-nowrap">
+                Guardado:
+                {{ optional($submission->submission_date ?? $submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
+            </p>
+        </div>
         @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
             <p class="mt-2 flex flex-wrap gap-2">
                 <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('radicado')"
