@@ -25,10 +25,10 @@
                 @else
                     sin fecha
                 @endif
-                @if(!$radicadoAt)
-                    → Pendiente de radicación
-                @else
+                @if($radicadoAt)
                     → Radicado: {{ $radicadoAt }}
+                @else
+                    → Pendiente de radicación
                 @endif
             </p>
             <p class="text-[11px] text-gray-500 whitespace-nowrap mt-1">
@@ -36,27 +36,23 @@
                 {{ optional($submission->created_at)->format('d/m/Y H:i') }}
             </p>
         </div>
-        <div class="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
-            <p>
-                <span class="font-medium text-gray-800">Estado:</span>
-                <span class="ml-1">{{ $submission->status }}</span>
-            </p>
-            <p>
-                <span class="font-medium text-gray-800">Fecha de sometimiento:</span>
-                <span class="ml-1">
-                    @if($submission->submission_date)
-                        {{ $submission->submission_date->format('d/m/Y H:i') }}
-                    @else
-                        —
-                    @endif
-                </span>
-            </p>
-            <p>
-                <span class="font-medium text-gray-800">Código de sometimiento:</span>
-                <span class="ml-1">{{ $submission->submission_code ?? '—' }}</span>
-            </p>
-        </div>
-        <div class="mt-3 pt-2 border-t border-blue-100 flex items-center justify-between gap-3">
+        <p class="text-sm text-gray-700 mt-1">
+            <span class="font-medium text-gray-800">Código de sometimiento:</span>
+            <span class="ml-1">{{ $submission->submission_code ?? '—' }}</span>
+        </p>
+        <p class="text-sm text-gray-700 mt-1">
+            <span class="font-medium text-gray-800">Fecha de sometimiento:</span>
+            <span class="ml-1">
+                @if($submission->submission_date)
+                    {{ $submission->submission_date->format('d/m/Y H:i') }}
+                @else
+                    —
+                @endif
+            </span>
+            · <span class="font-medium text-gray-800">Estado:</span>
+            <span class="ml-1">{{ $submission->status }}</span>
+        </p>
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
                 @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
                     <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('radicado')"
@@ -91,6 +87,12 @@
                 </form>
             </div>
         </div>
+        @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
+            <p class="text-xs text-gray-500 mt-1">
+                Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones AUTO y RESOLUCIÓN.
+                Rechazar: indique la observación; podrá crear más intentos en el mismo ciclo.
+            </p>
+        @endif
     </div>
 
     @if($submission->status === \App\Models\Submission::STATUS_RADICADO)

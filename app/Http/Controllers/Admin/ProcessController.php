@@ -549,9 +549,11 @@ class ProcessController extends Controller
             'radicado_invima' => 'nullable|string|max:64',
             'tracking_id' => 'nullable|string|max:64',
             'fecha_radicacion' => 'nullable|date',
-            'status' => 'required|string|in:' . implode(',', Submission::statuses()),
+            // Si no se envía, se mantiene el estado actual del intento.
+            'status' => 'sometimes|string|in:' . implode(',', Submission::statuses()),
             'rejection_observation' => 'nullable|string|max:2000',
         ]);
+        // Solo actualizamos los campos presentes en la petición.
         $submission->update($validated);
         return redirect()
             ->route('admin.processes.show', $submission->process)
