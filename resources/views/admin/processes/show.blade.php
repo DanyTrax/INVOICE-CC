@@ -482,8 +482,11 @@
         </div>
     </div>
 
-    {{-- 2.b Gestión Documental AUTO (solo visible cuando el expediente está En Requerimiento / AUTO) --}}
-    @if(isset($lastSubmission) && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
+    {{-- 2.b Gestión Documental AUTO
+         - Visible mientras haya documentos AUTO en el expediente
+         - O cuando el último sometimiento está En Requerimiento (AUTO)
+    --}}
+    @if(($autoItems ?? collect())->isNotEmpty() || (isset($lastSubmission) && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO))
     <div class="bg-white rounded-lg shadow-sm border border-amber-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">
