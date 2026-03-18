@@ -17,25 +17,22 @@
                 (En curso)
             @endif
         </p>
-        <div class="flex items-start justify-between gap-2">
-            <p class="font-semibold text-gray-900">
-                Sometimiento:
-                @if($sometidoAt)
-                    {{ $sometidoAt }}
-                @else
-                    sin fecha
-                @endif
-                @if($radicadoAt)
-                    → Radicado: {{ $radicadoAt }}
-                @else
-                    → Pendiente de radicación
-                @endif
-            </p>
-            <p class="text-[11px] text-gray-500 whitespace-nowrap mt-1">
-                Guardado:
-                {{ optional($submission->created_at)->format('d/m/Y H:i') }}
-            </p>
-        </div>
+        <p class="font-semibold text-gray-900">
+            Sometimiento:
+            @if($sometidoAt)
+                {{ $sometidoAt }}
+            @else
+                sin fecha
+            @endif
+            @if($radicadoAt)
+                → Radicado: {{ $radicadoAt }}
+            @else
+                → Pendiente de radicación
+            @endif
+            · <span class="text-xs font-normal text-gray-500">
+                Guardado: {{ optional($submission->created_at)->format('d/m/Y H:i') }}
+            </span>
+        </p>
         <p class="text-sm text-gray-700 mt-1">
             <span class="font-medium text-gray-800">Código de sometimiento:</span>
             <span class="ml-1">{{ $submission->submission_code ?? '—' }}</span>
