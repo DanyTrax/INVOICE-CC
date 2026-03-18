@@ -318,8 +318,66 @@
                             </li>
                         @endif
 
-                        {{-- Botón Registrar Sometimiento / Crear Nuevo Intento: debajo del último ciclo cuando hay rechazo o requerimiento --}}
-                        @if(($canRegisterSubmission || $canCreateNewAttempt) && $roots->isNotEmpty())
+                        {{-- Ciclo 2: se muestra en cuanto el expediente pasa a AUTO (En Requerimiento) --}}
+                        @if($roots->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
+                            <li class="relative pl-12 pb-4">
+                                <div class="absolute left-0 w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                                <details class="group border border-amber-200 rounded-lg overflow-hidden bg-amber-50/30" open>
+                                    <summary class="flex items-center gap-2 flex-wrap px-4 py-3 bg-amber-50 hover:bg-amber-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                                        <span class="font-semibold text-gray-900">Ciclo 2</span>
+                                        <span class="text-sm text-gray-600">Checklist AUTO · Registrar sometimiento</span>
+                                        <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">En curso</span>
+                                        <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
+                                    </summary>
+                                    <div class="p-4 bg-white border-t border-amber-200 space-y-6">
+                                        <div class="bg-amber-50/50 border border-amber-200 rounded-lg p-4">
+                                            <p class="text-xs font-medium text-amber-800 uppercase tracking-wide">Checklist documental AUTO</p>
+                                            @if($autoItems->isNotEmpty())
+                                                <ul class="mt-2 space-y-1 text-sm">
+                                                    @foreach($autoItems as $item)
+                                                        @php
+                                                            $itemStyle = match($item->status) {
+                                                                'Aprobado' => 'text-green-700',
+                                                                'Traducción' => 'text-yellow-700',
+                                                                'Recibido' => 'text-blue-700',
+                                                                default => 'text-gray-700',
+                                                            };
+                                                        @endphp
+                                                        <li class="flex items-center gap-2 {{ $itemStyle }}">
+                                                            <i class="fas fa-{{ $item->status === 'Aprobado' ? 'check-circle' : 'circle' }} text-xs"></i>
+                                                            {{ $item->document_name }}
+                                                            <span class="text-xs">({{ $item->status }})</span>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                                <p class="text-sm text-gray-600 mt-3">Cuando todos los documentos AUTO estén en <strong>Aprobado</strong>, registre el sometimiento del Ciclo 2.</p>
+                                            @else
+                                                <p class="text-sm text-gray-600 mt-2">Use <strong>Gestión Documental AUTO</strong> (más abajo) para agregar y aprobar los documentos; luego registre el sometimiento.</p>
+                                            @endif
+                                            <div class="mt-4 pt-3 border-t border-amber-200">
+                                                @if($allChecklistApproved)
+                                                    <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                                                            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                                        <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento (Ciclo 2)
+                                                    </button>
+                                                @else
+                                                    <p class="text-sm text-amber-700">Debe aprobar todos los documentos de Gestión Documental AUTO para poder registrar el sometimiento.</p>
+                                                    <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                                                            class="mt-2 inline-flex items-center px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-lg cursor-not-allowed" disabled title="Aprobé todos los documentos AUTO primero">
+                                                        <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento (Ciclo 2)
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </li>
+                        @endif
+
+                        {{-- Botón Registrar Sometimiento / Crear Nuevo Intento: solo cuando NO estamos en AUTO (en AUTO ya se muestra Ciclo 2 arriba) --}}
+                        @if(($canRegisterSubmission || $canCreateNewAttempt) && $roots->isNotEmpty() && (!isset($lastSubmission) || $lastSubmission->status !== \App\Models\Submission::STATUS_EN_REQUERIMIENTO))
                             <li class="relative pl-12 pb-4">
                                 <div class="absolute left-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
                                     <i class="fas fa-paper-plane"></i>
@@ -332,29 +390,11 @@
                                             <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento (mismo ciclo)
                                         </button>
                                     @else
-                                        @if($lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO && $allChecklistApproved)
-                                            <p id="auto-checklist-warning" class="text-sm text-amber-700 mb-3">
-                                                El expediente quedó en estado <strong>En Requerimiento (AUTO)</strong>. Revise que la documentación siga vigente y completa.
-                                                Si no hace falta cargar nada más y todos los documentos están en <strong>Aprobado</strong>, haga clic en <strong>Aceptar</strong> para continuar con un nuevo sometimiento en este expediente.
-                                            </p>
-                                            <div class="flex flex-wrap gap-2">
-                                                <button type="button" id="btn-auto-accept-checklist"
-                                                        class="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700">
-                                                    <i class="fas fa-check mr-2"></i> Aceptar
-                                                </button>
-                                                <button type="button" id="btn-register-submission-after-auto"
-                                                        onclick="document.getElementById('modal-submission').classList.remove('hidden')"
-                                                        class="hidden inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
-                                                    <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
-                                                </button>
-                                            </div>
-                                        @else
-                                            <p class="text-sm text-gray-700 mb-3">Registre un nuevo sometimiento para iniciar un ciclo o continuar tras un requerimiento AUTO.</p>
-                                            <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
-                                                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
-                                                <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
-                                            </button>
-                                        @endif
+                                        <p class="text-sm text-gray-700 mb-3">Registre un nuevo sometimiento para iniciar este ciclo.</p>
+                                        <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
+                                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                            <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
+                                        </button>
                                     @endif
                                 </div>
                             </li>
