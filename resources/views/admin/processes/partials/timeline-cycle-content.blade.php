@@ -6,73 +6,82 @@
 <div class="space-y-4">
     <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
         <p class="font-semibold text-gray-900">
+            Sometimiento:
             @if($sometidoAt)
-                Sometimiento: {{ $sometidoAt }}
+                {{ $sometidoAt }}
             @else
-                Sometimiento sin fecha
+                sin fecha
             @endif
             @if($radicadoAt)
                 → Radicado: {{ $radicadoAt }}
             @else
                 → Pendiente de radicación
             @endif
-            @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && !$submission->regulatoryEvents->isEmpty())
-                → Esperando respuesta...
-            @elseif($submission->status === \App\Models\Submission::STATUS_PENDIENTE)
-                → Esperando respuesta INVIMA
-            @endif
+            · <span class="text-xs font-normal text-gray-500">
+                Guardado: {{ optional($submission->created_at)->format('d/m/Y H:i') }}
+            </span>
         </p>
-        <p class="text-sm text-gray-600 mt-1">
-            {{ $submission->submission_code ?? $submission->radicado_invima ?? 'Sin código' }}
-            @if($submission->tracking_id) · Seguimiento: {{ $submission->tracking_id }} @endif
-            @if($submission->quote)
-                · <a href="{{ route('admin.quotes.show', $submission->quote) }}" class="text-teal-600 hover:underline">Cotización: {{ $submission->quote->consecutive ?? $submission->quote->id }}</a>
-            @endif
-            @if($submission->quoteItem)
-                · Ítem: #{{ $submission->quoteItem->item_position }} ({{ $submission->quoteItem->serviceType->name ?? 'Servicio' }})
-            @endif
-            · <span class="px-2 py-0.5 rounded text-xs font-medium
-                @if($submission->status === 'Aprobado') bg-green-100 text-green-800
-                @elseif($submission->status === 'Rechazado') bg-red-100 text-red-800
-                @elseif($submission->status === \App\Models\Submission::STATUS_RADICADO) bg-teal-100 text-teal-800
-                @elseif($submission->status === 'En Requerimiento') bg-yellow-100 text-yellow-800
-                @else bg-blue-100 text-blue-800
+
+        <p class="text-sm text-gray-700 mt-1">
+            <span class="font-medium text-gray-800">Código de sometimiento:</span>
+            <span class="ml-1">{{ $submission->submission_code ?? '—' }}</span>
+        </p>
+
+        <p class="text-sm text-gray-700 mt-1">
+            <span class="font-medium text-gray-800">Fecha de sometimiento:</span>
+            <span class="ml-1">
+                @if($submission->submission_date)
+                    {{ $submission->submission_date->format('d/m/Y H:i') }}
+                @else
+                    —
                 @endif
-            ">{{ $submission->status }}</span>
+            </span>
+            · <span class="font-medium text-gray-800">Estado:</span>
+            <span class="ml-1">{{ $submission->status }}</span>
         </p>
+
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap gap-2">
+                @if(isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id && $submission->status === \App\Models\Submission::STATUS_PENDIENTE)
+                    <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('radicado')"
+                            class="text-sm px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                        Aprobar
+                    </button>
+                    <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('rechazo')"
+                            class="text-sm px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                        Rechazar
+                    </button>
+                @endif
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" class="js-edit-submission text-sm px-2.5 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
+                        data-url="{{ route('admin.submissions.update', $submission) }}"
+                        data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
+                        data-submission-code="{{ $submission->submission_code ?? '' }}"
+                        data-radicado-invima="{{ $submission->radicado_invima ?? '' }}"
+                        data-tracking-id="{{ $submission->tracking_id ?? '' }}"
+                        data-fecha-radicacion="{{ $submission->fecha_radicacion?->format('Y-m-d') }}"
+                        data-status="{{ $submission->status }}"
+                        data-rejection-observation="{{ $submission->rejection_observation ?? '' }}"
+                        title="Editar sometimiento">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline-flex" onsubmit="return confirm('¿Eliminar este ciclo y toda la línea hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="whitespace-nowrap text-sm px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-red-200" title="Eliminar ciclo y línea hacia abajo">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
         @if(isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id && $submission->status === \App\Models\Submission::STATUS_PENDIENTE)
-            <p class="mt-2 flex flex-wrap gap-2">
-                <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('radicado')"
-                        class="text-sm px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                    <i class="fas fa-check mr-1"></i> Aprobar
-                </button>
-                <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('rechazo')"
-                        class="text-sm px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                    <i class="fas fa-times mr-1"></i> Rechazar
-                </button>
+            <p class="text-xs text-gray-500 mt-1">
+                Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones AUTO y RESOLUCIÓN.
+                Rechazar: indique la observación; podrá crear más intentos en el mismo ciclo.
             </p>
-            <p class="text-xs text-gray-500 mt-1">Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones REQUERIMIENTO AUTO y RESOLUCIÓN. Rechazar: indicar observación; puede crear más intentos en el mismo ciclo.</p>
         @endif
-        <p class="mt-2 pt-2 border-t border-blue-100 flex flex-wrap gap-2 items-center">
-            <button type="button" class="js-edit-submission text-sm px-2.5 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
-                    data-url="{{ route('admin.submissions.update', $submission) }}"
-                    data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
-                    data-submission-code="{{ $submission->submission_code ?? '' }}"
-                    data-radicado-invima="{{ $submission->radicado_invima ?? '' }}"
-                    data-tracking-id="{{ $submission->tracking_id ?? '' }}"
-                    data-fecha-radicacion="{{ $submission->fecha_radicacion?->format('Y-m-d') }}"
-                    data-status="{{ $submission->status }}"
-                    data-rejection-observation="{{ $submission->rejection_observation ?? '' }}">
-                <i class="fas fa-edit"></i>
-            </button>
-            <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline-flex" onsubmit="return confirm('¿Eliminar este ciclo y toda la línea hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="whitespace-nowrap text-sm px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-red-200" title="Eliminar ciclo y línea hacia abajo">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </form>
-        </p>
     </div>
 
     @php
