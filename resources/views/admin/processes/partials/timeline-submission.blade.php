@@ -72,7 +72,7 @@
             <p class="text-xs text-gray-500 mt-1">Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones REQUERIMIENTO AUTO y RESOLUCIÓN. Rechazar: indicar observación; puede crear más intentos en el mismo ciclo.</p>
         @endif
         <p class="mt-2 pt-2 border-t border-blue-100 flex flex-nowrap gap-2 items-center">
-            <button type="button" class="js-edit-submission flex-shrink-0 text-sm px-3 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
+            <button type="button" class="js-edit-submission flex-shrink-0 text-sm px-2.5 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
                     data-url="{{ route('admin.submissions.update', $submission) }}"
                     data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
                     data-submission-code="{{ $submission->submission_code ?? '' }}"
@@ -81,13 +81,13 @@
                     data-fecha-radicacion="{{ $submission->fecha_radicacion?->format('Y-m-d') }}"
                     data-status="{{ $submission->status }}"
                     data-rejection-observation="{{ $submission->rejection_observation ?? '' }}">
-                <i class="fas fa-edit mr-1"></i> Editar
+                <i class="fas fa-edit"></i>
             </button>
             <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline-flex flex-shrink-0" onsubmit="return confirm('¿Eliminar este intento y toda la línea de tiempo hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="whitespace-nowrap text-sm px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-red-200">
-                    <i class="fas fa-trash-alt mr-1"></i> Eliminar intento y línea hacia abajo
+                <button type="submit" class="whitespace-nowrap text-sm px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-red-200" title="Eliminar intento y línea hacia abajo">
+                    <i class="fas fa-trash-alt"></i>
                 </button>
             </form>
         </p>

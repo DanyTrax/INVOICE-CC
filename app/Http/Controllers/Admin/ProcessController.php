@@ -411,8 +411,8 @@ class ProcessController extends Controller
             $validated = $request->validate([
                 'radicado_invima' => 'required|string|max:64',
                 'fecha_radicacion' => 'required|date',
-                // Detalle / observación opcional del radicado, separado de la llave de Resolución.
-                'tracking_id' => 'nullable|string|max:64',
+                // Llave / campo de registro OBLIGATORIO para el radicado.
+                'tracking_id' => 'required|string|max:64',
             ]);
             $submission->update([
                 'status' => Submission::STATUS_RADICADO,

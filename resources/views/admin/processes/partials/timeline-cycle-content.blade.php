@@ -54,7 +54,7 @@
             <p class="text-xs text-gray-500 mt-1">Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones REQUERIMIENTO AUTO y RESOLUCIÓN. Rechazar: indicar observación; puede crear más intentos en el mismo ciclo.</p>
         @endif
         <p class="mt-2 pt-2 border-t border-blue-100 flex flex-wrap gap-2 items-center">
-            <button type="button" class="js-edit-submission text-sm px-3 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
+            <button type="button" class="js-edit-submission text-sm px-2.5 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
                     data-url="{{ route('admin.submissions.update', $submission) }}"
                     data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
                     data-submission-code="{{ $submission->submission_code ?? '' }}"
@@ -63,13 +63,13 @@
                     data-fecha-radicacion="{{ $submission->fecha_radicacion?->format('Y-m-d') }}"
                     data-status="{{ $submission->status }}"
                     data-rejection-observation="{{ $submission->rejection_observation ?? '' }}">
-                <i class="fas fa-edit mr-1"></i> Editar
+                <i class="fas fa-edit"></i>
             </button>
             <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline-flex" onsubmit="return confirm('¿Eliminar este ciclo y toda la línea hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="whitespace-nowrap text-sm px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-red-200">
-                    <i class="fas fa-trash-alt mr-1"></i> Eliminar ciclo y línea hacia abajo
+                <button type="submit" class="whitespace-nowrap text-sm px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-red-200" title="Eliminar ciclo y línea hacia abajo">
+                    <i class="fas fa-trash-alt"></i>
                 </button>
             </form>
         </p>
@@ -113,8 +113,8 @@
                               onsubmit="return confirm('¿Quitar Radicado y eliminar AUTO / Resolución y ciclos posteriores? Esta acción no se puede deshacer.');">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="text-xs px-3 py-1.5 text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
-                                <i class="fas fa-trash-alt mr-1"></i> Quitar Radicado
+                        <button type="submit" class="text-xs px-2.5 py-1.5 text-red-600 border border-red-200 rounded-lg hover:bg-red-50" title="Quitar Radicado">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                         </form>
                     </p>
@@ -165,21 +165,21 @@
                     </p>
                 </div>
                 <p class="mt-2 flex flex-wrap gap-2">
-                    <button type="button" class="js-edit-event text-xs px-2 py-1 text-teal-600 hover:bg-teal-50 rounded border border-teal-200"
+                    <button type="button" class="js-edit-event text-xs px-2.5 py-1 text-teal-600 hover:bg-teal-50 rounded border border-teal-200"
                             data-url="{{ route('admin.regulatory-events.update', $event) }}"
                             data-event-type="{{ $event->event_type }}"
                             data-document-number="{{ $event->document_number ?? '' }}"
                             data-notification-date="{{ $event->notification_date?->format('Y-m-d') }}"
                             data-event-date="{{ $event->event_date?->format('Y-m-d') }}"
                             data-resolution-key="{{ $event->resolution_key ?? '' }}">
-                        <i class="fas fa-edit mr-1"></i> Editar
+                        <i class="fas fa-edit"></i>
                     </button>
                     <form action="{{ route('admin.regulatory-events.destroy', $event) }}" method="post" class="inline-flex"
                           onsubmit="return confirm('¿Eliminar este evento y devolver el proceso a su estado anterior si aplica? Esta acción no se puede deshacer.');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-xs px-2 py-1 text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
-                            <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                        <button type="submit" class="text-xs px-2.5 py-1 text-red-600 border border-red-200 rounded-lg hover:bg-red-50" title="Eliminar evento">
+                            <i class="fas fa-trash-alt"></i>
                         </button>
                     </form>
                 </p>

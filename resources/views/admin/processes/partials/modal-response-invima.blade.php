@@ -35,8 +35,8 @@
                             <input type="date" name="fecha_radicacion" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" value="{{ now()->format('Y-m-d') }}">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Detalle / observación (opcional)</label>
-                            <input type="text" name="tracking_id" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Detalle u observación sobre el radicado">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Llave / campo de registro <span class="text-red-500">*</span></label>
+                            <input type="text" name="tracking_id" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Llave o referencia del radicado">
                         </div>
                     </div>
 
@@ -140,7 +140,7 @@
             if (typeInput.value === 'radicado') {
                 var rad = form.querySelector('input[name="radicado_invima"]');
                 var fec = form.querySelector('input[name="fecha_radicacion"]');
-                var key = form.querySelector('input[name="resolution_key"]');
+                var key = form.querySelector('input[name="tracking_id"]');
                 if (!rad || !rad.value.trim() || !fec || !fec.value.trim() || !key || !key.value.trim()) {
                     e.preventDefault();
                     alert('Complete número de radicado, fecha y llave/campo de registro.');

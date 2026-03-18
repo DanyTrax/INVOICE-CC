@@ -717,32 +717,8 @@
                             <input type="datetime-local" name="submission_date" id="edit_submission_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">ID de sometimiento</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Código de sometimiento</label>
                             <input type="text" name="submission_code" id="edit_submission_code" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Radicado</label>
-                            <input type="text" name="radicado_invima" id="edit_radicado_invima" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Llave / Seguimiento</label>
-                            <input type="text" name="tracking_id" id="edit_tracking_id" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de radicación</label>
-                            <input type="date" name="fecha_radicacion" id="edit_fecha_radicacion" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                            <select name="status" id="edit_status" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                                @foreach(\App\Models\Submission::statuses() as $s)
-                                    <option value="{{ $s }}">{{ $s }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Observación rechazo</label>
-                            <textarea name="rejection_observation" id="edit_rejection_observation" rows="2" maxlength="2000" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
                         </div>
                     </div>
                     <div class="flex justify-end gap-2">
