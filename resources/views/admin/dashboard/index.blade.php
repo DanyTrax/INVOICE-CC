@@ -40,7 +40,7 @@
             icon="paper-plane"
             color="teal"
             :link="route('admin.processes.monitor', ['step' => \App\Models\Process::STEP_SOMETIMIENTO])"
-            subtitle="Sometido, pendiente de radicado INVIMA"
+            subtitle="Sometimiento, pendiente de radicado INVIMA"
         />
 
         <x-widgets.stats-card 

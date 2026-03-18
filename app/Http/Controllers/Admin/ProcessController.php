@@ -608,6 +608,13 @@ class ProcessController extends Controller
     {
         $process = $submission->process;
 
+        // Si se elimina un sometimiento (por ejemplo el del Ciclo 1 que ya tenía AUTO),
+        // también limpiamos la Gestión Documental AUTO asociada al expediente, ya que
+        // deja de aplicar ese requerimiento.
+        ChecklistItem::where('process_id', $process->id)
+            ->where('is_for_auto', true)
+            ->delete();
+
         $this->deleteSubmissionBranch($submission);
 
         $this->recalculateProcessStatus($process);

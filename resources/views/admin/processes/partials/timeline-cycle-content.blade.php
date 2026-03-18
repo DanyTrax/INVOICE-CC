@@ -7,7 +7,7 @@
     <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
         <p class="font-semibold text-gray-900">
             @if($sometidoAt)
-                Sometido: {{ $sometidoAt }}
+                Sometimiento: {{ $sometidoAt }}
             @else
                 Sometimiento sin fecha
             @endif

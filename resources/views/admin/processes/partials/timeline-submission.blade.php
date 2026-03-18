@@ -19,7 +19,7 @@
         </p>
         <p class="font-semibold text-gray-900">
             @if($sometidoAt)
-                Sometido: {{ $sometidoAt }}
+                Sometimiento: {{ $sometidoAt }}
             @else
                 Sometimiento sin fecha
             @endif
