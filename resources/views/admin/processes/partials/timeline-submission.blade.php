@@ -18,71 +18,79 @@
             @endif
         </p>
         <div class="flex items-start justify-between gap-2">
-            <div>
-                <p class="font-semibold text-gray-900">
-                    @if($sometidoAt)
-                        Fecha de sometimiento: {{ $sometidoAt }}
-                    @else
-                        Sometimiento sin fecha
-                    @endif
-                </p>
-                <p class="text-sm text-gray-600 mt-1">
-                    Código de sometimiento:
-                    <span class="font-medium text-gray-900">
-                        {{ $submission->submission_code ?? 'Sin código' }}
-                    </span>
-                </p>
-                <p class="text-sm text-gray-600 mt-1">
-                    @if($radicadoAt)
-                        Estado: <span class="font-medium">Radicado ({{ $radicadoAt }})</span>
-                    @else
-                        Estado: <span class="font-medium">Pendiente de radicación</span>
-                    @endif
-                    @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && !$submission->regulatoryEvents->isEmpty())
-                        · Esperando respuesta...
-                    @elseif($submission->status === \App\Models\Submission::STATUS_PENDIENTE)
-                        · Esperando respuesta INVIMA
-                    @endif
-                </p>
-            </div>
+            <p class="font-semibold text-gray-900">
+                Sometimiento:
+                @if($sometidoAt)
+                    {{ $sometidoAt }}
+                @else
+                    sin fecha
+                @endif
+                @if(!$radicadoAt)
+                    → Pendiente de radicación
+                @else
+                    → Radicado: {{ $radicadoAt }}
+                @endif
+            </p>
             <p class="text-[11px] text-gray-500 whitespace-nowrap mt-1">
                 Guardado:
                 {{ optional($submission->created_at)->format('d/m/Y H:i') }}
             </p>
         </div>
-        @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
-            <p class="mt-2 flex flex-wrap gap-2">
-                <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('radicado')"
-                        class="text-sm px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                    <i class="fas fa-check mr-1"></i> Aprobar
-                </button>
-                <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('rechazo')"
-                        class="text-sm px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                    <i class="fas fa-times mr-1"></i> Rechazar
-                </button>
+        <div class="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
+            <p>
+                <span class="font-medium text-gray-800">Estado:</span>
+                <span class="ml-1">{{ $submission->status }}</span>
             </p>
-            <p class="text-xs text-gray-500 mt-1">Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones REQUERIMIENTO AUTO y RESOLUCIÓN. Rechazar: indicar observación; puede crear más intentos en el mismo ciclo.</p>
-        @endif
-        <p class="mt-2 pt-2 border-t border-blue-100 flex flex-nowrap gap-2 items-center">
-            <button type="button" class="js-edit-submission flex-shrink-0 text-sm px-2.5 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
-                    data-url="{{ route('admin.submissions.update', $submission) }}"
-                    data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
-                    data-submission-code="{{ $submission->submission_code ?? '' }}"
-                    data-radicado-invima="{{ $submission->radicado_invima ?? '' }}"
-                    data-tracking-id="{{ $submission->tracking_id ?? '' }}"
-                    data-fecha-radicacion="{{ $submission->fecha_radicacion?->format('Y-m-d') }}"
-                    data-status="{{ $submission->status }}"
-                    data-rejection-observation="{{ $submission->rejection_observation ?? '' }}">
-                <i class="fas fa-edit"></i>
-            </button>
-            <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline-flex flex-shrink-0" onsubmit="return confirm('¿Eliminar este intento y toda la línea de tiempo hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="whitespace-nowrap text-sm px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-red-200" title="Eliminar intento y línea hacia abajo">
-                    <i class="fas fa-trash-alt"></i>
+            <p>
+                <span class="font-medium text-gray-800">Fecha de sometimiento:</span>
+                <span class="ml-1">
+                    @if($submission->submission_date)
+                        {{ $submission->submission_date->format('d/m/Y H:i') }}
+                    @else
+                        —
+                    @endif
+                </span>
+            </p>
+            <p>
+                <span class="font-medium text-gray-800">Código de sometimiento:</span>
+                <span class="ml-1">{{ $submission->submission_code ?? '—' }}</span>
+            </p>
+        </div>
+        <div class="mt-3 pt-2 border-t border-blue-100 flex items-center justify-between gap-3">
+            <div class="flex flex-wrap gap-2">
+                @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
+                    <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('radicado')"
+                            class="text-sm px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                        Aprobar
+                    </button>
+                    <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('rechazo')"
+                            class="text-sm px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                        Rechazar
+                    </button>
+                @endif
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" class="js-edit-submission flex-shrink-0 text-sm px-2.5 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
+                        data-url="{{ route('admin.submissions.update', $submission) }}"
+                        data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
+                        data-submission-code="{{ $submission->submission_code ?? '' }}"
+                        data-radicado-invima="{{ $submission->radicado_invima ?? '' }}"
+                        data-tracking-id="{{ $submission->tracking_id ?? '' }}"
+                        data-fecha-radicacion="{{ $submission->fecha_radicacion?->format('Y-m-d') }}"
+                        data-status="{{ $submission->status }}"
+                        data-rejection-observation="{{ $submission->rejection_observation ?? '' }}"
+                        title="Editar sometimiento">
+                    <i class="fas fa-edit"></i>
                 </button>
-            </form>
-        </p>
+                <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline-flex flex-shrink-0" onsubmit="return confirm('¿Eliminar este intento y toda la línea de tiempo hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="whitespace-nowrap text-sm px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-red-200" title="Eliminar intento y línea hacia abajo">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
     @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
