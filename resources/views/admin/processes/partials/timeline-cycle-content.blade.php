@@ -37,7 +37,14 @@
                 @endif
             </span>
             · <span class="font-medium text-gray-800">Estado:</span>
-            <span class="ml-1 font-semibold {{ $submission->status === \App\Models\Submission::STATUS_RECHAZADO ? 'text-red-600' : ($submission->status === \App\Models\Submission::STATUS_RADICADO ? 'text-green-700' : 'text-gray-800') }}">
+            @php
+                $statusPillClass = match($submission->status) {
+                    \App\Models\Submission::STATUS_RECHAZADO => 'bg-red-100 text-red-700',
+                    \App\Models\Submission::STATUS_RADICADO => 'bg-green-100 text-green-800',
+                    default => 'bg-gray-100 text-gray-800',
+                };
+            @endphp
+            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold {{ $statusPillClass }}">
                 {{ $submission->status }}
             </span>
         </p>
