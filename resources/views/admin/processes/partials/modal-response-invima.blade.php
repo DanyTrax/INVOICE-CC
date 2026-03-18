@@ -35,8 +35,8 @@
                             <input type="date" name="fecha_radicacion" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" value="{{ now()->format('Y-m-d') }}">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Llave / Campo de registro <span class="text-red-500">*</span></label>
-                            <input type="text" name="resolution_key" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Registro / Llave">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Detalle / observación (opcional)</label>
+                            <input type="text" name="resolution_key" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Detalle u observación sobre el radicado">
                         </div>
                     </div>
 
@@ -67,8 +67,8 @@
                             <input type="date" name="resolution_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Campo de registro <span class="text-red-500">*</span></label>
-                            <input type="text" name="resolution_key" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Registro / Llave">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Detalle / observación (opcional)</label>
+                            <input type="text" name="resolution_key" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Detalle u observación sobre la Resolución">
                         </div>
                     </div>
                     <div id="panel-file" class="mt-4">

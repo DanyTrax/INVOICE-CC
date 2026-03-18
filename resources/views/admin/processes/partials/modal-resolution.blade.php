@@ -26,8 +26,8 @@
                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
                         </div>
                         <div>
-                            <label for="res_resolution_key" class="block text-sm font-medium text-gray-700">Llave de resolución</label>
-                            <input type="text" name="resolution_key" id="res_resolution_key" value="{{ old('resolution_key') }}" placeholder="Ej. 2025-12345"
+                            <label for="res_resolution_key" class="block text-sm font-medium text-gray-700">Detalle / observación (opcional)</label>
+                            <input type="text" name="resolution_key" id="res_resolution_key" value="{{ old('resolution_key') }}" placeholder="Detalle u observación sobre la Resolución"
                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
                         </div>
                         <div>

@@ -411,13 +411,14 @@ class ProcessController extends Controller
             $validated = $request->validate([
                 'radicado_invima' => 'required|string|max:64',
                 'fecha_radicacion' => 'required|date',
-                'resolution_key' => 'required|string|max:64',
+                // Antes se usaba como \"campo de registro\" obligatorio; ahora es un detalle/observación opcional.
+                'resolution_key' => 'nullable|string|max:64',
             ]);
             $submission->update([
                 'status' => Submission::STATUS_RADICADO,
                 'radicado_invima' => $validated['radicado_invima'],
                 'fecha_radicacion' => $validated['fecha_radicacion'],
-                'tracking_id' => $validated['resolution_key'],
+                'tracking_id' => $validated['resolution_key'] ?? null,
             ]);
             $submission->process->update(['status' => Process::STATUS_RADICADO]);
             return redirect()
@@ -493,7 +494,8 @@ class ProcessController extends Controller
             $validated = $request->validate([
                 'resolution_number' => 'required|string|max:64',
                 'resolution_date' => 'required|date',
-                'resolution_key' => 'required|string|max:64',
+                // Antes \"campo de registro\" obligatorio; ahora detalle/observación opcional.
+                'resolution_key' => 'nullable|string|max:64',
                 'file' => 'nullable|file|mimes:pdf|max:10240',
             ]);
             $filePath = null;
@@ -519,14 +521,14 @@ class ProcessController extends Controller
                 'event_type' => RegulatoryEvent::EVENT_TYPE_RESOLUCION,
                 'document_number' => $validated['resolution_number'],
                 'event_date' => $validated['resolution_date'],
-                'resolution_key' => $validated['resolution_key'],
+                'resolution_key' => $validated['resolution_key'] ?? null,
                 'file_path' => $filePath,
             ]);
             $submission->process->update(['status' => Process::STATUS_FINALIZADO]);
             $submission->update([
                 'status' => Submission::STATUS_APROBADO,
                 'radicado_invima' => $validated['resolution_number'],
-                'tracking_id' => $validated['resolution_key'],
+                'tracking_id' => $validated['resolution_key'] ?? null,
                 'fecha_radicacion' => $validated['resolution_date'],
             ]);
 
