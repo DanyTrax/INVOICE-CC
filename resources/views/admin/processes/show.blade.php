@@ -730,6 +730,38 @@
         </div>
     </div>
 
+    {{-- Modal: Editar Radicado --}}
+    <div id="modal-edit-radicado" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-edit-radicado').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4"><i class="fas fa-stamp text-teal-600 mr-2"></i> Editar Radicado</h4>
+                <form id="form-edit-radicado" method="post" action="">
+                    @csrf
+                    @method('PUT')
+                    <div class="space-y-3 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Número de radicado</label>
+                            <input type="text" name="radicado_invima" id="edit_radicado_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de radicado</label>
+                            <input type="date" name="fecha_radicacion" id="edit_radicado_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Llave / campo de registro</label>
+                            <input type="text" name="tracking_id" id="edit_radicado_tracking" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" onclick="document.getElementById('modal-edit-radicado').classList.add('hidden')" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">Cancelar</button>
+                        <button type="submit" class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     {{-- Modal: Editar evento (Auto / Resolución) --}}
     <div id="modal-edit-event" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4">
@@ -894,6 +926,15 @@
             document.getElementById('modal-edit-event').classList.remove('hidden');
         });
     });
+    window.openEditRadicado = function(submissionId, number, date, tracking) {
+        var form = document.getElementById('form-edit-radicado');
+        if (!form) return;
+        form.action = '{{ url("admin/submissions") }}' + '/' + submissionId + '/radicado';
+        document.getElementById('edit_radicado_number').value = number || '';
+        document.getElementById('edit_radicado_date').value = date || '';
+        document.getElementById('edit_radicado_tracking').value = tracking || '';
+        document.getElementById('modal-edit-radicado').classList.remove('hidden');
+    };
     // Paso intermedio tras REQUERIMIENTO AUTO: advertencia y botón Aceptar antes de permitir "Registrar Sometimiento".
     (function() {
         var acceptBtn = document.getElementById('btn-auto-accept-checklist');

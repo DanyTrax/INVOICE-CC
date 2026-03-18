@@ -3,7 +3,10 @@
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75" onclick="document.getElementById('modal-response-invima').classList.add('hidden')"></div>
         <div class="relative bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900"><i class="fas fa-reply text-teal-600 mr-2"></i> Registrar Respuesta INVIMA</h3>
+                <h3 class="text-lg font-semibold text-gray-900">
+                    <i class="fas fa-reply text-teal-600 mr-2"></i>
+                    <span id="response-modal-title-text">Registrar Respuesta INVIMA</span>
+                </h3>
                 <p class="text-sm text-gray-500 mt-1">Sometimiento: {{ $submission->submission_code ?? $submission->radicado_invima ?? '#' . $submission->id }}</p>
             </div>
             {{-- Tabs (ocultos al abrir desde Aprobar/Rechazar/Auto: solo se muestra la opción elegida) --}}
@@ -118,6 +121,17 @@
                 panelFile.classList.toggle('hidden', type === 'rechazo' || type === 'radicado');
                 var fileInput = panelFile && panelFile.querySelector('input[name="file"]');
                 if (fileInput) fileInput.disabled = (type === 'rechazo' || type === 'radicado');
+            }
+            // Título según el tipo de acción
+            var titleSpan = document.getElementById('response-modal-title-text');
+            if (titleSpan) {
+                var titleMap = {
+                    radicado: 'Registrar Radicado',
+                    auto: 'Registrar AUTO',
+                    aprobado: 'Registrar Resolución',
+                    rechazo: 'Registrar Rechazo'
+                };
+                titleSpan.textContent = titleMap[type] || 'Registrar Respuesta INVIMA';
             }
         }
         if (tabs && tabs.length) tabs.forEach(function(t) {

@@ -144,6 +144,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::post('processes/{process}/submissions', [ProcessController::class, 'storeSubmission'])->name('processes.submissions.store');
     Route::post('submissions/{submission}/register-response', [ProcessController::class, 'registerResponse'])->name('submissions.register-response');
     Route::put('submissions/{submission}', [ProcessController::class, 'updateSubmission'])->name('submissions.update');
+    Route::put('submissions/{submission}/radicado', [ProcessController::class, 'updateRadicado'])->name('submissions.update-radicado');
     Route::delete('submissions/{submission}/radicado', [ProcessController::class, 'destroyRadicado'])->name('submissions.destroy-radicado');
     Route::put('submissions/{submission}/link-quote', [ProcessController::class, 'linkSubmissionQuote'])->name('submissions.link-quote');
     Route::delete('submissions/{submission}', [ProcessController::class, 'destroySubmission'])->name('submissions.destroy');

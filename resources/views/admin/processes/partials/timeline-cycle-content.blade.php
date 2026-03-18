@@ -88,10 +88,10 @@
                 <div class="flex items-start justify-between gap-2">
                     <div>
                         <p class="text-xs font-medium text-teal-700 uppercase">Radicado</p>
-                        <p class="font-medium text-gray-900">Radicado: {{ $submission->radicado_invima ?? '—' }}</p>
+                        <p class="font-medium text-gray-900">Número de radicado: {{ $submission->radicado_invima ?? '—' }}</p>
                         <p class="text-gray-600 mt-1">
-                            @if($submission->fecha_radicacion) Fecha: {{ $submission->fecha_radicacion->format('d/m/Y') }} @endif
-                            @if($submission->tracking_id) · Detalle: {{ $submission->tracking_id }} @endif
+                            @if($submission->fecha_radicacion) Fecha de radicado: {{ $submission->fecha_radicacion->format('d/m/Y') }} @endif
+                            @if($submission->tracking_id) · Llave / campo de registro: {{ $submission->tracking_id }} @endif
                         </p>
                     </div>
                     <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
@@ -100,7 +100,7 @@
                     </p>
                 </div>
                 @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
-                    <p class="mt-2 flex flex-wrap gap-2">
+                    <p class="mt-2 flex flex-wrap gap-2 items-center">
                         <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
                                 class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
                             <i class="fas fa-gavel mr-1"></i> AUTO
@@ -108,6 +108,12 @@
                         <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('aprobado')"
                                 class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
                             <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN
+                        </button>
+                        <button type="button"
+                                onclick="typeof openEditRadicado === 'function' && openEditRadicado({{ $submission->id }}, '{{ addslashes($submission->radicado_invima ?? '') }}', '{{ $submission->fecha_radicacion?->format('Y-m-d') }}', '{{ addslashes($submission->tracking_id ?? '') }}')"
+                                class="text-xs px-2.5 py-1.5 text-teal-600 border border-teal-200 rounded-lg hover:bg-teal-50"
+                                title="Editar Radicado">
+                            <i class="fas fa-edit"></i>
                         </button>
                         <form action="{{ route('admin.submissions.destroy-radicado', $submission) }}" method="post" class="inline-flex ml-auto"
                               onsubmit="return confirm('¿Quitar Radicado y eliminar AUTO / Resolución y ciclos posteriores? Esta acción no se puede deshacer.');">

@@ -525,11 +525,9 @@ class ProcessController extends Controller
                 'file_path' => $filePath,
             ]);
             $submission->process->update(['status' => Process::STATUS_FINALIZADO]);
+            // Solo cambiamos el estado del intento; los datos de Radicado permanecen intactos.
             $submission->update([
                 'status' => Submission::STATUS_APROBADO,
-                'radicado_invima' => $validated['resolution_number'],
-                'tracking_id' => $validated['resolution_key'] ?? null,
-                'fecha_radicacion' => $validated['resolution_date'],
             ]);
 
             return redirect()
@@ -558,6 +556,28 @@ class ProcessController extends Controller
         return redirect()
             ->route('admin.processes.show', $submission->process)
             ->with('success', 'Intento actualizado.');
+    }
+
+    /**
+     * Actualizar únicamente los datos del Radicado (número, fecha y llave/campo de registro).
+     */
+    public function updateRadicado(Request $request, Submission $submission): RedirectResponse
+    {
+        $validated = $request->validate([
+            'radicado_invima' => 'required|string|max:64',
+            'fecha_radicacion' => 'required|date',
+            'tracking_id' => 'required|string|max:64',
+        ]);
+
+        $submission->update($validated);
+
+        // Aseguramos que el intento y el proceso sigan marcados como Radicado.
+        $submission->update(['status' => Submission::STATUS_RADICADO]);
+        $submission->process->update(['status' => Process::STATUS_RADICADO]);
+
+        return redirect()
+            ->route('admin.processes.show', $submission->process)
+            ->with('success', 'Radicado actualizado.');
     }
 
     /**
