@@ -32,6 +32,11 @@
             · <span class="text-xs font-normal text-gray-500">
                 Guardado: {{ optional($submission->created_at)->format('d/m/Y H:i') }}
             </span>
+            @if($submission->status === \App\Models\Submission::STATUS_RECHAZADO)
+                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-600 text-white">
+                    RECHAZADO
+                </span>
+            @endif
         </p>
         <p class="text-sm text-gray-700 mt-1">
             <span class="font-medium text-gray-800">Código de sometimiento:</span>

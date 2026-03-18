@@ -4,7 +4,7 @@
     $radicadoAt = $submission->fecha_radicacion ? $submission->fecha_radicacion->format('d/M') : null;
 @endphp
 <div class="space-y-4">
-    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+    <div class="{{ $submission->status === \App\Models\Submission::STATUS_RECHAZADO ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-100' }} border rounded-lg p-4">
         <p class="font-semibold text-gray-900">
             Sometimiento:
             @if($sometidoAt)
@@ -20,6 +20,11 @@
             · <span class="text-xs font-normal text-gray-500">
                 Guardado: {{ optional($submission->created_at)->format('d/m/Y H:i') }}
             </span>
+            @if($submission->status === \App\Models\Submission::STATUS_RECHAZADO)
+                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-600 text-white">
+                    RECHAZADO
+                </span>
+            @endif
         </p>
 
         <p class="text-sm text-gray-700 mt-1">
