@@ -96,7 +96,7 @@
                     </div>
                     <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
                         Guardado:
-                        {{ optional($submission->fecha_radicacion ?? $submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
+                        {{ optional($submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
                     </p>
                 </div>
                 @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
@@ -161,7 +161,7 @@
                     </div>
                     <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
                         Guardado:
-                        {{ optional($event->created_at ?? $event->event_date ?? $event->notification_date)->format('d/m/Y H:i') }}
+                        {{ optional($event->updated_at ?? $event->created_at)->format('d/m/Y H:i') }}
                     </p>
                 </div>
                 <p class="mt-2 flex flex-wrap gap-2">

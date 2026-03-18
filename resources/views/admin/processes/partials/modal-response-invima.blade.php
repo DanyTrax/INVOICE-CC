@@ -36,7 +36,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Detalle / observación (opcional)</label>
-                            <input type="text" name="resolution_key" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Detalle u observación sobre el radicado">
+                            <input type="text" name="tracking_id" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Detalle u observación sobre el radicado">
                         </div>
                     </div>
 

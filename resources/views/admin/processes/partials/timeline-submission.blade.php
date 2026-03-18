@@ -55,7 +55,7 @@
             </p>
             <p class="text-[11px] text-gray-500 whitespace-nowrap">
                 Guardado:
-                {{ optional($submission->submission_date ?? $submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
+                {{ optional($submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
             </p>
         </div>
         @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
