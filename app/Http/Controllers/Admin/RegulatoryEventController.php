@@ -94,13 +94,12 @@ class RegulatoryEventController extends Controller
             $validated = $request->validate([
                 'document_number' => 'nullable|string|max:64',
                 'notification_date' => 'required|date',
+                'due_date' => 'required|date',
             ]);
-            $notificationDate = \Carbon\Carbon::parse($validated['notification_date']);
-            $dueDate = $notificationDate->copy()->addWeekdays(90);
             $regulatoryEvent->update([
                 'document_number' => $validated['document_number'] ?? $regulatoryEvent->document_number,
                 'notification_date' => $validated['notification_date'],
-                'due_date' => $dueDate,
+                'due_date' => $validated['due_date'],
             ]);
         } else {
             $validated = $request->validate([

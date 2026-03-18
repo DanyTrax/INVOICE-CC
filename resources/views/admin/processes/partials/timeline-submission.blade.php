@@ -17,45 +17,37 @@
                 (En curso)
             @endif
         </p>
-        <p class="font-semibold text-gray-900">
-            @if($sometidoAt)
-                Sometimiento: {{ $sometidoAt }}
-            @else
-                Sometimiento sin fecha
-            @endif
-            @if($radicadoAt)
-                → Radicado: {{ $radicadoAt }}
-            @else
-                → Pendiente de radicación
-            @endif
-            @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && !$submission->regulatoryEvents->isEmpty())
-                → Esperando respuesta...
-            @elseif($submission->status === \App\Models\Submission::STATUS_PENDIENTE)
-                → Esperando respuesta INVIMA
-            @endif
-        </p>
-        <div class="flex items-start justify-between gap-2 mt-1">
-            <p class="text-sm text-gray-600">
-                {{ $submission->submission_code ?? $submission->radicado_invima ?? 'Sin código' }}
-                @if($submission->tracking_id) · Seguimiento: {{ $submission->tracking_id }} @endif
-                @if($submission->quote)
-                    · Cotización: {{ $submission->quote->consecutive ?? $submission->quote->id }}
-                @endif
-                @if($submission->quoteItem)
-                    · Ítem: #{{ $submission->quoteItem->item_position }} ({{ $submission->quoteItem->serviceType->name ?? 'Servicio' }})
-                @endif
-                · <span class="px-2 py-0.5 rounded text-xs font-medium
-                    @if($submission->status === 'Aprobado') bg-green-100 text-green-800
-                    @elseif($submission->status === 'Rechazado') bg-red-100 text-red-800
-                    @elseif($submission->status === \App\Models\Submission::STATUS_RADICADO) bg-teal-100 text-teal-800
-                    @elseif($submission->status === 'En Requerimiento') bg-yellow-100 text-yellow-800
-                    @else bg-blue-100 text-blue-800
+        <div class="flex items-start justify-between gap-2">
+            <div>
+                <p class="font-semibold text-gray-900">
+                    @if($sometidoAt)
+                        Fecha de sometimiento: {{ $sometidoAt }}
+                    @else
+                        Sometimiento sin fecha
                     @endif
-                ">{{ $submission->status }}</span>
-            </p>
-            <p class="text-[11px] text-gray-500 whitespace-nowrap">
+                </p>
+                <p class="text-sm text-gray-600 mt-1">
+                    Código de sometimiento:
+                    <span class="font-medium text-gray-900">
+                        {{ $submission->submission_code ?? 'Sin código' }}
+                    </span>
+                </p>
+                <p class="text-sm text-gray-600 mt-1">
+                    @if($radicadoAt)
+                        Estado: <span class="font-medium">Radicado ({{ $radicadoAt }})</span>
+                    @else
+                        Estado: <span class="font-medium">Pendiente de radicación</span>
+                    @endif
+                    @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && !$submission->regulatoryEvents->isEmpty())
+                        · Esperando respuesta...
+                    @elseif($submission->status === \App\Models\Submission::STATUS_PENDIENTE)
+                        · Esperando respuesta INVIMA
+                    @endif
+                </p>
+            </div>
+            <p class="text-[11px] text-gray-500 whitespace-nowrap mt-1">
                 Guardado:
-                {{ optional($submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
+                {{ optional($submission->created_at)->format('d/m/Y H:i') }}
             </p>
         </div>
         @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
@@ -149,7 +141,7 @@
                 <p class="text-xs font-medium text-gray-600 uppercase">{{ $event->event_type }}</p>
                 <p class="font-medium text-gray-900">{{ $event->document_number ?? 'Sin número' }}</p>
                 <p class="text-gray-600 mt-1">
-                    @if($event->notification_date) Notificación: {{ $event->notification_date->format('d/m/Y') }} @endif
+                    @if($event->notification_date) Fecha: {{ $event->notification_date->format('d/m/Y') }} @endif
                     @if($event->due_date) · Vence: {{ $event->due_date->format('d/m/Y') }} @endif
                     @if($event->resolution_key) · Llave: {{ $event->resolution_key }} @endif
                 </p>
@@ -160,6 +152,7 @@
                             data-document-number="{{ $event->document_number ?? '' }}"
                             data-notification-date="{{ $event->notification_date?->format('Y-m-d') }}"
                             data-event-date="{{ $event->event_date?->format('Y-m-d') }}"
+                            data-due-date="{{ $event->due_date?->format('Y-m-d') }}"
                             data-resolution-key="{{ $event->resolution_key ?? '' }}">
                         <i class="fas fa-edit mr-1"></i> Editar
                     </button>

@@ -157,13 +157,34 @@
             <div class="flex-1 border {{ $eventBg }} rounded-lg p-3 text-sm">
                 <div class="flex items-start justify-between gap-2">
                     <div>
-                        <p class="text-xs font-medium text-gray-600 uppercase">{{ $event->event_type }}</p>
-                        <p class="font-medium text-gray-900">{{ $event->document_number ?? 'Sin número' }}</p>
-                        <p class="text-gray-600 mt-1">
-                            @if($event->notification_date) Notificación: {{ $event->notification_date->format('d/m/Y') }} @endif
-                            @if($event->due_date) · Vence: {{ $event->due_date->format('d/m/Y') }} @endif
-                            @if($event->resolution_key) · Detalle: {{ $event->resolution_key }} @endif
+                        <p class="text-xs font-medium text-gray-600 uppercase">
+                            @if($event->event_type === \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO)
+                                AUTO
+                            @elseif($event->event_type === \App\Models\RegulatoryEvent::EVENT_TYPE_RESOLUCION)
+                                RESOLUCIÓN
+                            @else
+                                {{ $event->event_type }}
+                            @endif
                         </p>
+                        @if($event->event_type === \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO)
+                            <p class="font-medium text-gray-900">Número de AUTO: {{ $event->document_number ?? 'Sin número' }}</p>
+                            <p class="text-gray-600 mt-1">
+                                @if($event->notification_date) Fecha de AUTO: {{ $event->notification_date->format('d/m/Y') }} @endif
+                                @if($event->due_date) · Fecha de vencimiento: {{ $event->due_date->format('d/m/Y') }} @endif
+                            </p>
+                        @elseif($event->event_type === \App\Models\RegulatoryEvent::EVENT_TYPE_RESOLUCION)
+                            <p class="font-medium text-gray-900">Número de Resolución: {{ $event->document_number ?? 'Sin número' }}</p>
+                            <p class="text-gray-600 mt-1">
+                                @if($event->event_date) Fecha de Resolución: {{ $event->event_date->format('d/m/Y') }} @endif
+                                @if($event->resolution_key) · Detalle: {{ $event->resolution_key }} @endif
+                            </p>
+                        @else
+                            <p class="font-medium text-gray-900">{{ $event->document_number ?? 'Sin número' }}</p>
+                            <p class="text-gray-600 mt-1">
+                                @if($event->notification_date) Fecha: {{ $event->notification_date->format('d/m/Y') }} @endif
+                                @if($event->due_date) · Vence: {{ $event->due_date->format('d/m/Y') }} @endif
+                            </p>
+                        @endif
                     </div>
                     <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
                         Guardado:
@@ -177,6 +198,7 @@
                             data-document-number="{{ $event->document_number ?? '' }}"
                             data-notification-date="{{ $event->notification_date?->format('Y-m-d') }}"
                             data-event-date="{{ $event->event_date?->format('Y-m-d') }}"
+                            data-due-date="{{ $event->due_date?->format('Y-m-d') }}"
                             data-resolution-key="{{ $event->resolution_key ?? '' }}">
                         <i class="fas fa-edit"></i>
                     </button>

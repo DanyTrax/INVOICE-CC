@@ -777,8 +777,12 @@
                             <input type="text" name="document_number" id="edit_event_document_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                         </div>
                         <div id="edit-event-field-notification" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de notificación (Auto)</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de AUTO</label>
                             <input type="date" name="notification_date" id="edit_event_notification_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div id="edit-event-field-due-date" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de vencimiento</label>
+                            <input type="date" name="due_date" id="edit_event_due_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                         </div>
                         <div id="edit-event-field-event-date" class="hidden">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de resolución</label>
@@ -918,9 +922,11 @@
             document.getElementById('edit_event_document_number').value = this.dataset.documentNumber || '';
             document.getElementById('edit_event_notification_date').value = this.dataset.notificationDate || '';
             document.getElementById('edit_event_event_date').value = this.dataset.eventDate || '';
+            document.getElementById('edit_event_due_date').value = this.dataset.dueDate || '';
             document.getElementById('edit_event_resolution_key').value = this.dataset.resolutionKey || '';
             var type = (this.dataset.eventType || '').toUpperCase();
             document.getElementById('edit-event-field-notification').classList.toggle('hidden', type !== 'AUTO');
+            document.getElementById('edit-event-field-due-date').classList.toggle('hidden', type !== 'AUTO');
             document.getElementById('edit-event-field-event-date').classList.toggle('hidden', type !== 'RESOLUCION');
             document.getElementById('edit-event-field-resolution-key').classList.toggle('hidden', type !== 'RESOLUCION');
             document.getElementById('modal-edit-event').classList.remove('hidden');
