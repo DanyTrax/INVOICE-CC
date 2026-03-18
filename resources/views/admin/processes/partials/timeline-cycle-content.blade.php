@@ -117,32 +117,36 @@
                         {{ optional($submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
                     </p>
                 </div>
-                @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
-                    <p class="mt-2 flex flex-wrap gap-2 items-center">
-                        <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
-                                class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-                            <i class="fas fa-gavel mr-1"></i> AUTO
-                        </button>
-                        <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('aprobado')"
-                                class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                            <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN
-                        </button>
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap gap-2">
+                        @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
+                            <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
+                                    class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                                <i class="fas fa-gavel mr-1"></i> AUTO
+                            </button>
+                            <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('aprobado')"
+                                    class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN
+                            </button>
+                        @endif
+                    </div>
+                    <div class="flex items-center gap-2">
                         <button type="button"
                                 onclick="typeof openEditRadicado === 'function' && openEditRadicado({{ $submission->id }}, '{{ addslashes($submission->radicado_invima ?? '') }}', '{{ $submission->fecha_radicacion?->format('Y-m-d') }}', '{{ addslashes($submission->tracking_id ?? '') }}')"
                                 class="text-xs px-2.5 py-1.5 text-teal-600 border border-teal-200 rounded-lg hover:bg-teal-50"
                                 title="Editar Radicado">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <form action="{{ route('admin.submissions.destroy-radicado', $submission) }}" method="post" class="inline-flex ml-auto"
+                        <form action="{{ route('admin.submissions.destroy-radicado', $submission) }}" method="post" class="inline-flex"
                               onsubmit="return confirm('¿Quitar Radicado y eliminar AUTO / Resolución y ciclos posteriores? Esta acción no se puede deshacer.');">
                             @csrf
                             @method('DELETE')
-                        <button type="submit" class="text-xs px-2.5 py-1.5 text-red-600 border border-red-200 rounded-lg hover:bg-red-50" title="Quitar Radicado">
+                            <button type="submit" class="text-xs px-2.5 py-1.5 text-red-600 border border-red-200 rounded-lg hover:bg-red-50" title="Quitar Radicado">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </form>
-                    </p>
-                @endif
+                    </div>
+                </div>
             </div>
         </div>
     @endif
@@ -209,7 +213,7 @@
                         {{ optional($event->updated_at ?? $event->created_at)->format('d/m/Y H:i') }}
                     </p>
                 </div>
-                <p class="mt-2 flex flex-wrap gap-2">
+                <div class="mt-3 flex items-center justify-end gap-2">
                     <button type="button" class="js-edit-event text-xs px-2.5 py-1 text-teal-600 hover:bg-teal-50 rounded border border-teal-200"
                             data-url="{{ route('admin.regulatory-events.update', $event) }}"
                             data-event-type="{{ $event->event_type }}"
@@ -217,18 +221,19 @@
                             data-notification-date="{{ $event->notification_date?->format('Y-m-d') }}"
                             data-event-date="{{ $event->event_date?->format('Y-m-d') }}"
                             data-due-date="{{ $event->due_date?->format('Y-m-d') }}"
-                            data-resolution-key="{{ $event->resolution_key ?? '' }}">
+                            data-resolution-key="{{ $event->resolution_key ?? '' }}"
+                            title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
                     <form action="{{ route('admin.regulatory-events.destroy', $event) }}" method="post" class="inline-flex"
                           onsubmit="return confirm('¿Eliminar este evento y devolver el proceso a su estado anterior si aplica? Esta acción no se puede deshacer.');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-xs px-2.5 py-1 text-red-600 border border-red-200 rounded-lg hover:bg-red-50" title="Eliminar evento">
+                        <button type="submit" class="text-xs px-2.5 py-1 text-red-600 border border-red-200 rounded-lg hover:bg-red-50" title="Eliminar">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </form>
-                </p>
+                </div>
             </div>
         </div>
     @endforeach
