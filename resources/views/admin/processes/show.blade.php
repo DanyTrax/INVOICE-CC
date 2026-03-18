@@ -180,7 +180,6 @@
                                 };
                                 $addAttempt($rootSubmission);
                                 $lastInCycle = $attemptsInCycle->last();
-                                $isClosed = in_array($lastInCycle->status, [\App\Models\Submission::STATUS_APROBADO, \App\Models\Submission::STATUS_EN_REQUERIMIENTO], true);
                                 $statusBadgeClass = match($lastInCycle->status) {
                                     'Aprobado' => 'bg-green-100 text-green-800',
                                     'Rechazado' => 'bg-red-100 text-red-800',
@@ -193,7 +192,7 @@
                                 <div class="absolute left-0 w-8 h-8 rounded-full {{ $lastInCycle->status === \App\Models\Submission::STATUS_RECHAZADO ? 'bg-red-500' : ($lastInCycle->status === \App\Models\Submission::STATUS_APROBADO ? 'bg-green-500' : ($lastInCycle->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO ? 'bg-yellow-500' : 'bg-blue-500')) }} flex items-center justify-center text-white text-xs">
                                     <i class="fas fa-layer-group"></i>
                                 </div>
-                                <details class="group border border-gray-200 rounded-lg overflow-hidden" @if(!$isClosed) open @endif>
+                                <details class="group border border-gray-200 rounded-lg overflow-hidden" @if($roots->count() === 1 || $loop->last) open @endif>
                                     <summary class="flex items-center gap-2 flex-wrap px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                                         <span class="font-semibold text-gray-900">Ciclo {{ $cycleNum }}</span>
                                         <span class="text-sm text-gray-600">
