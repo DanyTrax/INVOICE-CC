@@ -37,7 +37,13 @@ class QuoteController extends Controller
      */
     public function show(Quote $quote): View
     {
-        $quote->load(['client', 'quoteItems.service', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
+        $quote->load([
+            'client',
+            'quoteItems.service',
+            'quoteItems.serviceType',
+            // Vinculación por ciclo (submission) para mostrar Trámite por ítem
+            'quoteItems.submissions.process.serviceType',
+        ]);
         try {
             $quotePdfTemplates = QuotePdfTemplate::orderByRaw('is_default DESC')->orderBy('name')->get();
         } catch (\Throwable $e) {

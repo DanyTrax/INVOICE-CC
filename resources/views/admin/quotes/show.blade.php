@@ -164,8 +164,14 @@
                             <td class="px-2 py-2">{{ $item->service?->name ?? '-' }}</td>
                             @if($quote->show_service_type_column)
                                 <td class="px-2 py-2">
-                                    @if($item->process)
-                                        <a href="{{ route('admin.processes.show', $item->process) }}" class="text-teal-600 hover:text-teal-800 hover:underline">{{ $item->process->serviceType?->name ?? 'Expediente' }}</a>
+                                    @php
+                                        $linkedCycle = $item->submissions?->sortByDesc('id')->first();
+                                        $linkedProcess = $linkedCycle?->process;
+                                    @endphp
+                                    @if($linkedProcess)
+                                        <a href="{{ route('admin.processes.show', $linkedProcess) }}" class="text-teal-600 hover:text-teal-800 hover:underline">
+                                            {{ $linkedProcess->serviceType?->name ?? 'Expediente' }}
+                                        </a>
                                     @else
                                         –
                                     @endif

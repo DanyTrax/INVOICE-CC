@@ -200,16 +200,16 @@
                                             · {{ $rootSubmission->submission_date ? $rootSubmission->submission_date->format('d/m/Y') : ($rootSubmission->created_at?->format('d/m/Y') ?? '-') }}
                                         </span>
                                         <span class="px-2 py-0.5 rounded text-xs font-medium {{ $statusBadgeClass }}">{{ $lastInCycle->status }}</span>
-                                        @if($process->quote_id && $process->quote)
-                                            <a href="{{ route('admin.quotes.show', $process->quote) }}"
+                                        @if($rootSubmission->quote)
+                                            <a href="{{ route('admin.quotes.show', $rootSubmission->quote) }}"
                                                class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
                                                onclick="event.stopPropagation()">
-                                                <i class="fas fa-file-invoice mr-1"></i> Cot. {{ $process->quote->consecutive }}
+                                                <i class="fas fa-file-invoice mr-1"></i> Cot. {{ $rootSubmission->quote->consecutive ?? $rootSubmission->quote->id }}
                                             </a>
                                         @endif
                                         @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
                                             <button type="button"
-                                                    onclick="event.stopPropagation(); typeof openLinkQuoteModalForProcess === 'function' && openLinkQuoteModalForProcess();"
+                                                    onclick="event.stopPropagation(); typeof openLinkQuoteModal === 'function' && openLinkQuoteModal({{ $rootSubmission->id }}, {{ $rootSubmission->quote_id ?? 'null' }}, {{ $rootSubmission->quote_item_id ?? 'null' }});"
                                                     class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
                                                     title="Asignar cotización e ítem">
                                                 <i class="fas fa-file-alt"></i>
@@ -865,7 +865,7 @@
     var processLinkQuoteUrl = '{{ route("admin.processes.link-to-quote", $process) }}';
     var currentProcessQuoteId = @json($process->quote_id ?? null);
     var currentProcessQuoteItemId = @json($process->quote_item_id ?? null);
-    function openLinkQuoteModal(submissionId) {
+    function openLinkQuoteModal(submissionId, presetQuoteId, presetItemId) {
         var form = document.getElementById('form-link-quote');
         if (!form) return;
         form.action = linkQuoteBaseUrl + '/' + submissionId + '/link-quote';
@@ -873,11 +873,17 @@
         if (methodInput) methodInput.value = 'PUT';
         var quoteSelect = document.getElementById('link-quote-quote_id');
         var itemSelect = document.getElementById('link-quote-quote_item_id');
-        if (quoteSelect) quoteSelect.value = '';
+        if (quoteSelect) quoteSelect.value = presetQuoteId || '';
         if (itemSelect) {
-            itemSelect.value = '';
+            itemSelect.value = presetItemId || '';
             var opts = itemSelect.querySelectorAll('option[data-quote]');
-            opts.forEach(function(opt) { opt.style.display = 'none'; });
+            if (presetQuoteId) {
+                opts.forEach(function(opt) {
+                    opt.style.display = opt.getAttribute('data-quote') === String(presetQuoteId) ? '' : 'none';
+                });
+            } else {
+                opts.forEach(function(opt) { opt.style.display = 'none'; });
+            }
         }
         document.getElementById('modal-link-quote').classList.remove('hidden');
     }

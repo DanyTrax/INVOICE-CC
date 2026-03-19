@@ -52,6 +52,13 @@
             </span>
         </p>
 
+        @if($submission->status === \App\Models\Submission::STATUS_RECHAZADO && filled($submission->rejection_observation))
+            <p class="text-sm text-gray-700 mt-1">
+                <span class="font-medium text-gray-800">Observación (motivo del rechazo):</span>
+                <span class="ml-1">{{ $submission->rejection_observation }}</span>
+            </p>
+        @endif
+
         <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
                 @if(isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id && $submission->status === \App\Models\Submission::STATUS_PENDIENTE)

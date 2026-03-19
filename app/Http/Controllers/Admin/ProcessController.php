@@ -330,6 +330,9 @@ class ProcessController extends Controller
             'processDocuments',
             'submissions.regulatoryEvents',
             'submissions.children.regulatoryEvents',
+            'submissions.quote',
+            'submissions.quoteItem.quote',
+            'submissions.quoteItem.serviceType',
         ]);
 
         // Asegurar carpeta en Drive para este expediente (se crea al visitar la página si está configurado Drive)
@@ -591,39 +594,44 @@ class ProcessController extends Controller
      */
     public function linkSubmissionQuote(Request $request, Submission $submission): RedirectResponse
     {
+        $request->merge([
+            'quote_item_id' => $request->input('quote_item_id') ?: null,
+        ]);
         $validated = $request->validate([
             'quote_id' => 'required|exists:quotes,id',
-            'quote_item_id' => 'required|exists:quote_items,id',
+            'quote_item_id' => 'nullable|exists:quote_items,id',
         ]);
 
         $process = $submission->process;
-        $quoteItem = QuoteItem::with('quote')->findOrFail($validated['quote_item_id']);
-        if (!$quoteItem->quote || $quoteItem->quote_id != $validated['quote_id']) {
-            return redirect()->route('admin.processes.show', $process)
-                ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
-        }
-        if ($quoteItem->quote->client_id !== $process->client_id) {
+        $quote = Quote::findOrFail($validated['quote_id']);
+        if ($quote->client_id !== $process->client_id) {
             return redirect()->route('admin.processes.show', $process)
                 ->with('error', 'La cotización debe ser del mismo cliente del expediente.');
         }
 
-        $submission->update([
-            'quote_id' => $quoteItem->quote_id,
-            'quote_item_id' => $quoteItem->id,
-        ]);
-
-        if (!$process->quote_id) {
-            $process->update([
-                'quote_id' => $quoteItem->quote_id,
+        $quoteItemId = $validated['quote_item_id'] ?? null;
+        if ($quoteItemId) {
+            $quoteItem = QuoteItem::with('quote')->findOrFail($quoteItemId);
+            if (!$quoteItem->quote || $quoteItem->quote_id != $quote->id) {
+                return redirect()->route('admin.processes.show', $process)
+                    ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
+            }
+            $submission->update([
+                'quote_id' => $quote->id,
                 'quote_item_id' => $quoteItem->id,
+            ]);
+            $quote->update(['show_service_type_column' => true]);
+        } else {
+            // Quitar el ítem del ciclo, manteniendo la cotización seleccionada.
+            $submission->update([
+                'quote_id' => $quote->id,
+                'quote_item_id' => null,
             ]);
         }
 
-        $quoteItem->quote->update(['show_service_type_column' => true]);
-
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', 'Ciclo vinculado a la cotización e ítem seleccionados.');
+            ->with('success', 'Ciclo vinculado a la cotización/ítem seleccionado.');
     }
 
     /**

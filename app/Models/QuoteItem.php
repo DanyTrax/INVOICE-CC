@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Submission;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class QuoteItem extends Model
 {
@@ -50,5 +52,10 @@ class QuoteItem extends Model
     public function process(): HasOne
     {
         return $this->hasOne(Process::class);
+    }
+
+    public function submissions(): HasMany
+    {
+        return $this->hasMany(Submission::class, 'quote_item_id');
     }
 }
