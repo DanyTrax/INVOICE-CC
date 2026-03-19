@@ -50,9 +50,7 @@ class ProcessController extends Controller
             $created++;
         }
 
-        if ($created > 0) {
-            $quote->update(['show_service_type_column' => true]);
-        }
+        // No forzar show_service_type_column; el usuario puede habilitarlo manualmente.
 
         return $created;
     }
@@ -303,7 +301,6 @@ class ProcessController extends Controller
                     ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
             }
             $data['quote_item_id'] = $quoteItem->id;
-            $quote->update(['show_service_type_column' => true]);
         } else {
             $data['quote_item_id'] = null;
         }
@@ -620,7 +617,7 @@ class ProcessController extends Controller
                 'quote_id' => $quote->id,
                 'quote_item_id' => $quoteItem->id,
             ]);
-            $quote->update(['show_service_type_column' => true]);
+            // No forzar show_service_type_column; el usuario puede habilitarlo manualmente.
         } else {
             // Quitar el ítem del ciclo, manteniendo la cotización seleccionada.
             $submission->update([
@@ -917,7 +914,7 @@ class ProcessController extends Controller
         }
         $process->delete();
         return redirect()
-            ->route('admin.processes.index')
+            ->route('admin.processes.monitor')
             ->with('success', 'Expediente eliminado.');
     }
 

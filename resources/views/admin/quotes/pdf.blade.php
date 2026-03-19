@@ -143,7 +143,7 @@
             @foreach($quote->quoteItems as $item)
                 <tr class="{{ $loop->iteration % 2 === 0 ? 'alt' : '' }}">
                     <td>{{ $item->item_position }}</td>
-                    <td>{{ $item->service?->name ?? '-' }}</td>
+                    <td>{{ $item->service_label ?: ($item->service?->name ?? '-') }}</td>
                     @if($quote->show_service_type_column)
                         <td>{{ $item->process?->serviceType?->name ?? '-' }}</td>
                     @endif

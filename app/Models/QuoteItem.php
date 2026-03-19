@@ -13,6 +13,7 @@ class QuoteItem extends Model
     protected $fillable = [
         'quote_id',
         'service_id',
+        'service_label',
         'item_position',
         'service_type_id',
         'raa_code',

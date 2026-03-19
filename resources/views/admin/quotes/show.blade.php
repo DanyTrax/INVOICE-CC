@@ -161,7 +161,7 @@
                     @foreach($quote->quoteItems as $item)
                         <tr class="border-b border-gray-200 {{ $item->is_loan ? 'bg-amber-50' : '' }}">
                             <td class="px-2 py-2">{{ $item->item_position }}</td>
-                            <td class="px-2 py-2">{{ $item->service?->name ?? '-' }}</td>
+                            <td class="px-2 py-2">{{ $item->service_label ?: ($item->service?->name ?? '-') }}</td>
                             @if($quote->show_service_type_column)
                                 <td class="px-2 py-2">
                                     @php

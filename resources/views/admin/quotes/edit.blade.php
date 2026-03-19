@@ -110,8 +110,8 @@
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_raa_column', $quote->show_raa_column) ? 'checked' : '' }}>
                     <span>Usar columna RAA</span>
                 </label>
-                <label class="inline-flex items-center gap-2 {{ $has_any_item_with_process ? '' : 'opacity-60' }}" title="{{ $has_any_item_with_process ? 'Mostrar columna Trámite (vinculado a expedientes)' : 'Se activa al vincular un expediente a un ítem' }}">
-                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_service_type_column', $quote->show_service_type_column) ? 'checked' : '' }} {{ $has_any_item_with_process ? '' : 'disabled' }}>
+                <label class="inline-flex items-center gap-2" title="Mostrar columna Trámite">
+                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_service_type_column', $quote->show_service_type_column) ? 'checked' : '' }}>
                     <span>Usar columna Trámite</span>
                 </label>
                 <label class="inline-flex items-center gap-2">
@@ -157,13 +157,17 @@
                             $oldItems = old('items', []);
                             if (empty($oldItems)) {
                                 $oldItems = $quote->quoteItems->sortBy('item_position')->values()->map(function ($qi) {
+                                    $linkedCycle = $qi->submissions?->sortByDesc('id')->first();
+                                    $linkedProcess = $linkedCycle?->process;
                                     return [
                                         'id' => $qi->id,
                                         'item_position' => $qi->item_position,
                                         'service_id' => $qi->service_id ?? '',
+                                        'service_label' => $qi->service_label ?? ($qi->service?->name ?? ''),
                                         'service_type_name' => $qi->serviceType->name ?? '',
-                                        'has_process' => $qi->process !== null,
-                                        'process_tramite_name' => $qi->process?->serviceType?->name ?? '',
+                                        // Si el ítem tiene un ciclo vinculado, se muestra el trámite del proceso y se bloquea el texto manual.
+                                        'has_process' => $linkedProcess !== null,
+                                        'process_tramite_name' => $linkedProcess?->serviceType?->name ?? '',
                                         'description' => $qi->description ?? '',
                                         'previous_license' => $qi->previous_license ?? '',
                                         'raa_code' => $qi->raa_code ?? '',
@@ -184,9 +188,10 @@
                                 <td class="px-2 py-2 item-num">{{ $idx + 1 }}</td>
                                 <td class="px-2 py-2">
                                     @php $selectedService = $services->firstWhere('id', $item['service_id'] ?? null); @endphp
-                                    <input type="text" value="{{ $selectedService ? $selectedService->name : '' }}" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off"
+                                    <input type="text" value="{{ ($item['service_label'] ?? '') !== '' ? $item['service_label'] : ($selectedService ? $selectedService->name : '') }}" placeholder="Escriba y elija de la lista (obligatorio)" autocomplete="one-time-code" spellcheck="false"
                                            class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
                                     <input type="hidden" name="items[{{ $idx }}][service_id]" class="item-service-id-input" value="{{ $item['service_id'] ?? '' }}">
+                                    <input type="hidden" name="items[{{ $idx }}][service_label]" class="item-service-label-input" value="{{ $item['service_label'] ?? ($selectedService ? $selectedService->name : '') }}">
                                 </td>
                                 <td class="px-2 py-2" data-col="tramite">
                                     <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item['id'] ?? '' }}">
@@ -298,9 +303,10 @@
         <tr class="item-row border-b border-gray-200" data-is-loan="0">
             <td class="px-2 py-2 item-num"></td>
             <td class="px-2 py-2">
-                <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off"
+                <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" autocomplete="one-time-code" spellcheck="false"
                        class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
                 <input type="hidden" name="items[__INDEX__][service_id]" class="item-service-id-input" value="">
+                <input type="hidden" name="items[__INDEX__][service_label]" class="item-service-label-input" value="">
             </td>
             <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
@@ -340,9 +346,10 @@
         <tr class="item-row border-b border-gray-200 bg-amber-50" data-is-loan="1">
             <td class="px-2 py-2 item-num"></td>
             <td class="px-2 py-2">
-                <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" list="services_datalist" autocomplete="off"
+                <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" autocomplete="one-time-code" spellcheck="false"
                        class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
                 <input type="hidden" name="items[__INDEX__][service_id]" class="item-service-id-input" value="">
+                <input type="hidden" name="items[__INDEX__][service_label]" class="item-service-label-input" value="">
             </td>
             <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
@@ -539,30 +546,112 @@
         document.getElementById('toggle-bank-fee')?.addEventListener('change', updateBankFeeVisibility);
         document.getElementById('bank_fee_value')?.addEventListener('input', updateTotals);
         document.getElementById('tax_percentage')?.addEventListener('input', updateTotals);
-        document.getElementById('form-quote')?.addEventListener('submit', syncColumnHiddenInputs);
+
         var servicesDataEdit = @json($services->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'default_scope' => $s->default_scope ?? ''])->values());
+        var servicesListUrl = @json(route('admin.services.list-for-quotes'));
+        (function loadServicesList() {
+            fetch(servicesListUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function(r) { return r.ok ? r.json() : []; })
+                .then(function(list) { if (Array.isArray(list) && list.length) servicesDataEdit = list; })
+                .catch(function() {});
+        })();
+
+        var serviceDropdownEdit = null;
+        var serviceDropdownHideTimerEdit = null;
+        function ensureServiceDropdownEdit() {
+            if (serviceDropdownEdit) return serviceDropdownEdit;
+            serviceDropdownEdit = document.createElement('div');
+            serviceDropdownEdit.id = 'service-suggestions-dropdown-edit';
+            serviceDropdownEdit.setAttribute('role', 'listbox');
+            serviceDropdownEdit.className = 'fixed z-[100] mt-1 max-h-48 overflow-auto rounded-lg border border-gray-300 bg-white shadow-lg py-1 text-sm min-w-[200px] hidden';
+            document.body.appendChild(serviceDropdownEdit);
+            return serviceDropdownEdit;
+        }
+        function showServiceSuggestionsEdit(input, row) {
+            var dropdown = ensureServiceDropdownEdit();
+            var val = (input.value || '').trim().toLowerCase();
+            var matches = servicesDataEdit.filter(function(s) { return (s.name || '').toLowerCase().indexOf(val) !== -1; });
+            dropdown.innerHTML = '';
+            dropdown.classList.add('hidden');
+            if (matches.length === 0) return;
+            var rect = input.getBoundingClientRect();
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.top = (rect.bottom + 2) + 'px';
+            dropdown.style.width = Math.max(rect.width, 220) + 'px';
+            matches.forEach(function(s) {
+                var div = document.createElement('div');
+                div.setAttribute('role', 'option');
+                div.className = 'px-3 py-2 cursor-pointer hover:bg-teal-50 text-gray-900';
+                div.textContent = s.name;
+                div.dataset.id = s.id;
+                div.dataset.name = s.name;
+                div.dataset.defaultScope = s.default_scope || '';
+                div.addEventListener('mousedown', function(e) { e.preventDefault(); });
+                div.addEventListener('click', function() {
+                    input.value = s.name;
+                    syncServiceInputEdit(row);
+                    var desc = row.querySelector('.item-description-input');
+                    var scope = row.querySelector('.item-scope-input');
+                    if (desc && (!desc.value || desc.value.trim() === '')) desc.value = s.name;
+                    if (scope && (!scope.value || scope.value.trim() === '')) scope.value = s.default_scope || '';
+                    dropdown.classList.add('hidden');
+                });
+                dropdown.appendChild(div);
+            });
+            dropdown.classList.remove('hidden');
+        }
+        function hideServiceSuggestionsEdit() {
+            serviceDropdownHideTimerEdit = setTimeout(function() {
+                if (serviceDropdownEdit) serviceDropdownEdit.classList.add('hidden');
+            }, 150);
+        }
+
         function syncServiceInputEdit(row) {
             var input = row.querySelector('.item-service-input');
             var hidden = row.querySelector('.item-service-id-input');
+            var hiddenLabel = row.querySelector('.item-service-label-input');
             if (!input || !hidden) return;
             var val = (input.value || '').trim();
-            var found = servicesDataEdit.find(function(s) { return s.name === val; });
+            if (hiddenLabel) hiddenLabel.value = val;
+            var lowerVal = val.toLowerCase();
+            var found = servicesDataEdit.find(function(s) {
+                var n = (s.name || '').toLowerCase();
+                return n === lowerVal || (n && (lowerVal === n || lowerVal.startsWith(n + ' ') || lowerVal.startsWith(n + ' -') || lowerVal.startsWith(n + '-')));
+            });
             if (found) {
                 hidden.value = found.id;
                 var desc = row.querySelector('.item-description-input');
                 var scope = row.querySelector('.item-scope-input');
-                if (desc) desc.value = found.name;
-                if (scope) scope.value = found.default_scope || '';
+                if (desc && (!desc.value || desc.value.trim() === '')) desc.value = found.name;
+                if (scope && (!scope.value || scope.value.trim() === '')) scope.value = found.default_scope || '';
             } else {
                 hidden.value = '';
             }
         }
         tbody.addEventListener('input', function(e) {
-            if (e.target.matches('.item-service-input')) syncServiceInputEdit(e.target.closest('tr'));
+            if (e.target.matches('.item-service-input')) {
+                var row = e.target.closest('tr');
+                syncServiceInputEdit(row);
+                showServiceSuggestionsEdit(e.target, row);
+            }
         });
-        tbody.addEventListener('blur', function(e) {
-            if (e.target.matches('.item-service-input')) syncServiceInputEdit(e.target.closest('tr'));
+        tbody.addEventListener('focus', function(e) {
+            if (e.target.matches('.item-service-input')) {
+                if (serviceDropdownHideTimerEdit) clearTimeout(serviceDropdownHideTimerEdit);
+                showServiceSuggestionsEdit(e.target, e.target.closest('tr'));
+            }
         }, true);
+        tbody.addEventListener('blur', function(e) {
+            if (e.target.matches('.item-service-input')) {
+                syncServiceInputEdit(e.target.closest('tr'));
+                hideServiceSuggestionsEdit();
+            }
+        }, true);
+
+        document.getElementById('form-quote')?.addEventListener('submit', function() {
+            tbody.querySelectorAll('.item-row').forEach(function(r) { syncServiceInputEdit(r); });
+            syncColumnHiddenInputs();
+        });
         tbody.querySelectorAll('.item-row').forEach(function(row) {
             const removeBtn = row.querySelector('.btn-remove-row');
             if (removeBtn) removeBtn.addEventListener('click', function() {

@@ -61,11 +61,17 @@ class QuoteController extends Controller
             return redirect()->route('admin.quotes.show', $quote)
                 ->with('error', 'La cotización está aprobada y no puede editarse.');
         }
-        $quote->load(['client', 'quoteItems.serviceType', 'quoteItems.service', 'quoteItems.process.serviceType']);
+        $quote->load([
+            'client',
+            'quoteItems.serviceType',
+            'quoteItems.service',
+            // Vinculación por ciclo (submission) para mostrar trámite real si aplica
+            'quoteItems.submissions.process.serviceType',
+        ]);
         $companies = Company::orderBy('name')->get();
         $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
-        $has_any_item_with_process = $quote->quoteItems->contains(fn ($i) => $i->process !== null);
+        $has_any_item_with_process = $quote->quoteItems->contains(fn ($i) => $i->submissions?->isNotEmpty());
         return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services', 'has_any_item_with_process'));
     }
 
@@ -97,6 +103,7 @@ class QuoteController extends Controller
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
             'items.*.service_id' => 'required|exists:services,id',
+            'items.*.service_label' => 'nullable|string|max:255',
             'items.*.service_type_name' => 'nullable|string|max:255',
             'items.*.description' => 'nullable|string|max:500',
             'items.*.previous_license' => 'nullable|string|max:64',
@@ -158,6 +165,7 @@ class QuoteController extends Controller
             $itemData = [
                 'item_position' => (int) ($row['item_position'] ?? $pos + 1),
                 'service_id' => $row['service_id'] ?? null,
+                'service_label' => isset($row['service_label']) && trim((string) $row['service_label']) !== '' ? trim((string) $row['service_label']) : null,
                 'service_type_id' => $serviceType->id,
                 'raa_code' => $row['raa_code'] ?? null,
                 'previous_license' => $row['previous_license'] ?? null,
@@ -180,6 +188,7 @@ class QuoteController extends Controller
 
         return redirect()->route('admin.quotes.show', $quote)->with('success', 'Cotización actualizada.');
     }
+
 
     /**
      * Aprobar cotización (sin crear procesos automáticamente).
@@ -341,6 +350,7 @@ class QuoteController extends Controller
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
             'items.*.service_id' => 'required|exists:services,id',
+            'items.*.service_label' => 'nullable|string|max:255',
             'items.*.service_type_name' => 'nullable|string|max:255',
             'items.*.description' => 'nullable|string|max:500',
             'items.*.previous_license' => 'nullable|string|max:64',
@@ -403,6 +413,7 @@ class QuoteController extends Controller
             QuoteItem::create([
                 'quote_id' => $quote->id,
                 'service_id' => $row['service_id'] ?? null,
+                'service_label' => isset($row['service_label']) && trim((string) $row['service_label']) !== '' ? trim((string) $row['service_label']) : null,
                 'item_position' => (int) ($row['item_position'] ?? $pos + 1),
                 'service_type_id' => $serviceType->id,
                 'raa_code' => $row['raa_code'] ?? null,
