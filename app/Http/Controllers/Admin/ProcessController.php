@@ -276,6 +276,10 @@ class ProcessController extends Controller
      */
     public function linkToQuote(Request $request, Process $process): RedirectResponse
     {
+        // Permite "quitar ítem" enviando vacío desde el formulario (value="").
+        $request->merge([
+            'quote_item_id' => $request->input('quote_item_id') ?: null,
+        ]);
         $validated = $request->validate([
             'quote_id' => 'required|exists:quotes,id',
             'quote_item_id' => 'nullable|exists:quote_items,id',

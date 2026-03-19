@@ -200,8 +200,20 @@
                                             · {{ $rootSubmission->submission_date ? $rootSubmission->submission_date->format('d/m/Y') : ($rootSubmission->created_at?->format('d/m/Y') ?? '-') }}
                                         </span>
                                         <span class="px-2 py-0.5 rounded text-xs font-medium {{ $statusBadgeClass }}">{{ $lastInCycle->status }}</span>
-                                        @if($rootSubmission->quote)
-                                            <a href="{{ route('admin.quotes.show', $rootSubmission->quote) }}" class="text-sm text-teal-600 hover:underline" onclick="event.stopPropagation()">Cot. {{ $rootSubmission->quote->consecutive ?? $rootSubmission->quote->id }}</a>
+                                        @if($process->quote_id && $process->quote)
+                                            <a href="{{ route('admin.quotes.show', $process->quote) }}"
+                                               class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
+                                               onclick="event.stopPropagation()">
+                                                <i class="fas fa-file-invoice mr-1"></i> Cot. {{ $process->quote->consecutive }}
+                                            </a>
+                                        @endif
+                                        @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
+                                            <button type="button"
+                                                    onclick="event.stopPropagation(); typeof openLinkQuoteModalForProcess === 'function' && openLinkQuoteModalForProcess();"
+                                                    class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
+                                                    title="Asignar cotización e ítem">
+                                                <i class="fas fa-file-alt"></i>
+                                            </button>
                                         @endif
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>
@@ -258,6 +270,21 @@
                                         <span class="font-semibold text-gray-900">Ciclo 1</span>
                                         <span class="text-sm text-gray-600">Documentación</span>
                                         <span class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">En curso</span>
+                                        @if($process->quote_id && $process->quote)
+                                            <a href="{{ route('admin.quotes.show', $process->quote) }}"
+                                               class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
+                                               onclick="event.stopPropagation()">
+                                                <i class="fas fa-file-invoice mr-1"></i> Cot. {{ $process->quote->consecutive }}
+                                            </a>
+                                        @endif
+                                        @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
+                                            <button type="button"
+                                                    onclick="event.stopPropagation(); typeof openLinkQuoteModalForProcess === 'function' && openLinkQuoteModalForProcess();"
+                                                    class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
+                                                    title="Asignar cotización e ítem">
+                                                <i class="fas fa-file-alt"></i>
+                                            </button>
+                                        @endif
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>
                                     <div class="p-4 bg-white border-t border-gray-200 space-y-6">
@@ -296,22 +323,7 @@
                                                 <p class="text-sm text-gray-500 mt-2">No hay documentos. Use <strong>Gestión Documental</strong> → Agregar Documento para cargar los requisitos; luego apruebe cada uno y registre el sometimiento.</p>
                                             @endif
                                         </div>
-                                        @if($process->quote_id && $process->quote)
-                                            <p class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-2 items-center">
-                                                <a href="{{ route('admin.quotes.show', $process->quote) }}" class="text-sm px-3 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center">
-                                                    <i class="fas fa-file-invoice mr-1"></i> Ver cotización {{ $process->quote->consecutive }}
-                                                </a>
-                                            </p>
-                                        @endif
-                                        @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
-                                        <p class="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-2 items-center">
-                                            <button type="button" onclick="typeof openLinkQuoteModalForProcess === 'function' && openLinkQuoteModalForProcess()"
-                                                    class="text-sm px-3 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200">
-                                                <i class="fas fa-link mr-1"></i> {{ $process->quote_item_id ? 'Cambiar cotización / ítem' : 'Vincular a cotización e ítem' }}
-                                            </button>
-                                            <span class="text-xs text-gray-500">Este ciclo (y el expediente) quedarán vinculados al ítem elegido; en la cotización se mostrará el trámite de este expediente.</span>
-                                        </p>
-                                        @endif
+                                        {{-- Link cotización/ítem movido al resumen del ciclo (arriba). --}}
                                     </div>
                                 </details>
                             </li>
@@ -824,10 +836,11 @@
                             </select>
                         </div>
                         <div>
-                            <label for="link-quote-quote_item_id" class="block text-sm font-medium text-gray-700">Ítem de la cotización <span class="text-red-500">*</span></label>
-                            <select name="quote_item_id" id="link-quote-quote_item_id" required
+                            <label for="link-quote-quote_item_id" class="block text-sm font-medium text-gray-700">Ítem de la cotización</label>
+                            <select name="quote_item_id" id="link-quote-quote_item_id"
                                     class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
-                                <option value="">— Primero seleccione una cotización —</option>
+                                <option value="">— Sin ítem (quitar) —</option>
+                                <option value="" disabled>— Primero seleccione una cotización —</option>
                                 @foreach($quotesForClient as $q)
                                     @foreach($q->quoteItems as $qi)
                                         <option value="{{ $qi->id }}" data-quote="{{ $q->id }}">{{ $q->consecutive }} · #{{ $qi->item_position }} · {{ $qi->serviceType->name ?? 'Servicio' }}</option>
@@ -850,6 +863,8 @@
     <script>
     var linkQuoteBaseUrl = '{{ url("admin/submissions") }}';
     var processLinkQuoteUrl = '{{ route("admin.processes.link-to-quote", $process) }}';
+    var currentProcessQuoteId = @json($process->quote_id ?? null);
+    var currentProcessQuoteItemId = @json($process->quote_item_id ?? null);
     function openLinkQuoteModal(submissionId) {
         var form = document.getElementById('form-link-quote');
         if (!form) return;
@@ -874,11 +889,17 @@
         if (methodInput) methodInput.value = 'POST';
         var quoteSelect = document.getElementById('link-quote-quote_id');
         var itemSelect = document.getElementById('link-quote-quote_item_id');
-        if (quoteSelect) quoteSelect.value = '';
+        if (quoteSelect) quoteSelect.value = currentProcessQuoteId || '';
         if (itemSelect) {
-            itemSelect.value = '';
+            itemSelect.value = currentProcessQuoteItemId || '';
             var opts = itemSelect.querySelectorAll('option[data-quote]');
-            opts.forEach(function(opt) { opt.style.display = 'none'; });
+            if (currentProcessQuoteId) {
+                opts.forEach(function(opt) {
+                    opt.style.display = opt.getAttribute('data-quote') === String(currentProcessQuoteId) ? '' : 'none';
+                });
+            } else {
+                opts.forEach(function(opt) { opt.style.display = 'none'; });
+            }
         }
         document.getElementById('modal-link-quote').classList.remove('hidden');
     }
