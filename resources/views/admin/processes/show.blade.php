@@ -85,31 +85,37 @@
                         <dd class="font-medium text-gray-900">{{ $process->expediente_invima ?? '-' }}</dd>
                     </div>
                     @php
-                        $filasCotizacionPorCiclo = $process->submissions
+                        $rootsParaCotizaciones = $process->submissions
                             ->whereNull('parent_id')
-                            ->filter(fn ($s) => $s->quote_id && $s->quote)
                             ->sortBy(fn ($s) => $s->submission_date ?? $s->created_at)
                             ->values();
+                        $hayCotizacionesPorCiclo = $rootsParaCotizaciones->contains(fn ($s) => $s->quote_id && $s->quote);
                     @endphp
-                    @if($filasCotizacionPorCiclo->isNotEmpty())
+                    @if($hayCotizacionesPorCiclo)
                         <div>
                             <dt class="text-gray-500">Cotizaciones</dt>
-                            <dd class="font-medium text-gray-900 space-y-1.5">
-                                @foreach($filasCotizacionPorCiclo as $sub)
-                                    @php
-                                        $q = $sub->quote;
-                                        $qi = $sub->quoteItem;
-                                        $nombreServicio = $qi
-                                            ? ($qi->service_label ?: ($qi->service?->name ?? $qi->serviceType?->name ?? '—'))
-                                            : '—';
-                                    @endphp
-                                    <div class="text-sm">
-                                        <a href="{{ route('admin.quotes.show', $q) }}" class="text-teal-600 hover:text-teal-800 hover:underline font-medium">{{ $q->consecutive }}</a>
-                                        <span class="text-gray-500"> — </span>
-                                        <span class="text-gray-800">{{ $nombreServicio }}</span>
-                                        <span class="text-gray-500"> — </span>
-                                        <span class="text-gray-600">{{ $q->date?->format('d/m/Y') }}</span>
-                                    </div>
+                            <dd class="font-medium text-gray-900 space-y-2">
+                                @foreach($rootsParaCotizaciones as $idx => $sub)
+                                    @if($sub->quote_id && $sub->quote)
+                                        @php
+                                            $q = $sub->quote;
+                                            $qi = $sub->quoteItem;
+                                            $nombreServicio = $qi
+                                                ? ($qi->service_label ?: ($qi->service?->name ?? $qi->serviceType?->name ?? '—'))
+                                                : '—';
+                                            $numCiclo = $idx + 1;
+                                        @endphp
+                                        <div class="text-sm">
+                                            <div>
+                                                <a href="{{ route('admin.quotes.show', $q) }}" class="text-teal-600 hover:text-teal-800 hover:underline font-medium">{{ $q->consecutive }}</a>
+                                                <span class="text-gray-500"> — </span>
+                                                <span class="text-gray-800">{{ $nombreServicio }}</span>
+                                                <span class="text-gray-500"> — </span>
+                                                <span class="text-gray-600">{{ $q->date?->format('d/m/Y') }}</span>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-0.5 font-normal">Ciclo {{ $numCiclo }}</p>
+                                        </div>
+                                    @endif
                                 @endforeach
                             </dd>
                         </div>
@@ -123,11 +129,14 @@
                                         ?: ($process->quoteItem?->service?->name ?? $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '—');
                                 @endphp
                                 <div class="text-sm">
-                                    <a href="{{ route('admin.quotes.show', $q) }}" class="text-teal-600 hover:text-teal-800 hover:underline font-medium">{{ $q->consecutive }}</a>
-                                    <span class="text-gray-500"> — </span>
-                                    <span class="text-gray-800">{{ $nombreServicio }}</span>
-                                    <span class="text-gray-500"> — </span>
-                                    <span class="text-gray-600">{{ $q->date?->format('d/m/Y') }}</span>
+                                    <div>
+                                        <a href="{{ route('admin.quotes.show', $q) }}" class="text-teal-600 hover:text-teal-800 hover:underline font-medium">{{ $q->consecutive }}</a>
+                                        <span class="text-gray-500"> — </span>
+                                        <span class="text-gray-800">{{ $nombreServicio }}</span>
+                                        <span class="text-gray-500"> — </span>
+                                        <span class="text-gray-600">{{ $q->date?->format('d/m/Y') }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-0.5 font-normal">Cotización del expediente (sin ciclo)</p>
                                 </div>
                             </dd>
                         </div>
