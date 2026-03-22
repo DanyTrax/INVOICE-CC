@@ -167,13 +167,17 @@
                                     @php
                                         $linkedCycle = $item->submissions?->sortByDesc('id')->first();
                                         $linkedProcess = $linkedCycle?->process;
+                                        // Ítem (tras vincular ciclo) o expediente vinculado al ítem
+                                        $tramiteNombre = $item->serviceType?->name
+                                            ?? $linkedProcess?->serviceType?->name
+                                            ?? $item->process?->serviceType?->name;
                                     @endphp
                                     @if($linkedProcess)
                                         <a href="{{ route('admin.processes.show', $linkedProcess) }}" class="text-teal-600 hover:text-teal-800 hover:underline">
-                                            {{ $linkedProcess->serviceType?->name ?? 'Expediente' }}
+                                            {{ $tramiteNombre ?: 'Expediente' }}
                                         </a>
                                     @else
-                                        –
+                                        {{ $tramiteNombre ?: '–' }}
                                     @endif
                                 </td>
                             @endif

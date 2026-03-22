@@ -41,7 +41,8 @@ class QuoteController extends Controller
             'client',
             'quoteItems.service',
             'quoteItems.serviceType',
-            // Vinculación por ciclo (submission) para mostrar Trámite por ítem
+            // Expediente creado desde el ítem (HasOne) y ciclos vinculados al ítem
+            'quoteItems.process.serviceType',
             'quoteItems.submissions.process.serviceType',
         ]);
         try {

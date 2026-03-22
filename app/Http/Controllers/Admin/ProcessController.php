@@ -301,6 +301,12 @@ class ProcessController extends Controller
                     ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
             }
             $data['quote_item_id'] = $quoteItem->id;
+            if ($process->service_type_id) {
+                $quoteItem->update(['service_type_id' => $process->service_type_id]);
+            }
+            if (!$quote->show_service_type_column) {
+                $quote->update(['show_service_type_column' => true]);
+            }
         } else {
             $data['quote_item_id'] = null;
         }
@@ -627,7 +633,14 @@ class ProcessController extends Controller
                 'quote_id' => $quote->id,
                 'quote_item_id' => $quoteItem->id,
             ]);
-            // No forzar show_service_type_column; el usuario puede habilitarlo manualmente.
+            // Trámite del expediente → ítem de cotización (nombre de tipo de trámite en PDF/vista).
+            if ($process->service_type_id) {
+                $quoteItem->update(['service_type_id' => $process->service_type_id]);
+            }
+            // Mostrar columna Trámite en cotización y PDF (el usuario puede desactivarla al editar).
+            if (!$quote->show_service_type_column) {
+                $quote->update(['show_service_type_column' => true]);
+            }
         } else {
             // Quitar el ítem del ciclo, manteniendo la cotización seleccionada.
             $submission->update([
