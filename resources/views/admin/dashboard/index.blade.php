@@ -55,12 +55,12 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <x-widgets.stats-card 
-            title="EN REQUERIMIENTO (AUTO)"
+            title="TRÁMITE AUTO"
             :value="$stats['en_requerimiento']"
             icon="exclamation-triangle"
             color="yellow"
             :link="route('admin.processes.monitor', ['step' => \App\Models\Process::STEP_AUTO])"
-            subtitle="Con requerimiento AUTO vigente"
+            subtitle="AUTO (Recolección), (Sometimiento), (Radicado)… hasta cerrar"
         />
 
         <x-widgets.stats-card 

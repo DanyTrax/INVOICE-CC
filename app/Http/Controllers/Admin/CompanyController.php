@@ -170,10 +170,10 @@ class CompanyController extends Controller
             'recoleccion' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_RECOLECCION)->count(),
             'sometimiento' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_SOMETIMIENTO)->count(),
             'radicado' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_RADICADO)->count(),
-            'requerimiento' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_AUTO)->count(),
+            'requerimiento' => $company->processes->filter(fn ($p) => $p->isInAutoPipeline())->count(),
             'finalizado' => $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_FINALIZADO)->count(),
         ];
-        $alerts = $company->processes->filter(fn ($p) => $p->getCurrentStep() === Process::STEP_AUTO)->count();
+        $alerts = $company->processes->filter(fn ($p) => $p->isInAutoPipeline())->count();
 
         $availableSteps = Process::stepLabels();
 

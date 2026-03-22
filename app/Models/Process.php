@@ -44,14 +44,64 @@ class Process extends Model
     }
 
     /**
+     * Etiquetas para filtros (monitor): aclara el paso AUTO.
+     */
+    public static function stepFilterLabels(): array
+    {
+        $l = self::stepLabels();
+        $l[self::STEP_AUTO] = 'AUTO (Recolección, Sometimiento, Radicado…)';
+
+        return $l;
+    }
+
+    /**
      * Ya existe al menos un requerimiento AUTO registrado en la línea de tiempo.
      */
     public function hasAutoRegulatoryEvent(): bool
     {
+        if ($this->relationLoaded('submissions')) {
+            foreach ($this->submissions as $s) {
+                if ($s->relationLoaded('regulatoryEvents')) {
+                    if ($s->regulatoryEvents->contains('event_type', RegulatoryEvent::EVENT_TYPE_AUTO)) {
+                        return true;
+                    }
+                } else {
+                    if ($s->regulatoryEvents()->where('event_type', RegulatoryEvent::EVENT_TYPE_AUTO)->exists()) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         return RegulatoryEvent::query()
             ->where('event_type', RegulatoryEvent::EVENT_TYPE_AUTO)
             ->whereHas('submission', fn ($q) => $q->where('process_id', $this->id))
             ->exists();
+    }
+
+    /**
+     * Expediente con AUTO registrado y aún no finalizado (todas las sub-fases del trámite AUTO).
+     */
+    public function isInAutoPipeline(): bool
+    {
+        if ($this->status === self::STATUS_FINALIZADO) {
+            return false;
+        }
+
+        return $this->hasAutoRegulatoryEvent();
+    }
+
+    /**
+     * Alcance del filtro "Paso: AUTO" en monitor y conteo del dashboard.
+     */
+    public function scopeWhereAutoPipeline($query)
+    {
+        return $query->where('status', '!=', self::STATUS_FINALIZADO)
+            ->whereHas('submissions.regulatoryEvents', function ($q) {
+                $q->where('event_type', RegulatoryEvent::EVENT_TYPE_AUTO);
+            });
     }
 
     /**
@@ -145,7 +195,7 @@ class Process extends Model
             }),
             self::STEP_SOMETIMIENTO => $query->whereRaw($subLastStatus . ' = ?', [\App\Models\Submission::STATUS_PENDIENTE]),
             self::STEP_RADICADO => $query->where('status', self::STATUS_RADICADO),
-            self::STEP_AUTO => $query->where('status', self::STATUS_EN_REQUERIMIENTO),
+            self::STEP_AUTO => $query->whereAutoPipeline(),
             self::STEP_FINALIZADO => $query->where('status', self::STATUS_FINALIZADO),
             default => null,
         };

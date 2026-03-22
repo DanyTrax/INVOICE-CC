@@ -42,7 +42,7 @@
                 <label for="monitor-step" class="block text-xs font-medium text-gray-600 mb-1">Paso</label>
                 <select id="monitor-step" name="step" class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">
                     <option value="">Todos</option>
-                    @foreach(\App\Models\Process::stepLabels() as $num => $label)
+                    @foreach(\App\Models\Process::stepFilterLabels() as $num => $label)
                         <option value="{{ $num }}" {{ request('step') == $num ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>

@@ -17,7 +17,6 @@ class DashboardController extends Controller
         $recoleccion = 0;
         $sometimiento = 0;
         $radicado = 0;
-        $enRequerimiento = 0;
         $finalizados = 0;
         foreach ($processesWithSubs as $process) {
             $step = $process->getCurrentStep();
@@ -25,12 +24,14 @@ class DashboardController extends Controller
                 Process::STEP_RECOLECCION => $recoleccion++,
                 Process::STEP_SOMETIMIENTO => $sometimiento++,
                 Process::STEP_RADICADO => $radicado++,
-                Process::STEP_AUTO => $enRequerimiento++,
+                Process::STEP_AUTO => null,
                 Process::STEP_FINALIZADO => $finalizados++,
                 default => null,
             };
         }
-        $totalActive = $recoleccion + $sometimiento + $radicado + $enRequerimiento;
+        // AUTO: cualquier sub-fase (Recolección, Sometimiento, Radicado…) mientras no esté finalizado
+        $enRequerimiento = Process::whereAutoPipeline()->count();
+        $totalActive = Process::where('status', '!=', Process::STATUS_FINALIZADO)->count();
 
         $stats = [
             'total_active' => $totalActive,
