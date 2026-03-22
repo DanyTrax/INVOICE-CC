@@ -879,7 +879,13 @@
                                 <option value="" disabled>— Primero seleccione una cotización —</option>
                                 @foreach($quotesForClient as $q)
                                     @foreach($q->quoteItems as $qi)
-                                        <option value="{{ $qi->id }}" data-quote="{{ $q->id }}">{{ $q->consecutive }} · #{{ $qi->item_position }} · {{ $qi->serviceType->name ?? 'Servicio' }}</option>
+                                        @php
+                                            $nombreServicio = $qi->service_label ?: ($qi->service?->name ?? null);
+                                            if ($nombreServicio === null || $nombreServicio === '') {
+                                                $nombreServicio = $qi->serviceType?->name ?? '—';
+                                            }
+                                        @endphp
+                                        <option value="{{ $qi->id }}" data-quote="{{ $q->id }}">{{ $q->consecutive }} · #{{ $qi->item_position }} · {{ \Illuminate\Support\Str::limit($nombreServicio, 100) }}</option>
                                     @endforeach
                                 @endforeach
                             </select>

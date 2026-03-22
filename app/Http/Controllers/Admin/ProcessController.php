@@ -364,7 +364,7 @@ class ProcessController extends Controller
         }
 
         // Cotizaciones del mismo cliente para poder vincular ciclos a una cotización/ítem
-        $quotesForClient = Quote::with(['quoteItems.serviceType'])
+        $quotesForClient = Quote::with(['quoteItems.service', 'quoteItems.serviceType'])
             ->where('client_id', $process->client_id)
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc')
