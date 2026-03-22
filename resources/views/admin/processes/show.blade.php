@@ -237,14 +237,14 @@
                                                 <i class="fas fa-file-invoice mr-1"></i> Cot. {{ $rootSubmission->quote->consecutive ?? $rootSubmission->quote->id }}
                                             </a>
                                         @endif
-                                        @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
+                                        @isset($quotesForClient)
                                             <button type="button"
                                                     onclick="event.stopPropagation(); typeof openLinkQuoteModal === 'function' && openLinkQuoteModal({{ $rootSubmission->id }}, {{ $rootSubmission->quote_id ?? 'null' }}, {{ $rootSubmission->quote_item_id ?? 'null' }});"
                                                     class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
-                                                    title="Asignar cotización e ítem">
+                                                    title="Vincular o desvincular cotización e ítem">
                                                 <i class="fas fa-file-alt"></i>
                                             </button>
-                                        @endif
+                                        @endisset
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>
                                     <div class="p-4 bg-white border-t border-gray-200 space-y-6">
@@ -307,14 +307,14 @@
                                                 <i class="fas fa-file-invoice mr-1"></i> Cot. {{ $process->quote->consecutive }}
                                             </a>
                                         @endif
-                                        @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
+                                        @isset($quotesForClient)
                                             <button type="button"
                                                     onclick="event.stopPropagation(); typeof openLinkQuoteModalForProcess === 'function' && openLinkQuoteModalForProcess();"
                                                     class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
-                                                    title="Asignar cotización e ítem">
+                                                    title="Vincular o desvincular cotización e ítem">
                                                 <i class="fas fa-file-alt"></i>
                                             </button>
-                                        @endif
+                                        @endisset
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>
                                     <div class="p-4 bg-white border-t border-gray-200 space-y-6">
@@ -844,22 +844,26 @@
         </div>
     </div>
 
-    {{-- Modal: Vincular ciclo a cotización e ítem --}}
-    @if(isset($quotesForClient) && $quotesForClient->isNotEmpty())
+    {{-- Modal: Vincular / desvincular ciclo (o expediente) a cotización e ítem --}}
+    @isset($quotesForClient)
     <div id="modal-link-quote" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75" onclick="document.getElementById('modal-link-quote').classList.add('hidden')"></div>
             <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                <h4 class="text-lg font-semibold text-gray-900 mb-4">Vincular ciclo a cotización</h4>
-                <p class="text-sm text-gray-600 mb-4">Seleccione la cotización y luego el ítem (servicio) al que vincula este ciclo.</p>
+                <h4 id="modal-link-quote-title" class="text-lg font-semibold text-gray-900 mb-4">Vincular ciclo a cotización</h4>
+                <p class="text-sm text-gray-600 mb-4">Seleccione la cotización y el ítem, o use <strong>Quitar vinculación</strong> para dejar el ciclo sin cotización.</p>
                 <form id="form-link-quote" method="post" action="">
                     @csrf
                     @method('PUT')
                     <div class="space-y-4">
+                        @if($quotesForClient->isEmpty())
+                            <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">No hay cotizaciones de este cliente. Solo puede <strong>quitar</strong> una vinculación que ya exista.</p>
+                        @endif
                         <div>
                             <label for="link-quote-quote_id" class="block text-sm font-medium text-gray-700">Cotización <span class="text-red-500">*</span></label>
-                            <select name="quote_id" id="link-quote-quote_id" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                            <select name="quote_id" id="link-quote-quote_id" @if($quotesForClient->isNotEmpty()) required @endif
+                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                                    @if($quotesForClient->isEmpty()) disabled @endif>
                                 <option value="">— Buscar / seleccionar cotización —</option>
                                 @foreach($quotesForClient as $q)
                                     <option value="{{ $q->id }}">{{ $q->consecutive }} · {{ $q->date?->format('d/m/Y') ?? '-' }}</option>
@@ -869,8 +873,9 @@
                         <div>
                             <label for="link-quote-quote_item_id" class="block text-sm font-medium text-gray-700">Ítem de la cotización</label>
                             <select name="quote_item_id" id="link-quote-quote_item_id"
-                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
-                                <option value="">— Sin ítem (quitar) —</option>
+                                    class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                                    @if($quotesForClient->isEmpty()) disabled @endif>
+                                <option value="">— Sin ítem (solo cotización, sin línea) —</option>
                                 <option value="" disabled>— Primero seleccione una cotización —</option>
                                 @foreach($quotesForClient as $q)
                                     @foreach($q->quoteItems as $qi)
@@ -880,16 +885,20 @@
                             </select>
                         </div>
                     </div>
-                    <div class="mt-6 flex justify-end gap-2">
+                    <div class="mt-6 flex flex-wrap justify-end gap-2">
                         <button type="button" onclick="document.getElementById('modal-link-quote').classList.add('hidden')"
                                 class="px-3 py-2 border border-gray-300 rounded-lg text-sm">Cancelar</button>
-                        <button type="submit" class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700">Vincular</button>
+                        <button type="submit" name="unlink" value="1" formnovalidate id="btn-unlink-quote-modal"
+                                class="hidden px-3 py-2 border border-red-300 text-red-700 bg-red-50 rounded-lg text-sm hover:bg-red-100">
+                            Quitar vinculación
+                        </button>
+                        <button type="submit" id="btn-submit-link-quote" class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700">Guardar vinculación</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    @endif
+    @endisset
 
     <script>
     var linkQuoteBaseUrl = '{{ url("admin/submissions") }}';
@@ -902,6 +911,8 @@
         form.action = linkQuoteBaseUrl + '/' + submissionId + '/link-quote';
         var methodInput = form.querySelector('input[name="_method"]');
         if (methodInput) methodInput.value = 'PUT';
+        var titleEl = document.getElementById('modal-link-quote-title');
+        if (titleEl) titleEl.textContent = 'Vincular ciclo a cotización';
         var quoteSelect = document.getElementById('link-quote-quote_id');
         var itemSelect = document.getElementById('link-quote-quote_item_id');
         if (quoteSelect) quoteSelect.value = presetQuoteId || '';
@@ -916,6 +927,11 @@
                 opts.forEach(function(opt) { opt.style.display = 'none'; });
             }
         }
+        var unlinkBtn = document.getElementById('btn-unlink-quote-modal');
+        if (unlinkBtn) {
+            if (presetQuoteId) unlinkBtn.classList.remove('hidden');
+            else unlinkBtn.classList.add('hidden');
+        }
         document.getElementById('modal-link-quote').classList.remove('hidden');
     }
     function openLinkQuoteModalForProcess() {
@@ -924,6 +940,8 @@
         form.action = processLinkQuoteUrl;
         var methodInput = form.querySelector('input[name="_method"]');
         if (methodInput) methodInput.value = 'POST';
+        var titleEl = document.getElementById('modal-link-quote-title');
+        if (titleEl) titleEl.textContent = 'Vincular expediente a cotización';
         var quoteSelect = document.getElementById('link-quote-quote_id');
         var itemSelect = document.getElementById('link-quote-quote_item_id');
         if (quoteSelect) quoteSelect.value = currentProcessQuoteId || '';
@@ -937,6 +955,11 @@
             } else {
                 opts.forEach(function(opt) { opt.style.display = 'none'; });
             }
+        }
+        var unlinkBtn = document.getElementById('btn-unlink-quote-modal');
+        if (unlinkBtn) {
+            if (currentProcessQuoteId) unlinkBtn.classList.remove('hidden');
+            else unlinkBtn.classList.add('hidden');
         }
         document.getElementById('modal-link-quote').classList.remove('hidden');
     }

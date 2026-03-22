@@ -274,6 +274,21 @@ class ProcessController extends Controller
      */
     public function linkToQuote(Request $request, Process $process): RedirectResponse
     {
+        if ($request->boolean('unlink')) {
+            $unlinkedQuoteId = $process->quote_id;
+            $process->update([
+                'quote_id' => null,
+                'quote_item_id' => null,
+            ]);
+            if ($unlinkedQuoteId) {
+                $this->syncQuoteTramiteColumnIfNoLinks((int) $unlinkedQuoteId);
+            }
+
+            return redirect()
+                ->route('admin.processes.show', $process)
+                ->with('success', 'Cotización desvinculada del expediente.');
+        }
+
         // Permite "quitar ítem" enviando vacío desde el formulario (value="").
         $request->merge([
             'quote_item_id' => $request->input('quote_item_id') ?: null,
@@ -607,6 +622,23 @@ class ProcessController extends Controller
      */
     public function linkSubmissionQuote(Request $request, Submission $submission): RedirectResponse
     {
+        $process = $submission->process;
+
+        if ($request->boolean('unlink')) {
+            $unlinkedQuoteId = $submission->quote_id;
+            $submission->update([
+                'quote_id' => null,
+                'quote_item_id' => null,
+            ]);
+            if ($unlinkedQuoteId) {
+                $this->syncQuoteTramiteColumnIfNoLinks((int) $unlinkedQuoteId);
+            }
+
+            return redirect()
+                ->route('admin.processes.show', $process)
+                ->with('success', 'Ciclo desvinculado de la cotización.');
+        }
+
         $request->merge([
             'quote_item_id' => $request->input('quote_item_id') ?: null,
         ]);
@@ -614,8 +646,6 @@ class ProcessController extends Controller
             'quote_id' => 'required|exists:quotes,id',
             'quote_item_id' => 'nullable|exists:quote_items,id',
         ]);
-
-        $process = $submission->process;
         $quote = Quote::findOrFail($validated['quote_id']);
         if ($quote->client_id !== $process->client_id) {
             return redirect()->route('admin.processes.show', $process)
@@ -661,6 +691,7 @@ class ProcessController extends Controller
     public function destroySubmission(Submission $submission): RedirectResponse
     {
         $process = $submission->process;
+        $quoteIdsToSync = $this->collectQuoteIdsFromSubmissionTree($submission);
 
         // Si se elimina un sometimiento (por ejemplo el del Ciclo 1 que ya tenía AUTO),
         // también limpiamos la Gestión Documental AUTO asociada al expediente, ya que
@@ -670,6 +701,10 @@ class ProcessController extends Controller
             ->delete();
 
         $this->deleteSubmissionBranch($submission);
+
+        foreach ($quoteIdsToSync as $qid) {
+            $this->syncQuoteTramiteColumnIfNoLinks($qid);
+        }
 
         $this->recalculateProcessStatus($process);
 
@@ -688,6 +723,19 @@ class ProcessController extends Controller
         }
         $submission->regulatoryEvents()->delete();
         $submission->delete();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function collectQuoteIdsFromSubmissionTree(Submission $submission): array
+    {
+        $ids = $submission->quote_id ? [(int) $submission->quote_id] : [];
+        foreach ($submission->children as $child) {
+            $ids = array_merge($ids, $this->collectQuoteIdsFromSubmissionTree($child));
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**
@@ -963,5 +1011,25 @@ class ProcessController extends Controller
         $processDocument->delete();
         return redirect()->route('admin.processes.show', $process)
             ->with('success', 'Documento eliminado.');
+    }
+
+    /**
+     * Si ya no queda ningún expediente ni ciclo (sometimiento) con esa cotización vinculada,
+     * desactiva la columna "Trámite" (show_service_type_column) en la cotización.
+     * Si otros expedientes o ciclos siguen usando la misma cotización, la casilla se mantiene.
+     */
+    private function syncQuoteTramiteColumnIfNoLinks(int $quoteId): void
+    {
+        $quote = Quote::find($quoteId);
+        if (!$quote || !$quote->show_service_type_column) {
+            return;
+        }
+
+        $stillLinked = Submission::where('quote_id', $quoteId)->exists()
+            || Process::where('quote_id', $quoteId)->exists();
+
+        if (!$stillLinked) {
+            $quote->update(['show_service_type_column' => false]);
+        }
     }
 }
