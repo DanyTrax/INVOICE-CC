@@ -321,6 +321,7 @@ class ProcessController extends Controller
             'client',
             'quote',
             'quoteItem.quote',
+            'quoteItem.service',
             'quoteItem.serviceType',
             'serviceType',
             'checklistItems',
@@ -329,6 +330,7 @@ class ProcessController extends Controller
             'submissions.children.regulatoryEvents',
             'submissions.quote',
             'submissions.quoteItem.quote',
+            'submissions.quoteItem.service',
             'submissions.quoteItem.serviceType',
         ]);
 

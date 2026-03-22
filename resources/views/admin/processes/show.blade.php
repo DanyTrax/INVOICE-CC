@@ -84,12 +84,51 @@
                         <dt class="text-gray-500">Expediente INVIMA</dt>
                         <dd class="font-medium text-gray-900">{{ $process->expediente_invima ?? '-' }}</dd>
                     </div>
-                    @if($process->quote)
+                    @php
+                        $filasCotizacionPorCiclo = $process->submissions
+                            ->whereNull('parent_id')
+                            ->filter(fn ($s) => $s->quote_id && $s->quote)
+                            ->sortBy(fn ($s) => $s->submission_date ?? $s->created_at)
+                            ->values();
+                    @endphp
+                    @if($filasCotizacionPorCiclo->isNotEmpty())
                         <div>
-                            <dt class="text-gray-500">Cotización</dt>
-                            <dd class="font-medium text-gray-900">
-                                <a href="{{ route('admin.quotes.show', $process->quote) }}" class="text-teal-600 hover:text-teal-800 hover:underline">{{ $process->quote->consecutive }}</a>
-                                ({{ $process->quote->date?->format('d/m/Y') }})
+                            <dt class="text-gray-500">Cotizaciones</dt>
+                            <dd class="font-medium text-gray-900 space-y-1.5">
+                                @foreach($filasCotizacionPorCiclo as $sub)
+                                    @php
+                                        $q = $sub->quote;
+                                        $qi = $sub->quoteItem;
+                                        $nombreServicio = $qi
+                                            ? ($qi->service_label ?: ($qi->service?->name ?? $qi->serviceType?->name ?? '—'))
+                                            : '—';
+                                    @endphp
+                                    <div class="text-sm">
+                                        <a href="{{ route('admin.quotes.show', $q) }}" class="text-teal-600 hover:text-teal-800 hover:underline font-medium">{{ $q->consecutive }}</a>
+                                        <span class="text-gray-500"> — </span>
+                                        <span class="text-gray-800">{{ $nombreServicio }}</span>
+                                        <span class="text-gray-500"> — </span>
+                                        <span class="text-gray-600">{{ $q->date?->format('d/m/Y') }}</span>
+                                    </div>
+                                @endforeach
+                            </dd>
+                        </div>
+                    @elseif($process->quote)
+                        <div>
+                            <dt class="text-gray-500">Cotizaciones</dt>
+                            <dd class="font-medium text-gray-900 space-y-1.5">
+                                @php
+                                    $q = $process->quote;
+                                    $nombreServicio = $process->quoteItem?->service_label
+                                        ?: ($process->quoteItem?->service?->name ?? $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '—');
+                                @endphp
+                                <div class="text-sm">
+                                    <a href="{{ route('admin.quotes.show', $q) }}" class="text-teal-600 hover:text-teal-800 hover:underline font-medium">{{ $q->consecutive }}</a>
+                                    <span class="text-gray-500"> — </span>
+                                    <span class="text-gray-800">{{ $nombreServicio }}</span>
+                                    <span class="text-gray-500"> — </span>
+                                    <span class="text-gray-600">{{ $q->date?->format('d/m/Y') }}</span>
+                                </div>
                             </dd>
                         </div>
                     @endif
@@ -125,22 +164,7 @@
                     <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
 
                     <ul class="space-y-0">
-                        {{-- 1. Cotización --}}
-                        @if($process->quote)
-                            @php $quote = $process->quote; @endphp
-                            <li class="relative pl-12 pb-8">
-                                <div class="absolute left-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
-                                    <i class="fas fa-file-invoice-dollar"></i>
-                                </div>
-                                <a href="{{ route('admin.quotes.show', $quote) }}" class="block bg-blue-50 border border-blue-100 rounded-lg p-4 hover:bg-blue-100 transition-colors">
-                                    <p class="text-xs font-medium text-blue-600 uppercase tracking-wide">Cotización</p>
-                                    <p class="font-semibold text-gray-900">{{ $quote->consecutive }}</p>
-                                    <p class="text-sm text-gray-600 mt-1">{{ $quote->date?->format('d/m/Y') }} · {{ $quote->status }}</p>
-                                </a>
-                            </li>
-                        @endif
-
-                        {{-- 2. Ciclos de trámite: un ciclo = una raíz + todos sus intentos (hijos). Nuevo ciclo solo al registrar REQUERIMIENTO AUTO desde Radicado. --}}
+                        {{-- Ciclos de trámite: un ciclo = una raíz + todos sus intentos (hijos). La cotización por ciclo va en el resumen de cada ciclo. --}}
                         @php
                             $lastSubmission = $process->submissions->sortByDesc('id')->first();
                             $roots = $process->submissions->where('parent_id', null)->sortBy(fn($s) => $s->submission_date ?? $s->created_at);
