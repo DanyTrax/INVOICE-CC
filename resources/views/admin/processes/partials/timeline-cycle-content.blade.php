@@ -1,5 +1,8 @@
 {{-- Contenido de un solo ciclo: card del sometimiento + eventos regulatorios (sin hijos). --}}
 @php
+    $cycleNum = $cycleNum ?? 1;
+    /** Ciclos 2+ = respuesta al requerimiento AUTO (subsanación): mismo trámite AUTO, pasos Sometimiento/Radicado. */
+    $isAutoLinkedCycle = $cycleNum >= 2;
     $sometidoAt = $submission->submission_date ? $submission->submission_date->format('d/M') : null;
     $radicadoAt = $submission->fecha_radicacion ? $submission->fecha_radicacion->format('d/M') : null;
 @endphp
@@ -7,6 +10,9 @@
     <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
         <div class="flex items-start justify-between gap-2">
             <p class="font-semibold text-gray-900">
+                @if($isAutoLinkedCycle)
+                    <span class="text-amber-900">AUTO ·</span>
+                @endif
                 Sometimiento:
                 @if($sometidoAt)
                     {{ $sometidoAt }}
@@ -14,9 +20,9 @@
                     sin fecha
                 @endif
                 @if($radicadoAt)
-                    → Radicado: {{ $radicadoAt }}
+                    → @if($isAutoLinkedCycle)<span class="text-amber-900">AUTO ·</span> @endif Radicado: {{ $radicadoAt }}
                 @else
-                    → Pendiente de radicación
+                    → @if($isAutoLinkedCycle)<span class="text-amber-900">AUTO ·</span> @endif Pendiente de radicación
                 @endif
             </p>
             <p class="text-[11px] text-gray-500 whitespace-nowrap mt-1">
@@ -44,6 +50,9 @@
                 $statusPillClass = match($submission->status) {
                     \App\Models\Submission::STATUS_RECHAZADO => 'bg-red-100 text-red-700',
                     \App\Models\Submission::STATUS_RADICADO => 'bg-green-100 text-green-800',
+                    \App\Models\Submission::STATUS_EN_REQUERIMIENTO => 'bg-amber-100 text-amber-900',
+                    \App\Models\Submission::STATUS_APROBADO => 'bg-emerald-100 text-emerald-900',
+                    \App\Models\Submission::STATUS_PENDIENTE => 'bg-gray-100 text-gray-800',
                     default => 'bg-gray-100 text-gray-800',
                 };
             @endphp
@@ -51,6 +60,20 @@
                 {{ $submission->status }}
             </span>
         </p>
+        @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
+            <p class="text-xs text-teal-700 mt-1">
+                <i class="fas fa-stamp mr-1"></i>
+                @if($isAutoLinkedCycle)
+                    Trámite <strong>AUTO</strong>: fase <strong>AUTO · Radicado</strong> (subsanación tras requerimiento).
+                @else
+                    Fase INVIMA: <strong>Radicado</strong>.
+                @endif
+            </p>
+        @elseif($submission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
+            <p class="text-xs text-amber-800 mt-1">
+                <i class="fas fa-gavel mr-1"></i> Fase INVIMA: <strong>Requerimiento (AUTO)</strong> — detalle en la tarjeta AUTO debajo.
+            </p>
+        @endif
 
         @if($submission->status === \App\Models\Submission::STATUS_RECHAZADO && filled($submission->rejection_observation))
             <p class="text-sm text-gray-700 mt-1">
@@ -97,7 +120,11 @@
 
         @if(isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id && $submission->status === \App\Models\Submission::STATUS_PENDIENTE)
             <p class="text-xs text-gray-500 mt-1">
-                Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones AUTO y RESOLUCIÓN.
+                @if($isAutoLinkedCycle)
+                    <strong>AUTO · Sometimiento:</strong> al aprobar, registre el radicado de esta subsanación; debajo quedará <strong>AUTO · Radicado</strong> con la opción <strong>Resolución</strong> para cerrar el expediente.
+                @else
+                    Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones AUTO y RESOLUCIÓN.
+                @endif
                 Rechazar: indique la observación; podrá crear más intentos en el mismo ciclo.
             </p>
         @endif
@@ -115,7 +142,7 @@
             <div class="flex-1 border border-teal-200 bg-teal-50 rounded-lg p-3 text-sm">
                 <div class="flex items-start justify-between gap-2">
                     <div>
-                        <p class="text-xs font-medium text-teal-700 uppercase">Radicado</p>
+                        <p class="text-xs font-medium text-teal-700 uppercase">@if($isAutoLinkedCycle) AUTO · @endif Radicado</p>
                         <p class="font-medium text-gray-900">Número de radicado: {{ $submission->radicado_invima ?? '—' }}</p>
                         <p class="text-gray-600 mt-1">
                             @if($submission->fecha_radicacion) Fecha de radicado: {{ $submission->fecha_radicacion->format('d/m/Y') }} @endif
@@ -130,10 +157,12 @@
                 <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex flex-wrap gap-2">
                         @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
-                            <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
-                                    class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-                                <i class="fas fa-gavel mr-1"></i> AUTO
-                            </button>
+                            @if(!$isAutoLinkedCycle)
+                                <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
+                                        class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                                    <i class="fas fa-gavel mr-1"></i> AUTO
+                                </button>
+                            @endif
                             <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('aprobado')"
                                     class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
                                 <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN

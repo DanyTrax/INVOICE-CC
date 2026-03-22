@@ -54,6 +54,9 @@
                 $statusPillClass = match($submission->status) {
                     \App\Models\Submission::STATUS_RECHAZADO => 'bg-red-100 text-red-700',
                     \App\Models\Submission::STATUS_RADICADO => 'bg-green-100 text-green-800',
+                    \App\Models\Submission::STATUS_EN_REQUERIMIENTO => 'bg-amber-100 text-amber-900',
+                    \App\Models\Submission::STATUS_APROBADO => 'bg-emerald-100 text-emerald-900',
+                    \App\Models\Submission::STATUS_PENDIENTE => 'bg-gray-100 text-gray-800',
                     default => 'bg-gray-100 text-gray-800',
                 };
             @endphp
@@ -61,6 +64,15 @@
                 {{ $submission->status }}
             </span>
         </p>
+        @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
+            <p class="text-xs text-teal-700 mt-1">
+                <i class="fas fa-stamp mr-1"></i> Fase INVIMA: <strong>Radicado</strong> (debajo verá la tarjeta Radicado y podrá registrar AUTO o Resolución).
+            </p>
+        @elseif($submission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
+            <p class="text-xs text-amber-800 mt-1">
+                <i class="fas fa-gavel mr-1"></i> Fase INVIMA: <strong>Requerimiento (AUTO)</strong> — el sometimiento sigue aquí; el detalle del AUTO está en la tarjeta <strong>AUTO</strong> debajo.
+            </p>
+        @endif
 
         @if($submission->status === \App\Models\Submission::STATUS_RECHAZADO && filled($submission->rejection_observation))
             <p class="text-sm text-gray-700 mt-1">

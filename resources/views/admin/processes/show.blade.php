@@ -195,6 +195,9 @@
                                 <details class="group border border-gray-200 rounded-lg overflow-hidden" @if($roots->count() === 1 || $loop->last) open @endif>
                                     <summary class="flex items-center gap-2 flex-wrap px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                                         <span class="font-semibold text-gray-900">Ciclo {{ $cycleNum }}</span>
+                                        @if($cycleNum >= 2)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-900" title="Trámite por requerimiento AUTO (subsanación)">AUTO</span>
+                                        @endif
                                         <span class="text-sm text-gray-600">
                                             {{ $attemptsInCycle->count() }} intento(s)
                                             · {{ $rootSubmission->submission_date ? $rootSubmission->submission_date->format('d/m/Y') : ($rootSubmission->created_at?->format('d/m/Y') ?? '-') }}
@@ -251,7 +254,7 @@
                                                 @if($attemptsInCycle->count() > 1)
                                                     <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Intento {{ $attemptIndex + 1 }}</p>
                                                 @endif
-                                                @include('admin.processes.partials.timeline-cycle-content', ['submission' => $submission, 'lastSubmission' => $lastSubmission ?? null, 'quotesForClient' => $quotesForClient ?? collect()])
+                                                @include('admin.processes.partials.timeline-cycle-content', ['submission' => $submission, 'lastSubmission' => $lastSubmission ?? null, 'quotesForClient' => $quotesForClient ?? collect(), 'cycleNum' => $cycleNum])
                                             </div>
                                         @endforeach
                                     </div>
@@ -338,7 +341,8 @@
                                 <details class="group border border-gray-200 rounded-lg overflow-hidden" open>
                                     <summary class="flex items-center gap-2 flex-wrap px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                                         <span class="font-semibold text-gray-900">Ciclo 2</span>
-                                        <span class="text-sm text-gray-600">Checklist AUTO · Registrar sometimiento</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-900 mr-1">AUTO</span>
+                                        <span class="text-sm text-gray-600">Trámite por requerimiento AUTO: checklist documental y luego <strong>AUTO · Sometimiento</strong> / <strong>AUTO · Radicado</strong></span>
                                         <span class="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">En curso</span>
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>

@@ -89,4 +89,42 @@ class Submission extends Model
     {
         return $this->hasMany(RegulatoryEvent::class, 'submission_id');
     }
+
+    /**
+     * Raíz del "ciclo" (intento principal): el sometimiento sin padre en la cadena de rechazos/subsanaciones.
+     */
+    public function rootSubmission(): self
+    {
+        $s = $this;
+        while ($s->parent_id) {
+            $s = $s->parent;
+        }
+
+        return $s;
+    }
+
+    /**
+     * Número de ciclo (1 = primer sometimiento raíz, 2 = subsanación tras AUTO, etc.).
+     */
+    public function cycleNumber(): int
+    {
+        $root = $this->rootSubmission();
+        $ids = static::query()
+            ->where('process_id', $root->process_id)
+            ->whereNull('parent_id')
+            ->orderByRaw('COALESCE(submission_date, created_at)')
+            ->orderBy('id')
+            ->pluck('id');
+        $pos = $ids->search($root->id);
+
+        return $pos !== false ? (int) $pos + 1 : 1;
+    }
+
+    /**
+     * Ciclo 2+ = trámite de subsanación tras un requerimiento AUTO (solo Resolución al volver a Radicado).
+     */
+    public function isAutoFollowUpCycle(): bool
+    {
+        return $this->cycleNumber() >= 2;
+    }
 }

@@ -425,9 +425,13 @@ class ProcessController extends Controller
                 'tracking_id' => $validated['tracking_id'] ?? null,
             ]);
             $submission->process->update(['status' => Process::STATUS_RADICADO]);
+            $msg = $submission->isAutoFollowUpCycle()
+                ? 'Radicado registrado. En este ciclo de subsanación solo puede registrar RESOLUCIÓN para cerrar el expediente.'
+                : 'Radicado registrado. En la línea de tiempo use REQUERIMIENTO AUTO o RESOLUCIÓN según corresponda.';
+
             return redirect()
                 ->route('admin.processes.show', $submission->process)
-                ->with('success', 'Radicado registrado. En la línea de tiempo use REQUERIMIENTO AUTO o RESOLUCIÓN según corresponda.');
+                ->with('success', $msg);
         }
 
         if ($type === 'rechazo') {
@@ -445,6 +449,10 @@ class ProcessController extends Controller
         }
 
         if ($type === 'auto') {
+            if ($submission->isAutoFollowUpCycle()) {
+                return redirect()->route('admin.processes.show', $submission->process)
+                    ->with('error', 'En el ciclo de subsanación (Ciclo 2 o posterior) solo puede registrar Resolución desde Radicado para cerrar el expediente, no un nuevo AUTO.');
+            }
             if ($submission->status !== Submission::STATUS_RADICADO) {
                 return redirect()->route('admin.processes.show', $submission->process)
                     ->with('error', 'Solo se puede registrar Requerimiento AUTO cuando el sometimiento está en estado Radicado.');

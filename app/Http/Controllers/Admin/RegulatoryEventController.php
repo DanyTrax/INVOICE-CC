@@ -16,6 +16,12 @@ class RegulatoryEventController extends Controller
      */
     public function storeAuto(Request $request, Submission $submission): RedirectResponse
     {
+        if ($submission->isAutoFollowUpCycle()) {
+            return redirect()
+                ->route('admin.processes.show', $submission->process)
+                ->with('error', 'En el ciclo de subsanación solo puede cerrar con Resolución; no se registra un nuevo AUTO desde aquí.');
+        }
+
         $validated = $request->validate([
             'document_number' => 'nullable|string|max:64',
             'event_date' => 'nullable|date',
