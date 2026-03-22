@@ -131,10 +131,17 @@
             </div>
             <div class="flex-1 border border-teal-200 bg-teal-50 rounded-lg p-3 text-sm">
                 <p class="text-xs font-medium text-teal-700 uppercase">Radicado</p>
-                <p class="font-medium text-gray-900">Radicado: {{ $submission->radicado_invima ?? '—' }}</p>
-                <p class="text-gray-600 mt-1">
-                    @if($submission->fecha_radicacion) Fecha: {{ $submission->fecha_radicacion->format('d/m/Y') }} @endif
-                    @if($submission->tracking_id) · Llave: {{ $submission->tracking_id }} @endif
+                <p class="text-sm text-gray-700 mt-1">
+                    <span class="font-medium text-gray-800">Número de radicado:</span>
+                    <span class="ml-1">{{ $submission->radicado_invima ?? '—' }}</span>
+                </p>
+                <p class="text-sm text-gray-700 mt-1">
+                    <span class="font-medium text-gray-800">Fecha de radicado:</span>
+                    <span class="ml-1">{{ $submission->fecha_radicacion ? $submission->fecha_radicacion->format('d/m/Y') : '—' }}</span>
+                </p>
+                <p class="text-sm text-gray-700 mt-1">
+                    <span class="font-medium text-gray-800">Llave / campo de registro:</span>
+                    <span class="ml-1 break-words">{{ $submission->tracking_id ?? '—' }}</span>
                 </p>
                 <p class="mt-2 flex flex-wrap gap-2">
                     <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
@@ -178,12 +185,42 @@
             </div>
             <div class="border {{ $eventBg }} rounded-lg p-3 text-sm">
                 <p class="text-xs font-medium text-gray-600 uppercase">{{ $event->event_type }}</p>
-                <p class="font-medium text-gray-900">{{ $event->document_number ?? 'Sin número' }}</p>
-                <p class="text-gray-600 mt-1">
-                    @if($event->notification_date) Fecha: {{ $event->notification_date->format('d/m/Y') }} @endif
-                    @if($event->due_date) · Vence: {{ $event->due_date->format('d/m/Y') }} @endif
-                    @if($event->resolution_key) · Llave: {{ $event->resolution_key }} @endif
-                </p>
+                @if($event->event_type === \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO)
+                    <p class="text-sm text-gray-700 mt-1">
+                        <span class="font-medium text-gray-800">Número de AUTO:</span>
+                        <span class="ml-1">{{ $event->document_number ?? '—' }}</span>
+                    </p>
+                    <p class="text-sm text-gray-700 mt-1">
+                        <span class="font-medium text-gray-800">Fecha de AUTO:</span>
+                        <span class="ml-1">{{ $event->notification_date ? $event->notification_date->format('d/m/Y') : '—' }}</span>
+                    </p>
+                    <p class="text-sm text-gray-700 mt-1">
+                        <span class="font-medium text-gray-800">Fecha de vencimiento:</span>
+                        <span class="ml-1">{{ $event->due_date ? $event->due_date->format('d/m/Y') : '—' }}</span>
+                    </p>
+                @elseif($event->event_type === \App\Models\RegulatoryEvent::EVENT_TYPE_RESOLUCION)
+                    <p class="text-sm text-gray-700 mt-1">
+                        <span class="font-medium text-gray-800">Número de Resolución:</span>
+                        <span class="ml-1">{{ $event->document_number ?? '—' }}</span>
+                    </p>
+                    <p class="text-sm text-gray-700 mt-1">
+                        <span class="font-medium text-gray-800">Fecha de Resolución:</span>
+                        <span class="ml-1">{{ $event->event_date ? $event->event_date->format('d/m/Y') : '—' }}</span>
+                    </p>
+                    <p class="text-sm text-gray-700 mt-1">
+                        <span class="font-medium text-gray-800">Detalle / observación:</span>
+                        <span class="ml-1 break-words">{{ $event->resolution_key ?? '—' }}</span>
+                    </p>
+                @else
+                    <p class="text-sm text-gray-700 mt-1">
+                        <span class="font-medium text-gray-800">Número:</span>
+                        <span class="ml-1">{{ $event->document_number ?? '—' }}</span>
+                    </p>
+                    <p class="text-sm text-gray-700 mt-1">
+                        <span class="font-medium text-gray-800">Fecha:</span>
+                        <span class="ml-1">{{ $event->notification_date ? $event->notification_date->format('d/m/Y') : '—' }}</span>
+                    </p>
+                @endif
                 <p class="mt-2">
                     <button type="button" class="js-edit-event text-xs px-2 py-1 text-teal-600 hover:bg-teal-50 rounded border border-teal-200"
                             data-url="{{ route('admin.regulatory-events.update', $event) }}"

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\RegulatoryEvent;
+use App\Models\Submission;
 
 class Process extends Model
 {
@@ -36,9 +38,69 @@ class Process extends Model
             self::STEP_RECOLECCION => 'Recolección',
             self::STEP_SOMETIMIENTO => 'Sometimiento',
             self::STEP_RADICADO => 'Radicado',
-            self::STEP_AUTO => 'AUTO (si aplica)',
+            self::STEP_AUTO => 'AUTO',
             self::STEP_FINALIZADO => 'Finalizado',
         ];
+    }
+
+    /**
+     * Ya existe al menos un requerimiento AUTO registrado en la línea de tiempo.
+     */
+    public function hasAutoRegulatoryEvent(): bool
+    {
+        return RegulatoryEvent::query()
+            ->where('event_type', RegulatoryEvent::EVENT_TYPE_AUTO)
+            ->whereHas('submission', fn ($q) => $q->where('process_id', $this->id))
+            ->exists();
+    }
+
+    /**
+     * Etiqueta detallada del trámite cuando ya hubo AUTO: AUTO (Recolección), AUTO (Sometimiento), etc.
+     */
+    public function getCurrentStepDetailedLabel(): string
+    {
+        $last = $this->relationLoaded('submissions')
+            ? $this->submissions->sortByDesc('id')->first()
+            : $this->submissions()->orderByDesc('id')->first();
+
+        if (!$last) {
+            return 'AUTO (Recolección)';
+        }
+
+        return match ($last->status) {
+            Submission::STATUS_EN_REQUERIMIENTO => 'AUTO (Recolección)',
+            Submission::STATUS_APROBADO => 'AUTO (Finalizado)',
+            Submission::STATUS_RADICADO => 'AUTO (Radicado)',
+            Submission::STATUS_PENDIENTE => $last->isAutoFollowUpCycle()
+                ? 'AUTO (Sometimiento)'
+                : 'Sometimiento',
+            Submission::STATUS_RECHAZADO => 'AUTO (Recolección)',
+            default => 'AUTO (Recolección)',
+        };
+    }
+
+    /**
+     * Texto para "Estado" / paso resaltado: mezcla estado del expediente con fase AUTO si aplica.
+     */
+    public function getDisplayStatusLabel(): string
+    {
+        if ($this->hasAutoRegulatoryEvent()) {
+            return $this->getCurrentStepDetailedLabel();
+        }
+
+        return $this->status;
+    }
+
+    /**
+     * Etiqueta del paso actual en la barra (misma lógica que el resumen).
+     */
+    public function getDisplayLabelForCurrentFlowStep(): string
+    {
+        if ($this->hasAutoRegulatoryEvent()) {
+            return $this->getCurrentStepDetailedLabel();
+        }
+
+        return $this->getCurrentStepLabel();
     }
 
     /**

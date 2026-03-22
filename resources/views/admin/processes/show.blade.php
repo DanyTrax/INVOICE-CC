@@ -49,15 +49,18 @@
                         <dt class="text-gray-500">Estado</dt>
                         <dd>
                             @php
+                                $displayStatus = $process->getDisplayStatusLabel();
                                 $statusStyles = [
                                     'Recolección' => 'bg-gray-100 text-gray-800',
                                     'Radicado' => 'bg-blue-100 text-blue-800',
                                     'En Requerimiento' => 'bg-yellow-100 text-yellow-800',
                                     'Finalizado' => 'bg-green-100 text-green-800',
                                 ];
-                                $style = $statusStyles[$process->status] ?? 'bg-gray-100 text-gray-800';
+                                $style = str_starts_with($displayStatus, 'AUTO')
+                                    ? 'bg-amber-100 text-amber-900'
+                                    : ($statusStyles[$process->status] ?? 'bg-gray-100 text-gray-800');
                             @endphp
-                            <span class="px-2 py-1 text-xs font-medium rounded-full {{ $style }}">{{ $process->status }}</span>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full {{ $style }}">{{ $displayStatus }}</span>
                         </dd>
                     </div>
                     @php
@@ -70,7 +73,7 @@
                             @foreach($stepLabels as $num => $label)
                                 @if($num > 1)<span class="text-gray-300 mx-0.5">→</span>@endif
                                 @if($num === $currentStep)
-                                    <span class="font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">{{ $label }}</span>
+                                    <span class="font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">{{ $process->getDisplayLabelForCurrentFlowStep() }}</span>
                                 @else
                                     <span class="{{ $num < $currentStep ? 'text-gray-500' : 'text-gray-400' }}">{{ $label }}</span>
                                 @endif
@@ -110,7 +113,7 @@
                     @foreach(\App\Models\Process::stepLabels() as $num => $label)
                         @if($num > 1)<span class="text-gray-300 px-0.5">→</span>@endif
                         @if($num === $process->getCurrentStep())
-                            <span class="font-semibold text-teal-700 bg-teal-100 px-2 py-1 rounded">{{ $label }}</span>
+                            <span class="font-semibold text-teal-700 bg-teal-100 px-2 py-1 rounded">{{ $process->getDisplayLabelForCurrentFlowStep() }}</span>
                         @else
                             <span class="text-gray-400">{{ $label }}</span>
                         @endif

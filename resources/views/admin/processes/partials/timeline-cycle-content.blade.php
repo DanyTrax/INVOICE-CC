@@ -143,10 +143,17 @@
                 <div class="flex items-start justify-between gap-2">
                     <div>
                         <p class="text-xs font-medium text-teal-700 uppercase">@if($isAutoLinkedCycle) AUTO · @endif Radicado</p>
-                        <p class="font-medium text-gray-900">Número de radicado: {{ $submission->radicado_invima ?? '—' }}</p>
-                        <p class="text-gray-600 mt-1">
-                            @if($submission->fecha_radicacion) Fecha de radicado: {{ $submission->fecha_radicacion->format('d/m/Y') }} @endif
-                            @if($submission->tracking_id) · Llave / campo de registro: {{ $submission->tracking_id }} @endif
+                        <p class="text-sm text-gray-700 mt-1">
+                            <span class="font-medium text-gray-800">Número de radicado:</span>
+                            <span class="ml-1">{{ $submission->radicado_invima ?? '—' }}</span>
+                        </p>
+                        <p class="text-sm text-gray-700 mt-1">
+                            <span class="font-medium text-gray-800">Fecha de radicado:</span>
+                            <span class="ml-1">{{ $submission->fecha_radicacion ? $submission->fecha_radicacion->format('d/m/Y') : '—' }}</span>
+                        </p>
+                        <p class="text-sm text-gray-700 mt-1">
+                            <span class="font-medium text-gray-800">Llave / campo de registro:</span>
+                            <span class="ml-1 break-words">{{ $submission->tracking_id ?? '—' }}</span>
                         </p>
                     </div>
                     <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
@@ -228,23 +235,46 @@
                             @endif
                         </p>
                         @if($event->event_type === \App\Models\RegulatoryEvent::EVENT_TYPE_AUTO)
-                            <p class="font-medium text-gray-900">Número de AUTO: {{ $event->document_number ?? 'Sin número' }}</p>
-                            <p class="text-gray-600 mt-1">
-                                @if($event->notification_date) Fecha de AUTO: {{ $event->notification_date->format('d/m/Y') }} @endif
-                                @if($event->due_date) · Fecha de vencimiento: {{ $event->due_date->format('d/m/Y') }} @endif
+                            <p class="text-sm text-gray-700 mt-1">
+                                <span class="font-medium text-gray-800">Número de AUTO:</span>
+                                <span class="ml-1">{{ $event->document_number ?? '—' }}</span>
+                            </p>
+                            <p class="text-sm text-gray-700 mt-1">
+                                <span class="font-medium text-gray-800">Fecha de AUTO:</span>
+                                <span class="ml-1">{{ $event->notification_date ? $event->notification_date->format('d/m/Y') : '—' }}</span>
+                            </p>
+                            <p class="text-sm text-gray-700 mt-1">
+                                <span class="font-medium text-gray-800">Fecha de vencimiento:</span>
+                                <span class="ml-1">{{ $event->due_date ? $event->due_date->format('d/m/Y') : '—' }}</span>
                             </p>
                         @elseif($event->event_type === \App\Models\RegulatoryEvent::EVENT_TYPE_RESOLUCION)
-                            <p class="font-medium text-gray-900">Número de Resolución: {{ $event->document_number ?? 'Sin número' }}</p>
-                            <p class="text-gray-600 mt-1">
-                                @if($event->event_date) Fecha de Resolución: {{ $event->event_date->format('d/m/Y') }} @endif
-                                @if($event->resolution_key) · Detalle: {{ $event->resolution_key }} @endif
+                            <p class="text-sm text-gray-700 mt-1">
+                                <span class="font-medium text-gray-800">Número de Resolución:</span>
+                                <span class="ml-1">{{ $event->document_number ?? '—' }}</span>
+                            </p>
+                            <p class="text-sm text-gray-700 mt-1">
+                                <span class="font-medium text-gray-800">Fecha de Resolución:</span>
+                                <span class="ml-1">{{ $event->event_date ? $event->event_date->format('d/m/Y') : '—' }}</span>
+                            </p>
+                            <p class="text-sm text-gray-700 mt-1">
+                                <span class="font-medium text-gray-800">Detalle / observación:</span>
+                                <span class="ml-1 break-words">{{ $event->resolution_key ?? '—' }}</span>
                             </p>
                         @else
-                            <p class="font-medium text-gray-900">{{ $event->document_number ?? 'Sin número' }}</p>
-                            <p class="text-gray-600 mt-1">
-                                @if($event->notification_date) Fecha: {{ $event->notification_date->format('d/m/Y') }} @endif
-                                @if($event->due_date) · Vence: {{ $event->due_date->format('d/m/Y') }} @endif
+                            <p class="text-sm text-gray-700 mt-1">
+                                <span class="font-medium text-gray-800">Número:</span>
+                                <span class="ml-1">{{ $event->document_number ?? '—' }}</span>
                             </p>
+                            <p class="text-sm text-gray-700 mt-1">
+                                <span class="font-medium text-gray-800">Fecha:</span>
+                                <span class="ml-1">{{ $event->notification_date ? $event->notification_date->format('d/m/Y') : '—' }}</span>
+                            </p>
+                            @if($event->due_date)
+                                <p class="text-sm text-gray-700 mt-1">
+                                    <span class="font-medium text-gray-800">Vence:</span>
+                                    <span class="ml-1">{{ $event->due_date->format('d/m/Y') }}</span>
+                                </p>
+                            @endif
                         @endif
                     </div>
                     <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
