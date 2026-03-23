@@ -191,21 +191,172 @@
                 @endphp
                 <!-- Menu -->
                 <ul class="space-y-2 font-medium">
-                    <!-- PRINCIPAL -->
                     @if($permService->userHasPermission('dashboard', 'view'))
                         <li>
                             <a href="{{ route('admin.dashboard') }}" 
                                class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.dashboard') ? 'bg-teal-700' : '' }}">
-                                <i class="fas fa-home w-5 h-5"></i>
+                                <i class="fas fa-home w-5 h-5 shrink-0"></i>
                                 <span class="ms-3">Inicio</span>
                             </a>
                         </li>
                     @endif
-                    
+
                     <!-- OPERACIÓN -->
                     <li class="pt-4">
                         <span class="text-gray-400 text-xs font-semibold uppercase px-2">OPERACIÓN</span>
                     </li>
+                    @php
+                        $expedientesLinkActive = (request()->routeIs('admin.processes.*') && ! request()->routeIs('admin.processes.history'))
+                            || request()->routeIs('admin.submissions.*');
+                        $tramiteActive = request()->routeIs('admin.service-types.*');
+                        $expedientesRowActive = $expedientesLinkActive || $tramiteActive;
+                        $expedientesSubOpen = $tramiteActive;
+                    @endphp
+                    <li x-data="{ expedientesOpen: {{ $expedientesSubOpen ? 'true' : 'false' }} }">
+                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $expedientesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}">
+                            <a href="{{ route('admin.processes.monitor') }}"
+                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium">
+                                <i class="fas fa-folder w-5 h-5 shrink-0"></i>
+                                <span class="truncate">Expedientes</span>
+                            </a>
+                            <button type="button"
+                                    @click.stop="expedientesOpen = !expedientesOpen"
+                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30"
+                                    title="Mostrar Trámite">
+                                <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': expedientesOpen }"></i>
+                            </button>
+                        </div>
+                        <ul x-show="expedientesOpen" x-cloak
+                            x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 -translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
+                            <li>
+                                <a href="{{ route('admin.service-types.index') }}"
+                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ $tramiteActive ? 'bg-teal-700/50 text-white' : '' }}">
+                                    <i class="fas fa-list-alt w-4 h-4"></i>
+                                    <span class="ms-2 text-sm">Trámite</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.processes.history') }}" 
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.history') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-clock-rotate-left w-5 h-5"></i>
+                            <span class="ms-3">Historial de Expedientes</span>
+                        </a>
+                    </li>
+
+                    <!-- CONTABILIDAD -->
+                    @php
+                        $propuestasLinkActive = request()->routeIs('admin.proposals.*');
+                        $conceptosActive = request()->routeIs('admin.concept-catalogs.*');
+                        $propuestasRowActive = $propuestasLinkActive || $conceptosActive;
+                        $propuestasSubOpen = $conceptosActive;
+
+                        $cotizacionesLinkActive = request()->routeIs('admin.quotes.*');
+                        $serviciosActive = request()->routeIs('admin.services.*');
+                        $cotizacionesRowActive = $cotizacionesLinkActive || $serviciosActive;
+                        $cotizacionesSubOpen = $serviciosActive;
+                    @endphp
+                    <li class="pt-4">
+                        <span class="text-gray-400 text-xs font-semibold uppercase px-2">CONTABILIDAD</span>
+                    </li>
+                    <li x-data="{ propuestasOpen: {{ $propuestasSubOpen ? 'true' : 'false' }} }">
+                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $propuestasRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}">
+                            <a href="{{ route('admin.proposals.index') }}"
+                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium">
+                                <i class="fas fa-file-signature w-5 h-5 shrink-0"></i>
+                                <span class="truncate">Propuestas</span>
+                            </a>
+                            <button type="button"
+                                    @click.stop="propuestasOpen = !propuestasOpen"
+                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30"
+                                    title="Mostrar Conceptos">
+                                <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': propuestasOpen }"></i>
+                            </button>
+                        </div>
+                        <ul x-show="propuestasOpen" x-cloak
+                            x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 -translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
+                            <li>
+                                <a href="{{ route('admin.concept-catalogs.index') }}"
+                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ $conceptosActive ? 'bg-teal-700/50 text-white' : '' }}">
+                                    <i class="fas fa-list-ul w-4 h-4"></i>
+                                    <span class="ms-2 text-sm">Conceptos</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li x-data="{ contabilidadOpen: {{ $cotizacionesSubOpen ? 'true' : 'false' }} }">
+                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $cotizacionesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}">
+                            <a href="{{ route('admin.quotes.index') }}"
+                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium">
+                                <i class="fas fa-file-invoice-dollar w-5 h-5 shrink-0"></i>
+                                <span class="truncate">Cotizaciones</span>
+                            </a>
+                            <button type="button"
+                                    @click.stop="contabilidadOpen = !contabilidadOpen"
+                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30"
+                                    title="Mostrar Servicios">
+                                <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': contabilidadOpen }"></i>
+                            </button>
+                        </div>
+                        <ul x-show="contabilidadOpen" x-cloak
+                            x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 -translate-y-1"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
+                            <li>
+                                <a href="{{ route('admin.services.index') }}"
+                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ $serviciosActive ? 'bg-teal-700/50 text-white' : '' }}">
+                                    <i class="fas fa-concierge-bell w-4 h-4"></i>
+                                    <span class="ms-2 text-sm">Servicios</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="pt-4">
+                        <a href="{{ route('admin.capacitaciones.index') }}"
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.capacitaciones.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-video w-5 h-5 shrink-0"></i>
+                            <span class="ms-3">Capacitaciones</span>
+                        </a>
+                    </li>
+
+                    <!-- SISTEMA -->
+                    @php
+                        $sistemaSectionVisible = $permService->userHasPermission('companies', 'view')
+                            || $permService->userHasPermission('users', 'view')
+                            || $permService->userHasPermission('settings_agency', 'view')
+                            || $permService->userHasPermission('settings_drive', 'view')
+                            || $permService->userHasPermission('settings_drive_operations_log', 'view')
+                            || $permService->userHasPermission('settings_mail', 'view')
+                            || $permService->userHasPermission('settings_templates', 'view')
+                            || $permService->userHasPermission('settings_history', 'view')
+                            || $permService->userHasPermission('settings_system', 'view')
+                            || $permService->userHasPermission('backups', 'view')
+                            || $permService->userHasPermission('permissions', 'view')
+                            || $permService->userHasPermission('activity_logs', 'view');
+                    @endphp
+                    @if($sistemaSectionVisible)
+                        <li class="pt-4">
+                            <span class="text-gray-400 text-xs font-semibold uppercase px-2">SISTEMA</span>
+                        </li>
+                    @endif
                     @if($permService->userHasPermission('companies', 'view'))
                         <li>
                             <a href="{{ route('admin.companies.index') }}"
@@ -215,50 +366,6 @@
                             </a>
                         </li>
                     @endif
-                    {{-- Módulo Cotizaciones y Expedientes --}}
-                    <li>
-                        <a href="{{ route('admin.quotes.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.quotes.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-file-invoice-dollar w-5 h-5"></i>
-                            <span class="ms-3">Cotizaciones</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.proposals.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.proposals.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-file-signature w-5 h-5"></i>
-                            <span class="ms-3">Propuestas</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.concept-catalogs.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.concept-catalogs.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-list-ul w-5 h-5"></i>
-                            <span class="ms-3">Conceptos</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.processes.monitor') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.monitor') || request()->routeIs('admin.processes.*') || request()->routeIs('admin.submissions.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-folder w-5 h-5"></i>
-                            <span class="ms-3">Expedientes</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.processes.history') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.history') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-clock-rotate-left w-5 h-5"></i>
-                            <span class="ms-3">Historial de Expedientes</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.capacitaciones.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.capacitaciones.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-video w-5 h-5"></i>
-                            <span class="ms-3">Capacitaciones</span>
-                        </a>
-                    </li>
-                    <!-- SISTEMA -->
                     @if($permService->userHasPermission('users', 'view')
                         || $permService->userHasPermission('settings_agency', 'view') 
                         || $permService->userHasPermission('settings_drive', 'view')
@@ -267,9 +374,6 @@
                         || $permService->userHasPermission('settings_templates', 'view')
                         || $permService->userHasPermission('settings_history', 'view')
                         || $permService->userHasPermission('settings_system', 'view'))
-                        <li class="pt-4">
-                            <span class="text-gray-400 text-xs font-semibold uppercase px-2">SISTEMA</span>
-                        </li>
                         @if($permService->userHasPermission('users', 'view'))
                             <li x-data="{ directorioOpen: {{ request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
                                 <button @click="directorioOpen = !directorioOpen"
@@ -320,20 +424,6 @@
                             </li>
                         @endif
                     @endif
-                    <li>
-                        <a href="{{ route('admin.service-types.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.service-types.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-list-alt w-5 h-5"></i>
-                            <span class="ms-3">Trámite</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.services.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.services.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-concierge-bell w-5 h-5"></i>
-                            <span class="ms-3">Servicios</span>
-                        </a>
-                    </li>
                     @if($permService->userHasPermission('backups', 'view'))
                     <li>
                         <a href="{{ route('admin.backups.index') }}" 
