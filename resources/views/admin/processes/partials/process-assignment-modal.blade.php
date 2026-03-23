@@ -1,4 +1,7 @@
-{{-- Modal asignación de equipo (solo admin/super_admin disparan openProcessAssignmentModal). --}}
+{{-- Modal asignación de equipo (solo admin/super_admin disparan openProcessAssignmentModal).
+     El @once evita IDs duplicados si el partial se incluye más de una vez; el @push NO debe ir dentro de @once
+     porque en Laravel el push puede no apilarse y el script nunca llega a @stack('scripts'). --}}
+@once
 <div id="process-assignment-modal" class="hidden fixed inset-0 z-[120] overflow-y-auto" aria-modal="true" role="dialog">
     <div class="flex min-h-full items-center justify-center p-4">
         <div class="fixed inset-0 bg-gray-900/60" onclick="closeProcessAssignmentModal()"></div>
@@ -28,8 +31,8 @@
         </div>
     </div>
 </div>
+@endonce
 
-@once
 @push('scripts')
 <script>
 (function() {
@@ -184,4 +187,3 @@
 })();
 </script>
 @endpush
-@endonce
