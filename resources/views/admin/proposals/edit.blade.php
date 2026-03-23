@@ -95,12 +95,14 @@
                     <i class="fas fa-plus mr-2"></i> Agregar fila
                 </button>
             </div>
-            <div class="overflow-x-auto">
+            <p class="text-sm text-gray-600 mb-3">
+                Escriba el concepto; aparecerán sugerencias del catálogo mientras escribe. Al elegir una, se rellenan alcance y honorarios; puede seguir editando el concepto en el mismo campo.
+            </p>
+            <div class="w-full">
                 <table class="w-full text-sm border border-gray-200 rounded-lg">
                     <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                         <tr>
-                            <th class="px-3 py-2 text-left w-48">Desde catálogo</th>
-                            <th class="px-3 py-2 text-left">Concepto <span class="text-red-500">*</span></th>
+                            <th class="px-3 py-2 text-left min-w-[14rem]">Concepto <span class="text-red-500">*</span></th>
                             <th class="px-3 py-2 text-left">Alcance</th>
                             <th class="px-3 py-2 text-right w-36">Honorarios <span class="text-red-500">*</span></th>
                             <th class="px-3 py-2 w-12"></th>
@@ -129,7 +131,6 @@
     ])->values();
     $existingItems = $proposal->proposalItems->map(fn ($it) => [
         'id' => $it->id,
-        'concept_catalog_id' => $it->concept_catalog_id,
         'item_position' => $it->item_position,
         'concept' => $it->concept,
         'scope' => $it->scope,
@@ -152,14 +153,91 @@
         return d.innerHTML;
     }
 
-    function buildCatalogOptions(selectedId) {
-        var html = '<option value="">— Manual / sin catálogo —</option>';
-        PROPOSAL_CATALOG.forEach(function(c) {
-            var sel = selectedId && String(selectedId) === String(c.id) ? ' selected' : '';
-            html += '<option value="' + c.id + '"' + sel + '>' + esc(c.name) + '</option>';
-        });
-        return html;
+    function getMatches(query) {
+        var q = (query || '').trim().toLowerCase();
+        if (!q || !PROPOSAL_CATALOG.length) return [];
+        return PROPOSAL_CATALOG.filter(function(c) {
+            return (c.name || '').toLowerCase().indexOf(q) !== -1;
+        }).slice(0, 25);
     }
+
+    function attachConceptAutocomplete(tr) {
+        var wrap = tr.querySelector('.concept-autocomplete-wrap');
+        if (!wrap) return;
+        var input = wrap.querySelector('.concept-input');
+        var suggestions = wrap.querySelector('.concept-suggestions');
+        if (!input || !suggestions) return;
+
+        function hideSuggestions() {
+            suggestions.innerHTML = '';
+            suggestions.classList.add('hidden');
+            wrap._matches = [];
+        }
+
+        function showSuggestions(matches) {
+            if (!matches.length) {
+                hideSuggestions();
+                return;
+            }
+            wrap._matches = matches;
+            suggestions.innerHTML = matches.map(function(c, idx) {
+                return '<button type="button" tabindex="-1" class="concept-suggestions-item w-full text-left px-3 py-2 text-sm text-gray-800 hover:bg-teal-50 border-b border-gray-100 last:border-0" data-idx="' + idx + '">' + esc(c.name) + '</button>';
+            }).join('');
+            suggestions.classList.remove('hidden');
+        }
+
+        function applySelection(c) {
+            input.value = c.name || '';
+            var scope = tr.querySelector('textarea[name$="[scope]"]');
+            var fee = tr.querySelector('input[name$="[fee_value]"]');
+            if (scope) scope.value = c.scope || '';
+            if (fee && c.default_fee != null && c.default_fee !== '') {
+                fee.value = c.default_fee;
+            }
+            hideSuggestions();
+            input.focus();
+            var len = input.value.length;
+            try { input.setSelectionRange(len, len); } catch (e) {}
+        }
+
+        input.addEventListener('input', function() {
+            var v = input.value;
+            if (!v.trim()) {
+                hideSuggestions();
+                return;
+            }
+            showSuggestions(getMatches(v));
+        });
+
+        input.addEventListener('focus', function() {
+            var v = input.value;
+            if (v.trim()) {
+                showSuggestions(getMatches(v));
+            }
+        });
+
+        suggestions.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            var btn = e.target.closest('.concept-suggestions-item');
+            if (!btn) return;
+            var idx = parseInt(btn.getAttribute('data-idx'), 10);
+            var c = wrap._matches[idx];
+            if (c) applySelection(c);
+        });
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') hideSuggestions();
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.concept-autocomplete-wrap')) {
+            document.querySelectorAll('.concept-suggestions').forEach(function(el) {
+                el.innerHTML = '';
+                el.classList.add('hidden');
+            });
+        }
+    });
 
     function addRow(data) {
         data = data || {};
@@ -169,12 +247,13 @@
         var idHidden = data.id ? '<input type="hidden" name="items[' + i + '][id]" value="' + data.id + '">' : '';
         tr.innerHTML =
             '<td class="px-3 py-2 align-top">' +
-                '<select name="items[' + i + '][concept_catalog_id]" class="catalog-select w-full border border-gray-300 rounded-lg text-sm p-2">' + buildCatalogOptions(data.concept_catalog_id) + '</select>' +
-            '</td>' +
-            '<td class="px-3 py-2 align-top">' +
-                idHidden +
-                '<input type="hidden" name="items[' + i + '][item_position]" value="' + (data.item_position || (i + 1)) + '">' +
-                '<input type="text" name="items[' + i + '][concept]" required maxlength="500" class="w-full border border-gray-300 rounded-lg text-sm p-2">' +
+                '<div class="concept-autocomplete-wrap relative z-10">' +
+                    idHidden +
+                    '<input type="hidden" name="items[' + i + '][item_position]" value="' + (data.item_position || (i + 1)) + '">' +
+                    '<input type="text" name="items[' + i + '][concept]" required maxlength="500" autocomplete="off"' +
+                    ' class="concept-input w-full border border-gray-300 rounded-lg text-sm p-2" placeholder="Escriba o busque en el catálogo…">' +
+                    '<div class="concept-suggestions hidden absolute left-0 right-0 top-full mt-0.5 max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg"></div>' +
+                '</div>' +
             '</td>' +
             '<td class="px-3 py-2 align-top">' +
                 '<textarea name="items[' + i + '][scope]" rows="2" maxlength="5000" class="w-full border border-gray-300 rounded-lg text-sm p-2"></textarea>' +
@@ -192,7 +271,7 @@
         if (data.fee_value != null && data.fee_value !== '') {
             feeIn.value = data.fee_value;
         }
-        tr.querySelector('.catalog-select').addEventListener('change', onCatalogChange);
+        attachConceptAutocomplete(tr);
         tr.querySelector('.btn-remove').addEventListener('click', function() {
             if (tbody.querySelectorAll('tr').length <= 1) {
                 alert('Debe haber al menos un ítem.');
@@ -200,21 +279,6 @@
             }
             tr.remove();
         });
-    }
-
-    function onCatalogChange(e) {
-        var sel = e.target;
-        var id = sel.value;
-        var tr = sel.closest('tr');
-        if (!id) return;
-        var c = PROPOSAL_CATALOG.find(function(x) { return String(x.id) === String(id); });
-        if (!c) return;
-        tr.querySelector('input[name$="[concept]"]').value = c.name || '';
-        tr.querySelector('textarea[name$="[scope]"]').value = c.scope || '';
-        var feeIn = tr.querySelector('input[name$="[fee_value]"]');
-        if (c.default_fee != null && c.default_fee !== '') {
-            feeIn.value = c.default_fee;
-        }
     }
 
     document.getElementById('btn-add-proposal-row').addEventListener('click', function() { addRow(); });
