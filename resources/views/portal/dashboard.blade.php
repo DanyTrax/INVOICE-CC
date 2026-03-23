@@ -4,6 +4,10 @@
 
 @section('content')
 <div class="space-y-8">
+    @if(! auth()->user()->hasTwoFactorEnabled())
+        @include('profile.partials.two-factor-setup-wizard', ['routePrefix' => 'portal', 'variant' => 'banner'])
+    @endif
+
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">Hola, {{ auth()->user()->name }} 👋</h2>
