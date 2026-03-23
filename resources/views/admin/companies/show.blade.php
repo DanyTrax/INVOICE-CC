@@ -20,18 +20,24 @@
 @endsection
 
 @section('content')
-    @php $inviteContactUser = $company->contactRegisteredUser(); @endphp
+    @php
+        $inviteContactUser = $company->contactRegisteredUser();
+        $permService = app(\App\Services\PermissionService::class);
+        $canCompaniesEdit = $permService->userHasPermission('companies', 'edit');
+    @endphp
     {{-- Botones de acción --}}
     <div class="mb-6 flex flex-wrap items-center gap-3">
-        <a href="{{ route('admin.companies.edit', $company) }}"
-           class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium">
-            <i class="fas fa-edit mr-2"></i> Editar
-        </a>
+        @if($canCompaniesEdit)
+            <a href="{{ route('admin.companies.edit', $company) }}"
+               class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium">
+                <i class="fas fa-edit mr-2"></i> Editar
+            </a>
+        @endif
         <a href="{{ route('admin.processes.monitor', ['client_id' => $company->id]) }}"
            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
             <i class="fas fa-folder-open mr-2"></i> Ver Expedientes
         </a>
-        @if(! $inviteContactUser)
+        @if($canCompaniesEdit && ! $inviteContactUser)
             <button type="button"
                     onclick="openCompanyInviteModal({{ $company->id }})"
                     class="inline-flex items-center px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium">
@@ -344,5 +350,7 @@
         </div>
     </div>
 
-    @include('admin.companies.partials.invite-modal')
+    @if($canCompaniesEdit)
+        @include('admin.companies.partials.invite-modal')
+    @endif
 @endsection

@@ -192,18 +192,6 @@
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
-
-                @if(!$user->hasRole('client'))
-                <div class="md:col-span-2">
-                    <label class="inline-flex items-center gap-2">
-                        <input type="checkbox" name="manage_capacitaciones" value="1"
-                               class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500"
-                               {{ old('manage_capacitaciones', $user->manage_capacitaciones) ? 'checked' : '' }}>
-                        <span class="text-sm font-medium text-gray-900">Gestionar capacitaciones</span>
-                    </label>
-                    <p class="mt-1 text-xs text-gray-500">Permite a este agente subir/editar/eliminar videos de capacitación y descargar reportes PDF.</p>
-                </div>
-                @endif
             </div>
 
             <!-- Botones -->

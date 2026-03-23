@@ -14,6 +14,11 @@
 @endsection
 
 @section('content')
+    @php
+        $permService = app(\App\Services\PermissionService::class);
+        $canCompaniesEdit = $permService->userHasPermission('companies', 'edit');
+        $canCompaniesDelete = $permService->userHasPermission('companies', 'delete');
+    @endphp
     <!-- Barra de búsqueda y acciones -->
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div class="flex-1 w-full sm:w-auto">
@@ -38,9 +43,11 @@
                 @endif
             </form>
         </div>
-        <a href="{{ route('admin.companies.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-            <i class="fas fa-plus mr-2"></i> Nueva Empresa
-        </a>
+        @if($canCompaniesEdit)
+            <a href="{{ route('admin.companies.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                <i class="fas fa-plus mr-2"></i> Nueva Empresa
+            </a>
+        @endif
     </div>
 
     <!-- Tabla de clientes -->
@@ -98,35 +105,41 @@
                                             <i class="fas fa-sign-in-alt"></i>
                                         </a>
                                     @else
-                                        <button type="button"
-                                                onclick="openCompanyInviteModal({{ $company->id }})"
-                                                class="text-amber-600 hover:text-amber-800"
-                                                title="Enviar invitación para registro">
-                                            <i class="fas fa-envelope"></i>
-                                        </button>
+                                        @if($canCompaniesEdit)
+                                            <button type="button"
+                                                    onclick="openCompanyInviteModal({{ $company->id }})"
+                                                    class="text-amber-600 hover:text-amber-800"
+                                                    title="Enviar invitación para registro">
+                                                <i class="fas fa-envelope"></i>
+                                            </button>
+                                        @endif
                                     @endif
                                     <a href="{{ route('admin.companies.show', $company) }}" 
                                        class="text-blue-600 hover:text-blue-800" 
                                        title="Ver">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('admin.companies.edit', $company) }}" 
-                                       class="text-teal-600 hover:text-teal-800" 
-                                       title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form action="{{ route('admin.companies.destroy', $company) }}" 
-                                          method="POST" 
-                                          class="inline"
-                                          onsubmit="return confirm('¿Estás seguro de eliminar esta empresa?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" 
-                                                class="text-red-600 hover:text-red-800" 
-                                                title="Eliminar">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    @if($canCompaniesEdit)
+                                        <a href="{{ route('admin.companies.edit', $company) }}" 
+                                           class="text-teal-600 hover:text-teal-800" 
+                                           title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    @endif
+                                    @if($canCompaniesDelete)
+                                        <form action="{{ route('admin.companies.destroy', $company) }}" 
+                                              method="POST" 
+                                              class="inline"
+                                              onsubmit="return confirm('¿Estás seguro de eliminar esta empresa?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" 
+                                                    class="text-red-600 hover:text-red-800" 
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -155,5 +168,7 @@
         @endif
     </div>
 
-    @include('admin.companies.partials.invite-modal')
+    @if($canCompaniesEdit)
+        @include('admin.companies.partials.invite-modal')
+    @endif
 @endsection

@@ -35,9 +35,6 @@ class CapacitacionController extends Controller
         if ($user->hasRole('super_admin')) {
             return true;
         }
-        if (!empty($user->manage_capacitaciones)) {
-            return true;
-        }
 
         return app(PermissionService::class)->userHasPermission('capacitaciones', 'edit');
     }
