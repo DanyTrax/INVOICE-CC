@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\User;
-use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Writer\SvgWriter;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
@@ -31,18 +33,18 @@ class TwoFactorService
     }
 
     /**
-     * Imagen QR como data URI (SVG).
+     * Imagen QR como data URI (SVG vía BaconQrCode; sin dependencia de endroid/qr-code).
      */
     public function getQrCodeDataUri(string $otpAuthUrl): string
     {
-        $result = (new Builder(
-            writer: new SvgWriter,
-            data: $otpAuthUrl,
-            size: 220,
-            margin: 8,
-        ))->build();
+        $renderer = new ImageRenderer(
+            new RendererStyle(220, 8),
+            new SvgImageBackEnd
+        );
+        $writer = new Writer($renderer);
+        $svg = $writer->writeString($otpAuthUrl);
 
-        return $result->getDataUri();
+        return 'data:image/svg+xml;base64,'.base64_encode($svg);
     }
 
     public function verifyTotp(string $secret, string $code): bool
