@@ -143,6 +143,7 @@ class ProcessAccessService
 
     /**
      * Puede gestionar documentos / Drive / checklist editable en este expediente.
+     * Quien solo tiene permiso de línea de tiempo en el rol puede editar checklist si el pivote tiene can_feed_timeline.
      */
     public function canManageDocumentsOnProcess(User $user, Process $process): bool
     {
@@ -150,7 +151,10 @@ class ProcessAccessService
             return false;
         }
 
-        if (! $this->permissions->userHasProcessAction('edit')) {
+        $canEditGlobal = $this->permissions->userHasProcessAction('edit');
+        $canFeedGlobal = $this->permissions->userHasProcessAction(PermissionService::ACTION_TIMELINE_FEED);
+
+        if (! $canEditGlobal && ! $canFeedGlobal) {
             return false;
         }
 
@@ -159,7 +163,7 @@ class ProcessAccessService
         }
 
         if (! $this->userMustUsePerProcessAssignment($user, $process)) {
-            return true;
+            return $canEditGlobal;
         }
 
         $pivot = $this->getPivot($user, $process);
@@ -168,8 +172,18 @@ class ProcessAccessService
             return false;
         }
 
-        // "Línea de tiempo" en la asignación incluye checklist / gestión documental (normal y AUTO) si el rol tiene edit.
-        return $pivot->pivot->can_manage_documents || $pivot->pivot->can_feed_timeline;
+        $hasDocPivot = $pivot->pivot->can_manage_documents || $pivot->pivot->can_feed_timeline;
+
+        if (! $hasDocPivot) {
+            return false;
+        }
+
+        if ($canEditGlobal) {
+            return true;
+        }
+
+        return $canFeedGlobal
+            && ($pivot->pivot->can_feed_timeline || $pivot->pivot->can_manage_documents);
     }
 
     /**

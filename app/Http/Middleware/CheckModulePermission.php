@@ -47,6 +47,17 @@ class CheckModulePermission
                 return $next($request);
             }
 
+            // Actualizar ítem de checklist: edit O alimentar línea de tiempo (misma lógica que gestión con asignación).
+            if ($routeName === 'admin.checklist-items.update' && in_array($method, ['PUT', 'PATCH'], true)) {
+                $canTimeline = $service->userHasProcessAction(PermissionService::ACTION_TIMELINE_FEED);
+                $canEdit = $service->userHasProcessAction('edit');
+                if (! $canTimeline && ! $canEdit) {
+                    abort(403, 'No tienes permiso para realizar esta acción en expedientes.');
+                }
+
+                return $next($request);
+            }
+
             if (! $service->userHasProcessAction($action)) {
                 abort(403, 'No tienes permiso para realizar esta acción en expedientes.');
             }
@@ -243,10 +254,14 @@ class CheckModulePermission
             'admin.submissions.update',
             'admin.submissions.update-radicado',
             'admin.submissions.link-quote',
-            'admin.checklist-items.update',
             'admin.regulatory-events.update',
         ];
         if (in_array($routeName, $editRoutes, true)) {
+            return ['processes', 'edit'];
+        }
+
+        // Actualizar checklist: se resuelve como edit; en handle() se permite también con timeline_feed.
+        if ($routeName === 'admin.checklist-items.update' && in_array($method, ['PUT', 'PATCH'], true)) {
             return ['processes', 'edit'];
         }
 
