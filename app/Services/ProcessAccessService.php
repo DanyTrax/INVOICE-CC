@@ -162,8 +162,11 @@ class ProcessAccessService
             return true;
         }
 
+        // Sin asignación por expediente ("ver todos" en la empresa): mismo criterio que línea de tiempo / feed.
+        // Antes solo se permitía con permiso global `edit`, y quien tenía solo `timeline_feed` veía el expediente
+        // pero no podía cambiar estados en Gestión Documental (botón "Cambiar estado" oculto).
         if (! $this->userMustUsePerProcessAssignment($user, $process)) {
-            return $canEditGlobal;
+            return $canEditGlobal || $canFeedGlobal;
         }
 
         $pivot = $this->getPivot($user, $process);
