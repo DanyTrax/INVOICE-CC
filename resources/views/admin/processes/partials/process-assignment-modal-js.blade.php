@@ -43,17 +43,19 @@
             var assignments = (d.assignments && typeof d.assignments === 'object') ? d.assignments : {};
             usersPayload.forEach(function(u) {
                 var a = assignments[u.id] || {};
+                var hadFeed = !!a.can_feed_timeline;
+                var hadDocs = !!a.can_manage_documents;
                 sel[u.id] = {
                     checked: (d.user_ids || []).indexOf(u.id) !== -1,
-                    feed: !!a.can_feed_timeline,
-                    docs: !!a.can_manage_documents,
+                    feed: hadFeed || hadDocs,
                     offerT: u.can_offer_timeline,
-                    offerD: u.can_offer_documents
+                    offerD: u.can_offer_documents,
+                    canOperate: !!(u.can_offer_timeline || u.can_offer_documents)
                 };
             });
             var html = '';
             usersPayload.forEach(function(u) {
-                var s = sel[u.id] || { checked: false, feed: false, docs: false, offerT: u.can_offer_timeline, offerD: u.can_offer_documents };
+                var s = sel[u.id] || { checked: false, feed: false, offerT: u.can_offer_timeline, offerD: u.can_offer_documents, canOperate: !!(u.can_offer_timeline || u.can_offer_documents) };
                 var id = u.id;
                 html += '<div class="rounded-lg border border-gray-200 p-3 bg-gray-50/80">';
                 html += '<label class="flex items-start gap-2 cursor-pointer">';
@@ -61,12 +63,9 @@
                 html += '<span><span class="font-medium text-gray-900">' + escapeHtml(u.name) + '</span><br><span class="text-xs text-gray-500">' + escapeHtml(u.email) + '</span></span>';
                 html += '</label>';
                 html += '<div class="mt-2 ml-7 flex flex-wrap gap-4 text-sm pam-flags" data-uid="' + id + '" style="' + (s.checked ? '' : 'opacity:0.5;pointer-events:none;') + '">';
-                html += '<label class="inline-flex items-center gap-2 ' + (!s.offerT ? 'text-gray-400' : '') + '">';
-                html += '<input type="checkbox" class="pam-feed rounded border-gray-300 text-teal-600" data-uid="' + id + '" ' + (s.feed ? 'checked' : '') + ' ' + (!s.offerT ? 'disabled' : '') + '>';
+                html += '<label class="inline-flex items-center gap-2 ' + (!s.canOperate ? 'text-gray-400' : '') + '">';
+                html += '<input type="checkbox" class="pam-feed rounded border-gray-300 text-teal-600" data-uid="' + id + '" ' + (s.feed ? 'checked' : '') + ' ' + (!s.canOperate ? 'disabled' : '') + '>';
                 html += '<span>Línea de tiempo</span></label>';
-                html += '<label class="inline-flex items-center gap-2 ' + (!s.offerD ? 'text-gray-400' : '') + '">';
-                html += '<input type="checkbox" class="pam-docs rounded border-gray-300 text-teal-600" data-uid="' + id + '" ' + (s.docs ? 'checked' : '') + ' ' + (!s.offerD ? 'disabled' : '') + '>';
-                html += '<span>Documentos / Drive</span></label>';
                 html += '</div></div>';
             });
             if (!html) {
@@ -116,11 +115,9 @@
             var cb = modal.querySelector('.pam-user[data-uid="' + u.id + '"]');
             if (!cb || !cb.checked) return;
             var feed = modal.querySelector('.pam-feed[data-uid="' + u.id + '"]');
-            var docs = modal.querySelector('.pam-docs[data-uid="' + u.id + '"]');
             assignments.push({
                 user_id: u.id,
-                can_feed_timeline: !!(feed && feed.checked),
-                can_manage_documents: !!(docs && docs.checked)
+                can_feed_timeline: !!(feed && feed.checked)
             });
         });
         fetch('{{ url('/admin/processes') }}/' + currentProcessId + '/assignments', {

@@ -14,7 +14,7 @@
                 </button>
             </div>
             <div class="px-5 py-4 max-h-[70vh] overflow-y-auto">
-                <p class="text-sm text-gray-600 mb-3">Seleccione usuarios que podrán ver este expediente. Marque si pueden alimentar la línea de tiempo o gestionar documentos / Drive (según permisos del rol).</p>
+                <p class="text-sm text-gray-600 mb-3">Seleccione usuarios que podrán ver este expediente. Si marca <strong>Línea de tiempo</strong>, podrá alimentar la línea de tiempo, subir a Drive, gestión documental (normal y AUTO) y cambiar estados de checklist, según los permisos del rol.</p>
                 <div id="pam-loading" class="py-8 text-center text-gray-500">
                     <i class="fas fa-circle-notch fa-spin text-2xl text-teal-600"></i>
                     <p class="mt-2 text-sm">Cargando…</p>

@@ -164,7 +164,12 @@ class ProcessAccessService
 
         $pivot = $this->getPivot($user, $process);
 
-        return $pivot && $pivot->pivot->can_manage_documents;
+        if (! $pivot) {
+            return false;
+        }
+
+        // "Línea de tiempo" en la asignación incluye checklist / gestión documental (normal y AUTO) si el rol tiene edit.
+        return $pivot->pivot->can_manage_documents || $pivot->pivot->can_feed_timeline;
     }
 
     /**

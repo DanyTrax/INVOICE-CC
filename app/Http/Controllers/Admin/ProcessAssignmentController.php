@@ -67,7 +67,6 @@ class ProcessAssignmentController extends Controller
             'assignments' => 'array',
             'assignments.*.user_id' => 'required|exists:users,id',
             'assignments.*.can_feed_timeline' => 'boolean',
-            'assignments.*.can_manage_documents' => 'boolean',
         ]);
 
         $assignableIds = $access->assignableUsers()->pluck('id')->all();
@@ -84,12 +83,11 @@ class ProcessAssignmentController extends Controller
             }
             $flags = $access->permissionFlagsForAssignableUser($target);
 
-            $canFeed = ! empty($row['can_feed_timeline']) && $flags['can_offer_timeline'];
-            $canDocs = ! empty($row['can_manage_documents']) && $flags['can_offer_documents'];
-
+            // Una sola opción en UI ("Línea de tiempo"): alimentar timeline, Drive, checklist y gestión normal/AUTO según el rol.
+            $wants = ! empty($row['can_feed_timeline']);
             $sync[$uid] = [
-                'can_feed_timeline' => $canFeed,
-                'can_manage_documents' => $canDocs,
+                'can_feed_timeline' => $wants && $flags['can_offer_timeline'],
+                'can_manage_documents' => $wants && $flags['can_offer_documents'],
             ];
         }
 
