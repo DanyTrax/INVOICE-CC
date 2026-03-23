@@ -85,7 +85,7 @@
                 <h2 class="text-sm font-semibold text-amber-900">
                     <i class="fas fa-hourglass-half mr-2"></i> Invitaciones pendientes de registro
                 </h2>
-                <p class="text-xs text-amber-800 mt-1">Correos a los que se envió enlace y aún no completan el formulario de alta. Al registrarse pasan al listado de abajo (estado según su invitación, habitualmente deshabilitado hasta activación).</p>
+                <p class="text-xs text-amber-800 mt-1">Correos a los que se envió enlace y aún no completan el formulario de alta. Al registrarse pasan al listado de abajo con estado <strong>pendiente</strong> hasta que un administrador active el acceso al portal.</p>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left text-gray-600">

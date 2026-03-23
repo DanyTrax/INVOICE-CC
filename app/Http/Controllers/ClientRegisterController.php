@@ -16,12 +16,12 @@ class ClientRegisterController extends Controller
     public function show(Request $request)
     {
         $token = $request->query('token');
-        if (!$token) {
+        if (! $token) {
             return redirect()->route('login')->with('error', 'Enlace de invitación no válido.');
         }
 
         $invite = CompanyInvite::where('token', $token)->with('company')->first();
-        if (!$invite || !$invite->isValid()) {
+        if (! $invite || ! $invite->isValid()) {
             return redirect()->route('login')->with('error', 'Este enlace ha expirado o ya fue utilizado.');
         }
 
@@ -45,7 +45,7 @@ class ClientRegisterController extends Controller
         ]);
 
         $invite = CompanyInvite::where('token', $validated['token'])->with('company')->first();
-        if (!$invite || !$invite->isValid()) {
+        if (! $invite || ! $invite->isValid()) {
             return redirect()->route('login')->with('error', 'Este enlace ha expirado o ya fue utilizado.');
         }
         if (strtolower($validated['email']) !== strtolower($invite->email)) {
@@ -60,6 +60,7 @@ class ClientRegisterController extends Controller
             ->first();
         if ($existing) {
             $invite->markAsUsed();
+
             return redirect()->route('login')->with('success', 'Ya tienes cuenta. Inicia sesión.');
         }
 
@@ -67,8 +68,9 @@ class ClientRegisterController extends Controller
             'name' => $validated['name'],
             'email' => $invite->email,
             'password' => Hash::make($validated['password']),
-            'is_active' => false,
-            'client_status' => User::CLIENT_STATUS_DESHABILITADO,
+            // Puede iniciar sesión; el portal muestra "pendiente de activación" hasta que un admin active.
+            'is_active' => true,
+            'client_status' => User::CLIENT_STATUS_PENDIENTE,
         ]);
 
         $user->companies()->attach($invite->company_id);

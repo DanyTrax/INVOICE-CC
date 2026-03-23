@@ -7,13 +7,14 @@ use App\Models\ActivityLog;
 use App\Models\Company;
 use App\Models\CompanyInvite;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use App\Services\EmailTemplateService;
 use App\Services\MailService;
 use App\Services\PermissionService;
 use App\Services\TwoFactorService;
-use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Spatie\Permission\Models\Role;
@@ -168,7 +169,7 @@ class UserController extends Controller
     /**
      * Último inicio de sesión (desde logs) y si el admin actual puede quitar el 2FA a este usuario.
      *
-     * @return array{last_login_at: \Illuminate\Support\Carbon|null, can_manage_two_factor: bool}
+     * @return array{last_login_at: Carbon|null, can_manage_two_factor: bool}
      */
     protected function adminTwoFactorContext(User $targetUser): array
     {
@@ -309,8 +310,14 @@ class UserController extends Controller
             'companies.*' => 'exists:companies,id',
         ]);
         $validated['password'] = Hash::make($validated['password']);
-        $validated['is_active'] = $request->has('is_active');
-        $validated['client_status'] = $validated['is_active'] ? User::CLIENT_STATUS_ACTIVO : User::CLIENT_STATUS_DESHABILITADO;
+        // Sin "Cliente activo": pendiente de activación (no deshabilitado). Puede iniciar sesión y ver aviso en portal.
+        if ($request->has('is_active')) {
+            $validated['client_status'] = User::CLIENT_STATUS_ACTIVO;
+            $validated['is_active'] = true;
+        } else {
+            $validated['client_status'] = User::CLIENT_STATUS_PENDIENTE;
+            $validated['is_active'] = true;
+        }
         $user = User::create($validated);
         $user->assignRole('client');
         if ($request->filled('companies')) {
@@ -337,7 +344,7 @@ class UserController extends Controller
             'client_status' => 'required|in:activo,pendiente,deshabilitado',
         ]);
         $user->client_status = $validated['client_status'];
-        $user->is_active = ($validated['client_status'] === 'activo');
+        $user->is_active = ($validated['client_status'] !== User::CLIENT_STATUS_DESHABILITADO);
         $user->save();
 
         return back()->with('success', 'Estado del cliente actualizado.');
@@ -388,7 +395,7 @@ class UserController extends Controller
         } else {
             $validated['password'] = Hash::make($validated['password']);
         }
-        $validated['is_active'] = ($validated['client_status'] === 'activo');
+        $validated['is_active'] = ($validated['client_status'] !== User::CLIENT_STATUS_DESHABILITADO);
         $user->update($validated);
         if ($request->filled('companies')) {
             $user->companies()->sync($request->companies);

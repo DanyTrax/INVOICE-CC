@@ -19,7 +19,7 @@ class LoginController extends Controller
                 ? redirect()->route('portal.dashboard')
                 : redirect()->route('admin.dashboard');
         }
-        
+
         return view('auth.login-flowbite');
     }
 
@@ -46,7 +46,8 @@ class LoginController extends Controller
             ]);
         }
 
-        if ($user->hasRole('client') && ! $user->canAccessPortal()) {
+        // Cliente explícitamente deshabilitado: no puede entrar. "Pendiente" sí inicia sesión y ve aviso en el portal.
+        if ($user->hasRole('client') && $user->client_status === User::CLIENT_STATUS_DESHABILITADO) {
             throw ValidationException::withMessages([
                 'email' => ['No tienes acceso al portal con esta cuenta.'],
             ]);
@@ -77,6 +78,7 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }
