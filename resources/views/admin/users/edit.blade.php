@@ -172,20 +172,36 @@
                     </label>
                     <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 max-h-64 overflow-y-auto">
                         @if($companies->count() > 0)
-                            <div class="space-y-2">
+                            <div class="space-y-3">
                                 @foreach($companies as $company)
-                                    <div class="flex items-center">
-                                        <input type="checkbox" 
-                                               id="company_{{ $company->id }}" 
-                                               name="companies[]" 
-                                               value="{{ $company->id }}"
-                                               {{ in_array($company->id, old('companies', $user->companies->pluck('id')->toArray())) ? 'checked' : '' }}
-                                               class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
-                                        <label for="company_{{ $company->id }}" class="ml-2 text-sm text-gray-900 flex-1">
-                                            <span class="font-medium">{{ $company->name }}</span>
-                                            @if($company->nit_rut)
-                                                <span class="text-gray-500 ml-2">({{ $company->nit_rut }})</span>
-                                            @endif
+                                    @php
+                                        $pivot = $user->companies->firstWhere('id', $company->id);
+                                        $seesAll = old('company_sees_all.'.$company->id, (bool) ($pivot?->pivot?->sees_all_processes ?? false));
+                                    @endphp
+                                    <div class="flex flex-wrap items-center justify-between gap-2 py-1 border-b border-gray-100 last:border-0">
+                                        <div class="flex items-center min-w-0 flex-1">
+                                            <input type="checkbox"
+                                                   id="company_{{ $company->id }}"
+                                                   name="companies[]"
+                                                   value="{{ $company->id }}"
+                                                   {{ in_array($company->id, old('companies', $user->companies->pluck('id')->toArray())) ? 'checked' : '' }}
+                                                   class="company-check w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 shrink-0"
+                                                   data-company-id="{{ $company->id }}">
+                                            <label for="company_{{ $company->id }}" class="ml-2 text-sm text-gray-900 flex-1 min-w-0">
+                                                <span class="font-medium">{{ $company->name }}</span>
+                                                @if($company->nit_rut)
+                                                    <span class="text-gray-500 ml-2">({{ $company->nit_rut }})</span>
+                                                @endif
+                                            </label>
+                                        </div>
+                                        <label class="flex items-center gap-2 shrink-0 text-sm text-gray-700 whitespace-nowrap">
+                                            <input type="checkbox"
+                                                   name="company_sees_all[{{ $company->id }}]"
+                                                   value="1"
+                                                   {{ $seesAll ? 'checked' : '' }}
+                                                   class="company-sees-all w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500"
+                                                   data-company-id="{{ $company->id }}">
+                                            <span>Ver todos los expedientes</span>
                                         </label>
                                     </div>
                                 @endforeach
@@ -198,32 +214,6 @@
                     @error('companies')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                </div>
-
-                <div class="md:col-span-2">
-                    <label class="block mb-2 text-sm font-medium text-gray-900">
-                        Expedientes (INVIMA)
-                    </label>
-                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                        <div class="flex items-start gap-3">
-                            <input type="checkbox"
-                                   id="sees_all_company_processes"
-                                   name="sees_all_company_processes"
-                                   value="1"
-                                   {{ old('sees_all_company_processes', $user->sees_all_company_processes) ? 'checked' : '' }}
-                                   class="mt-1 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
-                            <div>
-                                <label for="sees_all_company_processes" class="text-sm font-medium text-gray-900 cursor-pointer">
-                                    Ver todos los expedientes de las empresas asignadas
-                                </label>
-                                <p class="mt-1 text-xs text-gray-600">
-                                    Si está activo, el usuario ve en monitor e historial todos los expedientes de sus empresas (sin depender de la asignación por expediente).
-                                    Las acciones (editar, borrar, línea de tiempo, subir documentos) siguen los permisos del rol en Configuración.
-                                    Los usuarios <strong>administrador / super administrador</strong> siempre ven todo el sistema; esta opción aplica a roles como agente o supervisor personalizado.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class Company extends Model
 {
     protected $fillable = [
@@ -33,7 +34,7 @@ class Company extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
-            ->withPivot('description')
+            ->withPivot(['description', 'sees_all_processes'])
             ->withTimestamps();
     }
 

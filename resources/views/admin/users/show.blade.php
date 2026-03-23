@@ -98,19 +98,6 @@
                             </div>
                         </dd>
                     </div>
-                    @if(!$user->hasRole('client'))
-                    <div class="md:col-span-2">
-                        <dt class="text-sm font-medium text-gray-500">Expedientes (todas las empresas asignadas)</dt>
-                        <dd class="mt-1 text-sm text-gray-900">
-                            @if($user->sees_all_company_processes)
-                                <span class="text-teal-700 font-medium">Ve todos los expedientes de sus empresas</span>
-                                <span class="text-gray-500">(acciones según permisos del rol)</span>
-                            @else
-                                <span class="text-gray-700">Solo expedientes donde esté asignado en el expediente</span>
-                            @endif
-                        </dd>
-                    </div>
-                    @endif
                 </dl>
             </div>
         </div>
@@ -142,6 +129,9 @@
                     <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                         <h4 class="font-medium text-gray-900">{{ $company->name }}</h4>
                         <p class="text-sm text-gray-500 mt-1">{{ $company->nit_rut }}</p>
+                        @if(!$user->hasRole('client') && ($company->pivot->sees_all_processes ?? false))
+                            <p class="text-xs text-teal-700 font-medium mt-2">Ver todos los expedientes</p>
+                        @endif
                         <a href="{{ route('admin.companies.show', $company) }}" 
                            class="text-teal-600 hover:text-teal-700 text-sm mt-2 inline-block">
                             Ver detalles →

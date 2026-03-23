@@ -320,9 +320,7 @@ class UserController extends Controller
         }
         $user = User::create($validated);
         $user->assignRole('client');
-        if ($request->filled('companies')) {
-            $user->companies()->sync($request->companies);
-        }
+        $this->syncClientCompaniesFromRequest($request, $user);
 
         return redirect()
             ->route('admin.clients.index')
@@ -397,11 +395,7 @@ class UserController extends Controller
         }
         $validated['is_active'] = ($validated['client_status'] !== User::CLIENT_STATUS_DESHABILITADO);
         $user->update($validated);
-        if ($request->filled('companies')) {
-            $user->companies()->sync($request->companies);
-        } else {
-            $user->companies()->sync([]);
-        }
+        $this->syncClientCompaniesFromRequest($request, $user);
 
         return redirect()
             ->route('admin.clients.index')
@@ -478,8 +472,9 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
-            'sees_all_company_processes' => 'boolean',
             'role' => 'nullable|string|max:255',
+            'companies' => 'array',
+            'companies.*' => 'exists:companies,id',
         ]);
 
         $roleInput = $request->input('role');
@@ -487,16 +482,12 @@ class UserController extends Controller
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
-        $validated['sees_all_company_processes'] = $request->boolean('sees_all_company_processes');
 
         $user = User::create($validated);
 
         $user->syncRoles($this->roleToSync($roleInput));
 
-        // Asignar empresas (clientes)
-        if ($request->filled('companies')) {
-            $user->companies()->sync($request->companies);
-        }
+        $this->syncAgentCompaniesFromRequest($request, $user);
 
         return redirect()
             ->route('admin.agents.index')
@@ -547,7 +538,6 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
-            'sees_all_company_processes' => 'boolean',
             'role' => 'nullable|string|max:255',
             'companies' => 'array',
             'companies.*' => 'exists:companies,id',
@@ -564,18 +554,12 @@ class UserController extends Controller
         }
 
         $validated['is_active'] = $request->has('is_active');
-        $validated['sees_all_company_processes'] = $request->boolean('sees_all_company_processes');
 
         $user->update($validated);
 
         $user->syncRoles($this->roleToSync($roleInput));
 
-        // Sincronizar empresas (clientes)
-        if ($request->filled('companies')) {
-            $user->companies()->sync($request->companies);
-        } else {
-            $user->companies()->sync([]);
-        }
+        $this->syncAgentCompaniesFromRequest($request, $user);
 
         return redirect()
             ->route('admin.agents.index')
@@ -748,5 +732,54 @@ class UserController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Se desactivó la verificación en dos pasos para '.$user->name.'. Podrá configurarla de nuevo desde su perfil.');
+    }
+
+    /**
+     * Empresas para agentes/especialistas: pivote con "ver todos los expedientes" por empresa.
+     */
+    protected function syncAgentCompaniesFromRequest(Request $request, User $user): void
+    {
+        $ids = $request->input('companies', []);
+        if (! is_array($ids)) {
+            $ids = [];
+        }
+        $pivot = [];
+        foreach ($ids as $companyId) {
+            $companyId = (int) $companyId;
+            if ($companyId <= 0) {
+                continue;
+            }
+            $existing = $user->exists ? $user->companies()->where('companies.id', $companyId)->first() : null;
+            $pivot[$companyId] = [
+                'description' => $existing?->pivot?->description,
+                'sees_all_processes' => $request->boolean("company_sees_all.{$companyId}"),
+            ];
+        }
+        $user->companies()->sync($pivot);
+    }
+
+    /**
+     * Empresas para clientes del portal: sin visión global de expedientes por empresa.
+     */
+    protected function syncClientCompaniesFromRequest(Request $request, User $user): void
+    {
+        if (! $request->filled('companies')) {
+            $user->companies()->sync([]);
+
+            return;
+        }
+        $pivot = [];
+        foreach ($request->input('companies', []) as $companyId) {
+            $companyId = (int) $companyId;
+            if ($companyId <= 0) {
+                continue;
+            }
+            $existing = $user->companies()->where('companies.id', $companyId)->first();
+            $pivot[$companyId] = [
+                'description' => $existing?->pivot?->description,
+                'sees_all_processes' => false,
+            ];
+        }
+        $user->companies()->sync($pivot);
     }
 }

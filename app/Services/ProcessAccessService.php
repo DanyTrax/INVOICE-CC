@@ -19,16 +19,37 @@ class ProcessAccessService
     }
 
     /**
-     * Si es true, el usuario no es admin/super_admin pero debe usar asignación por expediente (process_user).
-     * Si es false (p. ej. sees_all_company_processes), ve todos los expedientes de sus empresas y las acciones siguen el rol.
+     * En el vínculo usuario–empresa, ¿puede ver todos los expedientes de esa empresa sin asignación por expediente?
      */
-    public function userMustUsePerProcessAssignment(User $user): bool
+    public function userSeesAllProcessesForProcessCompany(User $user, Process $process): bool
+    {
+        if (! $process->client_id) {
+            return false;
+        }
+
+        $company = $user->companies()->where('companies.id', $process->client_id)->first();
+
+        if (! $company) {
+            return false;
+        }
+
+        return (bool) ($company->pivot->sees_all_processes ?? false);
+    }
+
+    /**
+     * Debe filtrar por process_user para este expediente (no admin y sin "ver todos" en esa empresa).
+     */
+    public function userMustUsePerProcessAssignment(User $user, Process $process): bool
     {
         if ($this->isSupervisor($user)) {
             return false;
         }
 
-        return ! (bool) ($user->sees_all_company_processes ?? false);
+        if (! $process->client_id) {
+            return true;
+        }
+
+        return ! $this->userSeesAllProcessesForProcessCompany($user, $process);
     }
 
     /**
@@ -77,7 +98,7 @@ class ProcessAccessService
             return false;
         }
 
-        if (! $this->userMustUsePerProcessAssignment($user)) {
+        if (! $this->userMustUsePerProcessAssignment($user, $process)) {
             return true;
         }
 
@@ -101,7 +122,7 @@ class ProcessAccessService
             return true;
         }
 
-        if (! $this->userMustUsePerProcessAssignment($user)) {
+        if (! $this->userMustUsePerProcessAssignment($user, $process)) {
             return true;
         }
 
@@ -137,7 +158,7 @@ class ProcessAccessService
             return true;
         }
 
-        if (! $this->userMustUsePerProcessAssignment($user)) {
+        if (! $this->userMustUsePerProcessAssignment($user, $process)) {
             return true;
         }
 
@@ -167,8 +188,7 @@ class ProcessAccessService
 
     /**
      * Restringe listados/export de expedientes.
-     * Con asignación por expediente: empresa + process_user.
-     * Con "ver todos" en el usuario: todos los expedientes de las empresas vinculadas.
+     * Incluye expedientes donde el usuario está en process_user O tiene "ver todos" en company_user para esa empresa.
      */
     public function scopeProcessesForUser(Builder $query, User $user): Builder
     {
@@ -176,13 +196,19 @@ class ProcessAccessService
             return $query;
         }
 
-        if (! $this->userMustUsePerProcessAssignment($user)) {
-            return $query->whereHas('client.users', fn (Builder $q3) => $q3->where('users.id', $user->id));
-        }
-
-        return $query
-            ->whereHas('assignedUsers', fn (Builder $q3) => $q3->where('users.id', $user->id))
-            ->whereHas('client.users', fn (Builder $q3) => $q3->where('users.id', $user->id));
+        return $query->where(function (Builder $q) use ($user) {
+            $q->where(function (Builder $q2) use ($user) {
+                $q2->whereHas('assignedUsers', fn (Builder $q3) => $q3->where('users.id', $user->id))
+                    ->whereHas('client.users', fn (Builder $q3) => $q3->where('users.id', $user->id));
+            })->orWhere(function (Builder $q2) use ($user) {
+                $q2->whereHas('client', function ($q3) use ($user) {
+                    $q3->whereHas('users', function ($q4) use ($user) {
+                        $q4->where('users.id', $user->id)
+                            ->where('company_user.sees_all_processes', true);
+                    });
+                });
+            });
+        });
     }
 
     /**

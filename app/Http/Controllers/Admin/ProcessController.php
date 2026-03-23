@@ -151,17 +151,17 @@ class ProcessController extends Controller
             ->get();
 
         $access = app(ProcessAccessService::class);
-        if (! $access->isSupervisor(auth()->user()) && $access->userMustUsePerProcessAssignment(auth()->user())) {
+        if (! $access->isSupervisor(auth()->user())) {
             $user = auth()->user();
             $grouped_quotes = $grouped_quotes->map(function ($quote) use ($user, $access) {
                 $filteredItems = $quote->quoteItems->filter(function ($item) use ($user, $access) {
                     $process = $item->process;
 
-                    return $process && $access->userIsAssigned($user, $process);
+                    return $process && $access->canViewProcess($user, $process);
                 });
                 $quote->setRelation('quoteItems', $filteredItems->values());
 
-                $filteredProcesses = $quote->processes->filter(fn ($p) => $access->userIsAssigned($user, $p));
+                $filteredProcesses = $quote->processes->filter(fn ($p) => $access->canViewProcess($user, $p));
                 $quote->setRelation('processes', $filteredProcesses->values());
 
                 return $quote;
@@ -169,7 +169,7 @@ class ProcessController extends Controller
                 return $quote->quoteItems->isNotEmpty() || $quote->processes->isNotEmpty();
             })->values();
 
-            $orphan_processes = $orphan_processes->filter(fn ($p) => $access->userIsAssigned($user, $p))->values();
+            $orphan_processes = $orphan_processes->filter(fn ($p) => $access->canViewProcess($user, $p))->values();
         }
 
         return view('admin.processes.index', compact('grouped_quotes', 'orphan_processes', 'quotes_for_assign', 'companies'));
