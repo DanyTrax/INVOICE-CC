@@ -98,3 +98,7 @@
     @include('admin.processes.partials.process-assignment-modal')
 @endsection
 
+@push('scripts')
+    @include('admin.processes.partials.process-assignment-modal-js')
+@endpush
+

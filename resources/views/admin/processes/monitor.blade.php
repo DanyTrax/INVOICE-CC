@@ -118,7 +118,10 @@
         @endif
     </div>
 
-    @push('scripts')
+    @include('admin.processes.partials.process-assignment-modal')
+@endsection
+
+@push('scripts')
     <script>
     (function() {
         var monitorUrl = '{{ route('admin.processes.monitor') }}';
@@ -205,5 +208,5 @@
         }
     })();
     </script>
-    @endpush
-@endsection
+    @include('admin.processes.partials.process-assignment-modal-js')
+@endpush
