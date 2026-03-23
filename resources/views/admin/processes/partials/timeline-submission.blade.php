@@ -31,10 +31,15 @@
                     → Pendiente de radicación
                 @endif
             </p>
-            <p class="text-[11px] text-gray-500 whitespace-nowrap mt-1">
-                Guardado:
-                {{ optional($submission->created_at)->format('d/m/Y H:i') }}
-            </p>
+            <div class="text-right flex-shrink-0">
+                <p class="text-[11px] text-gray-500 whitespace-nowrap mt-1">
+                    Guardado:
+                    {{ optional($submission->created_at)->format('d/m/Y H:i') }}
+                </p>
+                <p class="text-[11px] text-gray-500 mt-0.5">
+                    Especialista: {{ $submission->createdByUser?->name ?? '—' }}
+                </p>
+            </div>
         </div>
         <p class="text-sm text-gray-700 mt-1">
             <span class="font-medium text-gray-800">Código de sometimiento:</span>

@@ -18,6 +18,7 @@ class RegulatoryEvent extends Model
 
     protected $fillable = [
         'submission_id',
+        'saved_by_user_id',
         'event_type',
         'document_number',
         'event_date',
@@ -39,5 +40,10 @@ class RegulatoryEvent extends Model
     public function submission(): BelongsTo
     {
         return $this->belongsTo(Submission::class);
+    }
+
+    public function savedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'saved_by_user_id');
     }
 }

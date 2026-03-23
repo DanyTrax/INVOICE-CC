@@ -36,6 +36,7 @@ class RegulatoryEventController extends Controller
 
         RegulatoryEvent::create([
             'submission_id' => $submission->id,
+            'saved_by_user_id' => auth()->id(),
             'event_type' => RegulatoryEvent::EVENT_TYPE_AUTO,
             'document_number' => $validated['document_number'] ?? null,
             'event_date' => $validated['event_date'] ?? null,
@@ -72,6 +73,7 @@ class RegulatoryEventController extends Controller
 
         RegulatoryEvent::create([
             'submission_id' => $submission->id,
+            'saved_by_user_id' => auth()->id(),
             'event_type' => RegulatoryEvent::EVENT_TYPE_RESOLUCION,
             'document_number' => $validated['document_number'] ?? null,
             'event_date' => $validated['event_date'] ?? null,
@@ -106,6 +108,7 @@ class RegulatoryEventController extends Controller
                 'document_number' => $validated['document_number'] ?? $regulatoryEvent->document_number,
                 'notification_date' => $validated['notification_date'],
                 'due_date' => $validated['due_date'],
+                'saved_by_user_id' => auth()->id(),
             ]);
         } else {
             $validated = $request->validate([
@@ -117,6 +120,7 @@ class RegulatoryEventController extends Controller
                 'document_number' => $validated['document_number'] ?? $regulatoryEvent->document_number,
                 'event_date' => $validated['event_date'] ?? $regulatoryEvent->event_date,
                 'resolution_key' => $validated['resolution_key'] ?? $regulatoryEvent->resolution_key,
+                'saved_by_user_id' => auth()->id(),
             ]);
         }
 

@@ -32,6 +32,8 @@ class Submission extends Model
 
     protected $fillable = [
         'process_id',
+        'created_by_user_id',
+        'radicado_saved_by_user_id',
         'parent_id',
         'quote_id',
         'quote_item_id',
@@ -61,6 +63,16 @@ class Submission extends Model
     public function process(): BelongsTo
     {
         return $this->belongsTo(Process::class);
+    }
+
+    public function createdByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function radicadoSavedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'radicado_saved_by_user_id');
     }
 
     public function quote(): BelongsTo

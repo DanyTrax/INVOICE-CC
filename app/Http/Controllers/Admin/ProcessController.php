@@ -379,6 +379,12 @@ class ProcessController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
+        $process->submissions->loadMissing([
+            'createdByUser',
+            'radicadoSavedByUser',
+            'regulatoryEvents.savedByUser',
+        ]);
+
         return view('admin.processes.show', compact('process', 'quotesForClient'));
     }
 
@@ -421,6 +427,7 @@ class ProcessController extends Controller
             'submission_type' => $parentId ? 'Subsanación / Nuevo intento' : 'Inicial',
             'quote_id' => $isFirstSubmission && $process->quote_id ? $process->quote_id : null,
             'quote_item_id' => $isFirstSubmission && $process->quote_item_id ? $process->quote_item_id : null,
+            'created_by_user_id' => auth()->id(),
         ]);
 
         // El proceso sigue en Recolección hasta que se registre la respuesta "Radicado" del INVIMA.
@@ -455,6 +462,7 @@ class ProcessController extends Controller
                 'radicado_invima' => $validated['radicado_invima'],
                 'fecha_radicacion' => $validated['fecha_radicacion'],
                 'tracking_id' => $validated['tracking_id'] ?? null,
+                'radicado_saved_by_user_id' => auth()->id(),
             ]);
             $submission->process->update(['status' => Process::STATUS_RADICADO]);
             $msg = $submission->isAutoFollowUpCycle()
@@ -516,6 +524,7 @@ class ProcessController extends Controller
 
             RegulatoryEvent::create([
                 'submission_id' => $submission->id,
+                'saved_by_user_id' => auth()->id(),
                 'event_type' => RegulatoryEvent::EVENT_TYPE_AUTO,
                 'document_number' => $validated['document_number'],
                 'notification_date' => $validated['notification_date'],
@@ -562,6 +571,7 @@ class ProcessController extends Controller
 
             RegulatoryEvent::create([
                 'submission_id' => $submission->id,
+                'saved_by_user_id' => auth()->id(),
                 'event_type' => RegulatoryEvent::EVENT_TYPE_RESOLUCION,
                 'document_number' => $validated['resolution_number'],
                 'event_date' => $validated['resolution_date'],
@@ -598,6 +608,10 @@ class ProcessController extends Controller
             'rejection_observation' => 'nullable|string|max:2000',
         ]);
         // Solo actualizamos los campos presentes en la petición.
+        $radicadoKeys = ['radicado_invima', 'fecha_radicacion', 'tracking_id'];
+        if (array_intersect_key($validated, array_flip($radicadoKeys))) {
+            $validated['radicado_saved_by_user_id'] = auth()->id();
+        }
         $submission->update($validated);
         return redirect()
             ->route('admin.processes.show', $submission->process)
@@ -615,6 +629,7 @@ class ProcessController extends Controller
             'tracking_id' => 'required|string|max:64',
         ]);
 
+        $validated['radicado_saved_by_user_id'] = auth()->id();
         $submission->update($validated);
 
         // Aseguramos que el intento y el proceso sigan marcados como Radicado.
@@ -767,6 +782,7 @@ class ProcessController extends Controller
             'radicado_invima' => null,
             'tracking_id' => null,
             'fecha_radicacion' => null,
+            'radicado_saved_by_user_id' => null,
             'status' => Submission::STATUS_PENDIENTE,
         ]);
 

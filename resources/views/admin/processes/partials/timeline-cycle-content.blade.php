@@ -25,10 +25,15 @@
                     → @if($isAutoLinkedCycle)<span class="text-amber-900">AUTO ·</span> @endif Pendiente de radicación
                 @endif
             </p>
-            <p class="text-[11px] text-gray-500 whitespace-nowrap mt-1">
-                Guardado:
-                {{ optional($submission->created_at)->format('d/m/Y H:i') }}
-            </p>
+            <div class="text-right flex-shrink-0">
+                <p class="text-[11px] text-gray-500 whitespace-nowrap mt-1">
+                    Guardado:
+                    {{ optional($submission->created_at)->format('d/m/Y H:i') }}
+                </p>
+                <p class="text-[11px] text-gray-500 mt-0.5">
+                    Especialista: {{ $submission->createdByUser?->name ?? '—' }}
+                </p>
+            </div>
         </div>
 
         <p class="text-sm text-gray-700 mt-1">
@@ -156,10 +161,15 @@
                             <span class="ml-1 break-words">{{ $submission->tracking_id ?? '—' }}</span>
                         </p>
                     </div>
-                    <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
-                        Guardado:
-                        {{ optional($submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
-                    </p>
+                    <div class="text-right flex-shrink-0">
+                        <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
+                            Guardado:
+                            {{ optional($submission->updated_at ?? $submission->created_at)->format('d/m/Y H:i') }}
+                        </p>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                            Especialista: {{ $submission->radicadoSavedByUser?->name ?? '—' }}
+                        </p>
+                    </div>
                 </div>
                 <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex flex-wrap gap-2">
@@ -277,10 +287,15 @@
                             @endif
                         @endif
                     </div>
-                    <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
-                        Guardado:
-                        {{ optional($event->updated_at ?? $event->created_at)->format('d/m/Y H:i') }}
-                    </p>
+                    <div class="text-right flex-shrink-0">
+                        <p class="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
+                            Guardado:
+                            {{ optional($event->updated_at ?? $event->created_at)->format('d/m/Y H:i') }}
+                        </p>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                            Especialista: {{ $event->savedByUser?->name ?? '—' }}
+                        </p>
+                    </div>
                 </div>
                 <div class="mt-3 flex items-center justify-end gap-2">
                     <button type="button" class="js-edit-event text-xs px-2.5 py-1 text-teal-600 hover:bg-teal-50 rounded border border-teal-200"
