@@ -47,7 +47,7 @@ class ProcessAccessService
     }
 
     /**
-     * Puede ver el expediente: supervisores; o agente con empresa + (sin asignaciones explícitas en el expediente o está en la lista).
+     * Puede ver el expediente: supervisores ven todo; el resto necesita empresa asignada y estar asignado al expediente.
      */
     public function canViewProcess(User $user, Process $process): bool
     {
@@ -61,10 +61,6 @@ class ProcessAccessService
 
         if (! $this->userHasCompanyAccess($user, $process)) {
             return false;
-        }
-
-        if (! $process->hasExplicitAssignments()) {
-            return true;
         }
 
         return $this->userIsAssigned($user, $process);
@@ -87,13 +83,19 @@ class ProcessAccessService
             return true;
         }
 
-        if (! $process->hasExplicitAssignments()) {
-            return true;
-        }
-
         $pivot = $this->getPivot($user, $process);
 
         return $pivot && $pivot->pivot->can_feed_timeline;
+    }
+
+    /**
+     * Puede subir archivos a Drive en este expediente.
+     * Quien puede alimentar la línea de tiempo también puede subir documentos; además quien tenga gestión documental explícita.
+     */
+    public function canUploadDocumentsOnProcess(User $user, Process $process): bool
+    {
+        return $this->canFeedTimelineOnProcess($user, $process)
+            || $this->canManageDocumentsOnProcess($user, $process);
     }
 
     /**
@@ -110,10 +112,6 @@ class ProcessAccessService
         }
 
         if ($this->isSupervisor($user)) {
-            return true;
-        }
-
-        if (! $process->hasExplicitAssignments()) {
             return true;
         }
 
@@ -142,7 +140,8 @@ class ProcessAccessService
     }
 
     /**
-     * Restringe la consulta de expedientes para agentes (monitor, historial, export).
+     * Restringe listados/export de expedientes: no supervisores solo ven expedientes
+     * donde tienen empresa asignada y figuran en process_user (sin modo “toda la empresa”).
      */
     public function scopeProcessesForUser(Builder $query, User $user): Builder
     {
@@ -150,19 +149,9 @@ class ProcessAccessService
             return $query;
         }
 
-        if (! $user->hasRole('agent')) {
-            return $query;
-        }
-
-        return $query->where(function (Builder $q) use ($user) {
-            $q->where(function (Builder $q2) use ($user) {
-                $q2->whereHas('assignedUsers', fn (Builder $q3) => $q3->where('users.id', $user->id))
-                    ->whereHas('client.users', fn (Builder $q3) => $q3->where('users.id', $user->id));
-            })->orWhere(function (Builder $q2) use ($user) {
-                $q2->whereDoesntHave('assignedUsers')
-                    ->whereHas('client.users', fn (Builder $q3) => $q3->where('users.id', $user->id));
-            });
-        });
+        return $query
+            ->whereHas('assignedUsers', fn (Builder $q3) => $q3->where('users.id', $user->id))
+            ->whereHas('client.users', fn (Builder $q3) => $q3->where('users.id', $user->id));
     }
 
     /**

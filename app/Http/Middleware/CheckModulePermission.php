@@ -36,6 +36,17 @@ class CheckModulePermission
         $service = app(PermissionService::class);
 
         if ($module === 'processes') {
+            // Subir a Drive: alimentar línea de tiempo O editar expedientes (gestión documental sin timeline_feed).
+            if ($routeName === 'admin.processes.documents.upload' && $method === 'POST') {
+                $canTimeline = $service->userHasProcessAction(PermissionService::ACTION_TIMELINE_FEED);
+                $canEdit = $service->userHasProcessAction('edit');
+                if (! $canTimeline && ! $canEdit) {
+                    abort(403, 'No tienes permiso para realizar esta acción en expedientes.');
+                }
+
+                return $next($request);
+            }
+
             if (! $service->userHasProcessAction($action)) {
                 abort(403, 'No tienes permiso para realizar esta acción en expedientes.');
             }

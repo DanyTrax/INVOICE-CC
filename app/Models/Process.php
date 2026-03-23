@@ -292,7 +292,7 @@ class Process extends Model
     }
 
     /**
-     * ¿Hay al menos una asignación explícita? Si no, los agentes con acceso a la empresa siguen viendo el expediente (compatibilidad).
+     * ¿Hay al menos un usuario en process_user? (Útil para UI/admin; la visibilidad de agentes exige estar en la lista.)
      */
     public function hasExplicitAssignments(): bool
     {

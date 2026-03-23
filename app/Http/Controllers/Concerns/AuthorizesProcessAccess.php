@@ -34,6 +34,18 @@ trait AuthorizesProcessAccess
         );
     }
 
+    /**
+     * Subir archivos a la carpeta Drive del expediente (alimentar línea de tiempo o gestión documental).
+     */
+    protected function authorizeProcessDocumentUpload(Process $process): void
+    {
+        abort_unless(
+            app(ProcessAccessService::class)->canUploadDocumentsOnProcess(auth()->user(), $process),
+            403,
+            'No tienes permiso para subir documentos en este expediente.'
+        );
+    }
+
     protected function authorizeProcessDelete(Process $process): void
     {
         abort_unless(

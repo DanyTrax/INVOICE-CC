@@ -635,7 +635,7 @@
         @else
             <p class="text-sm text-gray-500 mb-3">La carpeta en Drive se creará al subir el primer documento (si está configurado Google Drive en Configuración).</p>
         @endif
-        @processCanFor($process, 'feed')
+        @processCanFor($process, 'upload')
         <form action="{{ route('admin.processes.documents.upload', $process) }}" method="POST" enctype="multipart/form-data" class="mb-4 flex flex-wrap items-end gap-3">
             @csrf
             <div class="flex-1 min-w-[200px]">

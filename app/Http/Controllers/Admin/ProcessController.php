@@ -150,6 +150,28 @@ class ProcessController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
+        $access = app(ProcessAccessService::class);
+        if (! $access->isSupervisor(auth()->user())) {
+            $user = auth()->user();
+            $grouped_quotes = $grouped_quotes->map(function ($quote) use ($user, $access) {
+                $filteredItems = $quote->quoteItems->filter(function ($item) use ($user, $access) {
+                    $process = $item->process;
+
+                    return $process && $access->userIsAssigned($user, $process);
+                });
+                $quote->setRelation('quoteItems', $filteredItems->values());
+
+                $filteredProcesses = $quote->processes->filter(fn ($p) => $access->userIsAssigned($user, $p));
+                $quote->setRelation('processes', $filteredProcesses->values());
+
+                return $quote;
+            })->filter(function ($quote) {
+                return $quote->quoteItems->isNotEmpty() || $quote->processes->isNotEmpty();
+            })->values();
+
+            $orphan_processes = $orphan_processes->filter(fn ($p) => $access->userIsAssigned($user, $p))->values();
+        }
+
         return view('admin.processes.index', compact('grouped_quotes', 'orphan_processes', 'quotes_for_assign', 'companies'));
     }
 
@@ -863,7 +885,7 @@ class ProcessController extends Controller
     public function storeChecklistItem(Request $request, Process $process): RedirectResponse
     {
         $this->authorizeProcessView($process);
-        $this->authorizeProcessDocuments($process);
+        $this->authorizeProcessFeed($process);
 
         $validated = $request->validate([
             'document_name' => 'required|string|max:255',
@@ -955,7 +977,7 @@ class ProcessController extends Controller
     public function uploadDocument(Request $request, Process $process): RedirectResponse
     {
         $this->authorizeProcessView($process);
-        $this->authorizeProcessDocuments($process);
+        $this->authorizeProcessDocumentUpload($process);
 
         $request->validate([
             'document' => 'required|file|max:10240', // 10MB
@@ -1088,7 +1110,7 @@ class ProcessController extends Controller
     public function destroyDocument(Process $process, ProcessDocument $processDocument): RedirectResponse
     {
         $this->authorizeProcessView($process);
-        $this->authorizeProcessDocuments($process);
+        $this->authorizeProcessDelete($process);
 
         if ($processDocument->process_id !== $process->id) {
             abort(404);

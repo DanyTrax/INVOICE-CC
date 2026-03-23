@@ -58,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
             return $s->userHasProcessAction($needed);
         });
 
-        // Expedientes con contexto: asignación por expediente + permisos globales
+        // Expedientes con contexto: asignación por expediente + permisos globales (upload = subir a Drive; feed o gestión doc.)
         Blade::if('processCanFor', function ($process, string $action) {
             if (! $process instanceof Process) {
                 return false;
@@ -72,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
             return match ($action) {
                 'view' => $svc->canViewProcess($user, $process),
                 'feed' => $svc->canFeedTimelineOnProcess($user, $process),
+                'upload' => $svc->canUploadDocumentsOnProcess($user, $process),
                 'edit' => $svc->canManageDocumentsOnProcess($user, $process),
                 'delete' => $svc->canDeleteProcess($user, $process),
                 default => false,
