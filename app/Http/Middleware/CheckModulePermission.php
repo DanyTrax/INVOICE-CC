@@ -89,7 +89,7 @@ class CheckModulePermission
             return $this->crudModule($routeName, $method, 'companies');
         }
 
-        if ($routeName === 'admin.company-invites.resend') {
+        if ($routeName === 'admin.company-invites.resend' || $routeName === 'admin.company-invites.destroy') {
             return ['companies', 'edit'];
         }
 

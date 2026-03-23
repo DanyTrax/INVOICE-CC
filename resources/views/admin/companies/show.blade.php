@@ -27,7 +27,7 @@
            class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium">
             <i class="fas fa-edit mr-2"></i> Editar
         </a>
-        <a href="{{ route('admin.processes.index', ['client_id' => $company->id]) }}"
+        <a href="{{ route('admin.processes.monitor', ['client_id' => $company->id]) }}"
            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
             <i class="fas fa-folder-open mr-2"></i> Ver Expedientes
         </a>

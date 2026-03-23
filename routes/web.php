@@ -91,6 +91,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::get('companies/{company}/invite-data', [CompanyController::class, 'inviteData'])->name('companies.invite-data');
     Route::post('companies/{company}/send-invite', [CompanyController::class, 'sendInvite'])->name('companies.send-invite');
     Route::post('company-invites/{invite}/resend', [CompanyController::class, 'resendInvite'])->name('company-invites.resend');
+    Route::delete('company-invites/{invite}', [CompanyController::class, 'destroyInvite'])->name('company-invites.destroy');
     Route::resource('companies', CompanyController::class);
 
     // Listas separadas: Clientes (rol client) y Agentes (no client)

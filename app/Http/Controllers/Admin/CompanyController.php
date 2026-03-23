@@ -470,6 +470,25 @@ class CompanyController extends Controller
     }
 
     /**
+     * Eliminar una invitación pendiente (revoca el enlace; no borra usuarios).
+     */
+    public function destroyInvite(CompanyInvite $invite)
+    {
+        if ($invite->used_at !== null) {
+            return redirect()
+                ->route('admin.clients.index')
+                ->with('error', 'Esta invitación ya no está pendiente.');
+        }
+
+        $email = $invite->email;
+        $invite->delete();
+
+        return redirect()
+            ->route('admin.clients.index')
+            ->with('success', 'Invitación eliminada para '.$email.'.');
+    }
+
+    /**
      * Crear invitación, procesar plantilla y enviar correo.
      * Si falla, $lastError se rellena con el mensaje a mostrar al usuario.
      */

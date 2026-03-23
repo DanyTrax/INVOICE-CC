@@ -47,6 +47,7 @@ class ActivityLogService
         'admin.companies.destroy' => 'Eliminó empresa / cliente',
         'admin.companies.send-invite' => 'Envió invitación a empresa',
         'admin.company-invites.resend' => 'Reenvió invitación de registro',
+        'admin.company-invites.destroy' => 'Eliminó invitación de registro pendiente',
         'admin.clients.store' => 'Creó usuario cliente',
         'admin.clients.update' => 'Actualizó usuario cliente',
         'admin.users.client-status.update' => 'Cambió estado de cliente',

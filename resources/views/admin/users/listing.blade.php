@@ -114,12 +114,26 @@
                                 </td>
                                 <td class="px-6 py-3 text-xs">{{ $invite->expires_at?->format('d/m/Y H:i') ?? '—' }}</td>
                                 <td class="px-6 py-3 text-right">
-                                    <form action="{{ route('admin.company-invites.resend', $invite) }}" method="POST" class="inline">
-                                        @csrf
-                                        <button type="submit" class="text-teal-700 hover:text-teal-900 text-sm font-medium" title="Generar nuevo enlace y reenviar correo">
-                                            <i class="fas fa-redo mr-1"></i> Reenviar
-                                        </button>
-                                    </form>
+                                    <div class="inline-flex items-center justify-end gap-3">
+                                        <form action="{{ route('admin.company-invites.resend', $invite) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="text-teal-700 hover:text-teal-900 text-sm font-medium" title="Generar nuevo enlace y reenviar correo">
+                                                <i class="fas fa-redo mr-1"></i> Reenviar
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('admin.company-invites.destroy', $invite) }}"
+                                              method="POST"
+                                              class="inline"
+                                              onsubmit="return confirm('¿Eliminar esta invitación pendiente? El enlace dejará de ser válido.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                    class="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                                                    title="Eliminar invitación">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
