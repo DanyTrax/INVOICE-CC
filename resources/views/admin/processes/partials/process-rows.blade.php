@@ -1,6 +1,5 @@
 @foreach($processes as $process)
     @php
-        $numeroExpediente = $process->expediente_invima ?? $process->id;
         $tipoTramite = $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '—';
         $fechaUltimoGuardado = $process->updated_at;
         $paso = $process->getCurrentStep();
@@ -11,7 +10,7 @@
             : ($stepStyles[$paso] ?? 'bg-gray-100 text-gray-800');
     @endphp
     <tr class="bg-white border-b border-gray-200 hover:bg-gray-50">
-        <td class="px-4 py-3 text-sm text-gray-900 font-mono" title="Número de expediente">{{ $numeroExpediente }}</td>
+        <td class="px-4 py-3 text-sm text-gray-900 font-mono" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID expediente: {{ $process->id }}">{{ $process->id }}</td>
         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $process->client->name ?? '—' }}</td>
         <td class="px-4 py-3 text-sm text-gray-700">{{ $tipoTramite }}</td>
         <td class="px-4 py-3 text-sm text-gray-700">{{ $process->product_reference ?? '—' }}</td>

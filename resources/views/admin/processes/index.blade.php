@@ -55,7 +55,7 @@
                                         @if($item->process)
                                             @php $process = $item->process; @endphp
                                             <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
-                                                <td class="px-4 py-3 font-mono text-sm text-gray-900" title="Número de expediente">{{ $process->expediente_invima ?? $process->id }}</td>
+                                                <td class="px-4 py-3 font-mono text-sm text-gray-900" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID expediente: {{ $process->id }}">{{ $process->id }}</td>
                                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                                                 <td class="px-4 py-3">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</td>
                                                 <td class="px-4 py-3">
@@ -90,7 +90,7 @@
                                     @endforeach
                                     @foreach($quote->processes->whereNotIn('id', $processIdsFromItems) as $process)
                                         <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
-                                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="Número de expediente">{{ $process->expediente_invima ?? $process->id }}</td>
+                                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID expediente: {{ $process->id }}">{{ $process->id }}</td>
                                             <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                                             <td class="px-4 py-3">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</td>
                                             <td class="px-4 py-3">
@@ -152,7 +152,7 @@
                 <tbody>
                     @forelse($orphan_processes as $process)
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="Número de expediente">{{ $process->expediente_invima ?? $process->id }}</td>
+                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID expediente: {{ $process->id }}">{{ $process->id }}</td>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $process->serviceType?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $process->product_reference ?? '-' }}</td>
