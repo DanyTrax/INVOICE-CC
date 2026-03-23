@@ -228,6 +228,7 @@ class CheckModulePermission
         $editRoutes = [
             'admin.processes.store',
             'admin.processes.link-to-quote',
+            'admin.processes.assignments.update',
             'admin.submissions.update',
             'admin.submissions.update-radicado',
             'admin.submissions.link-quote',

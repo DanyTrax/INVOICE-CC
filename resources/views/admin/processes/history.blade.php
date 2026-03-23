@@ -79,6 +79,7 @@
                         <th class="px-4 py-3">Producto / Referencia</th>
                         <th class="px-4 py-3">Estado</th>
                         <th class="px-4 py-3">Fecha Último Evento</th>
+                        <th class="px-4 py-3">Equipo</th>
                         <th class="px-4 py-3 whitespace-nowrap min-w-[9rem]">Acciones</th>
                     </tr>
                 </thead>
@@ -93,5 +94,7 @@
             </div>
         @endif
     </div>
+
+    @include('admin.processes.partials.process-assignment-modal')
 @endsection
 

@@ -2,12 +2,16 @@
 
 namespace App\Providers;
 
+use App\Models\Process;
 use App\Models\Quote;
 use App\Models\RegulatoryEvent;
 use App\Observers\QuoteObserver;
 use App\Observers\RegulatoryEventObserver;
 use App\Services\PermissionService;
+use App\Services\ProcessAccessService;
+use App\Settings\GeneralSettings;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -32,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
                 'email' => $notifiable->getEmailForPasswordReset(),
             ], false));
 
-            return (new \Illuminate\Notifications\Messages\MailMessage)
+            return (new MailMessage)
                 ->subject('Restablecer contraseña — '.config('app.name'))
                 ->line('Recibiste este correo porque alguien solicitó restablecer la contraseña de tu cuenta.')
                 ->action('Restablecer contraseña', $url)
@@ -43,7 +47,7 @@ class AppServiceProvider extends ServiceProvider
         Quote::observe(QuoteObserver::class);
         RegulatoryEvent::observe(RegulatoryEventObserver::class);
 
-        // Expedientes: @processCan('delete'|'edit'|'feed'|'view'|...)
+        // Expedientes: @processCan('delete'|'edit'|'feed'|'view'|...) — solo permiso global
         Blade::if('processCan', function (string $action) {
             $s = app(PermissionService::class);
             $map = [
@@ -52,6 +56,26 @@ class AppServiceProvider extends ServiceProvider
             $needed = $map[$action] ?? $action;
 
             return $s->userHasProcessAction($needed);
+        });
+
+        // Expedientes con contexto: asignación por expediente + permisos globales
+        Blade::if('processCanFor', function ($process, string $action) {
+            if (! $process instanceof Process) {
+                return false;
+            }
+            $user = auth()->user();
+            if (! $user) {
+                return false;
+            }
+            $svc = app(ProcessAccessService::class);
+
+            return match ($action) {
+                'view' => $svc->canViewProcess($user, $process),
+                'feed' => $svc->canFeedTimelineOnProcess($user, $process),
+                'edit' => $svc->canManageDocumentsOnProcess($user, $process),
+                'delete' => $svc->canDeleteProcess($user, $process),
+                default => false,
+            };
         });
 
         // Cotizaciones: @quoteCan('view'|'edit'|'delete'|'pdf')
@@ -66,7 +90,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Zona horaria configurable desde Configuración > Sistema
         try {
-            $settings = app(\App\Settings\GeneralSettings::class);
+            $settings = app(GeneralSettings::class);
             $tz = $settings->timezone ?? null;
             if (is_string($tz) && $tz !== '') {
                 config(['app.timezone' => $tz]);

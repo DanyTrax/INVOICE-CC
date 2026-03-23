@@ -142,7 +142,7 @@
                         </div>
                     @endif
                 </dl>
-                @processCan('delete')
+                @processCanFor($process, 'delete')
                 <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="mt-4 pt-4 border-t border-gray-200" onsubmit="return confirm('¿Eliminar este expediente y toda su información (sometimientos, documentos, checklist)? No se puede deshacer.');">
                     @csrf
                     @method('DELETE')
@@ -150,7 +150,7 @@
                         <i class="fas fa-trash-alt mr-2"></i> Eliminar expediente
                     </button>
                 </form>
-                @endprocessCan
+                @endprocessCanFor
             </div>
         </div>
 
@@ -249,14 +249,14 @@
                                             </a>
                                         @endif
                                         @isset($quotesForClient)
-                                            @processCan('edit')
+                                            @processCanFor($process, 'edit')
                                             <button type="button"
                                                     onclick="event.stopPropagation(); typeof openLinkQuoteModal === 'function' && openLinkQuoteModal({{ $rootSubmission->id }}, {{ $rootSubmission->quote_id ?? 'null' }}, {{ $rootSubmission->quote_item_id ?? 'null' }});"
                                                     class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
                                                     title="Vincular o desvincular cotización e ítem">
                                                 <i class="fas fa-file-alt"></i>
                                             </button>
-                                            @endprocessCan
+                                            @endprocessCanFor
                                         @endisset
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>
@@ -294,7 +294,7 @@
                                                 @if($attemptsInCycle->count() > 1)
                                                     <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Intento {{ $attemptIndex + 1 }}</p>
                                                 @endif
-                                                @include('admin.processes.partials.timeline-cycle-content', ['submission' => $submission, 'lastSubmission' => $lastSubmission ?? null, 'quotesForClient' => $quotesForClient ?? collect(), 'cycleNum' => $cycleNum])
+                                                @include('admin.processes.partials.timeline-cycle-content', ['process' => $process, 'submission' => $submission, 'lastSubmission' => $lastSubmission ?? null, 'quotesForClient' => $quotesForClient ?? collect(), 'cycleNum' => $cycleNum])
                                             </div>
                                         @endforeach
                                     </div>
@@ -321,14 +321,14 @@
                                             </a>
                                         @endif
                                         @isset($quotesForClient)
-                                            @processCan('edit')
+                                            @processCanFor($process, 'edit')
                                             <button type="button"
                                                     onclick="event.stopPropagation(); typeof openLinkQuoteModalForProcess === 'function' && openLinkQuoteModalForProcess();"
                                                     class="text-sm text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200 inline-flex items-center px-3 py-1.5"
                                                     title="Vincular o desvincular cotización e ítem">
                                                 <i class="fas fa-file-alt"></i>
                                             </button>
-                                            @endprocessCan
+                                            @endprocessCanFor
                                         @endisset
                                         <i class="fas fa-chevron-down ml-auto text-gray-400 group-open:rotate-180 transition-transform"></i>
                                     </summary>
@@ -356,12 +356,12 @@
                                                 <p class="text-sm text-gray-500 mt-3">Cuando todos los documentos estén en <strong>Aprobado</strong>, use el botón debajo para continuar con este ciclo.</p>
                                                 @if($canRegisterSubmission)
                                                     <div class="mt-4 pt-3 border-t border-gray-200">
-                                                        @processCan('feed')
+                                                        @processCanFor($process, 'feed')
                                                         <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                                                                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
                                                             <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
                                                         </button>
-                                                        @endprocessCan
+                                                        @endprocessCanFor
                                                     </div>
                                                 @elseif($process->checklistItems->isNotEmpty())
                                                     <p class="text-sm text-amber-700 mt-3">Debe aprobar todos los documentos antes de poder registrar el sometimiento.</p>
@@ -417,20 +417,20 @@
                                             @endif
                                             <div class="mt-4 pt-3 border-t border-gray-200">
                                                 @if($allChecklistApproved)
-                                                    @processCan('feed')
+                                                    @processCanFor($process, 'feed')
                                                     <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                                                             class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
                                                         <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
                                                     </button>
-                                                    @endprocessCan
+                                                    @endprocessCanFor
                                                 @else
                                                     <p class="text-sm text-gray-700">Debe aprobar todos los documentos de Gestión Documental AUTO para poder registrar el sometimiento.</p>
-                                                    @processCan('feed')
+                                                    @processCanFor($process, 'feed')
                                                     <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                                                             class="mt-2 inline-flex items-center px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-lg cursor-not-allowed" disabled title="Aprobé todos los documentos AUTO primero">
                                                         <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
                                                     </button>
-                                                    @endprocessCan
+                                                    @endprocessCanFor
                                                 @endif
                                             </div>
                                         </div>
@@ -448,20 +448,20 @@
                                 <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
                                     @if($canCreateNewAttempt)
                                         <p class="text-sm text-gray-700 mb-3">El último intento fue <strong>rechazado</strong>. Puede crear otro intento en el <strong>mismo ciclo</strong> vinculándolo al intento rechazado.</p>
-                                        @processCan('feed')
+                                        @processCanFor($process, 'feed')
                                         <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                                                 class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700">
                                             <i class="fas fa-redo mr-2"></i> Crear Nuevo Intento (mismo ciclo)
                                         </button>
-                                        @endprocessCan
+                                        @endprocessCanFor
                                     @else
                                         <p class="text-sm text-gray-700 mb-3">Registre un nuevo sometimiento para iniciar este ciclo.</p>
-                                        @processCan('feed')
+                                        @processCanFor($process, 'feed')
                                         <button type="button" onclick="document.getElementById('modal-submission').classList.remove('hidden')"
                                                 class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
                                             <i class="fas fa-paper-plane mr-2"></i> Registrar Sometimiento
                                         </button>
-                                        @endprocessCan
+                                        @endprocessCanFor
                                     @endif
                                 </div>
                             </li>
@@ -497,13 +497,13 @@
             <h3 class="text-lg font-semibold text-gray-900">
                 <i class="fas fa-folder-open text-teal-600 mr-2"></i> Gestión Documental
             </h3>
-            @processCan('feed')
+            @processCanFor($process, 'feed')
             <button type="button"
                     onclick="document.getElementById('add-doc-is-for-auto').value='0';document.getElementById('modal-add-document').classList.remove('hidden')"
                     class="inline-flex items-center px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
                 <i class="fas fa-plus mr-2"></i> Agregar Documento
             </button>
-            @endprocessCan
+            @endprocessCanFor
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-700">
@@ -535,12 +535,12 @@
                             </td>
                             <td class="px-3 py-2 text-gray-600">{{ Str::limit($item->observation_agent ?? '-', 50) }}</td>
                             <td class="px-3 py-2">
-                                @processCan('edit')
+                                @processCanFor($process, 'edit')
                                 <button type="button" onclick="openChecklistModal({{ $item->id }}, '{{ addslashes($item->document_name) }}', '{{ $item->status }}', '{{ addslashes($item->observation_agent ?? '') }}')"
                                         class="text-teal-600 hover:text-teal-800 text-sm font-medium">
                                     <i class="fas fa-edit mr-1"></i> Cambiar estado
                                 </button>
-                                @endprocessCan
+                                @endprocessCanFor
                             </td>
                         </tr>
                     @empty
@@ -563,13 +563,13 @@
             <h3 class="text-lg font-semibold text-gray-900">
                 <i class="fas fa-folder-open text-amber-600 mr-2"></i> Gestión Documental AUTO
             </h3>
-            @processCan('feed')
+            @processCanFor($process, 'feed')
             <button type="button"
                     onclick="document.getElementById('add-doc-is-for-auto').value='1';document.getElementById('modal-add-document').classList.remove('hidden')"
                     class="inline-flex items-center px-3 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700">
                 <i class="fas fa-plus mr-2"></i> Agregar Documento AUTO
             </button>
-            @endprocessCan
+            @endprocessCanFor
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-700">
@@ -601,12 +601,12 @@
                             </td>
                             <td class="px-3 py-2 text-gray-600">{{ Str::limit($item->observation_agent ?? '-', 50) }}</td>
                             <td class="px-3 py-2">
-                                @processCan('edit')
+                                @processCanFor($process, 'edit')
                                 <button type="button" onclick="openChecklistModal({{ $item->id }}, '{{ addslashes($item->document_name) }}', '{{ $item->status }}', '{{ addslashes($item->observation_agent ?? '') }}')"
                                         class="text-teal-600 hover:text-teal-800 text-sm font-medium">
                                     <i class="fas fa-edit mr-1"></i> Cambiar estado
                                 </button>
-                                @endprocessCan
+                                @endprocessCanFor
                             </td>
                         </tr>
                     @empty
@@ -635,7 +635,7 @@
         @else
             <p class="text-sm text-gray-500 mb-3">La carpeta en Drive se creará al subir el primer documento (si está configurado Google Drive en Configuración).</p>
         @endif
-        @processCan('feed')
+        @processCanFor($process, 'feed')
         <form action="{{ route('admin.processes.documents.upload', $process) }}" method="POST" enctype="multipart/form-data" class="mb-4 flex flex-wrap items-end gap-3">
             @csrf
             <div class="flex-1 min-w-[200px]">
@@ -647,7 +647,7 @@
                 <i class="fas fa-upload mr-2"></i> Subir
             </button>
         </form>
-        @endprocessCan
+        @endprocessCanFor
         <div class="border border-gray-200 rounded-lg overflow-hidden">
             <table class="w-full text-sm text-left text-gray-700">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
@@ -672,7 +672,7 @@
                                             <i class="fas fa-download mr-1"></i> Descargar
                                         </a>
                                     @endif
-                                    @processCan('delete')
+                                    @processCanFor($process, 'delete')
                                     <form action="{{ route('admin.processes.documents.destroy', [$process, $doc]) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este documento? Se borrará también en Google Drive.');">
                                         @csrf
                                         @method('DELETE')
@@ -680,7 +680,7 @@
                                             <i class="fas fa-trash mr-1"></i> Eliminar
                                         </button>
                                     </form>
-                                    @endprocessCan
+                                    @endprocessCanFor
                                 </div>
                             </td>
                         </tr>
@@ -728,7 +728,7 @@
     @endif
 
     {{-- Modal: Cambiar estado de documento --}}
-    @processCan('edit')
+    @processCanFor($process, 'edit')
     <div id="modal-checklist-item" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-checklist-item').classList.add('hidden')"></div>
@@ -759,10 +759,10 @@
             </div>
         </div>
     </div>
-    @endprocessCan
+    @endprocessCanFor
 
     {{-- Modal: Agregar documento --}}
-    @processCan('feed')
+    @processCanFor($process, 'feed')
     <div id="modal-add-document" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-add-document').classList.add('hidden')"></div>
@@ -783,10 +783,10 @@
             </div>
         </div>
     </div>
-    @endprocessCan
+    @endprocessCanFor
 
     {{-- Modal: Editar intento (sometimiento) --}}
-    @processCan('edit')
+    @processCanFor($process, 'edit')
     <div id="modal-edit-submission" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-edit-submission').classList.add('hidden')"></div>
@@ -813,10 +813,10 @@
             </div>
         </div>
     </div>
-    @endprocessCan
+    @endprocessCanFor
 
     {{-- Modal: Editar Radicado --}}
-    @processCan('edit')
+    @processCanFor($process, 'edit')
     <div id="modal-edit-radicado" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-edit-radicado').classList.add('hidden')"></div>
@@ -847,10 +847,10 @@
             </div>
         </div>
     </div>
-    @endprocessCan
+    @endprocessCanFor
 
     {{-- Modal: Editar evento (Auto / Resolución) --}}
-    @processCan('edit')
+    @processCanFor($process, 'edit')
     <div id="modal-edit-event" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-edit-event').classList.add('hidden')"></div>
@@ -889,11 +889,11 @@
             </div>
         </div>
     </div>
-    @endprocessCan
+    @endprocessCanFor
 
     {{-- Modal: Vincular / desvincular ciclo (o expediente) a cotización e ítem --}}
     @isset($quotesForClient)
-    @processCan('edit')
+    @processCanFor($process, 'edit')
     <div id="modal-link-quote" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75" onclick="document.getElementById('modal-link-quote').classList.add('hidden')"></div>
@@ -952,7 +952,7 @@
             </div>
         </div>
     </div>
-    @endprocessCan
+    @endprocessCanFor
     @endisset
 
     <script>
@@ -1090,17 +1090,17 @@
     })();
     </script>
 
-    @processCan('feed')
+    @processCanFor($process, 'feed')
     @include('admin.processes.partials.modal-submission', [
         'process' => $process,
         'rejectedSubmissions' => $rejectedSubmissions,
         'quotesForClient' => $quotesForClient ?? collect(),
         'canCreateNewAttempt' => $canCreateNewAttempt ?? false,
     ])
-    @endprocessCan
+    @endprocessCanFor
     @if($lastSubmission)
-        @processCan('feed')
+        @processCanFor($process, 'feed')
         @include('admin.processes.partials.modal-response-invima', ['submission' => $lastSubmission])
-        @endprocessCan
+        @endprocessCanFor
     @endif
 @endsection

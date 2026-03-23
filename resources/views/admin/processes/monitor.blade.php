@@ -100,6 +100,7 @@
                         <th class="px-4 py-3">Producto / Referencia</th>
                         <th class="px-4 py-3">Paso</th>
                         <th class="px-4 py-3">Fecha Último Evento</th>
+                        <th class="px-4 py-3">Equipo</th>
                         <th class="px-4 py-3 w-32">Acciones</th>
                     </tr>
                 </thead>
@@ -168,9 +169,11 @@
             })
             .catch(function() {
                 spinner.classList.add('hidden');
-                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-red-500">Error al cargar. Recargue la página.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-red-500">Error al cargar. Recargue la página.</td></tr>';
             });
         }
+
+        window.reloadMonitorRows = loadRows;
 
         var inputs = ['monitor-search', 'monitor-client', 'monitor-step', 'monitor-date-from', 'monitor-date-to'];
         var timeoutId = null;

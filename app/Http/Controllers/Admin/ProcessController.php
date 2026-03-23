@@ -2,29 +2,35 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\GeneralProcessExport;
+use App\Http\Controllers\Concerns\AuthorizesProcessAccess;
 use App\Http\Controllers\Controller;
+use App\Models\ChecklistItem;
+use App\Models\Company;
 use App\Models\Process;
+use App\Models\ProcessDocument;
 use App\Models\Quote;
 use App\Models\QuoteItem;
-use App\Models\Submission;
 use App\Models\RegulatoryEvent;
-use App\Models\Company;
-use App\Models\ChecklistItem;
-use App\Models\ProcessDocument;
 use App\Models\ServiceType;
-use App\Exports\GeneralProcessExport;
+use App\Models\Submission;
 use App\Services\GoogleDriveService;
+use App\Services\ProcessAccessService;
+use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
-use Illuminate\Http\UploadedFile;
 
 class ProcessController extends Controller
 {
+    use AuthorizesProcessAccess;
+
     /**
      * Crear procesos automáticamente cuando se aprueba una cotización.
      * Un Process por cada QuoteItem que aún no tenga proceso.
@@ -62,6 +68,7 @@ class ProcessController extends Controller
     {
         $companies = Company::orderBy('name')->get();
         $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
+
         return view('admin.processes.create', compact('companies', 'serviceTypes'));
     }
 
@@ -78,7 +85,7 @@ class ProcessController extends Controller
         ]);
 
         $serviceType = ServiceType::where('name', $validated['service_type_name'])->first();
-        if (!$serviceType) {
+        if (! $serviceType) {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['service_type_name' => 'Seleccione un tipo de trámite de la lista.']);
@@ -158,7 +165,10 @@ class ProcessController extends Controller
             'quote',
             'serviceType',
             'submissions.regulatoryEvents',
+            'assignedUsers',
         ]);
+
+        app(ProcessAccessService::class)->scopeProcessesForUser($query, auth()->user());
 
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->client_id);
@@ -169,7 +179,7 @@ class ProcessController extends Controller
             $query->whereStep($stepFilter);
         } elseif ($request->filled('status')) {
             $query->where('status', $request->status);
-        } elseif (!$request->filled('quote_id')) {
+        } elseif (! $request->filled('quote_id')) {
             // Por defecto, el Monitor solo muestra expedientes activos (excluye Finalizados).
             $query->where('status', '!=', Process::STATUS_FINALIZADO);
         }
@@ -207,10 +217,12 @@ class ProcessController extends Controller
         if ($request->ajax()) {
             $rows = view('admin.processes.partials.process-rows', compact('processes'))->render();
             $pagination = $processes->hasPages() ? $processes->withQueryString()->links()->render() : '';
+
             return response()->json(['rows' => $rows, 'pagination' => $pagination]);
         }
 
         $companies = Company::orderBy('name')->get();
+
         return view('admin.processes.monitor', compact('processes', 'companies', 'filterQuote'));
     }
 
@@ -225,7 +237,10 @@ class ProcessController extends Controller
             'quoteItem.serviceType',
             'quote',
             'serviceType',
+            'assignedUsers',
         ])->where('status', Process::STATUS_FINALIZADO);
+
+        app(ProcessAccessService::class)->scopeProcessesForUser($query, auth()->user());
 
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->client_id);
@@ -271,8 +286,8 @@ class ProcessController extends Controller
             'quote_id' => $request->filled('quote_id') ? (int) $request->quote_id : null,
         ];
 
-        $export = new GeneralProcessExport($filters);
-        $filename = 'monitor-procesos-' . now()->format('Y-m-d-His') . '.xlsx';
+        $export = new GeneralProcessExport($filters, auth()->user());
+        $filename = 'monitor-procesos-'.now()->format('Y-m-d-His').'.xlsx';
 
         return Excel::download($export, $filename);
     }
@@ -283,6 +298,9 @@ class ProcessController extends Controller
      */
     public function linkToQuote(Request $request, Process $process): RedirectResponse
     {
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessDocuments($process);
+
         if ($request->boolean('unlink')) {
             $unlinkedQuoteId = $process->quote_id;
             $process->update([
@@ -318,9 +336,9 @@ class ProcessController extends Controller
             'quote_id' => $quote->id,
             'client_id' => $quote->client_id,
         ];
-        if (!empty($validated['quote_item_id'])) {
+        if (! empty($validated['quote_item_id'])) {
             $quoteItem = QuoteItem::with('quote')->findOrFail($validated['quote_item_id']);
-            if (!$quoteItem->quote || $quoteItem->quote_id != $quote->id) {
+            if (! $quoteItem->quote || $quoteItem->quote_id != $quote->id) {
                 return redirect()->route('admin.processes.show', $process)
                     ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
             }
@@ -328,7 +346,7 @@ class ProcessController extends Controller
             if ($process->service_type_id) {
                 $quoteItem->update(['service_type_id' => $process->service_type_id]);
             }
-            if (!$quote->show_service_type_column) {
+            if (! $quote->show_service_type_column) {
                 $quote->update(['show_service_type_column' => true]);
             }
         } else {
@@ -347,6 +365,8 @@ class ProcessController extends Controller
      */
     public function show(Process $process)
     {
+        $this->authorizeProcessView($process);
+
         $process->load([
             'client',
             'quote',
@@ -362,6 +382,7 @@ class ProcessController extends Controller
             'submissions.quoteItem.quote',
             'submissions.quoteItem.service',
             'submissions.quoteItem.serviceType',
+            'assignedUsers',
         ]);
 
         // Asegurar carpeta en Drive para este expediente (se crea al visitar la página si está configurado Drive)
@@ -393,6 +414,9 @@ class ProcessController extends Controller
      */
     public function storeSubmission(Request $request, Process $process): RedirectResponse
     {
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessFeed($process);
+
         $checklistItems = $process->checklistItems;
 
         if ($checklistItems->isEmpty()) {
@@ -401,9 +425,10 @@ class ProcessController extends Controller
                 ->with('error', 'Debe existir al menos un ítem en la checklist del expediente.');
         }
 
-        $notApproved = $checklistItems->where('status', '!=', \App\Models\ChecklistItem::STATUS_APROBADO);
+        $notApproved = $checklistItems->where('status', '!=', ChecklistItem::STATUS_APROBADO);
         if ($notApproved->isNotEmpty()) {
             $names = $notApproved->pluck('document_name')->implode(', ');
+
             return redirect()
                 ->route('admin.processes.show', $process)
                 ->with('error', "No se puede crear el sometimiento: todos los ítems de la checklist deben estar en estado Aprobado. Pendientes: {$names}");
@@ -444,6 +469,9 @@ class ProcessController extends Controller
      */
     public function registerResponse(Request $request, Submission $submission): RedirectResponse
     {
+        $this->authorizeProcessView($submission->process);
+        $this->authorizeProcessFeed($submission->process);
+
         $type = $request->input('response_type');
 
         if ($type === 'radicado') {
@@ -483,6 +511,7 @@ class ProcessController extends Controller
                 'rejection_observation' => $validated['rejection_observation'],
             ]);
             $this->recalculateProcessStatus($submission->process);
+
             return redirect()
                 ->route('admin.processes.show', $submission->process)
                 ->with('success', 'Rechazo registrado. Observación guardada. Puede volver a intentar el proceso de sometimiento desde "Crear Nuevo Intento" (vinculando a este intento).');
@@ -506,21 +535,22 @@ class ProcessController extends Controller
             $filePath = null;
             if ($request->hasFile('file')) {
                 try {
-                    $name = 'Auto ' . ($validated['document_number'] ?? '') . '.pdf';
+                    $name = 'Auto '.($validated['document_number'] ?? '').'.pdf';
                     $result = $this->uploadProcessFileToDrive($submission->process, $request->file('file'), $name);
-                    $filePath = 'drive://' . $result['drive_id'];
+                    $filePath = 'drive://'.$result['drive_id'];
                 } catch (\Exception $e) {
                     Log::error('Error al subir PDF de Auto a Drive', ['submission_id' => $submission->id, 'error' => $e->getMessage()]);
                     $msg = $e->getMessage();
                     if (str_contains($msg, 'OAuth') || str_contains($msg, 'token') || str_contains($msg, 'Reautoriza')) {
                         $msg = 'Google Drive no está conectado o el acceso ha expirado. Ve a Configuración > Google Drive y reautoriza.';
                     } else {
-                        $msg = 'No se pudo subir el PDF a Drive: ' . $msg;
+                        $msg = 'No se pudo subir el PDF a Drive: '.$msg;
                     }
+
                     return redirect()->route('admin.processes.show', $submission->process)->with('error', $msg);
                 }
             }
-            $dueDate = \Carbon\Carbon::parse($validated['due_date']);
+            $dueDate = Carbon::parse($validated['due_date']);
 
             RegulatoryEvent::create([
                 'submission_id' => $submission->id,
@@ -536,7 +566,7 @@ class ProcessController extends Controller
 
             return redirect()
                 ->route('admin.processes.show', $submission->process)
-                ->with('success', 'Requerimiento AUTO registrado. Ciclo cerrado. Fecha de vencimiento: ' . $dueDate->format('d/m/Y') . '. Puede crear un nuevo ciclo.');
+                ->with('success', 'Requerimiento AUTO registrado. Ciclo cerrado. Fecha de vencimiento: '.$dueDate->format('d/m/Y').'. Puede crear un nuevo ciclo.');
         }
 
         if ($type === 'aprobado') {
@@ -554,17 +584,18 @@ class ProcessController extends Controller
             $filePath = null;
             if ($request->hasFile('file')) {
                 try {
-                    $name = 'Resolución ' . ($validated['resolution_number'] ?? '') . '.pdf';
+                    $name = 'Resolución '.($validated['resolution_number'] ?? '').'.pdf';
                     $result = $this->uploadProcessFileToDrive($submission->process, $request->file('file'), $name);
-                    $filePath = 'drive://' . $result['drive_id'];
+                    $filePath = 'drive://'.$result['drive_id'];
                 } catch (\Exception $e) {
                     Log::error('Error al subir PDF de Resolución a Drive', ['submission_id' => $submission->id, 'error' => $e->getMessage()]);
                     $msg = $e->getMessage();
                     if (str_contains($msg, 'OAuth') || str_contains($msg, 'token') || str_contains($msg, 'Reautoriza')) {
                         $msg = 'Google Drive no está conectado o el acceso ha expirado. Ve a Configuración > Google Drive y reautoriza.';
                     } else {
-                        $msg = 'No se pudo subir el PDF a Drive: ' . $msg;
+                        $msg = 'No se pudo subir el PDF a Drive: '.$msg;
                     }
+
                     return redirect()->route('admin.processes.show', $submission->process)->with('error', $msg);
                 }
             }
@@ -597,6 +628,9 @@ class ProcessController extends Controller
      */
     public function updateSubmission(Request $request, Submission $submission): RedirectResponse
     {
+        $this->authorizeProcessView($submission->process);
+        $this->authorizeProcessFeed($submission->process);
+
         $validated = $request->validate([
             'submission_date' => 'nullable|date',
             'submission_code' => 'nullable|string|max:64',
@@ -604,7 +638,7 @@ class ProcessController extends Controller
             'tracking_id' => 'nullable|string|max:64',
             'fecha_radicacion' => 'nullable|date',
             // Si no se envía, se mantiene el estado actual del intento.
-            'status' => 'sometimes|string|in:' . implode(',', Submission::statuses()),
+            'status' => 'sometimes|string|in:'.implode(',', Submission::statuses()),
             'rejection_observation' => 'nullable|string|max:2000',
         ]);
         // Solo actualizamos los campos presentes en la petición.
@@ -613,6 +647,7 @@ class ProcessController extends Controller
             $validated['radicado_saved_by_user_id'] = auth()->id();
         }
         $submission->update($validated);
+
         return redirect()
             ->route('admin.processes.show', $submission->process)
             ->with('success', 'Intento actualizado.');
@@ -623,6 +658,9 @@ class ProcessController extends Controller
      */
     public function updateRadicado(Request $request, Submission $submission): RedirectResponse
     {
+        $this->authorizeProcessView($submission->process);
+        $this->authorizeProcessFeed($submission->process);
+
         $validated = $request->validate([
             'radicado_invima' => 'required|string|max:64',
             'fecha_radicacion' => 'required|date',
@@ -647,6 +685,8 @@ class ProcessController extends Controller
     public function linkSubmissionQuote(Request $request, Submission $submission): RedirectResponse
     {
         $process = $submission->process;
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessDocuments($process);
 
         if ($request->boolean('unlink')) {
             $unlinkedQuoteId = $submission->quote_id;
@@ -679,7 +719,7 @@ class ProcessController extends Controller
         $quoteItemId = $validated['quote_item_id'] ?? null;
         if ($quoteItemId) {
             $quoteItem = QuoteItem::with('quote')->findOrFail($quoteItemId);
-            if (!$quoteItem->quote || $quoteItem->quote_id != $quote->id) {
+            if (! $quoteItem->quote || $quoteItem->quote_id != $quote->id) {
                 return redirect()->route('admin.processes.show', $process)
                     ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
             }
@@ -692,7 +732,7 @@ class ProcessController extends Controller
                 $quoteItem->update(['service_type_id' => $process->service_type_id]);
             }
             // Mostrar columna Trámite en cotización y PDF (el usuario puede desactivarla al editar).
-            if (!$quote->show_service_type_column) {
+            if (! $quote->show_service_type_column) {
                 $quote->update(['show_service_type_column' => true]);
             }
         } else {
@@ -715,6 +755,8 @@ class ProcessController extends Controller
     public function destroySubmission(Submission $submission): RedirectResponse
     {
         $process = $submission->process;
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessFeed($process);
         $quoteIdsToSync = $this->collectQuoteIdsFromSubmissionTree($submission);
 
         // Si se elimina un sometimiento (por ejemplo el del Ciclo 1 que ya tenía AUTO),
@@ -769,6 +811,8 @@ class ProcessController extends Controller
     public function destroyRadicado(Submission $submission): RedirectResponse
     {
         $process = $submission->process;
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessFeed($process);
 
         // Eliminar intentos hijos y eventos asociados (ciclos posteriores, AUTO, Resolución, etc.)
         foreach ($submission->children as $child) {
@@ -799,8 +843,9 @@ class ProcessController extends Controller
     private function recalculateProcessStatus(Process $process): void
     {
         $last = $process->submissions()->orderByDesc('id')->first();
-        if (!$last) {
+        if (! $last) {
             $process->update(['status' => Process::STATUS_RECOLECCION]);
+
             return;
         }
         $status = match ($last->status) {
@@ -817,6 +862,9 @@ class ProcessController extends Controller
      */
     public function storeChecklistItem(Request $request, Process $process): RedirectResponse
     {
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessDocuments($process);
+
         $validated = $request->validate([
             'document_name' => 'required|string|max:255',
         ]);
@@ -826,6 +874,7 @@ class ProcessController extends Controller
             'status' => ChecklistItem::STATUS_PENDIENTE,
             'is_for_auto' => $request->boolean('is_for_auto', false),
         ]);
+
         return redirect()
             ->route('admin.processes.show', $process)
             ->with('success', 'Documento agregado a la checklist.');
@@ -836,14 +885,18 @@ class ProcessController extends Controller
      */
     public function updateChecklistItem(Request $request, ChecklistItem $checklistItem): RedirectResponse
     {
+        $this->authorizeProcessView($checklistItem->process);
+        $this->authorizeProcessDocuments($checklistItem->process);
+
         $validated = $request->validate([
-            'status' => 'required|string|in:' . implode(',', ChecklistItem::statuses()),
+            'status' => 'required|string|in:'.implode(',', ChecklistItem::statuses()),
             'observation_agent' => 'nullable|string|max:1000',
         ]);
         $checklistItem->update([
             'status' => $validated['status'],
             'observation_agent' => $validated['observation_agent'] ?? null,
         ]);
+
         return redirect()
             ->route('admin.processes.show', $checklistItem->process)
             ->with('success', 'Documento actualizado.');
@@ -856,7 +909,7 @@ class ProcessController extends Controller
     private function uploadProcessFileToDrive(Process $process, UploadedFile $file, ?string $fileName = null): array
     {
         $tempDir = storage_path('app/temp');
-        if (!is_dir($tempDir)) {
+        if (! is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
         $originalName = $fileName ?? $file->getClientOriginalName();
@@ -864,8 +917,8 @@ class ProcessController extends Controller
         $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
         $baseName = pathinfo($originalName, PATHINFO_FILENAME);
         $safeName = preg_replace('/[^a-zA-Z0-9_\-\pL]/u', '_', $baseName) ?: 'file';
-        $uniqueName = Str::uuid() . '_' . $safeName . ($extension ? '.' . $extension : '');
-        $fullPath = $tempDir . '/' . $uniqueName;
+        $uniqueName = Str::uuid().'_'.$safeName.($extension ? '.'.$extension : '');
+        $fullPath = $tempDir.'/'.$uniqueName;
 
         $file->move($tempDir, $uniqueName);
         try {
@@ -882,11 +935,12 @@ class ProcessController extends Controller
             ProcessDocument::create([
                 'process_id' => $process->id,
                 'uploaded_by_id' => auth()->id(),
-                'file_path' => 'drive://' . $driveFile['id'],
+                'file_path' => 'drive://'.$driveFile['id'],
                 'file_name' => $originalName,
                 'file_type' => $mimeType,
                 'drive_id' => $driveFile['id'],
             ]);
+
             return ['drive_id' => $driveFile['id']];
         } finally {
             if (file_exists($fullPath)) {
@@ -900,6 +954,9 @@ class ProcessController extends Controller
      */
     public function uploadDocument(Request $request, Process $process): RedirectResponse
     {
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessDocuments($process);
+
         $request->validate([
             'document' => 'required|file|max:10240', // 10MB
         ]);
@@ -913,8 +970,9 @@ class ProcessController extends Controller
             if (str_contains($message, 'OAuth') || str_contains($message, 'token') || str_contains($message, 'Reautoriza')) {
                 $message = 'Google Drive no está conectado o el acceso ha expirado. Ve a Configuración > Google Drive y haz clic en «Conectar con Google» para reautorizar.';
             } else {
-                $message = 'No se pudo subir el documento: ' . $message;
+                $message = 'No se pudo subir el documento: '.$message;
             }
+
             return redirect()->route('admin.processes.show', $process)
                 ->with('error', $message);
         }
@@ -926,12 +984,14 @@ class ProcessController extends Controller
     /**
      * Ver documento del expediente en el navegador (desde Drive).
      */
-    public function viewDocument(Process $process, ProcessDocument $processDocument): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+    public function viewDocument(Process $process, ProcessDocument $processDocument): Response|RedirectResponse
     {
+        $this->authorizeProcessView($process);
+
         if ($processDocument->process_id !== $process->id) {
             abort(404);
         }
-        if (!$processDocument->drive_id) {
+        if (! $processDocument->drive_id) {
             abort(404, 'Documento sin enlace a Drive.');
         }
         $driveService = app(GoogleDriveService::class);
@@ -944,7 +1004,8 @@ class ProcessController extends Controller
         try {
             $fileContent = $driveService->downloadFile($processDocument->drive_id);
             $mime = $processDocument->file_type ?: ($fileInfo['mimeType'] ?? 'application/octet-stream');
-            $disposition = 'inline; filename="' . addcslashes($processDocument->file_name, '"\\') . '"';
+            $disposition = 'inline; filename="'.addcslashes($processDocument->file_name, '"\\').'"';
+
             return response($fileContent, 200, [
                 'Content-Type' => $mime,
                 'Content-Disposition' => $disposition,
@@ -959,12 +1020,14 @@ class ProcessController extends Controller
     /**
      * Descargar documento del expediente (desde Drive).
      */
-    public function downloadDocument(Process $process, ProcessDocument $processDocument): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+    public function downloadDocument(Process $process, ProcessDocument $processDocument): Response|RedirectResponse
     {
+        $this->authorizeProcessView($process);
+
         if ($processDocument->process_id !== $process->id) {
             abort(404);
         }
-        if (!$processDocument->drive_id) {
+        if (! $processDocument->drive_id) {
             abort(404, 'Documento sin enlace a Drive.');
         }
         $driveService = app(GoogleDriveService::class);
@@ -976,7 +1039,8 @@ class ProcessController extends Controller
         try {
             $fileContent = $driveService->downloadFile($processDocument->drive_id);
             $mime = $processDocument->file_type ?: ($fileInfo['mimeType'] ?? 'application/octet-stream');
-            $disposition = 'attachment; filename="' . addcslashes($processDocument->file_name, '"\\') . '"';
+            $disposition = 'attachment; filename="'.addcslashes($processDocument->file_name, '"\\').'"';
+
             return response($fileContent, 200, [
                 'Content-Type' => $mime,
                 'Content-Disposition' => $disposition,
@@ -994,6 +1058,9 @@ class ProcessController extends Controller
      */
     public function destroy(Process $process): RedirectResponse
     {
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessDelete($process);
+
         $process->load('processDocuments');
         foreach ($process->processDocuments as $doc) {
             if ($doc->drive_id) {
@@ -1009,6 +1076,7 @@ class ProcessController extends Controller
             }
         }
         $process->delete();
+
         return redirect()
             ->route('admin.processes.monitor')
             ->with('success', 'Expediente eliminado.');
@@ -1019,6 +1087,9 @@ class ProcessController extends Controller
      */
     public function destroyDocument(Process $process, ProcessDocument $processDocument): RedirectResponse
     {
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessDocuments($process);
+
         if ($processDocument->process_id !== $process->id) {
             abort(404);
         }
@@ -1034,6 +1105,7 @@ class ProcessController extends Controller
             }
         }
         $processDocument->delete();
+
         return redirect()->route('admin.processes.show', $process)
             ->with('success', 'Documento eliminado.');
     }
@@ -1046,14 +1118,14 @@ class ProcessController extends Controller
     private function syncQuoteTramiteColumnIfNoLinks(int $quoteId): void
     {
         $quote = Quote::find($quoteId);
-        if (!$quote || !$quote->show_service_type_column) {
+        if (! $quote || ! $quote->show_service_type_column) {
             return;
         }
 
         $stillLinked = Submission::where('quote_id', $quoteId)->exists()
             || Process::where('quote_id', $quoteId)->exists();
 
-        if (!$stillLinked) {
+        if (! $stillLinked) {
             $quote->update(['show_service_type_column' => false]);
         }
     }

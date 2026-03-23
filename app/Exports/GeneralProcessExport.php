@@ -5,17 +5,22 @@ namespace App\Exports;
 use App\Models\Process;
 use App\Models\Quote;
 use App\Models\RegulatoryEvent;
+use App\Models\User;
+use App\Services\ProcessAccessService;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
-class GeneralProcessExport implements FromQuery, WithMapping, WithHeadings
+class GeneralProcessExport implements FromQuery, WithHeadings, WithMapping
 {
     /** @var array<string, mixed> */
     protected array $filters;
 
-    public function __construct(array $filters = [])
-    {
+    public function __construct(
+        array $filters = [],
+        protected ?User $forUser = null
+    ) {
         $this->filters = $filters;
     }
 
@@ -31,26 +36,26 @@ class GeneralProcessExport implements FromQuery, WithMapping, WithHeadings
             'submissions.regulatoryEvents',
         ]);
 
-        if (!empty($this->filters['client_id'])) {
+        if (! empty($this->filters['client_id'])) {
             $query->where('client_id', $this->filters['client_id']);
         }
 
         $step = isset($this->filters['step']) ? (int) $this->filters['step'] : null;
         if ($step !== null && $step >= 1 && $step <= 5) {
             $query->whereStep($step);
-        } elseif (!empty($this->filters['status'])) {
+        } elseif (! empty($this->filters['status'])) {
             $query->where('status', $this->filters['status']);
         }
 
-        if (!empty($this->filters['date_from'])) {
+        if (! empty($this->filters['date_from'])) {
             $query->whereDate('updated_at', '>=', $this->filters['date_from']);
         }
 
-        if (!empty($this->filters['date_to'])) {
+        if (! empty($this->filters['date_to'])) {
             $query->whereDate('updated_at', '<=', $this->filters['date_to']);
         }
 
-        if (!empty($this->filters['search'])) {
+        if (! empty($this->filters['search'])) {
             $search = $this->filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('product_reference', 'like', "%{$search}%")
@@ -61,19 +66,22 @@ class GeneralProcessExport implements FromQuery, WithMapping, WithHeadings
             });
         }
 
-        if (!empty($this->filters['quote_id'])) {
+        if (! empty($this->filters['quote_id'])) {
             $qid = (int) $this->filters['quote_id'];
             if (Quote::where('id', $qid)->exists()) {
                 $query->whereLinkedToQuote($qid);
             }
         }
 
+        if ($this->forUser) {
+            app(ProcessAccessService::class)->scopeProcessesForUser($query, $this->forUser);
+        }
+
         return $query->orderBy('updated_at', 'desc');
     }
 
     /**
-     * @param Process $process
-     * @return array
+     * @param  Process  $process
      */
     public function map($process): array
     {
@@ -108,7 +116,7 @@ class GeneralProcessExport implements FromQuery, WithMapping, WithHeadings
             $process->client?->name ?? '',
             $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '',
             $process->product_reference ?? '',
-            $fechaSometimiento ? ($fechaSometimiento instanceof \Carbon\Carbon ? $fechaSometimiento->format('d/m/Y') : \Carbon\Carbon::parse($fechaSometimiento)->format('d/m/Y')) : '',
+            $fechaSometimiento ? ($fechaSometimiento instanceof Carbon ? $fechaSometimiento->format('d/m/Y') : Carbon::parse($fechaSometimiento)->format('d/m/Y')) : '',
             $radicado ?? '',
             $autoEvent?->document_number ?? '',
             $resolucionEvent?->document_number ?? '',

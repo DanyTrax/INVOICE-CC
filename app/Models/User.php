@@ -3,19 +3,20 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
+use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Auth\Passwords\CanResetPassword;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements CanResetPasswordContract
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use CanResetPassword, HasFactory, Notifiable, HasRoles;
+    /** @use HasFactory<UserFactory> */
+    use CanResetPassword, HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -73,7 +74,9 @@ class User extends Authenticatable implements CanResetPasswordContract
 
     /** Valores válidos para client_status (solo usuarios con rol client). */
     public const CLIENT_STATUS_ACTIVO = 'activo';
+
     public const CLIENT_STATUS_PENDIENTE = 'pendiente';
+
     public const CLIENT_STATUS_DESHABILITADO = 'deshabilitado';
 
     /**
@@ -81,9 +84,10 @@ class User extends Authenticatable implements CanResetPasswordContract
      */
     public function canAccessPortal(): bool
     {
-        if (!$this->hasRole('client')) {
+        if (! $this->hasRole('client')) {
             return true;
         }
+
         // null o 'activo' = puede acceder (retrocompatibilidad con usuarios sin client_status)
         return in_array($this->client_status, [null, self::CLIENT_STATUS_ACTIVO], true);
     }
@@ -104,6 +108,16 @@ class User extends Authenticatable implements CanResetPasswordContract
     public function assignedRegistrations(): HasMany
     {
         return $this->hasMany(Registration::class, 'assigned_specialist_id');
+    }
+
+    /**
+     * Expedientes INVIMA (processes) asignados con permisos por expediente.
+     */
+    public function assignedProcesses(): BelongsToMany
+    {
+        return $this->belongsToMany(Process::class, 'process_user')
+            ->withPivot(['can_feed_timeline', 'can_manage_documents'])
+            ->withTimestamps();
     }
 
     /**

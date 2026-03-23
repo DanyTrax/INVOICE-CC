@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\ConceptCatalogController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\ProcessAssignmentController;
 use App\Http\Controllers\Admin\ProcessController;
 use App\Http\Controllers\Admin\ProposalController;
 use App\Http\Controllers\Admin\ProposalPdfTemplateController;
@@ -189,6 +190,8 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::get('processes/create', [ProcessController::class, 'create'])->name('processes.create');
     Route::post('processes', [ProcessController::class, 'store'])->name('processes.store');
     Route::get('processes/{process}', [ProcessController::class, 'show'])->name('processes.show');
+    Route::get('processes/{process}/assignments', [ProcessAssignmentController::class, 'show'])->name('processes.assignments.show');
+    Route::put('processes/{process}/assignments', [ProcessAssignmentController::class, 'update'])->name('processes.assignments.update');
     Route::delete('processes/{process}', [ProcessController::class, 'destroy'])->name('processes.destroy');
     Route::post('processes/{process}/link-to-quote', [ProcessController::class, 'linkToQuote'])->name('processes.link-to-quote');
     Route::post('processes/{process}/submissions', [ProcessController::class, 'storeSubmission'])->name('processes.submissions.store');

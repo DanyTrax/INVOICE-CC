@@ -2,20 +2,26 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesProcessAccess;
 use App\Http\Controllers\Controller;
 use App\Models\Process;
 use App\Models\RegulatoryEvent;
 use App\Models\Submission;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class RegulatoryEventController extends Controller
 {
+    use AuthorizesProcessAccess;
+
     /**
      * Registrar un Auto. Crea el evento; el Observer calcula due_date (90 días hábiles) y marca proceso En Requerimiento.
      */
     public function storeAuto(Request $request, Submission $submission): RedirectResponse
     {
+        $this->authorizeProcessView($submission->process);
+        $this->authorizeProcessFeed($submission->process);
+
         if ($submission->isAutoFollowUpCycle()) {
             return redirect()
                 ->route('admin.processes.show', $submission->process)
@@ -58,6 +64,9 @@ class RegulatoryEventController extends Controller
      */
     public function storeResolution(Request $request, Submission $submission): RedirectResponse
     {
+        $this->authorizeProcessView($submission->process);
+        $this->authorizeProcessFeed($submission->process);
+
         $validated = $request->validate([
             'document_number' => 'nullable|string|max:64',
             'event_date' => 'nullable|date',
@@ -98,6 +107,9 @@ class RegulatoryEventController extends Controller
         $submission = $regulatoryEvent->submission;
         $process = $submission->process;
 
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessFeed($process);
+
         if ($regulatoryEvent->event_type === RegulatoryEvent::EVENT_TYPE_AUTO) {
             $validated = $request->validate([
                 'document_number' => 'nullable|string|max:64',
@@ -137,6 +149,9 @@ class RegulatoryEventController extends Controller
     {
         $submission = $regulatoryEvent->submission;
         $process = $submission->process;
+
+        $this->authorizeProcessView($process);
+        $this->authorizeProcessFeed($process);
 
         if ($regulatoryEvent->event_type === RegulatoryEvent::EVENT_TYPE_RESOLUCION) {
             // Borrar la resolución y devolver el intento / proceso a estado Radicado.

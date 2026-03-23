@@ -4,16 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\QuoteItem;
-use App\Models\RegulatoryEvent;
-use App\Models\Submission;
 
 class Process extends Model
 {
     public const STATUS_RECOLECCION = 'Recolección';
+
     public const STATUS_RADICADO = 'Radicado';
+
     public const STATUS_EN_REQUERIMIENTO = 'En Requerimiento';
+
     public const STATUS_FINALIZADO = 'Finalizado';
 
     public static function statuses(): array
@@ -28,9 +29,13 @@ class Process extends Model
 
     /** Pasos del flujo del expediente para mostrar en qué etapa está. */
     public const STEP_RECOLECCION = 1;
+
     public const STEP_SOMETIMIENTO = 2;
+
     public const STEP_RADICADO = 3;
+
     public const STEP_AUTO = 4;
+
     public const STEP_FINALIZADO = 5;
 
     public static function stepLabels(): array
@@ -114,7 +119,7 @@ class Process extends Model
             ? $this->submissions->sortByDesc('id')->first()
             : $this->submissions()->orderByDesc('id')->first();
 
-        if (!$last) {
+        if (! $last) {
             return 'AUTO (Recolección)';
         }
 
@@ -162,14 +167,15 @@ class Process extends Model
         $last = $this->relationLoaded('submissions')
             ? $this->submissions->sortByDesc('id')->first()
             : $this->submissions()->orderByDesc('id')->first();
-        if (!$last) {
+        if (! $last) {
             return self::STEP_RECOLECCION;
         }
+
         return match ($last->status) {
-            \App\Models\Submission::STATUS_APROBADO => self::STEP_FINALIZADO,
-            \App\Models\Submission::STATUS_EN_REQUERIMIENTO => self::STEP_AUTO,
-            \App\Models\Submission::STATUS_RADICADO => self::STEP_RADICADO,
-            \App\Models\Submission::STATUS_PENDIENTE => self::STEP_SOMETIMIENTO,
+            Submission::STATUS_APROBADO => self::STEP_FINALIZADO,
+            Submission::STATUS_EN_REQUERIMIENTO => self::STEP_AUTO,
+            Submission::STATUS_RADICADO => self::STEP_RADICADO,
+            Submission::STATUS_PENDIENTE => self::STEP_SOMETIMIENTO,
             default => self::STEP_RECOLECCION, // Rechazado u otro
         };
     }
@@ -180,6 +186,7 @@ class Process extends Model
     public function getCurrentStepLabel(): string
     {
         $labels = self::stepLabels();
+
         return $labels[$this->getCurrentStep()] ?? 'Recolección';
     }
 
@@ -212,9 +219,9 @@ class Process extends Model
         match ($step) {
             self::STEP_RECOLECCION => $query->where(function ($q) use ($subLastStatus) {
                 $q->whereDoesntHave('submissions')
-                    ->orWhereRaw($subLastStatus . ' = ?', [\App\Models\Submission::STATUS_RECHAZADO]);
+                    ->orWhereRaw($subLastStatus.' = ?', [Submission::STATUS_RECHAZADO]);
             }),
-            self::STEP_SOMETIMIENTO => $query->whereRaw($subLastStatus . ' = ?', [\App\Models\Submission::STATUS_PENDIENTE]),
+            self::STEP_SOMETIMIENTO => $query->whereRaw($subLastStatus.' = ?', [Submission::STATUS_PENDIENTE]),
             self::STEP_RADICADO => $query->where('status', self::STATUS_RADICADO),
             self::STEP_AUTO => $query->whereAutoPipeline(),
             self::STEP_FINALIZADO => $query->where('status', self::STATUS_FINALIZADO),
@@ -272,5 +279,27 @@ class Process extends Model
     public function processDocuments(): HasMany
     {
         return $this->hasMany(ProcessDocument::class, 'process_id');
+    }
+
+    /**
+     * Agentes/usuarios asignados al expediente (con permisos por expediente en el pivote).
+     */
+    public function assignedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'process_user')
+            ->withPivot(['can_feed_timeline', 'can_manage_documents'])
+            ->withTimestamps();
+    }
+
+    /**
+     * ¿Hay al menos una asignación explícita? Si no, los agentes con acceso a la empresa siguen viendo el expediente (compatibilidad).
+     */
+    public function hasExplicitAssignments(): bool
+    {
+        if ($this->relationLoaded('assignedUsers')) {
+            return $this->assignedUsers->isNotEmpty();
+        }
+
+        return $this->assignedUsers()->exists();
     }
 }

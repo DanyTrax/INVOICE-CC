@@ -18,12 +18,26 @@
             <span class="px-2 py-1 text-xs font-medium rounded-full {{ $stepClass }}" title="Paso {{ $paso }}">{{ $estadoLabel }}</span>
         </td>
         <td class="px-4 py-3 text-sm text-gray-600">{{ $fechaUltimoGuardado ? $fechaUltimoGuardado->format('d/m/Y H:i') : '—' }}</td>
+        <td class="px-4 py-3 align-top max-w-[11rem]">
+            @if($process->relationLoaded('assignedUsers') && $process->assignedUsers->isNotEmpty())
+                <p class="text-xs text-gray-800 truncate" title="{{ $process->assignedUsers->pluck('name')->join(', ') }}">
+                    {{ $process->assignedUsers->take(2)->pluck('name')->join(', ') }}@if($process->assignedUsers->count() > 2) +{{ $process->assignedUsers->count() - 2 }}@endif
+                </p>
+            @else
+                <span class="text-xs text-gray-400">Sin asignar</span>
+            @endif
+            @if(auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('admin'))
+                <button type="button" onclick="openProcessAssignmentModal({{ $process->id }})" class="mt-1 text-xs font-medium text-teal-600 hover:underline">
+                    Asignar equipo
+                </button>
+            @endif
+        </td>
         <td class="px-4 py-3">
             <div class="inline-flex items-center gap-1">
                 <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver expediente">
                     <i class="fas fa-eye"></i>
                 </a>
-                @processCan('delete')
+                @processCanFor($process, 'delete')
                 <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
                     @csrf
                     @method('DELETE')
@@ -31,13 +45,13 @@
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </form>
-                @endprocessCan
+                @endprocessCanFor
             </div>
         </td>
     </tr>
 @endforeach
 @if($processes->isEmpty())
     <tr>
-        <td colspan="7" class="px-4 py-8 text-center text-gray-500">No hay expedientes con los filtros aplicados.</td>
+        <td colspan="8" class="px-4 py-8 text-center text-gray-500">No hay expedientes con los filtros aplicados.</td>
     </tr>
 @endif

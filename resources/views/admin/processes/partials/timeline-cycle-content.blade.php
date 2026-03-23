@@ -1,5 +1,6 @@
 {{-- Contenido de un solo ciclo: card del sometimiento + eventos regulatorios (sin hijos). --}}
 @php
+    $process = $process ?? $submission->process;
     $cycleNum = $cycleNum ?? 1;
     /** Ciclos 2+ = respuesta al requerimiento AUTO (subsanación): mismo trámite AUTO, pasos Sometimiento/Radicado. */
     $isAutoLinkedCycle = $cycleNum >= 2;
@@ -90,7 +91,7 @@
         <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
                 @if(isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id && $submission->status === \App\Models\Submission::STATUS_PENDIENTE)
-                    @processCan('feed')
+                    @processCanFor($process, 'feed')
                     <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('radicado')"
                             class="text-sm px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
                         Aprobar
@@ -99,11 +100,11 @@
                             class="text-sm px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
                         Rechazar
                     </button>
-                    @endprocessCan
+                    @endprocessCanFor
                 @endif
             </div>
             <div class="flex items-center gap-2">
-                @processCan('edit')
+                @processCanFor($process, 'feed')
                 <button type="button" class="js-edit-submission text-sm px-2.5 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
                         data-url="{{ route('admin.submissions.update', $submission) }}"
                         data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
@@ -116,8 +117,6 @@
                         title="Editar sometimiento">
                     <i class="fas fa-edit"></i>
                 </button>
-                @endprocessCan
-                @processCan('delete')
                 <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline-flex" onsubmit="return confirm('¿Eliminar este ciclo y toda la línea hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
                     @csrf
                     @method('DELETE')
@@ -125,7 +124,7 @@
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </form>
-                @endprocessCan
+                @endprocessCanFor
             </div>
         </div>
 
@@ -180,7 +179,7 @@
                 <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex flex-wrap gap-2">
                         @if($submission->status === \App\Models\Submission::STATUS_RADICADO)
-                            @processCan('feed')
+                            @processCanFor($process, 'feed')
                             @if(!$isAutoLinkedCycle)
                                 <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
                                         class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
@@ -191,19 +190,19 @@
                                     class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
                                 <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN
                             </button>
-                            @endprocessCan
+                            @endprocessCanFor
                         @endif
                     </div>
                     <div class="flex items-center gap-2">
-                        @processCan('edit')
+                        @processCanFor($process, 'edit')
                         <button type="button"
                                 onclick="typeof openEditRadicado === 'function' && openEditRadicado({{ $submission->id }}, '{{ addslashes($submission->radicado_invima ?? '') }}', '{{ $submission->fecha_radicacion?->format('Y-m-d') }}', '{{ addslashes($submission->tracking_id ?? '') }}')"
                                 class="text-xs px-2.5 py-1.5 text-teal-600 border border-teal-200 rounded-lg hover:bg-teal-50"
                                 title="Editar Radicado">
                             <i class="fas fa-edit"></i>
                         </button>
-                        @endprocessCan
-                        @processCan('delete')
+                        @endprocessCanFor
+                        @processCanFor($process, 'delete')
                         <form action="{{ route('admin.submissions.destroy-radicado', $submission) }}" method="post" class="inline-flex"
                               onsubmit="return confirm('¿Quitar Radicado y eliminar AUTO / Resolución y ciclos posteriores? Esta acción no se puede deshacer.');">
                             @csrf
@@ -212,7 +211,7 @@
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </form>
-                        @endprocessCan
+                        @endprocessCanFor
                     </div>
                 </div>
             </div>
@@ -310,7 +309,7 @@
                     </div>
                 </div>
                 <div class="mt-3 flex items-center justify-end gap-2">
-                    @processCan('edit')
+                    @processCanFor($process, 'feed')
                     <button type="button" class="js-edit-event text-xs px-2.5 py-1 text-teal-600 hover:bg-teal-50 rounded border border-teal-200"
                             data-url="{{ route('admin.regulatory-events.update', $event) }}"
                             data-event-type="{{ $event->event_type }}"
@@ -322,8 +321,8 @@
                             title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
-                    @endprocessCan
-                    @processCan('delete')
+                    @endprocessCanFor
+                    @processCanFor($process, 'delete')
                     <form action="{{ route('admin.regulatory-events.destroy', $event) }}" method="post" class="inline-flex"
                           onsubmit="return confirm('¿Eliminar este evento y devolver el proceso a su estado anterior si aplica? Esta acción no se puede deshacer.');">
                         @csrf
@@ -332,7 +331,7 @@
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </form>
-                    @endprocessCan
+                    @endprocessCanFor
                 </div>
             </div>
         </div>
