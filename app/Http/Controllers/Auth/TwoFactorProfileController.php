@@ -28,6 +28,10 @@ class TwoFactorProfileController extends Controller
         }
 
         if ($user->hasTwoFactorEnabled()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Ya tienes el 2FA activado.'], 422);
+            }
+
             return back()->with('error', 'Ya tienes el 2FA activado.');
         }
 
@@ -46,6 +50,13 @@ class TwoFactorProfileController extends Controller
 
         $otpUrl = $this->twoFactor->getOtpAuthUrl($secret, $user->email, $issuer);
         $qrDataUri = $this->twoFactor->getQrCodeDataUri($otpUrl);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'qr_data_uri' => $qrDataUri,
+                'secret' => $secret,
+            ]);
+        }
 
         return back()
             ->with('two_factor_qr', $qrDataUri)
@@ -70,6 +81,10 @@ class TwoFactorProfileController extends Controller
         }
 
         if ($user->hasTwoFactorEnabled()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'El 2FA ya está activo.'], 422);
+            }
+
             return back()->with('error', 'El 2FA ya está activo.');
         }
 
@@ -77,6 +92,12 @@ class TwoFactorProfileController extends Controller
         $recoveryPlain = $request->session()->get('two_factor_setup.recovery_plain');
 
         if (! $encrypted || ! is_array($recoveryPlain)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Sesión de configuración caducada. Abre el asistente de nuevo.',
+                ], 422);
+            }
+
             return back()->with('error', 'Sesión de configuración caducada. Pulsa «Iniciar configuración» de nuevo.');
         }
 
@@ -95,6 +116,14 @@ class TwoFactorProfileController extends Controller
         ])->save();
 
         $request->session()->forget(['two_factor_setup.secret', 'two_factor_setup.recovery_plain']);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Verificación en dos pasos activada correctamente.',
+                'recovery_codes' => $recoveryPlain,
+            ]);
+        }
 
         return back()->with('success', 'Verificación en dos pasos activada correctamente. Guarda tus códigos de respaldo en un lugar seguro.');
     }
@@ -117,7 +146,7 @@ class TwoFactorProfileController extends Controller
             return back()->with('error', 'No tienes el 2FA activado.');
         }
 
-        if (! password_verify($request->input('current_password'), $user->password)) {
+        if (! Hash::check($request->input('current_password'), $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => ['La contraseña no es correcta.'],
             ]);
@@ -170,6 +199,10 @@ class TwoFactorProfileController extends Controller
     public function cancelSetup(Request $request)
     {
         $request->session()->forget(['two_factor_setup.secret', 'two_factor_setup.recovery_plain']);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return back()->with('status', 'Configuración de 2FA cancelada.');
     }
