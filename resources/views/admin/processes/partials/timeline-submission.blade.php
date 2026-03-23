@@ -89,6 +89,7 @@
         <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
                 @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
+                    @processCan('feed')
                     <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('radicado')"
                             class="text-sm px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
                         Aprobar
@@ -97,9 +98,11 @@
                             class="text-sm px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700">
                         Rechazar
                     </button>
+                    @endprocessCan
                 @endif
             </div>
             <div class="flex items-center gap-2">
+                @processCan('edit')
                 <button type="button" class="js-edit-submission flex-shrink-0 text-sm px-2.5 py-1.5 text-teal-600 hover:bg-teal-50 rounded-lg border border-teal-200"
                         data-url="{{ route('admin.submissions.update', $submission) }}"
                         data-submission-date="{{ $submission->submission_date?->format('Y-m-d\TH:i') }}"
@@ -112,6 +115,8 @@
                         title="Editar sometimiento">
                     <i class="fas fa-edit"></i>
                 </button>
+                @endprocessCan
+                @processCan('delete')
                 <form action="{{ route('admin.submissions.destroy', $submission) }}" method="post" class="inline-flex flex-shrink-0" onsubmit="return confirm('¿Eliminar este intento y toda la línea de tiempo hacia abajo (eventos e intentos hijos)? Esta acción no se puede deshacer.');">
                     @csrf
                     @method('DELETE')
@@ -119,6 +124,7 @@
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </form>
+                @endprocessCan
             </div>
         </div>
         @if($submission->status === \App\Models\Submission::STATUS_PENDIENTE && isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id)
@@ -149,6 +155,7 @@
                     <span class="ml-1 break-words">{{ $submission->tracking_id ?? '—' }}</span>
                 </p>
                 <p class="mt-2 flex flex-wrap gap-2">
+                    @processCan('feed')
                     <button type="button" onclick="typeof openResponseModal === 'function' && openResponseModal('auto')"
                             class="text-xs px-3 py-1.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
                         <i class="fas fa-gavel mr-1"></i> REQUERIMIENTO AUTO
@@ -157,6 +164,7 @@
                             class="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700">
                         <i class="fas fa-file-signature mr-1"></i> RESOLUCIÓN
                     </button>
+                    @endprocessCan
                 </p>
             </div>
         </div>
@@ -227,6 +235,7 @@
                     </p>
                 @endif
                 <p class="mt-2">
+                    @processCan('edit')
                     <button type="button" class="js-edit-event text-xs px-2 py-1 text-teal-600 hover:bg-teal-50 rounded border border-teal-200"
                             data-url="{{ route('admin.regulatory-events.update', $event) }}"
                             data-event-type="{{ $event->event_type }}"
@@ -237,6 +246,7 @@
                             data-resolution-key="{{ $event->resolution_key ?? '' }}">
                         <i class="fas fa-edit mr-1"></i> Editar
                     </button>
+                    @endprocessCan
                 </p>
             </div>
         </li>

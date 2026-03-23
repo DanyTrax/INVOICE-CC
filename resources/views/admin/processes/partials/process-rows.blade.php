@@ -23,6 +23,7 @@
                 <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Abrir expediente">
                     <i class="fas fa-edit"></i>
                 </a>
+                @processCan('delete')
                 <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
                     @csrf
                     @method('DELETE')
@@ -30,6 +31,7 @@
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </form>
+                @endprocessCan
             </div>
         </td>
     </tr>

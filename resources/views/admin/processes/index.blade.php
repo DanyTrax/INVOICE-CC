@@ -15,9 +15,11 @@
 
 @section('content')
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        @processCan('edit')
         <a href="{{ route('admin.processes.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 whitespace-nowrap">
             <i class="fas fa-plus mr-2"></i> Nuevo Expediente
         </a>
+        @endprocessCan
     </div>
 
     {{-- Sección superior: Acordeones por cotización --}}
@@ -111,6 +113,7 @@
                                                     <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Abrir expediente">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
+                                                    @processCan('delete')
                                                     <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
                                                         @csrf
                                                         @method('DELETE')
@@ -118,6 +121,7 @@
                                                             <i class="fas fa-trash-alt"></i>
                                                         </button>
                                                     </form>
+                                                    @endprocessCan
                                                 </div>
                                             </td>
                                         </tr>
@@ -174,6 +178,7 @@
                                     <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Abrir expediente">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    @processCan('delete')
                                     <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
                                         @csrf
                                         @method('DELETE')
@@ -181,6 +186,7 @@
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
+                                    @endprocessCan
                                 </div>
                             </td>
                         </tr>

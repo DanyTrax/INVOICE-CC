@@ -6,6 +6,8 @@ use App\Models\Quote;
 use App\Models\RegulatoryEvent;
 use App\Observers\QuoteObserver;
 use App\Observers\RegulatoryEventObserver;
+use App\Services\PermissionService;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +27,17 @@ class AppServiceProvider extends ServiceProvider
     {
         Quote::observe(QuoteObserver::class);
         RegulatoryEvent::observe(RegulatoryEventObserver::class);
+
+        // Expedientes: @processCan('delete'|'edit'|'feed'|'view'|...)
+        Blade::if('processCan', function (string $action) {
+            $s = app(PermissionService::class);
+            $map = [
+                'feed' => PermissionService::ACTION_TIMELINE_FEED,
+            ];
+            $needed = $map[$action] ?? $action;
+
+            return $s->userHasProcessAction($needed);
+        });
 
         // Zona horaria configurable desde Configuración > Sistema
         try {
