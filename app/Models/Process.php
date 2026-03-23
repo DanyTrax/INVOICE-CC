@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\QuoteItem;
 use App\Models\RegulatoryEvent;
 use App\Models\Submission;
 
@@ -180,6 +181,26 @@ class Process extends Model
     {
         $labels = self::stepLabels();
         return $labels[$this->getCurrentStep()] ?? 'Recolección';
+    }
+
+    /**
+     * Expedientes vinculados a una cotización: asignación directa, por ítem, o por ciclos (sometimientos).
+     */
+    public function scopeWhereLinkedToQuote($query, int $quoteId): void
+    {
+        $itemIds = QuoteItem::where('quote_id', $quoteId)->pluck('id');
+        $query->where(function ($q) use ($quoteId, $itemIds) {
+            $q->where('quote_id', $quoteId);
+            if ($itemIds->isNotEmpty()) {
+                $q->orWhereIn('quote_item_id', $itemIds);
+            }
+            $q->orWhereHas('submissions', function ($sq) use ($quoteId, $itemIds) {
+                $sq->where('quote_id', $quoteId);
+                if ($itemIds->isNotEmpty()) {
+                    $sq->orWhereIn('quote_item_id', $itemIds);
+                }
+            });
+        });
     }
 
     /**

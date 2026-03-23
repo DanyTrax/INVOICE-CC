@@ -169,9 +169,18 @@ class ProcessController extends Controller
             $query->whereStep($stepFilter);
         } elseif ($request->filled('status')) {
             $query->where('status', $request->status);
-        } else {
+        } elseif (!$request->filled('quote_id')) {
             // Por defecto, el Monitor solo muestra expedientes activos (excluye Finalizados).
             $query->where('status', '!=', Process::STATUS_FINALIZADO);
+        }
+
+        $filterQuote = null;
+        if ($request->filled('quote_id')) {
+            $quoteId = (int) $request->quote_id;
+            $filterQuote = Quote::find($quoteId);
+            if ($filterQuote) {
+                $query->whereLinkedToQuote($quoteId);
+            }
         }
 
         if ($request->filled('date_from')) {
@@ -202,7 +211,7 @@ class ProcessController extends Controller
         }
 
         $companies = Company::orderBy('name')->get();
-        return view('admin.processes.monitor', compact('processes', 'companies'));
+        return view('admin.processes.monitor', compact('processes', 'companies', 'filterQuote'));
     }
 
     /**
@@ -259,6 +268,7 @@ class ProcessController extends Controller
             'date_from' => $request->filled('date_from') ? $request->date_from : null,
             'date_to' => $request->filled('date_to') ? $request->date_to : null,
             'search' => $request->filled('search') ? $request->search : null,
+            'quote_id' => $request->filled('quote_id') ? (int) $request->quote_id : null,
         ];
 
         $export = new GeneralProcessExport($filters);

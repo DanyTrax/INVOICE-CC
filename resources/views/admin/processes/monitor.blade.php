@@ -22,6 +22,16 @@
 @section('content')
     <div class="mb-6 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
         <h2 class="text-sm font-semibold text-gray-700 mb-3">Filtros</h2>
+        @if(!empty($filterQuote))
+            <div class="mb-3 p-3 bg-teal-50 border border-teal-200 rounded-lg text-sm text-teal-900 flex flex-wrap items-center justify-between gap-2">
+                <span>
+                    <i class="fas fa-filter mr-1"></i>
+                    Expedientes vinculados a la cotización <strong>{{ $filterQuote->consecutive }}</strong> (por ítem, asignación o ciclos/sometimientos).
+                </span>
+                <a href="{{ route('admin.processes.monitor') }}" class="text-teal-800 font-medium hover:underline shrink-0">Quitar filtro</a>
+            </div>
+        @endif
+        <input type="hidden" id="monitor-quote-id" value="{{ request('quote_id') }}">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
             <div>
                 <label for="monitor-search" class="block text-xs font-medium text-gray-600 mb-1">Buscar</label>
@@ -114,12 +124,14 @@
         var paginationEl = document.getElementById('monitor-pagination');
 
         function getFilterParams() {
+            var quoteEl = document.getElementById('monitor-quote-id');
             return {
                 search: document.getElementById('monitor-search').value.trim() || undefined,
                 client_id: document.getElementById('monitor-client').value || undefined,
                 step: document.getElementById('monitor-step').value || undefined,
                 date_from: document.getElementById('monitor-date-from').value || undefined,
                 date_to: document.getElementById('monitor-date-to').value || undefined,
+                quote_id: quoteEl && quoteEl.value ? quoteEl.value : undefined,
             };
         }
 

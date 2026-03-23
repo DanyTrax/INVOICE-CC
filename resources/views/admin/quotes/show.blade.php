@@ -42,7 +42,7 @@
             <a href="{{ route('admin.quotes.pdf', $quote) }}" id="btn-download-pdf" target="_blank" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">
                 <i class="fas fa-file-pdf mr-2"></i> Descargar PDF
             </a>
-            <a href="{{ route('admin.processes.index', ['open_quote' => $quote->id]) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium">
+            <a href="{{ route('admin.processes.monitor', ['quote_id' => $quote->id]) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium">
                 <i class="fas fa-folder-open mr-2"></i> Ver Expedientes
             </a>
         </div>

@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Process;
+use App\Models\Quote;
 use App\Models\RegulatoryEvent;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -58,6 +59,13 @@ class GeneralProcessExport implements FromQuery, WithMapping, WithHeadings
                     ->orWhereHas('quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"))
                     ->orWhereHas('quoteItem.quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"));
             });
+        }
+
+        if (!empty($this->filters['quote_id'])) {
+            $qid = (int) $this->filters['quote_id'];
+            if (Quote::where('id', $qid)->exists()) {
+                $query->whereLinkedToQuote($qid);
+            }
         }
 
         return $query->orderBy('updated_at', 'desc');
