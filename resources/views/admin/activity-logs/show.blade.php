@@ -50,6 +50,7 @@
                         @elseif($log->action === 'created') bg-blue-100 text-blue-600
                         @elseif($log->action === 'updated') bg-amber-100 text-amber-600
                         @elseif($log->action === 'deleted') bg-red-100 text-red-600
+                        @elseif($log->action === 'mutation') bg-indigo-100 text-indigo-600
                         @else bg-gray-100 text-gray-600
                         @endif">
                         @if($log->action === 'login')
@@ -64,6 +65,8 @@
                             <i class="fas fa-trash"></i>
                         @elseif($log->action === 'sent_email')
                             <i class="fas fa-envelope"></i>
+                        @elseif($log->action === 'mutation')
+                            <i class="fas fa-paper-plane"></i>
                         @else
                             <i class="fas fa-circle"></i>
                         @endif
@@ -77,6 +80,7 @@
                                 @elseif($log->action === 'updated') bg-amber-100 text-amber-800
                                 @elseif($log->action === 'deleted') bg-red-100 text-red-800
                                 @elseif($log->action === 'sent_email') bg-teal-100 text-teal-800
+                                @elseif($log->action === 'mutation') bg-indigo-100 text-indigo-800
                                 @else bg-gray-100 text-gray-800
                                 @endif">
                                 {{ $actionLabels[$log->action] ?? $log->action }}

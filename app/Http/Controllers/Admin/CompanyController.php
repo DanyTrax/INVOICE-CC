@@ -5,12 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanyInvite;
-use App\Models\Process;
 use App\Models\EmailLog;
+use App\Models\Process;
+use App\Services\EmailTemplateService;
 use App\Services\GoogleDriveService;
 use App\Services\MailService;
-use App\Services\EmailTemplateService;
-use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -23,10 +22,10 @@ class CompanyController extends Controller
         // Búsqueda
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('nit_rut', 'like', "%{$search}%")
-                  ->orWhere('contact_person_email', 'like', "%{$search}%");
+                    ->orWhere('nit_rut', 'like', "%{$search}%")
+                    ->orWhere('contact_person_email', 'like', "%{$search}%");
             });
         }
 
@@ -41,6 +40,7 @@ class CompanyController extends Controller
     {
         $countries = config('countries', []);
         sort($countries);
+
         return view('admin.companies.create', compact('countries'));
     }
 
@@ -55,7 +55,7 @@ class CompanyController extends Controller
                 'nullable',
                 'string',
                 'max:100',
-                'in:' . implode(',', $countriesList),
+                'in:'.implode(',', $countriesList),
             ],
             'phone' => 'nullable|string|max:50',
             'contact_person_name' => 'nullable|string|max:255',
@@ -74,14 +74,14 @@ class CompanyController extends Controller
         if (empty($validated['drive_folder_id'])) {
             try {
                 $driveService = app(GoogleDriveService::class);
-                $folderName = $validated['name'] . ' - ' . ($validated['nit_rut'] ?? 'Sin NIT');
+                $folderName = $validated['name'].' - '.($validated['nit_rut'] ?? 'Sin NIT');
                 $country = isset($validated['country']) && trim($validated['country']) !== '' ? trim($validated['country']) : null;
                 $parentId = $country
                     ? $driveService->getOrCreateCountryFolder($country)
                     : $driveService->getOrCreateClientsFolder(null);
                 $folder = $driveService->createFolder($folderName, $parentId);
                 $validated['drive_folder_id'] = $folder['id'];
-                
+
                 Log::info('Carpeta de Google Drive creada para cliente', [
                     'company_name' => $validated['name'],
                     'folder_id' => $folder['id'],
@@ -96,10 +96,9 @@ class CompanyController extends Controller
         }
 
         $company = Company::create($validated);
-        app(ActivityLogService::class)->log('created', 'Creó la empresa "' . $company->name . '"', $company);
 
         $sendInvite = $request->boolean('send_invite_email');
-        if ($sendInvite && !empty($validated['contact_person_email'])) {
+        if ($sendInvite && ! empty($validated['contact_person_email'])) {
             $lastError = null;
             $sent = $this->sendCompanyInviteEmail($company, $validated['contact_person_email'], $validated['contact_person_name'] ?? $validated['name'], $lastError);
             if ($sent) {
@@ -107,10 +106,11 @@ class CompanyController extends Controller
                     ->route('admin.companies.index')
                     ->with('success', 'Empresa creada exitosamente. Se envió correo de invitación para registro.');
             }
+
             return redirect()
                 ->route('admin.companies.index')
                 ->with('success', 'Cliente creado exitosamente.')
-                ->with('error', 'No se pudo enviar el correo de invitación.' . ($lastError ? ' ' . $lastError : ''));
+                ->with('error', 'No se pudo enviar el correo de invitación.'.($lastError ? ' '.$lastError : ''));
         }
 
         return redirect()
@@ -149,6 +149,7 @@ class CompanyController extends Controller
                 $producto = $p->product_reference ?: ($p->expediente_invima ?? '') ?: ($p->quoteItem?->serviceType?->name ?? $p->serviceType?->name ?? '');
                 $expediente = $p->expediente_invima ?? '';
                 $tipoTramite = $p->quoteItem?->serviceType?->name ?? $p->serviceType?->name ?? '';
+
                 return str_contains(mb_strtolower($origen), $searchLower)
                     || str_contains(mb_strtolower($producto), $searchLower)
                     || str_contains(mb_strtolower((string) $expediente), $searchLower)
@@ -184,6 +185,7 @@ class CompanyController extends Controller
     {
         $countries = config('countries', []);
         sort($countries);
+
         return view('admin.companies.edit', compact('company', 'countries'));
     }
 
@@ -192,13 +194,13 @@ class CompanyController extends Controller
         $countriesList = config('countries', []);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'nit_rut' => 'required|string|max:50|unique:companies,nit_rut,' . $company->id,
+            'nit_rut' => 'required|string|max:50|unique:companies,nit_rut,'.$company->id,
             'address' => 'nullable|string|max:500',
             'country' => [
                 'nullable',
                 'string',
                 'max:100',
-                'in:' . implode(',', $countriesList),
+                'in:'.implode(',', $countriesList),
             ],
             'phone' => 'nullable|string|max:50',
             'contact_person_name' => 'nullable|string|max:255',
@@ -233,15 +235,15 @@ class CompanyController extends Controller
                     'company_id' => $company->id,
                     'error' => $e->getMessage(),
                 ]);
+
                 return redirect()
                     ->route('admin.companies.edit', $company)
-                    ->with('error', 'No se pudo mover la carpeta en Google Drive al nuevo país. ' . $e->getMessage())
+                    ->with('error', 'No se pudo mover la carpeta en Google Drive al nuevo país. '.$e->getMessage())
                     ->withInput();
             }
         }
 
         $company->update($validated);
-        app(ActivityLogService::class)->log('updated', 'Actualizó la empresa "' . $company->name . '"', $company);
 
         return redirect()
             ->route('admin.companies.index')
@@ -251,11 +253,11 @@ class CompanyController extends Controller
     public function search(Request $request)
     {
         $query = $request->input('q', '');
-        
+
         if (empty($query)) {
             return response()->json([]);
         }
-        
+
         $companies = Company::where('name', 'like', "%{$query}%")
             ->orWhere('contact_person_email', 'like', "%{$query}%")
             ->orWhere('nit_rut', 'like', "%{$query}%")
@@ -265,13 +267,13 @@ class CompanyController extends Controller
             ->map(function ($company) {
                 return [
                     'id' => $company->id,
-                    'text' => $company->name . ' - ' . ($company->nit_rut ?: 'Sin NIT') . ($company->contact_person_email ? ' (' . $company->contact_person_email . ')' : ''),
+                    'text' => $company->name.' - '.($company->nit_rut ?: 'Sin NIT').($company->contact_person_email ? ' ('.$company->contact_person_email.')' : ''),
                     'name' => $company->name,
                     'email' => $company->contact_person_email,
                     'nit_rut' => $company->nit_rut,
                 ];
             });
-        
+
         return response()->json($companies);
     }
 
@@ -284,9 +286,7 @@ class CompanyController extends Controller
                 ->with('error', 'No se puede eliminar la empresa porque tiene expedientes asociados.');
         }
 
-        $name = $company->name;
         $company->delete();
-        app(ActivityLogService::class)->log('deleted', 'Eliminó la empresa "' . $name . '"');
 
         return redirect()
             ->route('admin.companies.index')
@@ -298,7 +298,7 @@ class CompanyController extends Controller
      */
     public function sendInvite(Company $company)
     {
-        if (!$company->contact_person_email) {
+        if (! $company->contact_person_email) {
             return redirect()
                 ->route('admin.companies.index')
                 ->with('error', 'La empresa no tiene email de contacto. Edítala y añade uno.');
@@ -315,15 +315,16 @@ class CompanyController extends Controller
         if ($sent) {
             return redirect()
                 ->route('admin.companies.index')
-                ->with('success', 'Correo de invitación enviado a ' . $company->contact_person_email);
+                ->with('success', 'Correo de invitación enviado a '.$company->contact_person_email);
         }
 
         $msg = 'No se pudo enviar el correo de invitación.';
         if ($lastError) {
-            $msg .= ' ' . $lastError;
+            $msg .= ' '.$lastError;
         } else {
             $msg .= ' Revisa Configuración → Correo y el Historial de correos.';
         }
+
         return redirect()
             ->route('admin.companies.index')
             ->with('error', $msg);
@@ -339,7 +340,7 @@ class CompanyController extends Controller
 
         try {
             $invite = CompanyInvite::createForCompany($company, $email);
-            $link = url('/registrarse?token=' . $invite->token);
+            $link = url('/registrarse?token='.$invite->token);
 
             $templateService = app(EmailTemplateService::class);
             $result = $templateService->processTemplate('client_invitation', [
@@ -349,22 +350,23 @@ class CompanyController extends Controller
                 'link' => $link,
             ]);
 
-            if (!$result) {
+            if (! $result) {
                 Log::warning('Plantilla client_invitation no encontrada');
                 $lastError = 'No existe la plantilla de invitación. Ejecuta: php artisan db:seed --class=EmailTemplateSeeder';
+
                 return false;
             }
 
             $mailService = app(MailService::class);
             $sent = $mailService->send($email, $result['subject'], $result['body']);
 
-            if (!$sent) {
+            if (! $sent) {
                 Log::warning('MailService::send devolvió false para invitación', [
                     'company_id' => $company->id,
                     'email' => $email,
                 ]);
                 $lastError = $this->getLastEmailError($email);
-                if (!$lastError) {
+                if (! $lastError) {
                     $lastError = 'Revisa Configuración → Historial de correos para el detalle del error.';
                 }
             }
@@ -377,7 +379,8 @@ class CompanyController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            $lastError = strlen($e->getMessage()) > 250 ? substr($e->getMessage(), 0, 247) . '…' : $e->getMessage();
+            $lastError = strlen($e->getMessage()) > 250 ? substr($e->getMessage(), 0, 247).'…' : $e->getMessage();
+
             return false;
         }
     }
@@ -395,7 +398,8 @@ class CompanyController extends Controller
 
         if ($log && $log->error_message) {
             $msg = $log->error_message;
-            return strlen($msg) > 200 ? substr($msg, 0, 197) . '…' : $msg;
+
+            return strlen($msg) > 200 ? substr($msg, 0, 197).'…' : $msg;
         }
 
         $fallback = EmailLog::where('status', 'failed')
@@ -405,7 +409,7 @@ class CompanyController extends Controller
             ->first();
 
         return $fallback && $fallback->error_message
-            ? (strlen($fallback->error_message) > 200 ? substr($fallback->error_message, 0, 197) . '…' : $fallback->error_message)
+            ? (strlen($fallback->error_message) > 200 ? substr($fallback->error_message, 0, 197).'…' : $fallback->error_message)
             : null;
     }
 }

@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Company;
-use App\Services\MailService;
+use App\Models\User;
 use App\Services\EmailTemplateService;
+use App\Services\MailService;
 use App\Services\PermissionService;
-use App\Services\ActivityLogService;
-use App\Settings\GeneralSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -25,33 +23,33 @@ class UserController extends Controller
     protected function getAllowedRolesToCreate(): array
     {
         $user = auth()->user();
-        
+
         // Intentar usar el servicio de permisos
         try {
             $permissionService = app(PermissionService::class);
             foreach ($user->roles as $role) {
                 $canCreate = $permissionService->getRolesCanCreate($role->name);
-                if (!empty($canCreate)) {
+                if (! empty($canCreate)) {
                     return $canCreate;
                 }
             }
         } catch (\Exception $e) {
             // Si falla, usar lógica hardcodeada
         }
-        
+
         // Lógica hardcodeada como fallback
         if ($user->hasRole('super_admin')) {
             return ['super_admin', 'admin', 'agent', 'client'];
         }
-        
+
         if ($user->hasRole('admin')) {
             return ['admin', 'agent', 'client'];
         }
-        
+
         if ($user->hasRole('agent')) {
             return ['client'];
         }
-        
+
         return [];
     }
 
@@ -62,33 +60,33 @@ class UserController extends Controller
     protected function getAllowedRolesToView(): array
     {
         $user = auth()->user();
-        
+
         // Intentar usar el servicio de permisos
         try {
             $permissionService = app(PermissionService::class);
             foreach ($user->roles as $role) {
                 $canView = $permissionService->getRolesCanView($role->name);
-                if (!empty($canView)) {
+                if (! empty($canView)) {
                     return $canView;
                 }
             }
         } catch (\Exception $e) {
             // Si falla, usar lógica hardcodeada
         }
-        
+
         // Lógica hardcodeada como fallback
         if ($user->hasRole('super_admin')) {
             return ['super_admin', 'admin', 'agent', 'client'];
         }
-        
+
         if ($user->hasRole('admin')) {
             return ['admin', 'agent', 'client'];
         }
-        
+
         if ($user->hasRole('agent')) {
             return ['agent', 'client'];
         }
-        
+
         return [];
     }
 
@@ -103,7 +101,7 @@ class UserController extends Controller
             $permissionService = app(PermissionService::class);
             foreach ($user->roles as $role) {
                 $canEdit = $permissionService->getRolesCanEdit($role->name);
-                if (!empty($canEdit)) {
+                if (! empty($canEdit)) {
                     return $canEdit;
                 }
             }
@@ -119,6 +117,7 @@ class UserController extends Controller
         if ($user->hasRole('agent')) {
             return ['agent', 'client'];
         }
+
         return [];
     }
 
@@ -170,13 +169,14 @@ class UserController extends Controller
         $allowedRoles = $this->getAllowedRolesToCreate();
         $noRole = PermissionService::NO_ROLE;
         if (empty($role) || $role === $noRole) {
-            if (!in_array($noRole, $allowedRoles, true)) {
+            if (! in_array($noRole, $allowedRoles, true)) {
                 abort(403, 'No tienes permiso para asignar "Sin roles".');
             }
+
             return;
         }
-        if (!in_array($role, $allowedRoles, true)) {
-            abort(403, 'No tienes permiso para asignar el rol: ' . $role);
+        if (! in_array($role, $allowedRoles, true)) {
+            abort(403, 'No tienes permiso para asignar el rol: '.$role);
         }
     }
 
@@ -186,6 +186,7 @@ class UserController extends Controller
         if (empty($role) || $role === PermissionService::NO_ROLE) {
             return [];
         }
+
         return [$role];
     }
 
@@ -219,6 +220,7 @@ class UserController extends Controller
         $roles = collect();
         $canCreateClients = in_array('client', $this->getAllowedRolesToCreate(), true);
         $editableUserIds = collect($users->items())->filter(fn ($u) => $this->canEditUser($u))->pluck('id')->all();
+
         return view('admin.users.listing', [
             'users' => $users,
             'roles' => $roles,
@@ -234,10 +236,11 @@ class UserController extends Controller
      */
     public function createClient()
     {
-        if (!in_array('client', $this->getAllowedRolesToCreate(), true)) {
+        if (! in_array('client', $this->getAllowedRolesToCreate(), true)) {
             abort(403, 'No tienes permiso para crear clientes.');
         }
         $companies = Company::orderBy('name')->get();
+
         return view('admin.users.create-client', compact('companies'));
     }
 
@@ -246,7 +249,7 @@ class UserController extends Controller
      */
     public function storeClient(Request $request): RedirectResponse
     {
-        if (!in_array('client', $this->getAllowedRolesToCreate(), true)) {
+        if (! in_array('client', $this->getAllowedRolesToCreate(), true)) {
             abort(403, 'No tienes permiso para crear clientes.');
         }
         $validated = $request->validate([
@@ -266,7 +269,7 @@ class UserController extends Controller
         if ($request->filled('companies')) {
             $user->companies()->sync($request->companies);
         }
-        app(ActivityLogService::class)->log('created', 'Creó el cliente "' . $user->name . '" (' . $user->email . ')', $user);
+
         return redirect()
             ->route('admin.clients.index')
             ->with('success', 'Cliente creado exitosamente.');
@@ -277,10 +280,10 @@ class UserController extends Controller
      */
     public function updateClientStatus(Request $request, User $user): RedirectResponse
     {
-        if (!$user->hasRole('client')) {
+        if (! $user->hasRole('client')) {
             abort(404, 'El usuario no es un cliente.');
         }
-        if (!$this->canEditUser($user)) {
+        if (! $this->canEditUser($user)) {
             abort(403, 'No tienes permiso para editar este cliente.');
         }
         $validated = $request->validate([
@@ -289,7 +292,7 @@ class UserController extends Controller
         $user->client_status = $validated['client_status'];
         $user->is_active = ($validated['client_status'] === 'activo');
         $user->save();
-        app(ActivityLogService::class)->log('updated', 'Cambió el estado del cliente "' . $user->name . '" a ' . $validated['client_status'], $user);
+
         return back()->with('success', 'Estado del cliente actualizado.');
     }
 
@@ -298,14 +301,15 @@ class UserController extends Controller
      */
     public function editClient(User $user)
     {
-        if (!$user->hasRole('client')) {
+        if (! $user->hasRole('client')) {
             abort(404, 'El usuario no es un cliente.');
         }
-        if (!$this->canEditUser($user)) {
+        if (! $this->canEditUser($user)) {
             abort(403, 'No tienes permiso para editar este cliente.');
         }
         $user->load('companies');
         $companies = Company::orderBy('name')->get();
+
         return view('admin.users.edit-client', compact('user', 'companies'));
     }
 
@@ -314,15 +318,15 @@ class UserController extends Controller
      */
     public function updateClient(Request $request, User $user): RedirectResponse
     {
-        if (!$user->hasRole('client')) {
+        if (! $user->hasRole('client')) {
             abort(404, 'El usuario no es un cliente.');
         }
-        if (!$this->canEditUser($user)) {
+        if (! $this->canEditUser($user)) {
             abort(403, 'No tienes permiso para editar este cliente.');
         }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8|confirmed',
             'phone' => 'nullable|string|max:50',
             'client_status' => 'required|in:activo,pendiente,deshabilitado',
@@ -341,7 +345,7 @@ class UserController extends Controller
         } else {
             $user->companies()->sync([]);
         }
-        app(ActivityLogService::class)->log('updated', 'Actualizó el cliente "' . $user->name . '"', $user);
+
         return redirect()
             ->route('admin.clients.index')
             ->with('success', 'Cliente actualizado correctamente.');
@@ -405,6 +409,7 @@ class UserController extends Controller
         $canAssignNoRole = in_array($noRole, $allowedRoles, true);
         $roles = Role::whereIn('name', array_filter($allowedRoles, fn ($n) => $n !== $noRole))->get();
         $companies = Company::orderBy('name')->get();
+
         return view('admin.users.create', compact('roles', 'companies', 'canAssignNoRole'));
     }
 
@@ -434,8 +439,6 @@ class UserController extends Controller
             $user->companies()->sync($request->companies);
         }
 
-        app(ActivityLogService::class)->log('created', 'Creó el agente/usuario "' . $user->name . '" (' . $user->email . ')', $user);
-
         return redirect()
             ->route('admin.agents.index')
             ->with('success', 'Usuario creado exitosamente.');
@@ -445,13 +448,13 @@ class UserController extends Controller
     {
         $user->load('roles', 'companies');
         $user->loadCount('companies', 'assignedRegistrations');
-        
+
         return view('admin.users.show', compact('user'));
     }
 
     public function edit(User $user)
     {
-        if (!$this->canEditUser($user)) {
+        if (! $this->canEditUser($user)) {
             abort(403, 'No tienes permiso para editar este usuario.');
         }
 
@@ -462,18 +465,19 @@ class UserController extends Controller
         $roles = Role::whereIn('name', array_filter($allowedRoles, fn ($n) => $n !== $noRole))->get();
         $companies = Company::orderBy('name')->get();
         $user->load('roles', 'companies');
+
         return view('admin.users.edit', compact('user', 'roles', 'companies', 'canAssignNoRole'));
     }
 
     public function update(Request $request, User $user)
     {
-        if (!$this->canEditUser($user)) {
+        if (! $this->canEditUser($user)) {
             abort(403, 'No tienes permiso para editar este usuario.');
         }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8|confirmed',
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
@@ -507,8 +511,6 @@ class UserController extends Controller
             $user->companies()->sync([]);
         }
 
-        app(ActivityLogService::class)->log('updated', 'Actualizó el usuario "' . $user->name . '" (' . $user->email . ')', $user);
-
         return redirect()
             ->route('admin.agents.index')
             ->with('success', 'Usuario actualizado exitosamente.');
@@ -516,7 +518,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        if (!$this->canEditUser($user)) {
+        if (! $this->canEditUser($user)) {
             abort(403, 'No tienes permiso para eliminar este usuario.');
         }
 
@@ -530,6 +532,7 @@ class UserController extends Controller
         // Verificar si tiene registros asignados (solo aplica a especialistas, no a clientes)
         if ($user->assignedRegistrations()->count() > 0) {
             $redirectTo = $user->hasRole('client') ? route('admin.clients.index') : route('admin.agents.index');
+
             return redirect()->to($redirectTo)
                 ->with('error', 'No se puede eliminar el usuario porque tiene expedientes asignados.');
         }
@@ -538,6 +541,7 @@ class UserController extends Controller
         $this->performUserDeletion($user);
 
         $redirectTo = $isClient ? route('admin.clients.index') : route('admin.agents.index');
+
         return redirect()->to($redirectTo)
             ->with('success', 'Usuario eliminado exitosamente.');
     }
@@ -547,14 +551,9 @@ class UserController extends Controller
      */
     public function performUserDeletion(User $user): void
     {
-        $name = $user->name;
-        $email = $user->email;
-
         $user->syncRoles([]);
         $user->companies()->sync([]);
         $user->delete();
-
-        app(ActivityLogService::class)->log('deleted', 'Eliminó el usuario "' . $name . '" (' . $email . ')');
     }
 
     /**
@@ -570,7 +569,7 @@ class UserController extends Controller
      */
     public function sendAccessEmail(User $user): RedirectResponse
     {
-        if (!$this->canEditUser($user)) {
+        if (! $this->canEditUser($user)) {
             abort(403, 'No tienes permiso para enviar correo a este usuario.');
         }
         $redirectRoute = $user->hasRole('client') ? 'admin.clients.index' : 'admin.agents.index';
@@ -589,7 +588,7 @@ class UserController extends Controller
             'link' => $link,
         ]);
 
-        if (!$processed) {
+        if (! $processed) {
             return redirect()->route($redirectRoute)
                 ->with('error', 'No existe la plantilla de correo de acceso. Ejecuta: php artisan db:seed --class=EmailTemplateSeeder');
         }
@@ -601,14 +600,13 @@ class UserController extends Controller
             $processed['body']
         );
 
-        if (!$sent) {
+        if (! $sent) {
             return redirect()->route($redirectRoute)
                 ->with('error', 'No se pudo enviar el correo. Revisa Configuración → Historial de correos.');
         }
 
-        app(ActivityLogService::class)->log('sent_email', 'Envió correo de acceso a "' . $user->name . '" (' . $user->email . ')', $user);
         return redirect()->route($redirectRoute)
-            ->with('success', 'Correo de acceso enviado a ' . $user->email);
+            ->with('success', 'Correo de acceso enviado a '.$user->email);
     }
 
     /**
@@ -619,7 +617,7 @@ class UserController extends Controller
         $user = auth()->user();
         $user->load('roles', 'companies');
         $user->loadCount('companies', 'assignedRegistrations');
-        
+
         return view('admin.users.profile', compact('user'));
     }
 
@@ -629,18 +627,18 @@ class UserController extends Controller
     public function updateProfile(Request $request)
     {
         $user = auth()->user();
-        
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
             'phone' => 'nullable|string|max:50',
             'password' => 'nullable|string|min:8|confirmed',
             'current_password' => 'required_with:password|string',
         ]);
 
         // Validar contraseña actual si se está cambiando la contraseña
-        if (!empty($validated['password'])) {
-            if (!Hash::check($validated['current_password'], $user->password)) {
+        if (! empty($validated['password'])) {
+            if (! Hash::check($validated['current_password'], $user->password)) {
                 return redirect()
                     ->route('admin.profile')
                     ->withErrors(['current_password' => 'La contraseña actual no es correcta.'])

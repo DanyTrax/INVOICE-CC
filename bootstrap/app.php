@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'not.client' => \App\Http\Middleware\EnsureUserIsNotClient::class,
             'module.permission' => \App\Http\Middleware\CheckModulePermission::class,
             'admin.no-cache' => \App\Http\Middleware\PreventAdminCache::class,
+            'log.admin.mutations' => \App\Http\Middleware\LogAdminMutationActivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

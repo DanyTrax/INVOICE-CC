@@ -1,35 +1,36 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\BackupController;
-use App\Http\Controllers\Admin\CompanyController;
-use App\Http\Controllers\Admin\RegistrationController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\CapacitacionController;
+use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\ConceptCatalogController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ProcessController;
-use App\Http\Controllers\Admin\ServiceTypeController;
-use App\Http\Controllers\Admin\ServiceController;
-use App\Http\Controllers\Admin\QuoteController;
-use App\Http\Controllers\Admin\QuotePdfTemplateController;
 use App\Http\Controllers\Admin\ProposalController;
 use App\Http\Controllers\Admin\ProposalPdfTemplateController;
-use App\Http\Controllers\Admin\ConceptCatalogController;
+use App\Http\Controllers\Admin\QuoteController;
+use App\Http\Controllers\Admin\QuotePdfTemplateController;
+use App\Http\Controllers\Admin\RegistrationController;
 use App\Http\Controllers\Admin\RegulatoryEventController;
-use App\Http\Controllers\Admin\CapacitacionController;
+use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\ServiceTypeController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\ClientRegisterController;
 use App\Http\Controllers\ClientPortalController;
+use App\Http\Controllers\ClientRegisterController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 // Página principal: si está autenticado va al panel; si no, muestra información pública de la app (requisito verificación OAuth)
 Route::get('/', function () {
     if (Auth::check()) {
         return Auth::user()->hasRole('client') ? redirect()->route('portal.dashboard') : redirect()->route('admin.dashboard');
     }
+
     return view('home-public');
 })->name('home');
 
@@ -65,31 +66,31 @@ Route::middleware(['auth', 'client', 'client.portal.access'])->prefix('portal')-
 });
 
 // Rutas Admin (auth + no clientes + permisos granulares por módulo)
-Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 'log.admin.mutations'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-            // Backups de sistema (solo super_admin dentro del controlador)
-            Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
-            Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
-            Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
-            Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
-            Route::post('/backups/wipe', [BackupController::class, 'wipe'])->name('backups.wipe');
+    // Backups de sistema (solo super_admin dentro del controlador)
+    Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
+    Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
+    Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
+    Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
+    Route::post('/backups/wipe', [BackupController::class, 'wipe'])->name('backups.wipe');
 
-            // Permisos y roles personalizados
-            Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
-            Route::post('/permissions/update', [PermissionController::class, 'updatePermissions'])->name('permissions.update');
-            Route::post('/permissions/hierarchy', [PermissionController::class, 'updateHierarchy'])->name('permissions.hierarchy');
-            Route::post('/roles', [PermissionController::class, 'storeRole'])->name('roles.store');
-            Route::delete('/roles/{role}', [PermissionController::class, 'destroyRole'])->name('roles.destroy');
+    // Permisos y roles personalizados
+    Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+    Route::post('/permissions/update', [PermissionController::class, 'updatePermissions'])->name('permissions.update');
+    Route::post('/permissions/hierarchy', [PermissionController::class, 'updateHierarchy'])->name('permissions.hierarchy');
+    Route::post('/roles', [PermissionController::class, 'storeRole'])->name('roles.store');
+    Route::delete('/roles/{role}', [PermissionController::class, 'destroyRole'])->name('roles.destroy');
 
     // Registros de actividad por usuario
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::get('activity-logs/user/{user}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
-    
+
     // Companies (Empresas)
     Route::post('companies/{company}/send-invite', [CompanyController::class, 'sendInvite'])->name('companies.send-invite');
     Route::resource('companies', CompanyController::class);
-    
+
     // Listas separadas: Clientes (rol client) y Agentes (no client)
     Route::get('clients', [UserController::class, 'clients'])->name('clients.index');
     Route::get('clients/create', [UserController::class, 'createClient'])->name('clients.create');
@@ -97,7 +98,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::get('clients/{user}/edit', [UserController::class, 'editClient'])->name('clients.edit');
     Route::put('clients/{user}', [UserController::class, 'updateClient'])->name('clients.update');
     Route::get('agents', [UserController::class, 'agents'])->name('agents.index');
-    
+
     // Registrations (módulo jubilado: se usa Expedientes / Procesos)
     // Route::get('/registrations/{registration}/documents/{document}/view', [RegistrationController::class, 'viewDocument'])
     //     ->name('registrations.documents.view');
@@ -196,56 +197,56 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::post('users/{user}/send-access-email', [UserController::class, 'sendAccessEmail'])->name('users.send-access-email');
     Route::patch('users/{user}/client-status', [UserController::class, 'updateClientStatus'])->name('users.client-status.update');
     Route::resource('users', UserController::class);
-    
+
     // Profile (perfil del usuario autenticado)
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
-    
-            // Settings - Rutas independientes para cada sección
-            Route::get('/settings', [SettingsController::class, 'redirectToFirstSection'])->name('settings.index');
-            Route::get('/settings/quote-pdf-templates/create', [QuotePdfTemplateController::class, 'create'])->name('settings.quote-pdf-templates.create');
-            Route::post('/settings/quote-pdf-templates', [QuotePdfTemplateController::class, 'store'])->name('settings.quote-pdf-templates.store');
-            Route::get('/settings/quote-pdf-templates/{quotePdfTemplate}/edit', [QuotePdfTemplateController::class, 'edit'])->name('settings.quote-pdf-templates.edit');
-            Route::put('/settings/quote-pdf-templates/{quotePdfTemplate}', [QuotePdfTemplateController::class, 'update'])->name('settings.quote-pdf-templates.update');
-            Route::delete('/settings/quote-pdf-templates/{quotePdfTemplate}', [QuotePdfTemplateController::class, 'destroy'])->name('settings.quote-pdf-templates.destroy');
-            Route::get('/settings/proposal-pdf-templates/create', [ProposalPdfTemplateController::class, 'create'])->name('settings.proposal-pdf-templates.create');
-            Route::post('/settings/proposal-pdf-templates', [ProposalPdfTemplateController::class, 'store'])->name('settings.proposal-pdf-templates.store');
-            Route::get('/settings/proposal-pdf-templates/{proposalPdfTemplate}/edit', [ProposalPdfTemplateController::class, 'edit'])->name('settings.proposal-pdf-templates.edit');
-            Route::put('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'update'])->name('settings.proposal-pdf-templates.update');
-            Route::delete('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'destroy'])->name('settings.proposal-pdf-templates.destroy');
-            Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system|quote-pdf|proposal-pdf');
-            Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
-            
-            // Git Pull (solo super_admin)
-            Route::post('/settings/git-pull', [SettingsController::class, 'gitPull'])->name('settings.git-pull');
-            
-            // Artisan Commands (solo super_admin)
-            Route::post('/settings/artisan', [SettingsController::class, 'artisanCommand'])->name('settings.artisan');
-            
-            // API: Buscar clientes
-            Route::get('/api/companies/search', [CompanyController::class, 'search'])->name('api.companies.search');
-            
-            // Zoho OAuth
-            Route::get('/settings/zoho/authorize', [SettingsController::class, 'zohoAuthorize'])->name('settings.zoho.authorize');
-            Route::get('/settings/zoho/callback', [SettingsController::class, 'zohoCallback'])->name('settings.zoho.callback');
-            
-            Route::get('/settings/drive-oauth/authorize', [SettingsController::class, 'driveOauthAuthorize'])->name('settings.drive-oauth.authorize');
-            Route::get('/settings/drive-oauth/callback', [SettingsController::class, 'driveOauthCallback'])->name('settings.drive-oauth.callback');
-            
-            // Email Logs
-            Route::get('/settings/email-logs/{log}', [SettingsController::class, 'getEmailLog'])->name('settings.email-logs.show');
-            Route::delete('/settings/email-logs/{log}', [SettingsController::class, 'deleteEmailLog'])->name('settings.email-logs.destroy');
-            
-            // Email Templates
-            Route::get('/settings/templates/{template}', [SettingsController::class, 'getTemplate'])->name('settings.templates.show');
-            
-            // Test Google Drive Connection
-            Route::post('/settings/test-drive-connection', [SettingsController::class, 'testDriveConnection'])->name('settings.test-drive-connection');
-            
-            // Drive Operations Log
-            Route::get('/settings/drive-operations-log', [SettingsController::class, 'getDriveOperationsLog'])->name('settings.drive-operations-log');
-            Route::delete('/settings/drive-operations-log', [SettingsController::class, 'deleteDriveOperationsLog'])->name('settings.drive-operations-log.delete');
 
-            // Eliminar usuario por correo (Configuración → Sistema)
-            Route::post('/settings/delete-user-by-email', [SettingsController::class, 'deleteUserByEmail'])->name('settings.delete-user-by-email');
-        });
+    // Settings - Rutas independientes para cada sección
+    Route::get('/settings', [SettingsController::class, 'redirectToFirstSection'])->name('settings.index');
+    Route::get('/settings/quote-pdf-templates/create', [QuotePdfTemplateController::class, 'create'])->name('settings.quote-pdf-templates.create');
+    Route::post('/settings/quote-pdf-templates', [QuotePdfTemplateController::class, 'store'])->name('settings.quote-pdf-templates.store');
+    Route::get('/settings/quote-pdf-templates/{quotePdfTemplate}/edit', [QuotePdfTemplateController::class, 'edit'])->name('settings.quote-pdf-templates.edit');
+    Route::put('/settings/quote-pdf-templates/{quotePdfTemplate}', [QuotePdfTemplateController::class, 'update'])->name('settings.quote-pdf-templates.update');
+    Route::delete('/settings/quote-pdf-templates/{quotePdfTemplate}', [QuotePdfTemplateController::class, 'destroy'])->name('settings.quote-pdf-templates.destroy');
+    Route::get('/settings/proposal-pdf-templates/create', [ProposalPdfTemplateController::class, 'create'])->name('settings.proposal-pdf-templates.create');
+    Route::post('/settings/proposal-pdf-templates', [ProposalPdfTemplateController::class, 'store'])->name('settings.proposal-pdf-templates.store');
+    Route::get('/settings/proposal-pdf-templates/{proposalPdfTemplate}/edit', [ProposalPdfTemplateController::class, 'edit'])->name('settings.proposal-pdf-templates.edit');
+    Route::put('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'update'])->name('settings.proposal-pdf-templates.update');
+    Route::delete('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'destroy'])->name('settings.proposal-pdf-templates.destroy');
+    Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system|quote-pdf|proposal-pdf');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
+    // Git Pull (solo super_admin)
+    Route::post('/settings/git-pull', [SettingsController::class, 'gitPull'])->name('settings.git-pull');
+
+    // Artisan Commands (solo super_admin)
+    Route::post('/settings/artisan', [SettingsController::class, 'artisanCommand'])->name('settings.artisan');
+
+    // API: Buscar clientes
+    Route::get('/api/companies/search', [CompanyController::class, 'search'])->name('api.companies.search');
+
+    // Zoho OAuth
+    Route::get('/settings/zoho/authorize', [SettingsController::class, 'zohoAuthorize'])->name('settings.zoho.authorize');
+    Route::get('/settings/zoho/callback', [SettingsController::class, 'zohoCallback'])->name('settings.zoho.callback');
+
+    Route::get('/settings/drive-oauth/authorize', [SettingsController::class, 'driveOauthAuthorize'])->name('settings.drive-oauth.authorize');
+    Route::get('/settings/drive-oauth/callback', [SettingsController::class, 'driveOauthCallback'])->name('settings.drive-oauth.callback');
+
+    // Email Logs
+    Route::get('/settings/email-logs/{log}', [SettingsController::class, 'getEmailLog'])->name('settings.email-logs.show');
+    Route::delete('/settings/email-logs/{log}', [SettingsController::class, 'deleteEmailLog'])->name('settings.email-logs.destroy');
+
+    // Email Templates
+    Route::get('/settings/templates/{template}', [SettingsController::class, 'getTemplate'])->name('settings.templates.show');
+
+    // Test Google Drive Connection
+    Route::post('/settings/test-drive-connection', [SettingsController::class, 'testDriveConnection'])->name('settings.test-drive-connection');
+
+    // Drive Operations Log
+    Route::get('/settings/drive-operations-log', [SettingsController::class, 'getDriveOperationsLog'])->name('settings.drive-operations-log');
+    Route::delete('/settings/drive-operations-log', [SettingsController::class, 'deleteDriveOperationsLog'])->name('settings.drive-operations-log.delete');
+
+    // Eliminar usuario por correo (Configuración → Sistema)
+    Route::post('/settings/delete-user-by-email', [SettingsController::class, 'deleteUserByEmail'])->name('settings.delete-user-by-email');
+});
