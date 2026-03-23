@@ -224,6 +224,20 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.proposals.index') }}"
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.proposals.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-file-signature w-5 h-5"></i>
+                            <span class="ms-3">Propuestas</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.concept-catalogs.index') }}"
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.concept-catalogs.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-list-ul w-5 h-5"></i>
+                            <span class="ms-3">Conceptos</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.processes.monitor') }}" 
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.monitor') || request()->routeIs('admin.processes.*') || request()->routeIs('admin.submissions.*') ? 'bg-teal-700' : '' }}">
                             <i class="fas fa-folder w-5 h-5"></i>

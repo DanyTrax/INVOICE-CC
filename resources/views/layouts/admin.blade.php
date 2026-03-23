@@ -122,6 +122,18 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ route('admin.proposals.index') }}" class="nav-link {{ request()->routeIs('admin.proposals.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-file-signature"></i>
+                            <p>Propuestas</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.concept-catalogs.index') }}" class="nav-link {{ request()->routeIs('admin.concept-catalogs.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-list-ul"></i>
+                            <p>Conceptos</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ route('admin.processes.monitor') }}" class="nav-link {{ request()->routeIs('admin.processes.monitor') || request()->routeIs('admin.processes.*') || request()->routeIs('admin.submissions.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-folder"></i>
                             <p>Expedientes</p>

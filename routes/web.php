@@ -15,6 +15,9 @@ use App\Http\Controllers\Admin\ServiceTypeController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\QuoteController;
 use App\Http\Controllers\Admin\QuotePdfTemplateController;
+use App\Http\Controllers\Admin\ProposalController;
+use App\Http\Controllers\Admin\ProposalPdfTemplateController;
+use App\Http\Controllers\Admin\ConceptCatalogController;
 use App\Http\Controllers\Admin\RegulatoryEventController;
 use App\Http\Controllers\Admin\CapacitacionController;
 use App\Http\Controllers\Auth\LoginController;
@@ -115,6 +118,21 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
     Route::post('quotes/{quote}/anular', [QuoteController::class, 'anular'])->name('quotes.anular');
     Route::delete('quotes/{quote}', [QuoteController::class, 'destroy'])->name('quotes.destroy');
 
+    // Propuestas (honorarios / concepto–alcance)
+    Route::get('proposals', [ProposalController::class, 'index'])->name('proposals.index');
+    Route::get('proposals/create', [ProposalController::class, 'create'])->name('proposals.create');
+    Route::post('proposals', [ProposalController::class, 'store'])->name('proposals.store');
+    Route::get('proposals/{proposal}', [ProposalController::class, 'show'])->name('proposals.show');
+    Route::get('proposals/{proposal}/edit', [ProposalController::class, 'edit'])->name('proposals.edit');
+    Route::put('proposals/{proposal}', [ProposalController::class, 'update'])->name('proposals.update');
+    Route::post('proposals/{proposal}/approve', [ProposalController::class, 'approve'])->name('proposals.approve');
+    Route::get('proposals/{proposal}/pdf', [ProposalController::class, 'pdf'])->name('proposals.pdf');
+    Route::patch('proposals/{proposal}/pdf-footer', [ProposalController::class, 'updatePdfFooter'])->name('proposals.pdf-footer.update');
+    Route::delete('proposals/{proposal}', [ProposalController::class, 'destroy'])->name('proposals.destroy');
+
+    // Catálogo de conceptos (opcional, alimenta propuestas)
+    Route::resource('concept-catalogs', ConceptCatalogController::class)->except(['show']);
+
     // Tipos de Trámite (ServiceTypes) — módulo "Trámite"
     Route::get('service-types', [ServiceTypeController::class, 'index'])->name('service-types.index');
     Route::get('service-types/create', [ServiceTypeController::class, 'create'])->name('service-types.create');
@@ -188,7 +206,12 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
             Route::get('/settings/quote-pdf-templates/{quotePdfTemplate}/edit', [QuotePdfTemplateController::class, 'edit'])->name('settings.quote-pdf-templates.edit');
             Route::put('/settings/quote-pdf-templates/{quotePdfTemplate}', [QuotePdfTemplateController::class, 'update'])->name('settings.quote-pdf-templates.update');
             Route::delete('/settings/quote-pdf-templates/{quotePdfTemplate}', [QuotePdfTemplateController::class, 'destroy'])->name('settings.quote-pdf-templates.destroy');
-            Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system|quote-pdf');
+            Route::get('/settings/proposal-pdf-templates/create', [ProposalPdfTemplateController::class, 'create'])->name('settings.proposal-pdf-templates.create');
+            Route::post('/settings/proposal-pdf-templates', [ProposalPdfTemplateController::class, 'store'])->name('settings.proposal-pdf-templates.store');
+            Route::get('/settings/proposal-pdf-templates/{proposalPdfTemplate}/edit', [ProposalPdfTemplateController::class, 'edit'])->name('settings.proposal-pdf-templates.edit');
+            Route::put('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'update'])->name('settings.proposal-pdf-templates.update');
+            Route::delete('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'destroy'])->name('settings.proposal-pdf-templates.destroy');
+            Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system|quote-pdf|proposal-pdf');
             Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
             
             // Git Pull (solo super_admin)

@@ -27,7 +27,7 @@
                 @if($permService->userHasPermission('settings_agency', 'view'))
                 <a href="{{ route('admin.settings.section', 'agency') }}" 
                         id="tab-empresa"
-                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ in_array($activeSection, ['agency', 'quote-pdf']) ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ in_array($activeSection, ['agency', 'quote-pdf', 'proposal-pdf']) ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-building mr-2"></i> Empresa
                 </a>
                 @endif
@@ -69,8 +69,8 @@
             </nav>
         </div>
 
-        @if($permService->userHasPermission('settings_agency', 'view') && in_array($activeSection, ['agency', 'quote-pdf']))
-        <div class="flex gap-1 border-b border-gray-200 -mb-px">
+        @if($permService->userHasPermission('settings_agency', 'view') && in_array($activeSection, ['agency', 'quote-pdf', 'proposal-pdf']))
+        <div class="flex gap-1 border-b border-gray-200 -mb-px flex-wrap">
             <a href="{{ route('admin.settings.section', 'agency') }}" 
                     class="px-4 py-2 text-sm font-medium {{ $activeSection === 'agency' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
                 Información de la Empresa
@@ -78,6 +78,10 @@
             <a href="{{ route('admin.settings.section', 'quote-pdf') }}" 
                     class="px-4 py-2 text-sm font-medium {{ $activeSection === 'quote-pdf' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
                 Plantilla PDF de cotizaciones
+            </a>
+            <a href="{{ route('admin.settings.section', 'proposal-pdf') }}" 
+                    class="px-4 py-2 text-sm font-medium {{ $activeSection === 'proposal-pdf' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
+                Plantilla PDF de Propuestas
             </a>
         </div>
         @endif
@@ -290,6 +294,72 @@
                             @empty
                                 <tr>
                                     <td colspan="4" class="px-4 py-8 text-center text-gray-500">No hay plantillas. Cree una para usarla al generar el PDF de cotizaciones.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Plantilla PDF de Propuestas -->
+        <div id="panel-proposal-pdf" class="tab-panel {{ $activeSection === 'proposal-pdf' ? '' : 'hidden' }}">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-file-pdf text-teal-600 mr-2"></i>
+                    Plantilla PDF de Propuestas
+                </h3>
+                <p class="text-sm text-gray-600 mb-6">
+                    Cree plantillas con logo, cabecera y contexto para el PDF de propuestas (concepto, alcance, honorarios). Al descargar una propuesta podrá elegir qué plantilla usar. Las mismas variables que en cotizaciones (<code class="bg-gray-100 px-1 rounded text-xs">@verbatim{{fecha}}, {{ciudad}}, {{cliente}}, {{consecutivo}}, {{destinatario}}@endverbatim</code>) se reemplazan al generar el PDF.
+                </p>
+                @if(session('success'))
+                    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+                    </div>
+                @endif
+                <a href="{{ route('admin.settings.proposal-pdf-templates.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium mb-6">
+                    <i class="fas fa-plus mr-2"></i> Nueva plantilla
+                </a>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-700">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-3">Nombre</th>
+                                <th class="px-4 py-3">Logo</th>
+                                <th class="px-4 py-3">Por defecto</th>
+                                <th class="px-4 py-3 w-40">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($proposalPdfTemplates ?? [] as $t)
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="px-4 py-3 font-medium">{{ $t->name }}</td>
+                                    <td class="px-4 py-3">
+                                        @if($t->logo_path && file_exists(public_path($t->logo_path)))
+                                            <img src="{{ asset($t->logo_path) }}" alt="" class="h-10 w-auto object-contain">
+                                        @else
+                                            <span class="text-gray-400">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($t->is_default)
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Por defecto</span>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <a href="{{ route('admin.settings.proposal-pdf-templates.edit', $t) }}" class="text-teal-600 hover:underline mr-3">Editar</a>
+                                        <form action="{{ route('admin.settings.proposal-pdf-templates.destroy', $t) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta plantilla?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:underline">Eliminar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-4 py-8 text-center text-gray-500">No hay plantillas. Cree una para usarla al generar el PDF de propuestas.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -2165,7 +2235,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentSection = pathParts[pathParts.length - 1] || 'agency';
     
     // Validar que sea una sección válida
-    const validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'quote-pdf', 'system'];
+    const validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'quote-pdf', 'proposal-pdf', 'system'];
     const activeSection = validSections.includes(currentSection) ? currentSection : 'agency';
     
     // Inicializar campos según el proveedor

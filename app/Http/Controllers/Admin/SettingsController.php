@@ -8,6 +8,7 @@ use App\Settings\GeneralSettings;
 use App\Models\EmailTemplate;
 use App\Models\EmailLog;
 use App\Models\QuotePdfTemplate;
+use App\Models\ProposalPdfTemplate;
 use App\Models\User;
 use App\Services\MailService;
 use App\Services\PermissionService;
@@ -21,7 +22,7 @@ class SettingsController extends Controller
     public function index(Request $request, $section = 'agency')
     {
         // Validar que la sección sea válida
-        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system', 'quote-pdf'];
+        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system', 'quote-pdf', 'proposal-pdf'];
         if (!in_array($section, $validSections)) {
             $section = 'agency';
         }
@@ -37,6 +38,7 @@ class SettingsController extends Controller
             'history' => ['settings_history'],
             'system' => ['settings_system'],
             'quote-pdf' => ['settings_agency'],
+            'proposal-pdf' => ['settings_agency'],
         ];
 
         $modules = $sectionModuleMap[$section] ?? null;
@@ -72,6 +74,15 @@ class SettingsController extends Controller
                 $quotePdfTemplates = QuotePdfTemplate::orderByRaw('is_default DESC')->orderBy('name')->get();
             } catch (\Throwable $e) {
                 $quotePdfTemplates = [];
+            }
+        }
+
+        $proposalPdfTemplates = [];
+        if ($section === 'proposal-pdf') {
+            try {
+                $proposalPdfTemplates = ProposalPdfTemplate::orderByRaw('is_default DESC')->orderBy('name')->get();
+            } catch (\Throwable $e) {
+                $proposalPdfTemplates = [];
             }
         }
         
@@ -120,6 +131,7 @@ class SettingsController extends Controller
             'emailTemplates' => $emailTemplates,
             'emailLogs' => $emailLogs,
             'quotePdfTemplates' => $quotePdfTemplates,
+            'proposalPdfTemplates' => $proposalPdfTemplates ?? [],
             'activeSection' => $section,
             'userToDelete' => $userToDelete,
         ]);
@@ -209,6 +221,7 @@ class SettingsController extends Controller
             'history' => ['settings_history'],
             'system' => ['settings_system'],
             'quote-pdf' => ['settings_agency'],
+            'proposal-pdf' => ['settings_agency'],
         ];
         foreach ($order as $section => $modules) {
             if ($section === 'system') {
