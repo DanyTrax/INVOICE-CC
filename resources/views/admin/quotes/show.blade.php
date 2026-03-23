@@ -22,6 +22,7 @@
 @section('content')
     {{-- Acciones de gestión --}}
     <div class="mb-6 flex flex-wrap items-center gap-3">
+        @quoteCan('edit')
         @if(in_array($quote->status, ['Borrador', 'Enviada']))
             <form action="{{ route('admin.quotes.approve', $quote) }}" method="POST" class="inline">
                 @csrf
@@ -30,7 +31,9 @@
                 </button>
             </form>
         @endif
-        <div class="inline-flex items-center gap-2">
+        @endquoteCan
+        <div class="inline-flex items-center gap-2 flex-wrap">
+            @quoteCan('pdf')
             @if(count($quotePdfTemplates ?? []) > 0)
                 <label for="pdf-template-select" class="text-sm text-gray-600">Plantilla PDF:</label>
                 <select id="pdf-template-select" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
@@ -42,42 +45,48 @@
             <a href="{{ route('admin.quotes.pdf', $quote) }}" id="btn-download-pdf" target="_blank" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">
                 <i class="fas fa-file-pdf mr-2"></i> Descargar PDF
             </a>
+            @if(count($quotePdfTemplates ?? []) > 0)
+            @push('scripts')
+            <script>
+            (function() {
+                var select = document.getElementById('pdf-template-select');
+                var link = document.getElementById('btn-download-pdf');
+                if (select && link) {
+                    function updatePdfLink() {
+                        var id = select.value;
+                        link.href = '{{ route("admin.quotes.pdf", $quote) }}' + (id ? '?template_id=' + encodeURIComponent(id) : '');
+                    }
+                    select.addEventListener('change', updatePdfLink);
+                    updatePdfLink();
+                }
+            })();
+            </script>
+            @endpush
+            @endif
+            @endquoteCan
             <a href="{{ route('admin.processes.monitor', ['quote_id' => $quote->id]) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium">
                 <i class="fas fa-folder-open mr-2"></i> Ver Expedientes
             </a>
         </div>
-        @if(count($quotePdfTemplates ?? []) > 0)
-        @push('scripts')
-        <script>
-        (function() {
-            var select = document.getElementById('pdf-template-select');
-            var link = document.getElementById('btn-download-pdf');
-            if (select && link) {
-                function updatePdfLink() {
-                    var id = select.value;
-                    link.href = '{{ route("admin.quotes.pdf", $quote) }}' + (id ? '?template_id=' + encodeURIComponent(id) : '');
-                }
-                select.addEventListener('change', updatePdfLink);
-                updatePdfLink();
-            }
-        })();
-        </script>
-        @endpush
-        @endif
         @if($quote->status !== 'Aprobada')
+            @quoteCan('edit')
             <a href="{{ route('admin.quotes.edit', $quote) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium">
                 <i class="fas fa-edit mr-2"></i> Editar
             </a>
+            @endquoteCan
         @else
             <span class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium">
                 <i class="fas fa-lock mr-2"></i> Bloqueado por Aprobación
             </span>
         @endif
+        @quoteCan('edit')
         @if(!in_array($quote->status, ['Aprobada', 'Anulada']))
             <button type="button" onclick="document.getElementById('modal-anular-cotizacion').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">
                 <i class="fas fa-times-circle mr-2"></i> Cancelar cotización
             </button>
         @endif
+        @endquoteCan
+        @quoteCan('delete')
         <form action="{{ route('admin.quotes.destroy', $quote) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta cotización y todos sus ítems? Los expedientes vinculados quedarán sin cotización. Esta acción no se puede deshacer.');">
             @csrf
             @method('DELETE')
@@ -85,6 +94,7 @@
                 <i class="fas fa-trash-alt mr-2"></i> Eliminar cotización
             </button>
         </form>
+        @endquoteCan
     </div>
 
     {{-- Datos de la cotización --}}
@@ -268,6 +278,7 @@
     </div>
 
     {{-- Pie de página del PDF (editable) --}}
+    @quoteCan('edit')
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-2">Pie de página del PDF</h3>
         <p class="text-sm text-gray-600 mb-3">Este texto se muestra en la parte inferior de la cotización al descargar el PDF. Si está vacío, se usará el pie definido en la plantilla o en Configuración.</p>
@@ -285,6 +296,7 @@
             </button>
         </form>
     </div>
+    @endquoteCan
 
     <div class="flex gap-3">
         <a href="{{ route('admin.quotes.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
@@ -293,6 +305,7 @@
     </div>
 
     {{-- Modal: Cancelar cotización con motivo --}}
+    @quoteCan('edit')
     <div id="modal-anular-cotizacion" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-anular-cotizacion').classList.add('hidden')"></div>
@@ -323,4 +336,5 @@
             </div>
         </div>
     </div>
+    @endquoteCan
 @endsection

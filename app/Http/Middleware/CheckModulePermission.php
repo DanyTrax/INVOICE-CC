@@ -12,7 +12,7 @@ class CheckModulePermission
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 
@@ -21,7 +21,7 @@ class CheckModulePermission
         }
 
         $routeName = $request->route()?->getName();
-        if (!$routeName || !str_starts_with($routeName, 'admin.')) {
+        if (! $routeName || ! str_starts_with($routeName, 'admin.')) {
             return $next($request);
         }
 
@@ -36,7 +36,7 @@ class CheckModulePermission
         $service = app(PermissionService::class);
 
         if ($module === 'processes') {
-            if (!$service->userHasProcessAction($action)) {
+            if (! $service->userHasProcessAction($action)) {
                 abort(403, 'No tienes permiso para realizar esta acción en expedientes.');
             }
 
@@ -52,14 +52,14 @@ class CheckModulePermission
                     break;
                 }
             }
-            if (!$hasAny) {
+            if (! $hasAny) {
                 abort(403, 'No tienes permiso para acceder a este módulo.');
             }
 
             return $next($request);
         }
 
-        if (!$service->userHasPermission($module, $action)) {
+        if (! $service->userHasPermission($module, $action)) {
             abort(403, 'No tienes permiso para acceder a este módulo.');
         }
 
@@ -91,6 +91,11 @@ class CheckModulePermission
 
         // Cotizaciones
         if (str_starts_with($routeName, 'admin.quotes')) {
+            // Ver detalle y PDF: ver cotizaciones o ver propuestas
+            if ($method === 'GET' && in_array($routeName, ['admin.quotes.show', 'admin.quotes.pdf'], true)) {
+                return ['quotes|proposals', 'view'];
+            }
+
             return $this->crudModule($routeName, $method, 'quotes');
         }
 

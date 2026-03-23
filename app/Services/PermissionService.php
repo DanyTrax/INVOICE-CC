@@ -98,7 +98,7 @@ class PermissionService
     {
         $role = Role::where('name', $roleName)->first();
 
-        if (!$role) {
+        if (! $role) {
             return false;
         }
 
@@ -120,7 +120,7 @@ class PermissionService
     public function userHasProcessAction(string $needed): bool
     {
         $user = auth()->user();
-        if (!$user) {
+        if (! $user) {
             return false;
         }
         if ($user->hasRole('super_admin')) {
@@ -150,13 +150,59 @@ class PermissionService
     }
 
     /**
+     * Cotizaciones: view | edit (incluye delete a nivel de rol) | delete.
+     */
+    public function userHasQuoteAction(string $needed): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        if ($needed === 'view') {
+            return $this->userHasPermission('quotes', 'view');
+        }
+
+        if ($needed === 'edit') {
+            return $this->userHasPermission('quotes', 'edit')
+                || $this->userHasPermission('quotes', 'delete');
+        }
+
+        if ($needed === 'delete') {
+            return $this->userHasPermission('quotes', 'delete');
+        }
+
+        return false;
+    }
+
+    /**
+     * Descargar PDF de cotización: ver cotizaciones o ver propuestas.
+     */
+    public function userCanDownloadQuotePdf(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        return $this->userHasPermission('quotes', 'view')
+            || $this->userHasPermission('proposals', 'view');
+    }
+
+    /**
      * Verificar si el usuario autenticado tiene permiso.
      */
     public function userHasPermission(string $module, string $action): bool
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -180,7 +226,7 @@ class PermissionService
     {
         $role = Role::where('name', $roleName)->first();
 
-        if (!$role) {
+        if (! $role) {
             return [];
         }
 
@@ -192,7 +238,7 @@ class PermissionService
             ->where('can_create_role', '!=', null)
             ->pluck('can_create_role')
             ->toArray();
-        if (!in_array($roleName, $fromHierarchy, true)) {
+        if (! in_array($roleName, $fromHierarchy, true)) {
             $fromHierarchy[] = $roleName;
         }
 
@@ -206,7 +252,7 @@ class PermissionService
     {
         $role = Role::where('name', $roleName)->first();
 
-        if (!$role) {
+        if (! $role) {
             return [];
         }
 
@@ -218,7 +264,7 @@ class PermissionService
             ->where('can_view', true)
             ->pluck('can_create_role')
             ->toArray();
-        if (!in_array($roleName, $fromHierarchy, true)) {
+        if (! in_array($roleName, $fromHierarchy, true)) {
             $fromHierarchy[] = $roleName;
         }
 
@@ -232,7 +278,7 @@ class PermissionService
     {
         $role = Role::where('name', $roleName)->first();
 
-        if (!$role) {
+        if (! $role) {
             return [];
         }
 
@@ -244,7 +290,7 @@ class PermissionService
             ->where('can_edit', true)
             ->pluck('can_create_role')
             ->toArray();
-        if (!in_array($roleName, $fromHierarchy, true)) {
+        if (! in_array($roleName, $fromHierarchy, true)) {
             $fromHierarchy[] = $roleName;
         }
 

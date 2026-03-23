@@ -45,9 +45,11 @@
                 @endif
             </form>
         </div>
+        @quoteCan('edit')
         <a href="{{ route('admin.quotes.create') }}" class="shrink-0 inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">
             <i class="fas fa-plus mr-2"></i> Nueva Cotización
         </a>
+        @endquoteCan
     </div>
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -88,11 +90,13 @@
                             <td class="px-4 py-3">
                                 <a href="{{ route('admin.quotes.show', $quote) }}" class="inline-flex items-center gap-1 text-teal-600 hover:text-teal-700 font-medium" title="Ver"><i class="fas fa-eye"></i></a>
                                 <a href="{{ route('admin.processes.monitor', ['quote_id' => $quote->id]) }}" class="inline-flex items-center gap-1 text-teal-600 hover:text-teal-700 font-medium ml-2" title="Ver expedientes vinculados a esta cotización"><i class="fas fa-folder-open"></i></a>
+                                @quoteCan('delete')
                                 <form action="{{ route('admin.quotes.destroy', $quote) }}" method="POST" class="inline ml-2" onsubmit="return confirm('¿Eliminar esta cotización? No se puede deshacer.');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-800 font-medium" title="Eliminar"><i class="fas fa-trash-alt"></i></button>
                                 </form>
+                                @endquoteCan
                             </td>
                         </tr>
                     @empty

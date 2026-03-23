@@ -39,6 +39,16 @@ class AppServiceProvider extends ServiceProvider
             return $s->userHasProcessAction($needed);
         });
 
+        // Cotizaciones: @quoteCan('view'|'edit'|'delete'|'pdf')
+        Blade::if('quoteCan', function (string $action) {
+            $s = app(PermissionService::class);
+            if ($action === 'pdf') {
+                return $s->userCanDownloadQuotePdf();
+            }
+
+            return $s->userHasQuoteAction($action);
+        });
+
         // Zona horaria configurable desde Configuración > Sistema
         try {
             $settings = app(\App\Settings\GeneralSettings::class);
