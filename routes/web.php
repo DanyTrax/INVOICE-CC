@@ -88,7 +88,9 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::get('activity-logs/user/{user}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
 
     // Companies (Empresas)
+    Route::get('companies/{company}/invite-data', [CompanyController::class, 'inviteData'])->name('companies.invite-data');
     Route::post('companies/{company}/send-invite', [CompanyController::class, 'sendInvite'])->name('companies.send-invite');
+    Route::post('company-invites/{invite}/resend', [CompanyController::class, 'resendInvite'])->name('company-invites.resend');
     Route::resource('companies', CompanyController::class);
 
     // Listas separadas: Clientes (rol client) y Agentes (no client)

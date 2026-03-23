@@ -7,11 +7,14 @@ use App\Models\Company;
 use App\Models\CompanyInvite;
 use App\Models\EmailLog;
 use App\Models\Process;
+use App\Models\User;
 use App\Services\EmailTemplateService;
 use App\Services\GoogleDriveService;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class CompanyController extends Controller
 {
@@ -25,11 +28,20 @@ class CompanyController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('nit_rut', 'like', "%{$search}%")
-                    ->orWhere('contact_person_email', 'like', "%{$search}%");
+                    ->orWhere('contact_person_email', 'like', "%{$search}%")
+                    ->orWhereHas('users', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
-        $companies = $query->withCount('processes')
+        $companies = $query->withCount([
+            'processes',
+            'users as clients_assigned_count' => function ($q) {
+                $q->whereHas('roles', fn ($r) => $r->where('name', 'client'));
+            },
+        ])
             ->orderBy('name')
             ->paginate(15);
 
@@ -40,8 +52,9 @@ class CompanyController extends Controller
     {
         $countries = config('countries', []);
         sort($countries);
+        $clientUsers = $this->availableClientUsers();
 
-        return view('admin.companies.create', compact('countries'));
+        return view('admin.companies.create', compact('countries', 'clientUsers'));
     }
 
     public function store(Request $request)
@@ -58,8 +71,7 @@ class CompanyController extends Controller
                 'in:'.implode(',', $countriesList),
             ],
             'phone' => 'nullable|string|max:50',
-            'contact_person_name' => 'nullable|string|max:255',
-            'contact_person_email' => 'nullable|email|max:255',
+            'invite_email' => 'nullable|email|max:255',
             'logo_path' => 'nullable|string|max:500',
             'drive_folder_id' => 'nullable|string|max:255',
             'allows_loans' => 'nullable|boolean',
@@ -69,6 +81,10 @@ class CompanyController extends Controller
             'country' => 'país',
         ]);
         $validated['allows_loans'] = $request->boolean('allows_loans');
+        $inviteEmail = $validated['invite_email'] ?? null;
+        unset($validated['invite_email']);
+
+        $this->validateClientAssignments($request);
 
         // Crear carpeta en Google Drive: Base → País → Empresa (sin carpeta "Clientes" intermedia)
         if (empty($validated['drive_folder_id'])) {
@@ -97,10 +113,12 @@ class CompanyController extends Controller
 
         $company = Company::create($validated);
 
+        $company->syncClientAssignments($this->parseClientAssignments($request));
+
         $sendInvite = $request->boolean('send_invite_email');
-        if ($sendInvite && ! empty($validated['contact_person_email'])) {
+        if ($sendInvite && ! empty($inviteEmail)) {
             $lastError = null;
-            $sent = $this->sendCompanyInviteEmail($company, $validated['contact_person_email'], $validated['contact_person_name'] ?? $validated['name'], $lastError);
+            $sent = $this->sendCompanyInviteEmail($company, $inviteEmail, $validated['name'], $lastError);
             if ($sent) {
                 return redirect()
                     ->route('admin.companies.index')
@@ -185,8 +203,10 @@ class CompanyController extends Controller
     {
         $countries = config('countries', []);
         sort($countries);
+        $company->load(['users' => fn ($q) => $q->with('roles')->orderBy('users.name')]);
+        $clientUsers = $this->availableClientUsers();
 
-        return view('admin.companies.edit', compact('company', 'countries'));
+        return view('admin.companies.edit', compact('company', 'countries', 'clientUsers'));
     }
 
     public function update(Request $request, Company $company)
@@ -203,8 +223,6 @@ class CompanyController extends Controller
                 'in:'.implode(',', $countriesList),
             ],
             'phone' => 'nullable|string|max:50',
-            'contact_person_name' => 'nullable|string|max:255',
-            'contact_person_email' => 'nullable|email|max:255',
             'logo_path' => 'nullable|string|max:500',
             'drive_folder_id' => 'nullable|string|max:255',
             'allows_loans' => 'nullable|boolean',
@@ -214,6 +232,8 @@ class CompanyController extends Controller
             'country' => 'país',
         ]);
         $validated['allows_loans'] = $request->boolean('allows_loans');
+
+        $this->validateClientAssignments($request);
 
         $oldCountry = trim($company->country ?? '');
         $newCountry = isset($validated['country']) ? trim($validated['country'] ?? '') : '';
@@ -245,6 +265,8 @@ class CompanyController extends Controller
 
         $company->update($validated);
 
+        $company->syncClientAssignments($this->parseClientAssignments($request));
+
         return redirect()
             ->route('admin.companies.index')
             ->with('success', 'Cliente actualizado exitosamente.');
@@ -261,15 +283,22 @@ class CompanyController extends Controller
         $companies = Company::where('name', 'like', "%{$query}%")
             ->orWhere('contact_person_email', 'like', "%{$query}%")
             ->orWhere('nit_rut', 'like', "%{$query}%")
+            ->orWhereHas('users', function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->with(['users' => fn ($q) => $q->orderBy('users.name')->limit(1)])
             ->select('id', 'name', 'contact_person_email', 'nit_rut')
             ->limit(20)
             ->get()
             ->map(function ($company) {
+                $firstEmail = $company->contact_person_email ?? $company->users->first()?->email;
+
                 return [
                     'id' => $company->id,
-                    'text' => $company->name.' - '.($company->nit_rut ?: 'Sin NIT').($company->contact_person_email ? ' ('.$company->contact_person_email.')' : ''),
+                    'text' => $company->name.' - '.($company->nit_rut ?: 'Sin NIT').($firstEmail ? ' ('.$firstEmail.')' : ''),
                     'name' => $company->name,
-                    'email' => $company->contact_person_email,
+                    'email' => $firstEmail,
                     'nit_rut' => $company->nit_rut,
                 ];
             });
@@ -294,39 +323,149 @@ class CompanyController extends Controller
     }
 
     /**
-     * Enviar correo de invitación para registro (link de unico uso).
+     * Datos JSON para el modal de invitación (clientes asignados con rol cliente).
      */
-    public function sendInvite(Company $company)
+    public function inviteData(Company $company)
     {
-        if (! $company->contact_person_email) {
+        $company->load(['users' => fn ($q) => $q->with('roles')->orderBy('users.name')]);
+        $clients = $company->users
+            ->filter(fn ($u) => $u->hasRole('client'))
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+            ])
+            ->values();
+
+        return response()->json([
+            'company_id' => $company->id,
+            'company_name' => $company->name,
+            'clients' => $clients,
+        ]);
+    }
+
+    /**
+     * Enviar correo(s) de invitación para registro (uno o más clientes asignados y/o un correo nuevo).
+     */
+    public function sendInvite(Request $request, Company $company)
+    {
+        $validated = $request->validate([
+            'user_ids' => 'nullable|array',
+            'user_ids.*' => 'integer|exists:users,id',
+            'invite_email' => 'nullable|email|max:255',
+            'invite_name' => 'nullable|string|max:255',
+        ]);
+
+        $userIds = array_values(array_unique(array_filter($validated['user_ids'] ?? [])));
+        $inviteEmail = isset($validated['invite_email']) ? trim((string) $validated['invite_email']) : '';
+        $inviteEmail = $inviteEmail !== '' ? $inviteEmail : null;
+        $inviteName = isset($validated['invite_name']) ? trim((string) $validated['invite_name']) : '';
+        $inviteName = $inviteName !== '' ? $inviteName : null;
+
+        if ($userIds === [] && $inviteEmail === null) {
             return redirect()
-                ->route('admin.companies.index')
-                ->with('error', 'La empresa no tiene email de contacto. Edítala y añade uno.');
+                ->back()
+                ->with('error', 'Seleccione al menos un cliente de la empresa o indique un correo para invitar.');
         }
 
-        $lastError = null;
-        $sent = $this->sendCompanyInviteEmail(
-            $company,
-            $company->contact_person_email,
-            $company->contact_person_name ?? $company->name,
-            $lastError
-        );
+        $emailsSent = [];
+        $errors = [];
 
-        if ($sent) {
-            return redirect()
-                ->route('admin.companies.index')
-                ->with('success', 'Correo de invitación enviado a '.$company->contact_person_email);
+        foreach ($userIds as $uid) {
+            $user = $company->users()
+                ->where('users.id', $uid)
+                ->whereHas('roles', fn ($r) => $r->where('name', 'client'))
+                ->first();
+            if (! $user) {
+                $errors[] = "El usuario #{$uid} no está asignado a esta empresa como cliente.";
+
+                continue;
+            }
+            $lastError = null;
+            $ok = $this->sendCompanyInviteEmail($company, $user->email, $user->name, $lastError);
+            if ($ok) {
+                $emailsSent[] = $user->email;
+            } else {
+                $errors[] = $user->email.': '.($lastError ?? 'Error al enviar.');
+            }
         }
 
-        $msg = 'No se pudo enviar el correo de invitación.';
-        if ($lastError) {
-            $msg .= ' '.$lastError;
-        } else {
-            $msg .= ' Revisa Configuración → Correo y el Historial de correos.';
+        if ($inviteEmail !== null) {
+            $already = false;
+            foreach ($emailsSent as $sent) {
+                if (strcasecmp($sent, $inviteEmail) === 0) {
+                    $already = true;
+                    break;
+                }
+            }
+            if (! $already) {
+                $displayName = $inviteName !== null && $inviteName !== ''
+                    ? $inviteName
+                    : (explode('@', $inviteEmail)[0] ?: 'Invitado/a');
+                $lastError = null;
+                $ok = $this->sendCompanyInviteEmail($company, $inviteEmail, $displayName, $lastError);
+                if ($ok) {
+                    $emailsSent[] = $inviteEmail;
+                } else {
+                    $errors[] = $inviteEmail.': '.($lastError ?? 'Error al enviar.');
+                }
+            }
+        }
+
+        if ($emailsSent !== []) {
+            $successMsg = count($emailsSent) === 1
+                ? 'Invitación enviada a '.$emailsSent[0].'.'
+                : 'Invitaciones enviadas a: '.implode(', ', $emailsSent).'.';
+        }
+
+        if ($errors !== []) {
+            $errMsg = implode(' ', $errors);
+            if ($emailsSent !== []) {
+                return redirect()
+                    ->back()
+                    ->with('success', $successMsg ?? 'Algunas invitaciones se enviaron.')
+                    ->with('error', 'Algunos envíos fallaron: '.$errMsg);
+            }
+
+            return redirect()
+                ->back()
+                ->with('error', $errMsg);
         }
 
         return redirect()
-            ->route('admin.companies.index')
+            ->back()
+            ->with('success', $successMsg ?? 'Invitación enviada.');
+    }
+
+    /**
+     * Reenviar invitación pendiente (mismo correo, nuevo token).
+     */
+    public function resendInvite(CompanyInvite $invite)
+    {
+        if ($invite->used_at !== null) {
+            return redirect()
+                ->route('admin.clients.index')
+                ->with('error', 'Esta invitación ya fue utilizada.');
+        }
+
+        $company = $invite->company;
+        $name = explode('@', $invite->email)[0] ?: 'Invitado/a';
+        $lastError = null;
+        $ok = $this->sendCompanyInviteEmail($company, $invite->email, $name, $lastError);
+
+        if ($ok) {
+            return redirect()
+                ->route('admin.clients.index')
+                ->with('success', 'Invitación reenviada a '.$invite->email.'.');
+        }
+
+        $msg = 'No se pudo reenviar la invitación.';
+        if ($lastError) {
+            $msg .= ' '.$lastError;
+        }
+
+        return redirect()
+            ->route('admin.clients.index')
             ->with('error', $msg);
     }
 
@@ -388,6 +527,64 @@ class CompanyController extends Controller
     /**
      * Obtener el último error de EmailLog para un destinatario (para mostrar al usuario).
      */
+    /**
+     * Usuarios con rol client para asignar a la empresa.
+     */
+    protected function availableClientUsers()
+    {
+        return User::role('client')->orderBy('name')->get(['id', 'name', 'email']);
+    }
+
+    /**
+     * @return array<int, array{user_id: int, description: ?string}>
+     */
+    protected function parseClientAssignments(Request $request): array
+    {
+        $rows = $request->input('client_assignments', []);
+        if (! is_array($rows)) {
+            return [];
+        }
+
+        $out = [];
+        $seen = [];
+        foreach ($rows as $row) {
+            if (empty($row['user_id'])) {
+                continue;
+            }
+            $uid = (int) $row['user_id'];
+            if (isset($seen[$uid])) {
+                continue;
+            }
+            $seen[$uid] = true;
+            $desc = isset($row['description']) ? trim((string) $row['description']) : '';
+            $out[] = [
+                'user_id' => $uid,
+                'description' => $desc === '' ? null : $desc,
+            ];
+        }
+
+        return $out;
+    }
+
+    protected function validateClientAssignments(Request $request): void
+    {
+        $assignments = $this->parseClientAssignments($request);
+        foreach ($assignments as $index => $row) {
+            Validator::make($row, [
+                'user_id' => [
+                    'required',
+                    'integer',
+                    Rule::exists('users', 'id')->where(function ($q) {
+                        $q->whereHas('roles', fn ($r) => $r->where('name', 'client'));
+                    }),
+                ],
+                'description' => 'nullable|string|max:500',
+            ], [], [
+                'user_id' => 'cliente #'.($index + 1),
+            ])->validate();
+        }
+    }
+
     protected function getLastEmailError(string $to): ?string
     {
         $log = EmailLog::where('to', $to)

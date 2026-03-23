@@ -54,6 +54,7 @@
                         <th scope="col" class="px-6 py-3">País</th>
                         <th scope="col" class="px-6 py-3">Contacto</th>
                         <th scope="col" class="px-6 py-3">Email</th>
+                        <th scope="col" class="px-6 py-3">Clientes</th>
                         <th scope="col" class="px-6 py-3">Expedientes</th>
                         <th scope="col" class="px-6 py-3 text-right">Acciones</th>
                     </tr>
@@ -76,6 +77,11 @@
                             <td class="px-6 py-4">
                                 {{ $company->contact_person_email ?? '-' }}
                             </td>
+                            <td class="px-6 py-4 text-gray-700">
+                                <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-800" title="Usuarios rol Cliente vinculados">
+                                    {{ (int) ($company->clients_assigned_count ?? 0) }}
+                                </span>
+                            </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                                     {{ $company->processes_count }}
@@ -83,26 +89,21 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2 flex-wrap">
-                                    @if($company->contact_person_email)
-                                        @php $contactUser = $company->contactRegisteredUser(); @endphp
-                                        @if($contactUser)
-                                            <a href="{{ route('login') }}?email={{ urlencode($company->contact_person_email) }}" 
-                                               class="text-green-600 hover:text-green-800" 
-                                               title="Acceder (ya registrado)">
-                                                <i class="fas fa-sign-in-alt"></i>
-                                            </a>
-                                        @else
-                                            <form action="{{ route('admin.companies.send-invite', $company) }}" 
-                                                  method="POST" 
-                                                  class="inline">
-                                                @csrf
-                                                <button type="submit" 
-                                                        class="text-amber-600 hover:text-amber-800" 
-                                                        title="Enviar invitación para registro">
-                                                    <i class="fas fa-envelope"></i>
-                                                </button>
-                                            </form>
-                                        @endif
+                                    @php $contactUser = $company->contactRegisteredUser(); @endphp
+                                    @if($contactUser)
+                                        @php $loginEmail = $company->contact_person_email ?? $contactUser->email; @endphp
+                                        <a href="{{ route('login') }}?email={{ urlencode($loginEmail) }}"
+                                           class="text-green-600 hover:text-green-800"
+                                           title="Acceder (ya registrado)">
+                                            <i class="fas fa-sign-in-alt"></i>
+                                        </a>
+                                    @else
+                                        <button type="button"
+                                                onclick="openCompanyInviteModal({{ $company->id }})"
+                                                class="text-amber-600 hover:text-amber-800"
+                                                title="Enviar invitación para registro">
+                                            <i class="fas fa-envelope"></i>
+                                        </button>
                                     @endif
                                     <a href="{{ route('admin.companies.show', $company) }}" 
                                        class="text-blue-600 hover:text-blue-800" 
@@ -131,7 +132,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
                                 <p>No se encontraron empresas</p>
                                 @if(request('search'))
@@ -153,4 +154,6 @@
             </div>
         @endif
     </div>
+
+    @include('admin.companies.partials.invite-modal')
 @endsection

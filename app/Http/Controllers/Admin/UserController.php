@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Models\CompanyInvite;
 use App\Models\User;
 use App\Services\EmailTemplateService;
 use App\Services\MailService;
@@ -221,6 +222,25 @@ class UserController extends Controller
         $canCreateClients = in_array('client', $this->getAllowedRolesToCreate(), true);
         $editableUserIds = collect($users->items())->filter(fn ($u) => $this->canEditUser($u))->pluck('id')->all();
 
+        $pendingInvitesQuery = CompanyInvite::query()
+            ->whereNull('used_at')
+            ->with('company');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $pendingInvitesQuery->where(function ($q) use ($search) {
+                $q->where('email', 'like', "%{$search}%")
+                    ->orWhereHas('company', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $pendingInvites = $pendingInvitesQuery
+            ->orderByDesc('created_at')
+            ->paginate(10, ['*'], 'invites_page')
+            ->withQueryString();
+
         return view('admin.users.listing', [
             'users' => $users,
             'roles' => $roles,
@@ -228,6 +248,7 @@ class UserController extends Controller
             'canCreateClients' => $canCreateClients,
             'canFilterNoRole' => false,
             'editableUserIds' => $editableUserIds,
+            'pendingInvites' => $pendingInvites,
         ]);
     }
 

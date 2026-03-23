@@ -93,32 +93,10 @@
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                 </div>
 
-                <!-- Nombre Contacto -->
-                <div>
-                    <label for="contact_person_name" class="block mb-2 text-sm font-medium text-gray-900">
-                        Nombre de Contacto
-                    </label>
-                    <input type="text" 
-                           id="contact_person_name" 
-                           name="contact_person_name" 
-                           value="{{ old('contact_person_name') }}"
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                </div>
-
-                <!-- Email Contacto -->
-                <div>
-                    <label for="contact_person_email" class="block mb-2 text-sm font-medium text-gray-900">
-                        Email de Contacto
-                    </label>
-                    <input type="email" 
-                           id="contact_person_email" 
-                           name="contact_person_email" 
-                           value="{{ old('contact_person_email') }}"
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 @error('contact_person_email') border-red-500 @enderror">
-                    @error('contact_person_email')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                @include('admin.companies.partials.client-assignments', [
+                    'clientUsers' => $clientUsers,
+                    'assignments' => old('client_assignments', [['user_id' => '', 'description' => '']]),
+                ])
 
                 <!-- Drive Folder ID -->
                 <div class="md:col-span-2">
@@ -149,18 +127,30 @@
                     </div>
                 </div>
 
-                <!-- Enviar correo de invitación -->
+                <!-- Invitar correo externo (aún no es usuario) -->
                 <div class="md:col-span-2">
-                    <div class="flex items-start">
-                        <input type="checkbox" 
-                               id="send_invite_email" 
-                               name="send_invite_email" 
+                    <label for="invite_email" class="block mb-2 text-sm font-medium text-gray-900">
+                        Invitar por correo (opcional)
+                    </label>
+                    <input type="email"
+                           id="invite_email"
+                           name="invite_email"
+                           value="{{ old('invite_email') }}"
+                           placeholder="correo@ejemplo.com — si aún no existe como usuario cliente"
+                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full max-w-xl p-2.5 @error('invite_email') border-red-500 @enderror">
+                    @error('invite_email')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <div class="flex items-start mt-3">
+                        <input type="checkbox"
+                               id="send_invite_email"
+                               name="send_invite_email"
                                value="1"
                                {{ old('send_invite_email') ? 'checked' : '' }}
                                class="mt-1 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                         <label for="send_invite_email" class="ml-2 block text-sm text-gray-900">
-                            <span class="font-medium">Enviar correo de invitación para registro</span>
-                            <span class="block text-gray-500 mt-0.5">Se enviará un enlace de un solo uso al <strong>email de contacto</strong> para que el cliente se registre y acceda al sistema. Debe tener email de contacto.</span>
+                            <span class="font-medium">Enviar correo de invitación al correo indicado</span>
+                            <span class="block text-gray-500 mt-0.5">Solo si rellenó el campo de arriba: se envía un enlace de un solo uso para registro. Los clientes ya creados se asignan arriba sin necesidad de invitación.</span>
                         </label>
                     </div>
                 </div>

@@ -89,6 +89,10 @@ class CheckModulePermission
             return $this->crudModule($routeName, $method, 'companies');
         }
 
+        if ($routeName === 'admin.company-invites.resend') {
+            return ['companies', 'edit'];
+        }
+
         // Cotizaciones
         if (str_starts_with($routeName, 'admin.quotes')) {
             // Ver detalle y PDF: ver cotizaciones o ver propuestas

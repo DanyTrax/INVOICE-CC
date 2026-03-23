@@ -20,6 +20,7 @@
 @endsection
 
 @section('content')
+    @php $inviteContactUser = $company->contactRegisteredUser(); @endphp
     {{-- Botones de acción --}}
     <div class="mb-6 flex flex-wrap items-center gap-3">
         <a href="{{ route('admin.companies.edit', $company) }}"
@@ -30,6 +31,13 @@
            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
             <i class="fas fa-folder-open mr-2"></i> Ver Expedientes
         </a>
+        @if(! $inviteContactUser)
+            <button type="button"
+                    onclick="openCompanyInviteModal({{ $company->id }})"
+                    class="inline-flex items-center px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium">
+                <i class="fas fa-envelope mr-2"></i> Invitar al registro
+            </button>
+        @endif
     </div>
 
     {{-- Información básica (compacta) --}}
@@ -44,16 +52,17 @@
                 <dd class="font-medium text-gray-900">{{ $company->country ?? '-' }}</dd>
             </div>
             <div>
-                <dt class="text-gray-500">Contacto</dt>
-                <dd class="font-medium text-gray-900">{{ $company->contact_person_name ?? '-' }}</dd>
+                <dt class="text-gray-500">Contacto principal</dt>
+                <dd class="font-medium text-gray-900">{{ $company->contact_person_name ?? '—' }}</dd>
+                <dd class="text-xs text-gray-500 mt-0.5">Sincronizado con el primer cliente asignado (orden alfabético).</dd>
             </div>
             <div>
-                <dt class="text-gray-500">Email</dt>
+                <dt class="text-gray-500">Email principal</dt>
                 <dd class="font-medium text-gray-900">
                     @if($company->contact_person_email)
                         <a href="mailto:{{ $company->contact_person_email }}" class="text-teal-600 hover:text-teal-700">{{ $company->contact_person_email }}</a>
                     @else
-                        -
+                        —
                     @endif
                 </dd>
             </div>
@@ -83,6 +92,9 @@
                             <p class="text-sm text-gray-600">
                                 <a href="mailto:{{ $user->email }}" class="text-teal-600 hover:underline">{{ $user->email }}</a>
                             </p>
+                            @if($user->pivot && $user->pivot->description)
+                                <p class="text-xs text-amber-900 bg-amber-50 border border-amber-100 rounded px-2 py-1 mt-1 inline-block">{{ $user->pivot->description }}</p>
+                            @endif
                             @if($user->phone)
                                 <p class="text-xs text-gray-500">{{ $user->phone }}</p>
                             @endif
@@ -344,4 +356,6 @@
             </table>
         </div>
     </div>
+
+    @include('admin.companies.partials.invite-modal')
 @endsection

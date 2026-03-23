@@ -79,6 +79,61 @@
         @endif
     </div>
 
+    @if($listingType === 'clients' && isset($pendingInvites) && $pendingInvites->total() > 0)
+        <div class="mb-6 bg-white rounded-lg shadow-sm border border-amber-200 overflow-hidden">
+            <div class="px-4 py-3 border-b border-amber-100 bg-amber-50/80">
+                <h2 class="text-sm font-semibold text-amber-900">
+                    <i class="fas fa-hourglass-half mr-2"></i> Invitaciones pendientes de registro
+                </h2>
+                <p class="text-xs text-amber-800 mt-1">Correos a los que se envió enlace y aún no completan el formulario de alta. Al registrarse pasan al listado de abajo (estado según su invitación, habitualmente deshabilitado hasta activación).</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Correo</th>
+                            <th scope="col" class="px-6 py-3">Empresa</th>
+                            <th scope="col" class="px-6 py-3">Estado</th>
+                            <th scope="col" class="px-6 py-3">Vence</th>
+                            <th scope="col" class="px-6 py-3 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($pendingInvites as $invite)
+                            @php
+                                $expired = $invite->expires_at && $invite->expires_at->isPast();
+                            @endphp
+                            <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
+                                <td class="px-6 py-3 font-medium text-gray-900">{{ $invite->email }}</td>
+                                <td class="px-6 py-3">{{ $invite->company?->name ?? '—' }}</td>
+                                <td class="px-6 py-3">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-900">Pendiente registro</span>
+                                    @if($expired)
+                                        <span class="ml-1 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Enlace expirado</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-3 text-xs">{{ $invite->expires_at?->format('d/m/Y H:i') ?? '—' }}</td>
+                                <td class="px-6 py-3 text-right">
+                                    <form action="{{ route('admin.company-invites.resend', $invite) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="text-teal-700 hover:text-teal-900 text-sm font-medium" title="Generar nuevo enlace y reenviar correo">
+                                            <i class="fas fa-redo mr-1"></i> Reenviar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @if($pendingInvites->hasPages())
+                <div class="px-6 py-3 border-t border-gray-200">
+                    {{ $pendingInvites->links() }}
+                </div>
+            @endif
+        </div>
+    @endif
+
     <!-- Tabla -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">

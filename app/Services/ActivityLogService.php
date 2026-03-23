@@ -46,6 +46,7 @@ class ActivityLogService
         'admin.companies.update' => 'Actualizó empresa / cliente',
         'admin.companies.destroy' => 'Eliminó empresa / cliente',
         'admin.companies.send-invite' => 'Envió invitación a empresa',
+        'admin.company-invites.resend' => 'Reenvió invitación de registro',
         'admin.clients.store' => 'Creó usuario cliente',
         'admin.clients.update' => 'Actualizó usuario cliente',
         'admin.users.client-status.update' => 'Cambió estado de cliente',

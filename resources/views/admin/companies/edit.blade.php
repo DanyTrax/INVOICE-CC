@@ -94,32 +94,21 @@
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                 </div>
 
-                <!-- Nombre Contacto -->
-                <div>
-                    <label for="contact_person_name" class="block mb-2 text-sm font-medium text-gray-900">
-                        Nombre de Contacto
-                    </label>
-                    <input type="text" 
-                           id="contact_person_name" 
-                           name="contact_person_name" 
-                           value="{{ old('contact_person_name', $company->contact_person_name) }}"
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
-                </div>
-
-                <!-- Email Contacto -->
-                <div>
-                    <label for="contact_person_email" class="block mb-2 text-sm font-medium text-gray-900">
-                        Email de Contacto
-                    </label>
-                    <input type="email" 
-                           id="contact_person_email" 
-                           name="contact_person_email" 
-                           value="{{ old('contact_person_email', $company->contact_person_email) }}"
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 @error('contact_person_email') border-red-500 @enderror">
-                    @error('contact_person_email')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                @php
+                    $assignments = old('client_assignments');
+                    if ($assignments === null) {
+                        $assignments = $company->users->filter(fn ($u) => $u->hasRole('client'))->map(function ($u) {
+                            return ['user_id' => $u->id, 'description' => $u->pivot->description ?? ''];
+                        })->values()->all();
+                        if (count($assignments) === 0) {
+                            $assignments = [['user_id' => '', 'description' => '']];
+                        }
+                    }
+                @endphp
+                @include('admin.companies.partials.client-assignments', [
+                    'clientUsers' => $clientUsers,
+                    'assignments' => $assignments,
+                ])
 
                 <!-- Drive Folder ID -->
                 <div class="md:col-span-2">
