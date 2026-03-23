@@ -20,8 +20,8 @@
         <td class="px-4 py-3 text-sm text-gray-600">{{ $fechaUltimoGuardado ? $fechaUltimoGuardado->format('d/m/Y H:i') : '—' }}</td>
         <td class="px-4 py-3">
             <div class="inline-flex items-center gap-1">
-                <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Abrir expediente">
-                    <i class="fas fa-edit"></i>
+                <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver expediente">
+                    <i class="fas fa-eye"></i>
                 </a>
                 @processCan('delete')
                 <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
