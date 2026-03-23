@@ -13,45 +13,86 @@ class PermissionService
     public const NO_ROLE = 'no_role';
 
     /**
-     * Módulos disponibles en el sistema.
+     * Acción solo para expedientes: registrar en línea de tiempo sin editar/borrar registros existentes.
+     */
+    public const ACTION_TIMELINE_FEED = 'timeline_feed';
+
+    /**
+     * Módulos disponibles en el sistema (panel admin).
+     *
+     * @return array<string, string>
      */
     public static function getModules(): array
     {
         return [
             'dashboard' => 'Dashboard',
             'companies' => 'Empresas',
-            'registrations' => 'Registros (Expedientes)',
+            'quotes' => 'Cotizaciones',
+            'proposals' => 'Propuestas',
+            'concept_catalogs' => 'Conceptos (catálogo)',
+            'service_types' => 'Trámite (tipos de servicio)',
+            'services' => 'Servicios (catálogo)',
             'processes' => 'Expedientes INVIMA',
             'capacitaciones' => 'Capacitaciones',
-            'users' => 'Usuarios',
-            // Configuración por secciones
-            'settings_agency' => 'Config: Datos Empresa',
-            'settings_drive' => 'Config: Conexión Drive',
-            'settings_drive_operations_log' => 'Config: Historial Operaciones Drive',
-            'settings_mail' => 'Config: Correo',
-            'settings_templates' => 'Config: Plantillas',
-            'settings_history' => 'Config: Históricos',
-            'settings_system' => 'Config: Sistema',
+            'users' => 'Directorio (clientes, agentes, usuarios)',
+            'settings_agency' => 'Config: datos empresa',
+            'settings_drive' => 'Config: conexión Drive',
+            'settings_drive_operations_log' => 'Config: historial operaciones Drive',
+            'settings_mail' => 'Config: correo',
+            'settings_templates' => 'Config: plantillas',
+            'settings_history' => 'Config: históricos',
+            'settings_system' => 'Config: sistema',
             'backups' => 'Backups',
-            'permissions' => 'Gestión de Permisos',
-            'activity_logs' => 'Registros de Actividad',
+            'permissions' => 'Gestión de permisos y roles',
+            'activity_logs' => 'Registros de actividad',
         ];
     }
 
     /**
-     * Acciones disponibles por módulo.
+     * Acciones estándar (todos los módulos excepto variaciones en expedientes).
+     *
+     * @return array<string, string>
+     */
+    public static function getStandardActions(): array
+    {
+        return [
+            'view' => 'Ver',
+            'edit' => 'Editar',
+            'delete' => 'Eliminar',
+        ];
+    }
+
+    /**
+     * Acciones por módulo (expedientes incluye alimentar línea de tiempo).
+     *
+     * @return array<string, string>
+     */
+    public static function getActionsForModule(string $moduleKey): array
+    {
+        if ($moduleKey === 'processes') {
+            return [
+                'view' => 'Ver',
+                self::ACTION_TIMELINE_FEED => 'Alimentar línea de tiempo (sin editar/borrar)',
+                'edit' => 'Editar',
+                'delete' => 'Eliminar',
+            ];
+        }
+
+        return self::getStandardActions();
+    }
+
+    /**
+     * @deprecated Usar getStandardActions / getActionsForModule
      */
     public static function getActions(): array
     {
-        return [
-            // Por ahora solo usamos 'view' para mostrar/ocultar módulos.
-            'view' => 'Ver',
-        ];
+        return array_merge(self::getStandardActions(), [
+            self::ACTION_TIMELINE_FEED => 'Alimentar línea de tiempo',
+        ]);
     }
 
     /**
      * Verificar si un rol tiene permiso para una acción en un módulo.
-     * Sin caché: marcar/desmarcar en Permisos se refleja de inmediato en sidebar y tabs.
      */
     public function hasPermission(string $roleName, string $module, string $action): bool
     {
@@ -74,17 +115,51 @@ class PermissionService
     }
 
     /**
+     * Permisos de expediente con jerarquía: edit/delete implican capacidades inferiores para rutas.
+     */
+    public function userHasProcessAction(string $needed): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        if ($needed === 'view') {
+            return $this->userHasPermission('processes', 'view');
+        }
+
+        if ($needed === self::ACTION_TIMELINE_FEED) {
+            return $this->userHasPermission('processes', self::ACTION_TIMELINE_FEED)
+                || $this->userHasPermission('processes', 'edit')
+                || $this->userHasPermission('processes', 'delete');
+        }
+
+        if ($needed === 'edit') {
+            return $this->userHasPermission('processes', 'edit')
+                || $this->userHasPermission('processes', 'delete');
+        }
+
+        if ($needed === 'delete') {
+            return $this->userHasPermission('processes', 'delete');
+        }
+
+        return false;
+    }
+
+    /**
      * Verificar si el usuario autenticado tiene permiso.
      */
     public function userHasPermission(string $module, string $action): bool
     {
         $user = auth()->user();
-        
+
         if (!$user) {
             return false;
         }
 
-        // Super admin tiene todos los permisos
         if ($user->hasRole('super_admin')) {
             return true;
         }
@@ -104,12 +179,11 @@ class PermissionService
     public function getRolesCanCreate(string $roleName): array
     {
         $role = Role::where('name', $roleName)->first();
-        
+
         if (!$role) {
             return [];
         }
 
-        // Super admin puede crear todos
         if ($roleName === 'super_admin') {
             return Role::pluck('name')->toArray();
         }
@@ -118,10 +192,10 @@ class PermissionService
             ->where('can_create_role', '!=', null)
             ->pluck('can_create_role')
             ->toArray();
-        // Un rol siempre puede crear usuarios de su mismo tipo (p. ej. admin crea admin)
         if (!in_array($roleName, $fromHierarchy, true)) {
             $fromHierarchy[] = $roleName;
         }
+
         return $fromHierarchy;
     }
 
@@ -131,12 +205,11 @@ class PermissionService
     public function getRolesCanView(string $roleName): array
     {
         $role = Role::where('name', $roleName)->first();
-        
+
         if (!$role) {
             return [];
         }
 
-        // Super admin puede ver todos
         if ($roleName === 'super_admin') {
             return Role::pluck('name')->toArray();
         }
@@ -145,10 +218,10 @@ class PermissionService
             ->where('can_view', true)
             ->pluck('can_create_role')
             ->toArray();
-        // Un rol siempre puede ver usuarios de su mismo tipo (p. ej. admin ve admin)
         if (!in_array($roleName, $fromHierarchy, true)) {
             $fromHierarchy[] = $roleName;
         }
+
         return $fromHierarchy;
     }
 
@@ -171,16 +244,13 @@ class PermissionService
             ->where('can_edit', true)
             ->pluck('can_create_role')
             ->toArray();
-        // Un rol siempre puede editar usuarios de su mismo tipo
         if (!in_array($roleName, $fromHierarchy, true)) {
             $fromHierarchy[] = $roleName;
         }
+
         return $fromHierarchy;
     }
 
-    /**
-     * Limpiar caché de permisos para que el menú refleje al desmarcar.
-     */
     public function clearCache(): void
     {
         Cache::flush();

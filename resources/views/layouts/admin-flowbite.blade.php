@@ -202,6 +202,7 @@
                     @endif
 
                     <!-- OPERACIÓN -->
+                    @if($permService->userHasPermission('processes', 'view') || $permService->userHasPermission('service_types', 'view'))
                     <li class="pt-4">
                         <span class="text-gray-400 text-xs font-semibold uppercase px-2">OPERACIÓN</span>
                     </li>
@@ -212,6 +213,7 @@
                         $expedientesRowActive = $expedientesLinkActive || $tramiteActive;
                         $expedientesSubOpen = $tramiteActive;
                     @endphp
+                    @if($permService->userHasPermission('processes', 'view'))
                     <li x-data="{ expedientesOpen: {{ $expedientesSubOpen ? 'true' : 'false' }} }">
                         <div class="flex items-stretch rounded-lg overflow-hidden {{ $expedientesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}">
                             <a href="{{ route('admin.processes.monitor') }}"
@@ -219,13 +221,16 @@
                                 <i class="fas fa-folder w-5 h-5 shrink-0"></i>
                                 <span class="truncate">Expedientes</span>
                             </a>
+                            @if($permService->userHasPermission('service_types', 'view'))
                             <button type="button"
                                     @click.stop="expedientesOpen = !expedientesOpen"
                                     class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30"
                                     title="Mostrar Trámite">
                                 <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': expedientesOpen }"></i>
                             </button>
+                            @endif
                         </div>
+                        @if($permService->userHasPermission('service_types', 'view'))
                         <ul x-show="expedientesOpen" x-cloak
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 -translate-y-1"
@@ -242,6 +247,7 @@
                                 </a>
                             </li>
                         </ul>
+                        @endif
                     </li>
                     <li>
                         <a href="{{ route('admin.processes.history') }}" 
@@ -250,8 +256,19 @@
                             <span class="ms-3">Historial de Expedientes</span>
                         </a>
                     </li>
+                    @elseif($permService->userHasPermission('service_types', 'view'))
+                    <li>
+                        <a href="{{ route('admin.service-types.index') }}"
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.service-types.*') ? 'bg-teal-700' : '' }}">
+                            <i class="fas fa-list-alt w-5 h-5 shrink-0"></i>
+                            <span class="ms-3">Trámite</span>
+                        </a>
+                    </li>
+                    @endif
+                    @endif
 
                     <!-- CONTABILIDAD -->
+                    @if($permService->userHasPermission('proposals', 'view') || $permService->userHasPermission('concept_catalogs', 'view') || $permService->userHasPermission('quotes', 'view') || $permService->userHasPermission('services', 'view'))
                     @php
                         $propuestasLinkActive = request()->routeIs('admin.proposals.*');
                         $conceptosActive = request()->routeIs('admin.concept-catalogs.*');
@@ -266,20 +283,26 @@
                     <li class="pt-4">
                         <span class="text-gray-400 text-xs font-semibold uppercase px-2">CONTABILIDAD</span>
                     </li>
+                    @if($permService->userHasPermission('proposals', 'view') || $permService->userHasPermission('concept_catalogs', 'view'))
                     <li x-data="{ propuestasOpen: {{ $propuestasSubOpen ? 'true' : 'false' }} }">
                         <div class="flex items-stretch rounded-lg overflow-hidden {{ $propuestasRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}">
+                            @if($permService->userHasPermission('proposals', 'view'))
                             <a href="{{ route('admin.proposals.index') }}"
                                class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium">
                                 <i class="fas fa-file-signature w-5 h-5 shrink-0"></i>
                                 <span class="truncate">Propuestas</span>
                             </a>
+                            @endif
+                            @if($permService->userHasPermission('concept_catalogs', 'view'))
                             <button type="button"
                                     @click.stop="propuestasOpen = !propuestasOpen"
-                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30"
+                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30 {{ $permService->userHasPermission('proposals', 'view') ? '' : 'flex-1 justify-start pl-3' }}"
                                     title="Mostrar Conceptos">
                                 <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': propuestasOpen }"></i>
                             </button>
+                            @endif
                         </div>
+                        @if($permService->userHasPermission('concept_catalogs', 'view'))
                         <ul x-show="propuestasOpen" x-cloak
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 -translate-y-1"
@@ -296,21 +319,29 @@
                                 </a>
                             </li>
                         </ul>
+                        @endif
                     </li>
+                    @endif
+                    @if($permService->userHasPermission('quotes', 'view') || $permService->userHasPermission('services', 'view'))
                     <li x-data="{ contabilidadOpen: {{ $cotizacionesSubOpen ? 'true' : 'false' }} }">
                         <div class="flex items-stretch rounded-lg overflow-hidden {{ $cotizacionesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}">
+                            @if($permService->userHasPermission('quotes', 'view'))
                             <a href="{{ route('admin.quotes.index') }}"
                                class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium">
                                 <i class="fas fa-file-invoice-dollar w-5 h-5 shrink-0"></i>
                                 <span class="truncate">Cotizaciones</span>
                             </a>
+                            @endif
+                            @if($permService->userHasPermission('services', 'view'))
                             <button type="button"
                                     @click.stop="contabilidadOpen = !contabilidadOpen"
-                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30"
+                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30 {{ $permService->userHasPermission('quotes', 'view') ? '' : 'flex-1 justify-start pl-3' }}"
                                     title="Mostrar Servicios">
                                 <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': contabilidadOpen }"></i>
                             </button>
+                            @endif
                         </div>
+                        @if($permService->userHasPermission('services', 'view'))
                         <ul x-show="contabilidadOpen" x-cloak
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 -translate-y-1"
@@ -327,8 +358,12 @@
                                 </a>
                             </li>
                         </ul>
+                        @endif
                     </li>
+                    @endif
+                    @endif
 
+                    @if($permService->userHasPermission('capacitaciones', 'view'))
                     <li class="pt-4">
                         <a href="{{ route('admin.capacitaciones.index') }}"
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.capacitaciones.*') ? 'bg-teal-700' : '' }}">
@@ -336,6 +371,7 @@
                             <span class="ms-3">Capacitaciones</span>
                         </a>
                     </li>
+                    @endif
 
                     <!-- SISTEMA -->
                     @php
@@ -350,6 +386,7 @@
                             || $permService->userHasPermission('settings_system', 'view')
                             || $permService->userHasPermission('backups', 'view')
                             || $permService->userHasPermission('permissions', 'view')
+                            || $permService->userHasPermission('permissions', 'edit')
                             || $permService->userHasPermission('activity_logs', 'view');
                     @endphp
                     @if($sistemaSectionVisible)
@@ -433,7 +470,7 @@
                         </a>
                     </li>
                     @endif
-                    @if($permService->userHasPermission('permissions', 'view'))
+                    @if($permService->userHasPermission('permissions', 'view') || $permService->userHasPermission('permissions', 'edit'))
                     <li>
                         <a href="{{ route('admin.permissions.index') }}" 
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.permissions.*') ? 'bg-teal-700' : '' }}">

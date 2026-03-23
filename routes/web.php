@@ -75,10 +75,12 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache'])
             Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
             Route::post('/backups/wipe', [BackupController::class, 'wipe'])->name('backups.wipe');
 
-            // Permisos (solo super_admin)
+            // Permisos y roles personalizados
             Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
             Route::post('/permissions/update', [PermissionController::class, 'updatePermissions'])->name('permissions.update');
             Route::post('/permissions/hierarchy', [PermissionController::class, 'updateHierarchy'])->name('permissions.hierarchy');
+            Route::post('/roles', [PermissionController::class, 'storeRole'])->name('roles.store');
+            Route::delete('/roles/{role}', [PermissionController::class, 'destroyRole'])->name('roles.destroy');
 
     // Registros de actividad por usuario
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');

@@ -6,70 +6,133 @@ use App\Http\Controllers\Controller;
 use App\Models\RoleHierarchy;
 use App\Models\RolePermission;
 use App\Services\PermissionService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 
 class PermissionController extends Controller
 {
-    /** Solo quien tiene permiso "Gestión de Permisos" puede acceder (super_admin lo tiene por defecto). */
-    protected function ensureCanManagePermissions(): void
+    protected function ensureCanViewPermissions(): void
     {
         $user = Auth::user();
-        if (!$user || !app(PermissionService::class)->userHasPermission('permissions', 'view')) {
-            abort(403, 'No tienes permiso para gestionar permisos.');
+        if (!$user) {
+            abort(403);
+        }
+        $s = app(PermissionService::class);
+        if ($user->hasRole('super_admin')) {
+            return;
+        }
+        if (!$s->userHasPermission('permissions', 'view') && !$s->userHasPermission('permissions', 'edit')) {
+            abort(403, 'No tienes permiso para ver la gestión de permisos.');
+        }
+    }
+
+    protected function ensureCanEditPermissions(): void
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(403);
+        }
+        if ($user->hasRole('super_admin')) {
+            return;
+        }
+        if (!app(PermissionService::class)->userHasPermission('permissions', 'edit')) {
+            abort(403, 'No tienes permiso para modificar roles o permisos.');
         }
     }
 
     public function index()
     {
-        $this->ensureCanManagePermissions();
+        $this->ensureCanViewPermissions();
 
-        // Roles para Permisos por Módulo: sin client (usa portal, no requiere permisos de admin)
         $roles = Role::where('name', '!=', 'client')
             ->orderBy('name')
             ->get();
-        // Roles destino en Jerarquía: incluye client para poder crear/ver usuarios del portal
         $targetRolesForHierarchy = Role::orderBy('name')->get();
         $modules = PermissionService::getModules();
-        $actions = PermissionService::getActions();
 
-        // Si no hay registros aún, rellenar con los permisos actuales por defecto
-        if (RolePermission::count() === 0 && RoleHierarchy::count() === 0) {
-            $this->seedDefaultPermissions($roles, $modules, $actions);
+        // Jerarquía y permisos por separado: la migración puede rellenar solo permisos
+        if (RoleHierarchy::count() === 0) {
+            $this->seedDefaultHierarchy($roles);
+        }
+        if (RolePermission::count() === 0) {
+            $this->seedDefaultPermissions($roles);
         }
 
-        // Obtener permisos existentes
         $permissions = RolePermission::with('role')->get()->groupBy('role_id');
-        
-        // Obtener jerarquía de roles
         $hierarchy = RoleHierarchy::with('role')->get()->groupBy('role_id');
 
         return view('admin.permissions.index', compact(
             'roles',
             'targetRolesForHierarchy',
             'modules',
-            'actions',
             'permissions',
             'hierarchy'
         ));
     }
 
-    public function updatePermissions(Request $request)
+    public function storeRole(Request $request): RedirectResponse
     {
-        $this->ensureCanManagePermissions();
+        $this->ensureCanEditPermissions();
 
-        // Los checkboxes desmarcados NO se envían en el POST. Hay que procesar TODAS las
-        // combinaciones rol+módulo+acción y marcar enabled=false para las que no vengan.
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:64',
+                'regex:/^[a-z][a-z0-9_]*$/',
+                Rule::unique('roles', 'name'),
+            ],
+        ]);
+
+        Role::create([
+            'name' => $validated['name'],
+            'guard_name' => 'web',
+        ]);
+
+        app(PermissionService::class)->clearCache();
+
+        return redirect()
+            ->route('admin.permissions.index')
+            ->with('success', 'Rol "'.$validated['name'].'" creado. Asigna sus permisos en la tabla y guarda.');
+    }
+
+    public function destroyRole(Role $role): RedirectResponse
+    {
+        $this->ensureCanEditPermissions();
+
+        if (in_array($role->name, ['super_admin', 'client'], true)) {
+            abort(403, 'Este rol no puede eliminarse.');
+        }
+
+        RolePermission::where('role_id', $role->id)->delete();
+        RoleHierarchy::where('role_id', $role->id)->delete();
+        RoleHierarchy::where('can_create_role', $role->name)->delete();
+
+        $role->delete();
+
+        app(PermissionService::class)->clearCache();
+
+        return redirect()
+            ->route('admin.permissions.index')
+            ->with('success', 'Rol eliminado.');
+    }
+
+    public function updatePermissions(Request $request): RedirectResponse
+    {
+        $this->ensureCanEditPermissions();
+
         $roles = Role::where('name', '!=', 'client')
             ->where('name', '!=', 'super_admin')
             ->orderBy('name')
             ->get();
         $modules = PermissionService::getModules();
-        $actions = PermissionService::getActions();
 
         foreach ($roles as $role) {
             foreach ($modules as $moduleKey => $moduleLabel) {
+                $actions = PermissionService::getActionsForModule($moduleKey);
                 foreach ($actions as $actionKey => $actionLabel) {
                     $key = "{$role->id}_{$moduleKey}_{$actionKey}";
                     $enabled = isset($request->permissions[$key]['enabled'])
@@ -89,7 +152,6 @@ class PermissionController extends Controller
             }
         }
 
-        // Limpiar caché para que el menú refleje los desmarcados de inmediato
         app(PermissionService::class)->clearCache();
 
         return redirect()
@@ -98,42 +160,35 @@ class PermissionController extends Controller
             ->withHeaders(['Cache-Control' => 'no-store, no-cache, must-revalidate']);
     }
 
-    public function updateHierarchy(Request $request)
+    public function updateHierarchy(Request $request): RedirectResponse
     {
-        $this->ensureCanManagePermissions();
+        $this->ensureCanEditPermissions();
 
-        // Limpiar jerarquía existente (excepto super_admin)
         RoleHierarchy::whereHas('role', function ($q) {
             $q->where('name', '!=', 'super_admin');
         })->delete();
 
-        // Procesar datos del formulario (Laravel agrupa como hierarchy[prefix][campo])
-        $hierarchyData = [];
         $hierarchyInput = $request->input('hierarchy', []);
         if (!is_array($hierarchyInput)) {
             $hierarchyInput = [];
         }
+
         foreach ($hierarchyInput as $prefix => $data) {
             if (!is_array($data) || empty($data['can_create']) || (string) $data['can_create'] !== '1') {
                 continue;
             }
-            // Prefijo = "roleId_roleName" (ej. 1_admin, 2_no_role)
             if (preg_match('/^(\d+)_(.+)$/', $prefix, $matches)) {
                 $roleId = (int) $matches[1];
                 $canCreateRole = $matches[2];
                 $canView = !empty($data['can_view']) && (string) $data['can_view'] === '1';
                 $canEdit = !empty($data['can_edit']) && (string) $data['can_edit'] === '1';
-                $hierarchyData[] = [
+                RoleHierarchy::create([
                     'role_id' => $roleId,
                     'can_create_role' => $canCreateRole,
                     'can_view' => $canView,
                     'can_edit' => $canEdit,
-                ];
+                ]);
             }
-        }
-
-        foreach ($hierarchyData as $hier) {
-            RoleHierarchy::create($hier);
         }
 
         return redirect()
@@ -142,79 +197,76 @@ class PermissionController extends Controller
     }
 
     /**
-     * Rellenar permisos y jerarquía con la configuración actual por defecto.
-     *
-     * - super_admin: tiene todos los permisos de forma implícita (no se crean filas).
-     * - admin: acceso completo a todos los módulos excepto Backups.
-     * - agent: acceso completo a módulos principales; no a Backups.
-     * - Jerarquía de roles según reglas actuales:
-     *   * super_admin: puede crear/ver todos (implícito).
-     *   * admin: puede crear/ver admin, agent, client.
-     *   * agent: puede crear/ver solo client.
+     * Jerarquía por defecto (solo si la tabla está vacía).
      */
-    protected function seedDefaultPermissions($roles, $modules, $actions): void
+    protected function seedDefaultHierarchy($roles): void
     {
         $roleByName = $roles->keyBy('name');
 
-        // Helper para crear permisos por módulo/acción para un rol
-        $createModulePermissions = function (Role $role, array $allowedModules, array $deniedModules = []) use ($modules, $actions) {
-            foreach ($modules as $moduleKey => $moduleLabel) {
-                // Si el módulo está explícitamente denegado, saltar
+        if ($roleByName->has('admin')) {
+            $adminRole = $roleByName->get('admin');
+            foreach (['admin', 'agent', 'client'] as $targetRole) {
+                RoleHierarchy::firstOrCreate(
+                    [
+                        'role_id' => $adminRole->id,
+                        'can_create_role' => $targetRole,
+                    ],
+                    [
+                        'can_view' => true,
+                        'can_edit' => true,
+                    ]
+                );
+            }
+        }
+
+        if ($roleByName->has('agent')) {
+            $agent = $roleByName->get('agent');
+            RoleHierarchy::firstOrCreate(
+                [
+                    'role_id' => $agent->id,
+                    'can_create_role' => 'client',
+                ],
+                [
+                    'can_view' => true,
+                    'can_edit' => true,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Rellenar permisos por defecto (solo si no hay filas en role_permissions).
+     */
+    protected function seedDefaultPermissions($roles): void
+    {
+        $roleByName = $roles->keyBy('name');
+
+        $grantAllExcept = function (Role $role, array $deniedModules): void {
+            $modules = PermissionService::getModules();
+            foreach ($modules as $moduleKey => $_label) {
                 if (in_array($moduleKey, $deniedModules, true)) {
                     continue;
                 }
-                // Si se pasó una lista de permitidos y este no está, saltar
-                if (!empty($allowedModules) && !in_array($moduleKey, $allowedModules, true)) {
-                    continue;
-                }
-
-                foreach ($actions as $actionKey => $actionLabel) {
+                $actions = PermissionService::getActionsForModule($moduleKey);
+                foreach ($actions as $actionKey => $_a) {
                     RolePermission::updateOrCreate(
                         [
                             'role_id' => $role->id,
                             'module' => $moduleKey,
                             'action' => $actionKey,
                         ],
-                        [
-                            'enabled' => true,
-                        ]
+                        ['enabled' => true]
                     );
                 }
             }
         };
 
-        // admin: acceso completo excepto Backups y Gestión de Permisos
         if ($roleByName->has('admin')) {
-            $adminRole = $roleByName->get('admin');
-            $createModulePermissions($adminRole, [], ['backups', 'permissions']);
-
-            // Jerarquía: puede crear/ver/editar admin, agent, client
-            foreach (['admin', 'agent', 'client'] as $targetRole) {
-                RoleHierarchy::firstOrCreate([
-                    'role_id' => $adminRole->id,
-                    'can_create_role' => $targetRole,
-                ], [
-                    'can_view' => true,
-                    'can_edit' => true,
-                ]);
-            }
+            $grantAllExcept($roleByName->get('admin'), ['backups', 'permissions']);
         }
 
-        // agent: acceso completo a módulos principales; no Backups ni Gestión de Permisos
         if ($roleByName->has('agent')) {
-            $agent = $roleByName->get('agent');
-            $createModulePermissions($agent, [], ['backups', 'permissions']);
-
-            // Jerarquía: puede crear/ver/editar solo client
-            RoleHierarchy::firstOrCreate([
-                'role_id' => $agent->id,
-                'can_create_role' => 'client',
-            ], [
-                'can_view' => true,
-                'can_edit' => true,
-            ]);
+            $grantAllExcept($roleByName->get('agent'), ['backups', 'permissions']);
         }
-
-        // client: normalmente no accede al panel admin, no se configuran permisos aquí.
     }
 }

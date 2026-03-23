@@ -7,6 +7,7 @@ use App\Models\CapacitacionCompletion;
 use App\Models\CapacitacionVideo;
 use App\Models\User;
 use App\Services\GoogleDriveService;
+use App\Services\PermissionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -28,7 +29,17 @@ class CapacitacionController extends Controller
     protected function canManage(): bool
     {
         $user = auth()->user();
-        return $user && ($user->hasRole('super_admin') || !empty($user->manage_capacitaciones));
+        if (!$user) {
+            return false;
+        }
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+        if (!empty($user->manage_capacitaciones)) {
+            return true;
+        }
+
+        return app(PermissionService::class)->userHasPermission('capacitaciones', 'edit');
     }
 
     public function index(): View|RedirectResponse
