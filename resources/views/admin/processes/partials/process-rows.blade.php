@@ -40,12 +40,21 @@
         </td>
         <td class="px-4 py-3 text-sm text-gray-600">{{ $fechaUltimo ? (\Carbon\Carbon::parse($fechaUltimo)->format('d/m/Y')) : '—' }}</td>
         <td class="px-4 py-3">
-            <a href="{{ route('admin.processes.show', $process) }}" class="text-teal-600 hover:text-teal-800 font-medium text-sm mr-2">
-                <i class="fas fa-eye mr-1"></i> Ver
-            </a>
-            <a href="{{ route('admin.processes.show', $process) }}" class="text-gray-600 hover:text-gray-800 font-medium text-sm">
-                <i class="fas fa-edit mr-1"></i> Editar
-            </a>
+            <div class="inline-flex items-center gap-1">
+                <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50" title="Eliminar">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </form>
+            </div>
         </td>
     </tr>
 @endforeach

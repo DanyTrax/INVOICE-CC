@@ -44,6 +44,10 @@
         <input type="hidden" name="show_raa_column" id="input-show-raa" value="{{ old('show_raa_column', $quote->show_raa_column) ? '1' : '0' }}">
         <input type="hidden" name="show_service_type_column" id="input-show-tramite" value="{{ old('show_service_type_column', $quote->show_service_type_column) ? '1' : '0' }}">
         <input type="hidden" name="show_description_column" id="input-show-description" value="{{ old('show_description_column', $quote->show_description_column ?? true) ? '1' : '0' }}">
+        <input type="hidden" name="show_row_id_column" id="input-show-row-id" value="{{ old('show_row_id_column', $quote->show_row_id_column ?? false) ? '1' : '0' }}">
+        <input type="hidden" name="show_franquicia_column" id="input-show-franquicia" value="{{ old('show_franquicia_column', $quote->show_franquicia_column ?? false) ? '1' : '0' }}">
+        <input type="hidden" name="show_centro_costos_column" id="input-show-centro-costos" value="{{ old('show_centro_costos_column', $quote->show_centro_costos_column ?? false) ? '1' : '0' }}">
+        <input type="hidden" name="show_contacto_column" id="input-show-contacto" value="{{ old('show_contacto_column', $quote->show_contacto_column ?? false) ? '1' : '0' }}">
 
         {{-- Cabecera --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -118,6 +122,22 @@
                     <input type="checkbox" id="toggle-description" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_description_column', $quote->show_description_column ?? true) ? 'checked' : '' }}>
                     <span>Usar columna Producto / Descripción</span>
                 </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" id="toggle-row-id" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_row_id_column', $quote->show_row_id_column ?? false) ? 'checked' : '' }}>
+                    <span>Usar columna ROW ID</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" id="toggle-franquicia" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_franquicia_column', $quote->show_franquicia_column ?? false) ? 'checked' : '' }}>
+                    <span>Usar columna Franquicia</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" id="toggle-centro-costos" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_centro_costos_column', $quote->show_centro_costos_column ?? false) ? 'checked' : '' }}>
+                    <span>Usar columna Centro de costos</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" id="toggle-contacto" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_contacto_column', $quote->show_contacto_column ?? false) ? 'checked' : '' }}>
+                    <span>Usar columna Contacto</span>
+                </label>
                 <label class="inline-flex items-center gap-2 ml-4">
                     <input type="checkbox" name="apply_tax" id="toggle-apply-tax" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('apply_tax', $quote->apply_tax) ? 'checked' : '' }}>
                     <span>Aplicar impuesto (IVA)</span>
@@ -138,15 +158,19 @@
                 </span>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-700 min-w-[900px]" id="items-table">
+                <table class="w-full text-sm text-left text-gray-700 min-w-[1100px]" id="items-table">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                         <tr>
                             <th class="px-2 py-2 w-12">#</th>
+                            <th class="px-2 py-2 w-24" data-col="row-id">ROW ID</th>
                             <th class="px-2 py-2">Servicio</th>
                             <th class="px-2 py-2" data-col="tramite">Trámite (opcional)</th>
                             <th class="px-2 py-2" data-col="description">Producto / Descripción</th>
                             <th class="px-2 py-2" data-col="prev-license">Expediente / INVIMA</th>
                             <th class="px-2 py-2 w-20" data-col="raa">RAA</th>
+                            <th class="px-2 py-2" data-col="franquicia">Franquicia</th>
+                            <th class="px-2 py-2" data-col="centro-costos">Centro de costos</th>
+                            <th class="px-2 py-2" data-col="contacto">Contacto</th>
                             <th class="px-2 py-2">Alcance</th>
                             <th class="px-2 py-2 w-28">Valor</th>
                             <th class="px-2 py-2 w-12"></th>
@@ -169,8 +193,12 @@
                                         'has_process' => $linkedProcess !== null,
                                         'process_tramite_name' => $linkedProcess?->serviceType?->name ?? '',
                                         'description' => $qi->description ?? '',
+                                        'row_id' => $qi->row_id ?? '',
                                         'previous_license' => $qi->previous_license ?? '',
                                         'raa_code' => $qi->raa_code ?? '',
+                                        'franquicia' => $qi->franquicia ?? '',
+                                        'centro_costos' => $qi->centro_costos ?? '',
+                                        'contacto' => $qi->contacto ?? '',
                                         'scope' => $qi->scope ?? '',
                                         'fee_value' => $qi->fee_value,
                                         'invima_rate_code' => $qi->invima_rate_code ?? '',
@@ -180,12 +208,16 @@
                                 })->toArray();
                             }
                             if (empty($oldItems)) {
-                                $oldItems = [['id' => '', 'item_position' => 1, 'service_id' => '', 'service_type_name' => '', 'has_process' => false, 'process_tramite_name' => '', 'description' => '', 'previous_license' => '', 'raa_code' => '', 'scope' => '', 'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '', 'is_loan' => 0]];
+                                $oldItems = [['id' => '', 'item_position' => 1, 'service_id' => '', 'service_type_name' => '', 'has_process' => false, 'process_tramite_name' => '', 'description' => '', 'row_id' => '', 'previous_license' => '', 'raa_code' => '', 'franquicia' => '', 'centro_costos' => '', 'contacto' => '', 'scope' => '', 'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '', 'is_loan' => 0]];
                             }
                         @endphp
                         @foreach($oldItems as $idx => $item)
                             <tr class="item-row border-b border-gray-200 {{ !empty($item['is_loan']) ? 'bg-amber-50' : '' }}" data-is-loan="{{ !empty($item['is_loan']) ? '1' : '0' }}">
                                 <td class="px-2 py-2 item-num">{{ $idx + 1 }}</td>
+                                <td class="px-2 py-2" data-col="row-id">
+                                    <input type="text" name="items[{{ $idx }}][row_id]" value="{{ $item['row_id'] ?? '' }}" placeholder="ROW ID" maxlength="128"
+                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                </td>
                                 <td class="px-2 py-2">
                                     @php $selectedService = $services->firstWhere('id', $item['service_id'] ?? null); @endphp
                                     <input type="text" value="{{ ($item['service_label'] ?? '') !== '' ? $item['service_label'] : ($selectedService ? $selectedService->name : '') }}" placeholder="Escriba y elija de la lista (obligatorio)" autocomplete="one-time-code" spellcheck="false"
@@ -219,6 +251,18 @@
                                 </td>
                                 <td class="px-2 py-2" data-col="raa">
                                     <input type="text" name="items[{{ $idx }}][raa_code]" value="{{ $item['raa_code'] ?? '' }}" placeholder="Ej: 141153" maxlength="64"
+                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                </td>
+                                <td class="px-2 py-2" data-col="franquicia">
+                                    <input type="text" name="items[{{ $idx }}][franquicia]" value="{{ $item['franquicia'] ?? '' }}" placeholder="Franquicia" maxlength="255"
+                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                </td>
+                                <td class="px-2 py-2" data-col="centro-costos">
+                                    <input type="text" name="items[{{ $idx }}][centro_costos]" value="{{ $item['centro_costos'] ?? '' }}" placeholder="Centro de costos" maxlength="255"
+                                           class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+                                </td>
+                                <td class="px-2 py-2" data-col="contacto">
+                                    <input type="text" name="items[{{ $idx }}][contacto]" value="{{ $item['contacto'] ?? '' }}" placeholder="Contacto" maxlength="255"
                                            class="border border-gray-300 rounded-lg p-2 w-full text-sm">
                                 </td>
                                 <td class="px-2 py-2">
@@ -302,6 +346,10 @@
     <template id="row-template-normal">
         <tr class="item-row border-b border-gray-200" data-is-loan="0">
             <td class="px-2 py-2 item-num"></td>
+            <td class="px-2 py-2" data-col="row-id">
+                <input type="text" name="items[__INDEX__][row_id]" placeholder="ROW ID" maxlength="128"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+            </td>
             <td class="px-2 py-2">
                 <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" autocomplete="one-time-code" spellcheck="false"
                        class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-white">
@@ -327,6 +375,18 @@
                 <input type="text" name="items[__INDEX__][raa_code]" placeholder="Ej: 141153" maxlength="64"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
+            <td class="px-2 py-2" data-col="franquicia">
+                <input type="text" name="items[__INDEX__][franquicia]" placeholder="Franquicia" maxlength="255"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+            </td>
+            <td class="px-2 py-2" data-col="centro-costos">
+                <input type="text" name="items[__INDEX__][centro_costos]" placeholder="Centro de costos" maxlength="255"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+            </td>
+            <td class="px-2 py-2" data-col="contacto">
+                <input type="text" name="items[__INDEX__][contacto]" placeholder="Contacto" maxlength="255"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+            </td>
             <td class="px-2 py-2">
                 <textarea name="items[__INDEX__][scope]" rows="2" placeholder="Alcance" maxlength="1000"
                           class="js-autoresize item-scope-input border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
@@ -345,6 +405,10 @@
     <template id="row-template-loan">
         <tr class="item-row border-b border-gray-200 bg-amber-50" data-is-loan="1">
             <td class="px-2 py-2 item-num"></td>
+            <td class="px-2 py-2" data-col="row-id">
+                <input type="text" name="items[__INDEX__][row_id]" placeholder="ROW ID" maxlength="128"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
+            </td>
             <td class="px-2 py-2">
                 <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" autocomplete="one-time-code" spellcheck="false"
                        class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
@@ -368,6 +432,18 @@
             </td>
             <td class="px-2 py-2" data-col="raa">
                 <input type="text" name="items[__INDEX__][raa_code]" placeholder="-" maxlength="64"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+            </td>
+            <td class="px-2 py-2" data-col="franquicia">
+                <input type="text" name="items[__INDEX__][franquicia]" placeholder="Franquicia" maxlength="255"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+            </td>
+            <td class="px-2 py-2" data-col="centro-costos">
+                <input type="text" name="items[__INDEX__][centro_costos]" placeholder="Centro de costos" maxlength="255"
+                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
+            </td>
+            <td class="px-2 py-2" data-col="contacto">
+                <input type="text" name="items[__INDEX__][contacto]" placeholder="Contacto" maxlength="255"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm">
             </td>
             <td class="px-2 py-2">
@@ -399,12 +475,20 @@
         const toggleRaa = document.getElementById('toggle-raa');
         const toggleTramite = document.getElementById('toggle-tramite');
         const toggleDescription = document.getElementById('toggle-description');
+        const toggleRowId = document.getElementById('toggle-row-id');
+        const toggleFranquicia = document.getElementById('toggle-franquicia');
+        const toggleCentroCostos = document.getElementById('toggle-centro-costos');
+        const toggleContacto = document.getElementById('toggle-contacto');
         const inputShowTramite = document.getElementById('input-show-tramite');
         const toggleApplyTax = document.getElementById('toggle-apply-tax');
         const taxPctWrap = document.getElementById('tax-pct-wrap');
         const inputShowPrevLicense = document.getElementById('input-show-prev-license');
         const inputShowRaa = document.getElementById('input-show-raa');
         const inputShowDescription = document.getElementById('input-show-description');
+        const inputShowRowId = document.getElementById('input-show-row-id');
+        const inputShowFranquicia = document.getElementById('input-show-franquicia');
+        const inputShowCentroCostos = document.getElementById('input-show-centro-costos');
+        const inputShowContacto = document.getElementById('input-show-contacto');
         let rowIndex = {{ count($oldItems) }};
 
         function syncColumnHiddenInputs() {
@@ -412,6 +496,10 @@
             if (inputShowRaa) inputShowRaa.value = toggleRaa?.checked ? '1' : '0';
             if (inputShowTramite && toggleTramite && !toggleTramite.disabled) inputShowTramite.value = toggleTramite.checked ? '1' : '0';
             if (inputShowDescription && toggleDescription) inputShowDescription.value = toggleDescription.checked ? '1' : '0';
+            if (inputShowRowId && toggleRowId) inputShowRowId.value = toggleRowId.checked ? '1' : '0';
+            if (inputShowFranquicia && toggleFranquicia) inputShowFranquicia.value = toggleFranquicia.checked ? '1' : '0';
+            if (inputShowCentroCostos && toggleCentroCostos) inputShowCentroCostos.value = toggleCentroCostos.checked ? '1' : '0';
+            if (inputShowContacto && toggleContacto) inputShowContacto.value = toggleContacto.checked ? '1' : '0';
         }
         function updateTaxSectionVisibility() {
             const applyTax = toggleApplyTax?.checked;
@@ -446,6 +534,10 @@
             if (toggleRaa) setColumnEnabled('raa', toggleRaa.checked);
             setColumnEnabled('tramite', toggleTramite && !toggleTramite.disabled && toggleTramite.checked);
             if (toggleDescription) setColumnEnabled('description', toggleDescription.checked);
+            if (toggleRowId) setColumnEnabled('row-id', toggleRowId.checked);
+            if (toggleFranquicia) setColumnEnabled('franquicia', toggleFranquicia.checked);
+            if (toggleCentroCostos) setColumnEnabled('centro-costos', toggleCentroCostos.checked);
+            if (toggleContacto) setColumnEnabled('contacto', toggleContacto.checked);
             syncColumnHiddenInputs();
         }
         function addRow(isLoan) {
@@ -542,6 +634,10 @@
         if (toggleRaa) toggleRaa.addEventListener('change', updateColumnVisibility);
         if (toggleTramite) toggleTramite.addEventListener('change', updateColumnVisibility);
         if (toggleDescription) toggleDescription.addEventListener('change', updateColumnVisibility);
+        if (toggleRowId) toggleRowId.addEventListener('change', updateColumnVisibility);
+        if (toggleFranquicia) toggleFranquicia.addEventListener('change', updateColumnVisibility);
+        if (toggleCentroCostos) toggleCentroCostos.addEventListener('change', updateColumnVisibility);
+        if (toggleContacto) toggleContacto.addEventListener('change', updateColumnVisibility);
         if (toggleApplyTax) toggleApplyTax.addEventListener('change', updateTaxSectionVisibility);
         document.getElementById('toggle-bank-fee')?.addEventListener('change', updateBankFeeVisibility);
         document.getElementById('bank_fee_value')?.addEventListener('input', updateTotals);

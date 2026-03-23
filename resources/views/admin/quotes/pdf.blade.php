@@ -121,28 +121,43 @@
     <table class="items">
         <thead>
             <tr>
-                <th style="width: 5%;">#</th>
-                <th style="width: 18%;">Servicio</th>
+                <th style="width: 4%;">#</th>
+                @if($quote->show_row_id_column ?? false)
+                    <th style="width: 8%;">ROW ID</th>
+                @endif
+                <th style="width: 16%;">Servicio</th>
                 @if($quote->show_service_type_column)
-                    <th style="width: 18%;">Trámite</th>
+                    <th style="width: 14%;">Trámite</th>
                 @endif
                 @if($quote->show_description_column ?? true)
-                    <th style="width: 22%;">Producto / Descripción</th>
+                    <th style="width: 18%;">Producto / Descripción</th>
                 @endif
                 @if($quote->show_prev_license_column)
-                    <th style="width: 12%;">Expediente / INVIMA</th>
+                    <th style="width: 10%;">Expediente / INVIMA</th>
                 @endif
                 @if($quote->show_raa_column)
-                    <th style="width: 8%;">RAA</th>
+                    <th style="width: 6%;">RAA</th>
                 @endif
-                <th style="width: 26%;">Alcance</th>
-                <th style="width: 10%; text-align: right;">Valor</th>
+                @if($quote->show_franquicia_column ?? false)
+                    <th style="width: 8%;">Franquicia</th>
+                @endif
+                @if($quote->show_centro_costos_column ?? false)
+                    <th style="width: 8%;">Centro de costos</th>
+                @endif
+                @if($quote->show_contacto_column ?? false)
+                    <th style="width: 8%;">Contacto</th>
+                @endif
+                <th style="width: 18%;">Alcance</th>
+                <th style="width: 8%; text-align: right;">Valor</th>
             </tr>
         </thead>
         <tbody>
             @foreach($quote->quoteItems as $item)
                 <tr class="{{ $loop->iteration % 2 === 0 ? 'alt' : '' }}">
                     <td>{{ $item->item_position }}</td>
+                    @if($quote->show_row_id_column ?? false)
+                        <td>{{ $item->row_id ?: '–' }}</td>
+                    @endif
                     <td>{{ $item->service_label ?: ($item->service?->name ?? '-') }}</td>
                     @if($quote->show_service_type_column)
                         <td>{{ $item->serviceType?->name ?? $item->process?->serviceType?->name ?? '–' }}</td>
@@ -155,6 +170,15 @@
                     @endif
                     @if($quote->show_raa_column)
                         <td>{{ $item->raa_code ?? '-' }}</td>
+                    @endif
+                    @if($quote->show_franquicia_column ?? false)
+                        <td>{{ $item->franquicia ?: '–' }}</td>
+                    @endif
+                    @if($quote->show_centro_costos_column ?? false)
+                        <td>{{ $item->centro_costos ?: '–' }}</td>
+                    @endif
+                    @if($quote->show_contacto_column ?? false)
+                        <td>{{ $item->contacto ?: '–' }}</td>
                     @endif
                     <td>{{ Str::limit($item->scope, 50) }}</td>
                     <td style="text-align: right;">{{ number_format($item->fee_value, 2) }}</td>

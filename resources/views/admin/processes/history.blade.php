@@ -80,7 +80,7 @@
                         <th class="px-4 py-3">Radicado / ID</th>
                         <th class="px-4 py-3">Estado</th>
                         <th class="px-4 py-3">Fecha Último Evento</th>
-                        <th class="px-4 py-3 w-32">Acciones</th>
+                        <th class="px-4 py-3 whitespace-nowrap min-w-[9rem]">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>

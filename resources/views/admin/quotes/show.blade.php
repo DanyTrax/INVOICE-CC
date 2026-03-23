@@ -140,6 +140,9 @@
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                     <tr>
                         <th class="px-2 py-2 w-12">#</th>
+                        @if($quote->show_row_id_column ?? false)
+                            <th class="px-2 py-2 w-24">ROW ID</th>
+                        @endif
                         <th class="px-2 py-2">Servicio</th>
                         @if($quote->show_service_type_column)
                             <th class="px-2 py-2">Trámite</th>
@@ -153,6 +156,15 @@
                         @if($quote->show_raa_column)
                             <th class="px-2 py-2 w-20">RAA</th>
                         @endif
+                        @if($quote->show_franquicia_column ?? false)
+                            <th class="px-2 py-2">Franquicia</th>
+                        @endif
+                        @if($quote->show_centro_costos_column ?? false)
+                            <th class="px-2 py-2">Centro de costos</th>
+                        @endif
+                        @if($quote->show_contacto_column ?? false)
+                            <th class="px-2 py-2">Contacto</th>
+                        @endif
                         <th class="px-2 py-2">Alcance</th>
                         <th class="px-2 py-2 w-28">Valor</th>
                     </tr>
@@ -161,6 +173,9 @@
                     @foreach($quote->quoteItems as $item)
                         <tr class="border-b border-gray-200 {{ $item->is_loan ? 'bg-amber-50' : '' }}">
                             <td class="px-2 py-2">{{ $item->item_position }}</td>
+                            @if($quote->show_row_id_column ?? false)
+                                <td class="px-2 py-2">{{ $item->row_id ?: '–' }}</td>
+                            @endif
                             <td class="px-2 py-2">{{ $item->service_label ?: ($item->service?->name ?? '-') }}</td>
                             @if($quote->show_service_type_column)
                                 <td class="px-2 py-2">
@@ -189,6 +204,15 @@
                             @endif
                             @if($quote->show_raa_column)
                                 <td class="px-2 py-2">{{ $item->raa_code ?? '-' }}</td>
+                            @endif
+                            @if($quote->show_franquicia_column ?? false)
+                                <td class="px-2 py-2">{{ $item->franquicia ?: '–' }}</td>
+                            @endif
+                            @if($quote->show_centro_costos_column ?? false)
+                                <td class="px-2 py-2">{{ $item->centro_costos ?: '–' }}</td>
+                            @endif
+                            @if($quote->show_contacto_column ?? false)
+                                <td class="px-2 py-2">{{ $item->contacto ?: '–' }}</td>
                             @endif
                             <td class="px-2 py-2">{{ Str::limit($item->scope, 40) ?? '-' }}</td>
                             <td class="px-2 py-2">{{ $quote->currency }} {{ number_format($item->fee_value, 2) }}</td>
