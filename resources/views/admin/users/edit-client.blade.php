@@ -20,6 +20,13 @@
 @endsection
 
 @section('content')
+    <div class="space-y-6">
+    @include('admin.users.partials.two-factor-admin-card', [
+        'user' => $user,
+        'last_login_at' => $last_login_at ?? null,
+        'can_manage_two_factor' => $can_manage_two_factor ?? false,
+    ])
+
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <form action="{{ route('admin.clients.update', $user) }}" method="POST">
             @csrf
@@ -165,5 +172,6 @@
                 </button>
             </div>
         </form>
+    </div>
     </div>
 @endsection

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Company;
 use App\Models\CompanyInvite;
 use App\Models\User;
@@ -162,6 +163,29 @@ class UserController extends Controller
         }
 
         return false;
+    }
+
+    /**
+     * Último inicio de sesión (desde logs) y si el admin actual puede quitar el 2FA a este usuario.
+     *
+     * @return array{last_login_at: \Illuminate\Support\Carbon|null, can_manage_two_factor: bool}
+     */
+    protected function adminTwoFactorContext(User $targetUser): array
+    {
+        $lastLogin = ActivityLog::query()
+            ->where('user_id', $targetUser->id)
+            ->where('action', 'login')
+            ->latest('id')
+            ->first();
+
+        $canManage = auth()->user()->hasAnyRole(['super_admin', 'admin'])
+            && $this->canEditUser($targetUser)
+            && auth()->id() !== $targetUser->id;
+
+        return [
+            'last_login_at' => $lastLogin?->created_at,
+            'can_manage_two_factor' => $canManage,
+        ];
     }
 
     /**
@@ -333,7 +357,10 @@ class UserController extends Controller
         $user->load('companies');
         $companies = Company::orderBy('name')->get();
 
-        return view('admin.users.edit-client', compact('user', 'companies'));
+        return view('admin.users.edit-client', array_merge(
+            compact('user', 'companies'),
+            $this->adminTwoFactorContext($user)
+        ));
     }
 
     /**
@@ -473,7 +500,10 @@ class UserController extends Controller
         $user->loadCount('companies', 'assignedRegistrations');
         $canEdit = $this->canEditUser($user);
 
-        return view('admin.users.show', compact('user', 'canEdit'));
+        return view('admin.users.show', array_merge(
+            compact('user', 'canEdit'),
+            $this->adminTwoFactorContext($user)
+        ));
     }
 
     public function edit(User $user)
@@ -490,7 +520,10 @@ class UserController extends Controller
         $companies = Company::orderBy('name')->get();
         $user->load('roles', 'companies');
 
-        return view('admin.users.edit', compact('user', 'roles', 'companies', 'canAssignNoRole'));
+        return view('admin.users.edit', array_merge(
+            compact('user', 'roles', 'companies', 'canAssignNoRole'),
+            $this->adminTwoFactorContext($user)
+        ));
     }
 
     public function update(Request $request, User $user)
