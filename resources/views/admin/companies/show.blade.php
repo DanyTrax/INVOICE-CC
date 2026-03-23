@@ -244,7 +244,7 @@
                 <input type="text"
                        name="search"
                        value="{{ request('search') }}"
-                       placeholder="Buscar por origen, producto, nº expediente..."
+                       placeholder="Buscar por expediente, trámite, producto..."
                        class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-48 focus:ring-teal-500 focus:border-teal-500">
                 <select name="step_filter" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-teal-500 focus:border-teal-500">
                     <option value="">Todos los pasos</option>
@@ -266,9 +266,8 @@
             <table class="w-full text-sm text-left text-gray-500">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3">Nº Expediente</th>
-                        <th class="px-4 py-3">Origen</th>
-                        <th class="px-4 py-3">Proceso / Producto</th>
+                        <th class="px-4 py-3">#</th>
+                        <th class="px-4 py-3">Trámite</th>
                         <th class="px-4 py-3">Estado</th>
                         <th class="px-4 py-3">Hito actual</th>
                         <th class="px-4 py-3">Barra de vida</th>
@@ -278,9 +277,7 @@
                 <tbody>
                     @forelse($processes as $process)
                         @php
-                            $quoteForProcess = $process->quote ?: $process->quoteItem?->quote;
-                            $origen = $quoteForProcess?->consecutive ?? '-';
-                            $producto = $process->product_reference ?: ($process->expediente_invima ?: ($process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? 'Expediente #' . $process->id));
+                            $tramite = $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '—';
                             $eventos = $process->submissions->flatMap->regulatoryEvents->sortByDesc('event_date');
                             $ultimoEvento = $eventos->first();
                             $ultimaSub = $process->submissions->sortByDesc('fecha_radicacion')->first();
@@ -306,17 +303,7 @@
                                     <span class="text-gray-800">{{ $process->expediente_invima }}</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 font-medium text-gray-900">
-                                @if($quoteForProcess && $origen !== '-')
-                                    <a href="{{ route('admin.quotes.show', $quoteForProcess) }}"
-                                       class="text-teal-700 hover:text-teal-900 hover:underline">
-                                        {{ $origen }}
-                                    </a>
-                                @else
-                                    {{ $origen }}
-                                @endif
-                            </td>
-                            <td class="px-4 py-3">{{ $producto }}</td>
+                            <td class="px-4 py-3 text-gray-800">{{ $tramite }}</td>
                             <td class="px-4 py-3">
                                 @php
                                     $stepStyles = [1 => 'bg-gray-100 text-gray-800', 2 => 'bg-teal-100 text-teal-800', 3 => 'bg-blue-100 text-blue-800', 4 => 'bg-orange-100 text-orange-800', 5 => 'bg-green-100 text-green-800'];
@@ -342,7 +329,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">
                                 @if(request('search') || request('step_filter'))
                                     No hay expedientes que coincidan con el filtro.
                                     <a href="{{ route('admin.companies.show', $company) }}" class="text-teal-600 hover:underline ml-1">Ver todos</a>
