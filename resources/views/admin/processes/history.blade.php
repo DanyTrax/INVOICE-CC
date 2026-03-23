@@ -73,11 +73,10 @@
             <table class="w-full text-sm text-left text-gray-500">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3">Cotización</th>
+                        <th class="px-4 py-3 whitespace-nowrap">#</th>
                         <th class="px-4 py-3">Cliente</th>
                         <th class="px-4 py-3">Tipo de Trámite</th>
                         <th class="px-4 py-3">Producto / Referencia</th>
-                        <th class="px-4 py-3">Radicado / ID</th>
                         <th class="px-4 py-3">Estado</th>
                         <th class="px-4 py-3">Fecha Último Evento</th>
                         <th class="px-4 py-3 whitespace-nowrap min-w-[9rem]">Acciones</th>

@@ -216,7 +216,6 @@ class ProcessController extends Controller
             'quoteItem.serviceType',
             'quote',
             'serviceType',
-            'submissions.regulatoryEvents',
         ])->where('status', Process::STATUS_FINALIZADO);
 
         if ($request->filled('client_id')) {

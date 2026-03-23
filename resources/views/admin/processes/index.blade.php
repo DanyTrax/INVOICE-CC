@@ -39,11 +39,11 @@
                             <table class="w-full text-sm text-left text-gray-500">
                                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                                     <tr>
+                                        <th class="px-4 py-3 whitespace-nowrap">#</th>
                                         <th class="px-4 py-3">Cliente</th>
-                                        <th class="px-4 py-3">Tipo servicio</th>
-                                        <th class="px-4 py-3">Expediente</th>
+                                        <th class="px-4 py-3">Tipo de trámite</th>
                                         <th class="px-4 py-3">Estado</th>
-                                        <th class="px-4 py-3">Actualizado</th>
+                                        <th class="px-4 py-3">Fecha Último Evento</th>
                                         <th class="px-4 py-3">Acciones</th>
                                     </tr>
                                 </thead>
@@ -55,15 +55,9 @@
                                         @if($item->process)
                                             @php $process = $item->process; @endphp
                                             <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
+                                                <td class="px-4 py-3 font-mono text-sm text-gray-900" title="Número de expediente">{{ $process->expediente_invima ?? $process->id }}</td>
                                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                                                 <td class="px-4 py-3">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</td>
-                                                <td class="px-4 py-3">
-                                                    <span class="font-mono text-xs text-gray-700">#{{ $process->id }}</span>
-                                                    @if($process->expediente_invima)
-                                                        <span class="text-gray-400 mx-1">·</span>
-                                                        <span class="text-gray-800">{{ $process->expediente_invima }}</span>
-                                                    @endif
-                                                </td>
                                                 <td class="px-4 py-3">
                                                     @php
                                                         $statusStyles = [
@@ -96,15 +90,9 @@
                                     @endforeach
                                     @foreach($quote->processes->whereNotIn('id', $processIdsFromItems) as $process)
                                         <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
+                                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="Número de expediente">{{ $process->expediente_invima ?? $process->id }}</td>
                                             <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                                             <td class="px-4 py-3">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</td>
-                                            <td class="px-4 py-3">
-                                                <span class="font-mono text-xs text-gray-700">#{{ $process->id }}</span>
-                                                @if($process->expediente_invima)
-                                                    <span class="text-gray-400 mx-1">·</span>
-                                                    <span class="text-gray-800">{{ $process->expediente_invima }}</span>
-                                                @endif
-                                            </td>
                                             <td class="px-4 py-3">
                                                 @php
                                                     $statusStyles = [
@@ -152,27 +140,22 @@
             <table class="w-full text-sm text-left text-gray-500">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
+                        <th class="px-4 py-3 whitespace-nowrap">#</th>
                         <th class="px-4 py-3">Cliente</th>
                         <th class="px-4 py-3">Tipo de trámite</th>
                         <th class="px-4 py-3">Producto</th>
-                        <th class="px-4 py-3">Expediente</th>
                         <th class="px-4 py-3">Estado</th>
+                        <th class="px-4 py-3">Fecha Último Evento</th>
                         <th class="px-4 py-3">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($orphan_processes as $process)
                         <tr class="bg-white border-b hover:bg-gray-50">
+                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="Número de expediente">{{ $process->expediente_invima ?? $process->id }}</td>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $process->serviceType?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $process->product_reference ?? '-' }}</td>
-                            <td class="px-4 py-3">
-                                <span class="font-mono text-xs text-gray-700">#{{ $process->id }}</span>
-                                @if($process->expediente_invima)
-                                    <span class="text-gray-400 mx-1">·</span>
-                                    <span class="text-gray-800">{{ $process->expediente_invima }}</span>
-                                @endif
-                            </td>
                             <td class="px-4 py-3">
                                 @php
                                     $statusStyles = [
@@ -185,6 +168,7 @@
                                 @endphp
                                 <span class="px-2 py-1 text-xs font-medium rounded-full {{ $style }}">{{ $process->status }}</span>
                             </td>
+                            <td class="px-4 py-3">{{ $process->updated_at->format('d/m/Y H:i') }}</td>
                             <td class="px-4 py-3">
                                 <div class="inline-flex items-center gap-1">
                                     <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Abrir expediente">
@@ -202,7 +186,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">No hay procesos huérfanos.</td>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">No hay procesos huérfanos.</td>
                         </tr>
                     @endforelse
                 </tbody>

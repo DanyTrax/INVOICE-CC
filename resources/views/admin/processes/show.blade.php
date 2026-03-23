@@ -32,7 +32,7 @@
                         <dd class="font-medium text-gray-900">{{ $process->client->name ?? '-' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-gray-500">Tipo de servicio</dt>
+                        <dt class="text-gray-500">Tipo de trámite</dt>
                         <dd class="font-medium text-gray-900">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</dd>
                     </div>
                     @if($process->product_reference)
