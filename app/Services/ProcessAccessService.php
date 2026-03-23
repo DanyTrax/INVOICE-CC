@@ -19,6 +19,19 @@ class ProcessAccessService
     }
 
     /**
+     * Si es true, el usuario no es admin/super_admin pero debe usar asignación por expediente (process_user).
+     * Si es false (p. ej. sees_all_company_processes), ve todos los expedientes de sus empresas y las acciones siguen el rol.
+     */
+    public function userMustUsePerProcessAssignment(User $user): bool
+    {
+        if ($this->isSupervisor($user)) {
+            return false;
+        }
+
+        return ! (bool) ($user->sees_all_company_processes ?? false);
+    }
+
+    /**
      * El usuario puede ver la empresa (cliente) del expediente.
      */
     public function userHasCompanyAccess(User $user, Process $process): bool
@@ -47,7 +60,8 @@ class ProcessAccessService
     }
 
     /**
-     * Puede ver el expediente: supervisores ven todo; el resto necesita empresa asignada y estar asignado al expediente.
+     * Puede ver el expediente: supervisores ven todo; con "ver todos los expedientes de la empresa" solo requiere empresa;
+     * si no, debe estar asignado en process_user.
      */
     public function canViewProcess(User $user, Process $process): bool
     {
@@ -61,6 +75,10 @@ class ProcessAccessService
 
         if (! $this->userHasCompanyAccess($user, $process)) {
             return false;
+        }
+
+        if (! $this->userMustUsePerProcessAssignment($user)) {
+            return true;
         }
 
         return $this->userIsAssigned($user, $process);
@@ -80,6 +98,10 @@ class ProcessAccessService
         }
 
         if ($this->isSupervisor($user)) {
+            return true;
+        }
+
+        if (! $this->userMustUsePerProcessAssignment($user)) {
             return true;
         }
 
@@ -115,6 +137,10 @@ class ProcessAccessService
             return true;
         }
 
+        if (! $this->userMustUsePerProcessAssignment($user)) {
+            return true;
+        }
+
         $pivot = $this->getPivot($user, $process);
 
         return $pivot && $pivot->pivot->can_manage_documents;
@@ -140,13 +166,18 @@ class ProcessAccessService
     }
 
     /**
-     * Restringe listados/export de expedientes: no supervisores solo ven expedientes
-     * donde tienen empresa asignada y figuran en process_user (sin modo “toda la empresa”).
+     * Restringe listados/export de expedientes.
+     * Con asignación por expediente: empresa + process_user.
+     * Con "ver todos" en el usuario: todos los expedientes de las empresas vinculadas.
      */
     public function scopeProcessesForUser(Builder $query, User $user): Builder
     {
         if ($this->isSupervisor($user)) {
             return $query;
+        }
+
+        if (! $this->userMustUsePerProcessAssignment($user)) {
+            return $query->whereHas('client.users', fn (Builder $q3) => $q3->where('users.id', $user->id));
         }
 
         return $query

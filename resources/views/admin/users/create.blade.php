@@ -186,6 +186,33 @@
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <!-- Expedientes: ver todos los de las empresas asignadas (no admin/super_admin) -->
+                <div class="md:col-span-2">
+                    <label class="block mb-2 text-sm font-medium text-gray-900">
+                        Expedientes (INVIMA)
+                    </label>
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox"
+                                   id="sees_all_company_processes"
+                                   name="sees_all_company_processes"
+                                   value="1"
+                                   {{ old('sees_all_company_processes') ? 'checked' : '' }}
+                                   class="mt-1 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
+                            <div>
+                                <label for="sees_all_company_processes" class="text-sm font-medium text-gray-900 cursor-pointer">
+                                    Ver todos los expedientes de las empresas asignadas
+                                </label>
+                                <p class="mt-1 text-xs text-gray-600">
+                                    Si está activo, el usuario ve en monitor e historial todos los expedientes de sus empresas (sin depender de la asignación por expediente).
+                                    Las acciones (editar, borrar, línea de tiempo, subir documentos) siguen los permisos del rol en Configuración.
+                                    Los usuarios <strong>administrador / super administrador</strong> siempre ven todo el sistema; esta opción aplica a roles como agente o supervisor personalizado.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Botones -->

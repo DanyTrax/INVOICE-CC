@@ -32,6 +32,7 @@ class User extends Authenticatable implements CanResetPasswordContract
         'client_status',
         'manage_capacitaciones',
         'phone',
+        'sees_all_company_processes',
     ];
 
     /**
@@ -58,6 +59,7 @@ class User extends Authenticatable implements CanResetPasswordContract
             'password' => 'hashed',
             'is_active' => 'boolean',
             'manage_capacitaciones' => 'boolean',
+            'sees_all_company_processes' => 'boolean',
             'two_factor_secret' => 'encrypted',
             'two_factor_confirmed_at' => 'datetime',
             'two_factor_recovery_codes' => 'array',

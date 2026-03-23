@@ -151,7 +151,7 @@ class ProcessController extends Controller
             ->get();
 
         $access = app(ProcessAccessService::class);
-        if (! $access->isSupervisor(auth()->user())) {
+        if (! $access->isSupervisor(auth()->user()) && $access->userMustUsePerProcessAssignment(auth()->user())) {
             $user = auth()->user();
             $grouped_quotes = $grouped_quotes->map(function ($quote) use ($user, $access) {
                 $filteredItems = $quote->quoteItems->filter(function ($item) use ($user, $access) {
