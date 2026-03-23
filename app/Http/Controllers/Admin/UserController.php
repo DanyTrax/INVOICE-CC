@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Services\EmailTemplateService;
 use App\Services\MailService;
 use App\Services\PermissionService;
+use App\Services\TwoFactorService;
+use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -469,8 +471,9 @@ class UserController extends Controller
     {
         $user->load('roles', 'companies');
         $user->loadCount('companies', 'assignedRegistrations');
+        $canEdit = $this->canEditUser($user);
 
-        return view('admin.users.show', compact('user'));
+        return view('admin.users.show', compact('user', 'canEdit'));
     }
 
     public function edit(User $user)
@@ -675,5 +678,31 @@ class UserController extends Controller
         return redirect()
             ->route('admin.profile')
             ->with('success', 'Perfil actualizado exitosamente.');
+    }
+
+    /**
+     * Quitar 2FA a un usuario (super_admin / admin) para que pueda volver a vincular el autenticador.
+     */
+    public function disableTwoFactor(Request $request, User $user)
+    {
+        if (! auth()->user()->hasAnyRole(['super_admin', 'admin'])) {
+            abort(403);
+        }
+
+        if (! $this->canEditUser($user)) {
+            abort(403, 'No tienes permiso para modificar este usuario.');
+        }
+
+        app(TwoFactorService::class)->disableTwoFactor($user);
+
+        app(ActivityLogService::class)->log(
+            '2fa_admin_disabled',
+            'Desactivó la verificación en dos pasos para el usuario '.$user->email,
+            $user
+        );
+
+        return redirect()
+            ->back()
+            ->with('success', 'Se desactivó la verificación en dos pasos para '.$user->name.'. Podrá configurarla de nuevo desde su perfil.');
     }
 }

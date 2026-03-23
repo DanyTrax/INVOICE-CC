@@ -41,10 +41,12 @@
                         </div>
                     </div>
                     <div class="flex gap-2">
-<a href="{{ $user->hasRole('client') ? route('admin.clients.edit', $user) : route('admin.users.edit', $user) }}"
+                        @if($canEdit ?? false)
+                        <a href="{{ $user->hasRole('client') ? route('admin.clients.edit', $user) : route('admin.users.edit', $user) }}"
                            class="px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm">
                             <i class="fas fa-edit mr-1"></i> Editar
                         </a>
+                        @endif
                     </div>
                 </div>
 
@@ -87,6 +89,25 @@
                                     <span class="text-gray-400 text-sm">Sin roles asignados</span>
                                 @endforelse
                             </div>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Verificación en dos pasos (2FA)</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            @if($user->hasTwoFactorEnabled())
+                                <span class="text-green-700 font-medium">Activado</span>
+                                @if(($canEdit ?? false) && auth()->user()->hasAnyRole(['super_admin', 'admin']) && auth()->id() !== $user->id)
+                                    <form action="{{ route('admin.users.disable-two-factor', $user) }}" method="POST" class="mt-2 inline-block"
+                                          onsubmit="return confirm('¿Desactivar el 2FA para este usuario? Podrá configurarlo de nuevo desde su perfil.');">
+                                        @csrf
+                                        <button type="submit" class="text-sm text-red-600 hover:underline">
+                                            Quitar 2FA (administrador)
+                                        </button>
+                                    </form>
+                                @endif
+                            @else
+                                <span class="text-gray-500">No activado</span>
+                            @endif
                         </dd>
                     </div>
                 </dl>

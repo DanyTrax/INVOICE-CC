@@ -18,8 +18,11 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServiceTypeController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\Auth\TwoFactorProfileController;
 use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\ClientRegisterController;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +41,22 @@ Route::get('/', function () {
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+Route::get('/forgot-password', [ForgotPasswordController::class, 'show'])
+    ->middleware('guest')
+    ->name('password.request');
+Route::post('/forgot-password', [ForgotPasswordController::class, 'send'])
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('password.email');
+
+Route::middleware(['guest', 'two_factor.pending', 'throttle:20,1'])->group(function () {
+    Route::get('/two-factor/challenge', [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
+    Route::post('/two-factor/challenge', [TwoFactorChallengeController::class, 'verify'])->name('two-factor.verify');
+    Route::post('/two-factor/recovery-email', [TwoFactorChallengeController::class, 'sendRecoveryEmail'])->name('two-factor.recovery.email');
+});
+
+Route::get('/two-factor/recovery/{token}', [TwoFactorChallengeController::class, 'confirmRecovery'])
+    ->name('two-factor.recovery.confirm');
 
 // Páginas legales (públicas, para OAuth y usuarios)
 Route::get('/politica-privacidad', function () {
@@ -58,6 +77,13 @@ Route::post('/registrarse', [ClientRegisterController::class, 'store']);
 // Portal Cliente (rol client: solo informativo y descargas)
 Route::middleware(['auth', 'client', 'client.portal.access'])->prefix('portal')->name('portal.')->group(function () {
     Route::get('/cuenta-deshabilitada', [ClientPortalController::class, 'accountDisabled'])->name('account-disabled');
+    Route::get('/perfil', [ClientPortalController::class, 'profile'])->name('profile');
+    Route::put('/perfil', [ClientPortalController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/perfil/two-factor/start', [TwoFactorProfileController::class, 'start'])->name('profile.two-factor.start');
+    Route::post('/perfil/two-factor/confirm', [TwoFactorProfileController::class, 'confirm'])->name('profile.two-factor.confirm');
+    Route::post('/perfil/two-factor/disable', [TwoFactorProfileController::class, 'disable'])->name('profile.two-factor.disable');
+    Route::post('/perfil/two-factor/regenerate-recovery', [TwoFactorProfileController::class, 'regenerateRecovery'])->name('profile.two-factor.regenerate-recovery');
+    Route::post('/perfil/two-factor/cancel', [TwoFactorProfileController::class, 'cancelSetup'])->name('profile.two-factor.cancel');
     Route::get('/', [ClientPortalController::class, 'dashboard'])->name('dashboard');
     Route::get('/registrations', [ClientPortalController::class, 'index'])->name('registrations.index');
     Route::get('/registrations/{registration}', [ClientPortalController::class, 'show'])->name('registrations.show');
@@ -198,12 +224,18 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
 
     // Users
     Route::post('users/{user}/send-access-email', [UserController::class, 'sendAccessEmail'])->name('users.send-access-email');
+    Route::post('users/{user}/disable-two-factor', [UserController::class, 'disableTwoFactor'])->name('users.disable-two-factor');
     Route::patch('users/{user}/client-status', [UserController::class, 'updateClientStatus'])->name('users.client-status.update');
     Route::resource('users', UserController::class);
 
     // Profile (perfil del usuario autenticado)
     Route::get('/profile', [UserController::class, 'profile'])->name('profile');
     Route::put('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/two-factor/start', [TwoFactorProfileController::class, 'start'])->name('profile.two-factor.start');
+    Route::post('/profile/two-factor/confirm', [TwoFactorProfileController::class, 'confirm'])->name('profile.two-factor.confirm');
+    Route::post('/profile/two-factor/disable', [TwoFactorProfileController::class, 'disable'])->name('profile.two-factor.disable');
+    Route::post('/profile/two-factor/regenerate-recovery', [TwoFactorProfileController::class, 'regenerateRecovery'])->name('profile.two-factor.regenerate-recovery');
+    Route::post('/profile/two-factor/cancel', [TwoFactorProfileController::class, 'cancelSetup'])->name('profile.two-factor.cancel');
 
     // Settings - Rutas independientes para cada sección
     Route::get('/settings', [SettingsController::class, 'redirectToFirstSection'])->name('settings.index');

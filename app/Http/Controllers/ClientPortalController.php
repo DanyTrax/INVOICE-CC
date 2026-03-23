@@ -6,6 +6,7 @@ use App\Models\Registration;
 use App\Models\Document;
 use App\Services\GoogleDriveService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -248,5 +249,49 @@ class ClientPortalController extends Controller
         }
 
         return $events;
+    }
+
+    /**
+     * Perfil del cliente (datos y 2FA).
+     */
+    public function profile()
+    {
+        $user = auth()->user();
+        $user->load('roles', 'companies');
+
+        return view('portal.profile', compact('user'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
+            'phone' => 'nullable|string|max:50',
+            'password' => 'nullable|string|min:8|confirmed',
+            'current_password' => 'required_with:password|string',
+        ]);
+
+        if (! empty($validated['password'])) {
+            if (! Hash::check($validated['current_password'], $user->password)) {
+                return redirect()
+                    ->route('portal.profile')
+                    ->withErrors(['current_password' => 'La contraseña actual no es correcta.'])
+                    ->withInput();
+            }
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
+        }
+
+        unset($validated['current_password']);
+
+        $user->update($validated);
+
+        return redirect()
+            ->route('portal.profile')
+            ->with('success', 'Perfil actualizado correctamente.');
     }
 }

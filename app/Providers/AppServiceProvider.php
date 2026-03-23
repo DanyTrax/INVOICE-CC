@@ -7,6 +7,7 @@ use App\Models\RegulatoryEvent;
 use App\Observers\QuoteObserver;
 use App\Observers\RegulatoryEventObserver;
 use App\Services\PermissionService;
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,6 +26,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ResetPasswordNotification::toMailUsing(function (object $notifiable, string $token) {
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            return (new \Illuminate\Notifications\Messages\MailMessage)
+                ->subject('Restablecer contraseña — '.config('app.name'))
+                ->line('Recibiste este correo porque alguien solicitó restablecer la contraseña de tu cuenta.')
+                ->action('Restablecer contraseña', $url)
+                ->line('Este enlace caduca en '.(int) config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60).' minutos.')
+                ->line('Si no solicitaste el cambio, ignora este mensaje.');
+        });
+
         Quote::observe(QuoteObserver::class);
         RegulatoryEvent::observe(RegulatoryEventObserver::class);
 

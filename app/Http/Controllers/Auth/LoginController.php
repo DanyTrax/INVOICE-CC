@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -28,21 +30,43 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
-        $credentials = $request->only('email', 'password');
-        $remember = $request->filled('remember');
+        $remember = $request->boolean('remember');
 
-        if (Auth::attempt($credentials, $remember)) {
-            $request->session()->regenerate();
-            app(ActivityLogService::class)->log('login', 'Inicio de sesión en el sistema');
-            $default = Auth::user()->hasRole('client')
-                ? route('portal.dashboard')
-                : route('admin.dashboard');
-            return redirect()->intended($default);
+        $user = User::query()->where('email', $request->input('email'))->first();
+
+        if (! $user || ! Hash::check($request->input('password'), $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Las credenciales proporcionadas no son correctas.'],
+            ]);
         }
 
-        throw ValidationException::withMessages([
-            'email' => ['Las credenciales proporcionadas no son correctas.'],
-        ]);
+        if (! $user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => ['Esta cuenta está desactivada.'],
+            ]);
+        }
+
+        if ($user->hasRole('client') && ! $user->canAccessPortal()) {
+            throw ValidationException::withMessages([
+                'email' => ['No tienes acceso al portal con esta cuenta.'],
+            ]);
+        }
+
+        if ($user->hasTwoFactorEnabled()) {
+            $request->session()->put('two_factor_login.id', $user->id);
+            $request->session()->put('two_factor_login.remember', $remember);
+
+            return redirect()->route('two-factor.challenge');
+        }
+
+        Auth::login($user, $remember);
+        $request->session()->regenerate();
+        app(ActivityLogService::class)->log('login', 'Inicio de sesión en el sistema');
+        $default = $user->hasRole('client')
+            ? route('portal.dashboard')
+            : route('admin.dashboard');
+
+        return redirect()->intended($default);
     }
 
     public function logout(Request $request)

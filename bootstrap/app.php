@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
+            'two_factor.pending' => \App\Http\Middleware\EnsureTwoFactorLoginPending::class,
             'client' => \App\Http\Middleware\EnsureUserIsClient::class,
             'client.portal.access' => \App\Http\Middleware\EnsureClientCanAccessPortal::class,
             'not.client' => \App\Http\Middleware\EnsureUserIsNotClient::class,

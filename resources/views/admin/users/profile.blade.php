@@ -112,6 +112,8 @@
                     </div>
                 </form>
             </div>
+
+            @include('profile.partials.two-factor', ['routePrefix' => 'admin', 'user' => $user])
         </div>
 
         <!-- Sidebar -->

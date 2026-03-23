@@ -81,6 +81,11 @@
                 <i class="fas fa-file-contract w-6 text-center"></i>
                 <span x-show="sidebarOpen" class="ml-3 text-sm">Mis Expedientes</span>
             </a>
+            <a href="{{ route('portal.profile') }}"
+               class="flex items-center px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('portal.profile') ? 'bg-teal-50 text-teal-700 font-bold' : 'text-gray-500 hover:bg-gray-50' }}">
+                <i class="fas fa-user-cog w-6 text-center"></i>
+                <span x-show="sidebarOpen" class="ml-3 text-sm">Mi perfil</span>
+            </a>
             @if($portalHelpEmail)
             <a href="mailto:{{ $portalHelpEmail }}" class="flex items-center px-3 py-2.5 rounded-lg text-gray-500 hover:bg-gray-50 mt-4">
                 <i class="fas fa-life-ring w-6 text-center"></i>
@@ -120,7 +125,10 @@
                 </button>
                 <div x-show="open" @click.away="open = false" x-cloak
                      class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1">
-                    <form action="{{ route('logout') }}" method="POST" class="block">
+                    <a href="{{ route('portal.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        Mi perfil
+                    </a>
+                    <form action="{{ route('logout') }}" method="POST" class="block border-t border-gray-100">
                         @csrf
                         <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                             Cerrar Sesión

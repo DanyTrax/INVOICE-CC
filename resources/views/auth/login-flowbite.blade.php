@@ -153,6 +153,11 @@
                     {{ session('error') }}
                 </div>
             @endif
+            @if (session('status'))
+                <div class="mb-4 p-4 text-sm text-teal-800 bg-teal-50 border border-teal-200 rounded-lg">
+                    {{ session('status') }}
+                </div>
+            @endif
 
             <!-- Errors -->
             @if ($errors->any())
@@ -196,12 +201,15 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between flex-wrap gap-2">
                     <div class="flex items-center">
                         <input id="remember" name="remember" type="checkbox" 
                                class="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500">
                         <label for="remember" class="ml-2 text-sm text-gray-900">Recordarme</label>
                     </div>
+                    <a href="{{ route('password.request') }}" class="text-sm text-teal-700 hover:underline">
+                        ¿Olvidaste tu contraseña?
+                    </a>
                 </div>
 
                 <button type="submit" 
