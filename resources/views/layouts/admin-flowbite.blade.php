@@ -14,9 +14,19 @@
         html.dark .bg-gray-200 { background-color: #1e293b !important; }
         html.dark .bg-gray-300 { background-color: #1e293b !important; }
         html.dark .bg-blue-50 { background-color: #0f172a !important; }
-        html.dark .bg-green-50 { background-color: #0f173a !important; }
-        html.dark .bg-yellow-50 { background-color: #1e293b !important; }
-        html.dark .bg-amber-50 { background-color: #1e293b !important; }
+        html.dark .bg-teal-50 { background-color: #0f172a !important; }
+        html.dark .bg-green-50 { background-color: #0f172a !important; }
+        html.dark .bg-amber-100 { background-color: #0f172a !important; }
+        html.dark .bg-yellow-50 { background-color: #0f172a !important; }
+
+        html.dark .border-blue-100 { border-color: #2c3a52 !important; }
+        html.dark .border-teal-200 { border-color: #2c3a52 !important; }
+        html.dark .border-gray-200 { border-color: #334155 !important; }
+        html.dark .border-gray-100 { border-color: #334155 !important; }
+
+        html.dark .text-gray-600, html.dark .text-gray-700, html.dark .text-gray-800 {
+            color: #cbd5e1 !important;
+        }
 
         /* Calendario (sabados/domingo con contraste) */
         html.dark .fc-day-sat, html.dark .fc-day-sun,
