@@ -1,3 +1,5 @@
+<h2 class="text-2xl font-semibold text-gray-900 mb-6">Términos y Condiciones del Servicio</h2>
+
 <section>
     <h3 class="text-lg font-medium text-gray-900 mb-2">1. Objeto y aceptación</h3>
     <p>Los presentes términos y condiciones («Términos») regulan el uso del sistema RAMS (Regulatory Affairs Management System) y de los servicios asociados ofrecidos por <strong>Asesoría y Consultoría Doble Vía</strong> («Doble Vía», «nosotros»). El acceso y uso del sistema (incluido el dominio acdoblevia.com / regulatory.acdoblevia.com) implica la aceptación de estos Términos. Si actúa en nombre de una empresa o organización, declara tener capacidad para vincularla.</p>

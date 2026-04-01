@@ -1,3 +1,5 @@
+<h2 class="text-2xl font-semibold text-gray-900 mb-6">Política de Privacidad</h2>
+
 <section>
     <h3 class="text-lg font-medium text-gray-900 mb-2">1. Responsable del tratamiento</h3>
     <p>El responsable del tratamiento de los datos personales es <strong>Asesoría y Consultoría Doble Vía</strong> (en adelante, «Doble Vía»), empresa privada que ofrece servicios de asesoría y consultoría regulatoria. Los datos se procesan a través del sistema RAMS (Regulatory Affairs Management System) y del dominio acdoblevia.com / regulatory.acdoblevia.com.</p>

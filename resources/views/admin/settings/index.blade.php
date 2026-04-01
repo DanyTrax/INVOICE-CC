@@ -370,8 +370,9 @@
                     Políticas legales (páginas públicas)
                 </h3>
                 <p class="text-sm text-gray-600 mb-6">
-                    Edita el contenido HTML de <strong>Política de Privacidad</strong> y <strong>Términos y Condiciones</strong> (rutas públicas).
-                    Si dejas un campo vacío y guardas, en la web se mostrará el texto por defecto del sistema.
+                    El <strong>título visible</strong> (p. ej. «Política de Privacidad») va al inicio del contenido en el editor; puedes editarlo o quitarlo.
+                    La página pública no muestra «Última actualización»; el <strong>texto del pie</strong> es el de Configuración → Sistema → Personalización («Texto del Footer»).
+                    Si dejas un campo vacío y guardas, se usará el texto por defecto del sistema (incluye título sugerido).
                     Vista previa: <a href="{{ route('legal.privacy') }}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">Privacidad</a>
                     · <a href="{{ route('legal.terms') }}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">Términos</a>
                 </p>

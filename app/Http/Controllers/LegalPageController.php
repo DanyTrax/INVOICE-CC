@@ -16,8 +16,8 @@ class LegalPageController extends Controller
 
         return view('legal.show', [
             'title' => 'Política de Privacidad',
-            'heading' => 'Política de Privacidad',
             'bodyHtml' => $body,
+            'footerHtml' => $settings->footer_text ?? '',
         ]);
     }
 
@@ -30,8 +30,8 @@ class LegalPageController extends Controller
 
         return view('legal.show', [
             'title' => 'Términos y Condiciones',
-            'heading' => 'Términos y Condiciones del Servicio',
             'bodyHtml' => $body,
+            'footerHtml' => $settings->footer_text ?? '',
         ]);
     }
 }

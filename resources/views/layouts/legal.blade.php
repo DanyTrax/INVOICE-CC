@@ -17,7 +17,12 @@
                 @yield('content')
             </main>
             <footer class="mt-12 pt-6 border-t border-gray-200 text-sm text-gray-500">
-                <a href="{{ route('login') }}" class="text-teal-600 hover:text-teal-800">Ir a iniciar sesión</a>
+                @if(! empty(trim($footerHtml ?? '')))
+                    <div class="mb-6 text-center text-gray-600 leading-relaxed">{!! $footerHtml !!}</div>
+                @endif
+                <div class="text-center">
+                    <a href="{{ route('login') }}" class="text-teal-600 hover:text-teal-800">Ir a iniciar sesión</a>
+                </div>
             </footer>
         </div>
     </div>
