@@ -44,14 +44,17 @@ class BackupService
             'companies',
             'company_user',
             'registrations',
+            'services',
+            'service_types',
+            'quotes',
+            'quote_items',
+            'proposals',
+            'proposal_items',
+            'concept_catalogs',
             'processes',
             'process_documents',
             'submissions',
             'documents',
-            'quotes',
-            'quote_items',
-            'service_types',
-            'proposals',
             'email_templates',
             'settings',
             'email_logs',
@@ -138,6 +141,36 @@ class BackupService
 
             foreach ($restoreOrder as $table) {
                 if (!isset($payload['tables'][$table]) || !Schema::hasTable($table)) {
+                    continue;
+                }
+
+                $rows = $payload['tables'][$table];
+                DB::table($table)->truncate();
+
+                $tableColumns = Schema::getColumnListing($table);
+
+                if (is_array($rows) && count($rows) > 0) {
+                    $cleanRows = array_map(function ($row) use ($tableColumns) {
+                        $rowArray = (array) $row;
+                        return array_filter(
+                            array_intersect_key($rowArray, array_flip($tableColumns)),
+                            fn ($value, $key) => in_array($key, $tableColumns, true),
+                            ARRAY_FILTER_USE_BOTH
+                        );
+                    }, $rows);
+
+                    foreach (array_chunk($cleanRows, 1000) as $chunk) {
+                        if (count($chunk) > 0) {
+                            DB::table($table)->insert($chunk);
+                        }
+                    }
+                }
+            }
+
+            // Cargar tablas extra que estén en el payload y no en la lista principal
+            $remainingTables = array_diff(array_keys($payload['tables']), $restoreOrder);
+            foreach ($remainingTables as $table) {
+                if (!Schema::hasTable($table)) {
                     continue;
                 }
 
