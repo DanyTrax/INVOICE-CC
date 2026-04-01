@@ -28,6 +28,34 @@
             color: #cbd5e1 !important;
         }
 
+        /* Inputs/textarea y controles de formularios dark mode */
+        html.dark input,
+        html.dark textarea,
+        html.dark select,
+        html.dark [contenteditable="true"],
+        html.dark .outline-none,
+        html.dark .form-input,
+        html.dark .form-textarea,
+        html.dark .form-select {
+            background-color: #0f172a !important;
+            color: #e2e8f0 !important;
+            border-color: #334155 !important;
+        }
+
+        html.dark input::placeholder,
+        html.dark textarea::placeholder,
+        html.dark select::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1 !important;
+        }
+
+        html.dark input:focus,
+        html.dark textarea:focus,
+        html.dark select:focus {
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.24) !important;
+            border-color: #38bdf8 !important;
+        }
+
         /* Calendario (sabados/domingo con contraste) */
         html.dark .fc-day-sat, html.dark .fc-day-sun,
         html.dark .fc-col-header-cell-sat, html.dark .fc-col-header-cell-sun {
