@@ -174,6 +174,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::post('service-types', [ServiceTypeController::class, 'store'])->name('service-types.store');
     Route::get('service-types/{serviceType}/edit', [ServiceTypeController::class, 'edit'])->name('service-types.edit');
     Route::put('service-types/{serviceType}', [ServiceTypeController::class, 'update'])->name('service-types.update');
+    Route::delete('service-types/{serviceType}', [ServiceTypeController::class, 'destroy'])->name('service-types.destroy');
 
     // Servicios (catálogo para cotizaciones: nombre + alcance por defecto)
     Route::get('services/list-for-quotes', [ServiceController::class, 'listForQuotes'])->name('services.list-for-quotes');

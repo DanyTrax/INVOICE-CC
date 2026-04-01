@@ -14,6 +14,9 @@
 @endsection
 
 @section('content')
+    @php
+        $permissionService = app(App\Services\PermissionService::class);
+    @endphp
     <div class="mb-6 flex justify-between items-center">
         <p class="text-sm text-gray-600 max-w-2xl">Lista opcional para rellenar por defecto concepto, alcance y honorarios al crear una <a href="{{ route('admin.proposals.index') }}" class="text-teal-600 hover:underline">propuesta</a>.</p>
         <a href="{{ route('admin.concept-catalogs.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">
@@ -46,13 +49,21 @@
                                     <span class="text-gray-400">No</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3">
-                                <a href="{{ route('admin.concept-catalogs.edit', $c) }}" class="text-teal-600 hover:underline mr-2">Editar</a>
-                                <form action="{{ route('admin.concept-catalogs.destroy', $c) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este concepto del catálogo?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:underline">Eliminar</button>
-                                </form>
+                            <td class="px-4 py-3 text-right">
+                                @if($permissionService->userHasPermission('concept_catalogs', 'edit'))
+                                    <a href="{{ route('admin.concept-catalogs.edit', $c) }}" class="text-teal-600 hover:text-teal-800 px-2" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                @endif
+                                @if($permissionService->userHasPermission('concept_catalogs', 'delete'))
+                                    <form action="{{ route('admin.concept-catalogs.destroy', $c) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este concepto del catálogo?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:text-red-800 px-2" title="Eliminar">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @empty

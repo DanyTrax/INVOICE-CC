@@ -14,6 +14,9 @@
 @endsection
 
 @section('content')
+    @php
+        $permissionService = app(App\Services\PermissionService::class);
+    @endphp
     @if(session('success'))
         <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
             <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
@@ -49,17 +52,21 @@
                                     <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">No</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3">
-                                <a href="{{ route('admin.services.edit', $svc) }}" class="text-teal-600 hover:text-teal-800 text-sm font-medium mr-2">
-                                    <i class="fas fa-edit mr-1"></i>Editar
-                                </a>
-                                <form action="{{ route('admin.services.destroy', $svc) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este servicio?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium">
-                                        <i class="fas fa-trash-alt mr-1"></i>Eliminar
-                                    </button>
-                                </form>
+                            <td class="px-4 py-3 text-right">
+                                @if($permissionService->userHasPermission('services', 'edit'))
+                                    <a href="{{ route('admin.services.edit', $svc) }}" class="text-teal-600 hover:text-teal-800 px-2" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                @endif
+                                @if($permissionService->userHasPermission('services', 'delete'))
+                                    <form action="{{ route('admin.services.destroy', $svc) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este servicio?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:text-red-800 px-2" title="Eliminar">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @empty

@@ -63,4 +63,13 @@ class ServiceTypeController extends Controller
             ->route('admin.service-types.index')
             ->with('success', 'Trámite actualizado correctamente.');
     }
+
+    public function destroy(ServiceType $serviceType): RedirectResponse
+    {
+        $serviceType->delete();
+
+        return redirect()
+            ->route('admin.service-types.index')
+            ->with('success', 'Trámite eliminado correctamente.');
+    }
 }
