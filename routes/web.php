@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\ServiceTypeController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserPreferenceController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -94,6 +95,8 @@ Route::middleware(['auth', 'client', 'client.portal.access'])->prefix('portal')-
 
 // Rutas Admin (auth + no clientes + permisos granulares por módulo)
 Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 'log.admin.mutations'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post('/preferences/theme', [UserPreferenceController::class, 'updateTheme'])->name('preferences.theme');
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Backups de sistema (solo super_admin dentro del controlador)

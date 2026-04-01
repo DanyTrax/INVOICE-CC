@@ -98,6 +98,10 @@ class CheckModulePermission
             return null;
         }
 
+        if ($routeName === 'admin.preferences.theme') {
+            return null;
+        }
+
         if ($routeName === 'admin.dashboard') {
             return ['dashboard', 'view'];
         }

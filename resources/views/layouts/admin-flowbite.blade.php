@@ -1,5 +1,11 @@
+@php
+    $ramsAdminTheme = auth()->check() ? (auth()->user()->admin_theme ?? 'light') : 'light';
+    if (! in_array($ramsAdminTheme, ['light', 'dark'], true)) {
+        $ramsAdminTheme = 'light';
+    }
+@endphp
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-gray-50" data-theme="light">
+<html lang="es" class="h-full bg-gray-50 {{ $ramsAdminTheme === 'dark' ? 'dark' : '' }}" data-theme="{{ $ramsAdminTheme }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -96,21 +102,47 @@
         function setTheme(theme) {
             document.documentElement.classList.toggle('dark', theme === 'dark');
             document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('rams-theme', theme);
             const isDark = theme === 'dark';
             const $body = document.body;
-            $body.classList.toggle('bg-gray-50', !isDark);
-            $body.classList.toggle('bg-slate-900', isDark);
-            $body.classList.toggle('text-gray-900', !isDark);
-            $body.classList.toggle('text-gray-100', isDark);
+            if ($body) {
+                $body.classList.toggle('bg-gray-50', !isDark);
+                $body.classList.toggle('bg-slate-900', isDark);
+                $body.classList.toggle('text-gray-900', !isDark);
+                $body.classList.toggle('text-gray-100', isDark);
+            }
+        }
+        function persistTheme(theme) {
+            fetch(@json(route('admin.preferences.theme')), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ theme: theme })
+            }).catch(function () {});
         }
         document.addEventListener('DOMContentLoaded', function() {
-            const saved = localStorage.getItem('rams-theme') || 'light';
-            setTheme(saved);
+            const serverTheme = @json($ramsAdminTheme);
+            setTheme(serverTheme);
             const toggleLight = document.getElementById('theme-light-btn');
             const toggleDark = document.getElementById('theme-dark-btn');
-            if (toggleLight) { toggleLight.addEventListener('click', function(e){ e.preventDefault(); setTheme('light'); }); }
-            if (toggleDark) { toggleDark.addEventListener('click', function(e){ e.preventDefault(); setTheme('dark'); }); }
+            if (toggleLight) {
+                toggleLight.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    setTheme('light');
+                    persistTheme('light');
+                });
+            }
+            if (toggleDark) {
+                toggleDark.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    setTheme('dark');
+                    persistTheme('dark');
+                });
+            }
         });
     </script>
     <meta name="cf-2fa-verify" content="">
