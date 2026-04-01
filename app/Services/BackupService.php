@@ -113,11 +113,35 @@ class BackupService
                 DB::statement('SET FOREIGN_KEY_CHECKS=0');
             }
 
-            foreach ($payload['tables'] as $table => $rows) {
-                if (!Schema::hasTable($table)) {
+            $restoreOrder = [
+                'users',
+                'roles',
+                'role_has_permissions',
+                'model_has_roles',
+                'companies',
+                'company_user',
+                'service_types',
+                'quotes',
+                'quote_items',
+                'proposals',
+                'processes',
+                'process_documents',
+                'submissions',
+                'registrations',
+                'documents',
+                'email_templates',
+                'settings',
+                'email_logs',
+                'drive_operations_log',
+                'company_invites',
+            ];
+
+            foreach ($restoreOrder as $table) {
+                if (!isset($payload['tables'][$table]) || !Schema::hasTable($table)) {
                     continue;
                 }
 
+                $rows = $payload['tables'][$table];
                 DB::table($table)->truncate();
 
                 $tableColumns = Schema::getColumnListing($table);
