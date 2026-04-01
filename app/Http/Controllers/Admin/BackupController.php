@@ -16,7 +16,7 @@ class BackupController extends Controller
     /** Solo quien tiene permiso "Backups" puede acceder (controlado desde Gestión de Permisos). */
     protected function ensureCanAccessBackups(): void
     {
-        if (!app(PermissionService::class)->userHasPermission('backups', 'view')) {
+        if (! app(PermissionService::class)->userHasPermission('backups', 'view')) {
             abort(403, 'No tienes permiso para acceder a Backups.');
         }
     }
@@ -91,7 +91,7 @@ class BackupController extends Controller
         } catch (\Throwable $e) {
             return redirect()
                 ->route('admin.backups.index')
-                ->with('error', 'Error al importar el backup: ' . $e->getMessage());
+                ->with('error', 'Error al importar el backup: '.$e->getMessage());
         }
 
         return redirect()
@@ -109,7 +109,7 @@ class BackupController extends Controller
         } catch (\Throwable $e) {
             return redirect()
                 ->route('admin.backups.index')
-                ->with('error', 'Error al restaurar backup desde Drive: ' . $e->getMessage());
+                ->with('error', 'Error al restaurar backup desde Drive: '.$e->getMessage());
         }
 
         return redirect()
@@ -121,8 +121,9 @@ class BackupController extends Controller
     {
         $this->ensureCanAccessBackups();
 
-        $preserveCurrentUser = (bool) $request->input('preserve_current_user', true);
-        $preserveRolesAndPermissions = (bool) $request->input('preserve_roles_permissions', true);
+        // Checkboxes no enviados = desmarcados; no usar input(..., true) o queda siempre en true.
+        $preserveCurrentUser = $request->boolean('preserve_current_user');
+        $preserveRolesAndPermissions = $request->boolean('preserve_roles_permissions');
 
         $service->wipeDataExceptSuperAdmin($preserveCurrentUser, $preserveRolesAndPermissions);
 
@@ -132,6 +133,8 @@ class BackupController extends Controller
         }
         if ($preserveRolesAndPermissions) {
             $message .= ' Se conservan roles y permisos.';
+        } else {
+            $message .= ' Roles y matriz de permisos eliminados; solo queda el rol super_admin para los super_admin conservados.';
         }
 
         return redirect()
@@ -139,4 +142,3 @@ class BackupController extends Controller
             ->with('success', $message);
     }
 }
-

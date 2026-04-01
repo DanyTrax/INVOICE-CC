@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Throwable;
 
 class BackupService
@@ -41,6 +43,8 @@ class BackupService
             'roles',
             'permissions',
             'role_has_permissions',
+            'role_permissions',
+            'role_hierarchy',
             'model_has_roles',
             'companies',
             'company_user',
@@ -140,6 +144,8 @@ class BackupService
                 'roles',
                 'permissions',
                 'role_has_permissions',
+                'role_permissions',
+                'role_hierarchy',
                 'model_has_roles',
                 'companies',
                 'company_user',
@@ -265,20 +271,22 @@ class BackupService
                 }
             }
 
+            // Orden: hijos de expediente → processes → empresas/cotizaciones (FK relajadas; orden legible).
             $truncateTables = [
                 'company_user',
                 'documents',
                 'registrations',
-                'companies',
                 'process_documents',
                 'process_user',
-                'submissions',
                 'regulatory_events',
+                'submissions',
                 'checklist_items',
-                'quotes',
+                'processes',
                 'quote_items',
-                'proposals',
+                'quotes',
                 'proposal_items',
+                'proposals',
+                'companies',
                 'services',
                 'service_types',
                 'concept_catalogs',
@@ -299,15 +307,19 @@ class BackupService
             }
 
             if (! $preserveRolesAndPermissions) {
-                foreach (['model_has_roles', 'role_has_permissions', 'roles', 'permissions'] as $table) {
+                foreach ([
+                    'role_hierarchy',
+                    'role_permissions',
+                    'role_has_permissions',
+                    'model_has_roles',
+                    'permissions',
+                    'roles',
+                ] as $table) {
                     if (Schema::hasTable($table)) {
-                        if ($table === 'model_has_roles') {
-                            DB::table($table)->where('model_type', User::class)->truncate();
-                        } else {
-                            DB::table($table)->truncate();
-                        }
+                        DB::table($table)->truncate();
                     }
                 }
+                $this->bootstrapSuperAdminRoleOnly($superAdminIds);
             } else {
                 if (Schema::hasTable('model_has_roles')) {
                     DB::table('model_has_roles')
@@ -329,6 +341,33 @@ class BackupService
             if ($driver === 'mysql') {
                 DB::statement('SET FOREIGN_KEY_CHECKS=1');
             }
+        }
+    }
+
+    /**
+     * Tras vaciar roles/permisos, deja solo el rol Spatie super_admin y lo asigna a los usuarios conservados.
+     */
+    protected function bootstrapSuperAdminRoleOnly(array $superAdminUserIds): void
+    {
+        if ($superAdminUserIds === []) {
+            return;
+        }
+
+        $role = Role::firstOrCreate(
+            ['name' => 'super_admin', 'guard_name' => 'web']
+        );
+
+        foreach ($superAdminUserIds as $userId) {
+            $user = User::find($userId);
+            if ($user !== null) {
+                $user->syncRoles([$role]);
+            }
+        }
+
+        app(PermissionService::class)->clearCache();
+
+        if (app()->bound(PermissionRegistrar::class)) {
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
         }
     }
 }
