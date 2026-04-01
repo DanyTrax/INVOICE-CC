@@ -10,12 +10,28 @@
         html.dark body { background-color: #0f172a; color: #e2e8f0; }
         html.dark .bg-gray-50 { background-color: #0f172a !important; }
         html.dark .bg-white { background-color: #1e293b !important; }
-        html.dark .text-gray-900 { color: #e2e8f0 !important; }
-        html.dark .text-gray-700 { color: #cbd5e1 !important; }
-        html.dark .text-gray-500 { color: #94a3b8 !important; }
-        html.dark .border-gray-200 { border-color: #334155 !important; }
-        html.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
         html.dark .bg-gray-100 { background-color: #1e293b !important; }
+        html.dark .bg-gray-200 { background-color: #1e293b !important; }
+        html.dark .bg-gray-300 { background-color: #1e293b !important; }
+
+        html.dark .text-black,
+        html.dark .text-slate-900,
+        html.dark .text-gray-900 { color: #e2e8f0 !important; }
+        html.dark .text-slate-800,
+        html.dark .text-gray-800,
+        html.dark .text-gray-700 { color: #cbd5e1 !important; }
+        html.dark .text-slate-600,
+        html.dark .text-gray-600,
+        html.dark .text-gray-500 { color: #94a3b8 !important; }
+        html.dark .text-slate-400,
+        html.dark .text-gray-400,
+        html.dark .text-gray-300 { color: #64748b !important; }
+
+        html.dark .border-gray-200,
+        html.dark .border-gray-300,
+        html.dark .border-gray-400 { border-color: #334155 !important; }
+        html.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+        html.dark .hover\:bg-gray-200:hover { background-color: #334155 !important; }
     </style>
     <script>
         function setTheme(theme) {
