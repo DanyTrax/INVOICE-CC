@@ -14,7 +14,7 @@ class UserPreferenceController extends Controller
     public function updateTheme(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'theme' => 'required|string|in:light,dark',
+            'theme' => 'required|string|in:light,dark,system',
         ]);
 
         $user = $request->user();

@@ -1,13 +1,25 @@
 @php
     $ramsAdminTheme = auth()->check() ? (auth()->user()->admin_theme ?? 'light') : 'light';
-    if (! in_array($ramsAdminTheme, ['light', 'dark'], true)) {
+    if (! in_array($ramsAdminTheme, ['light', 'dark', 'system'], true)) {
         $ramsAdminTheme = 'light';
     }
 @endphp
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-gray-50 {{ $ramsAdminTheme === 'dark' ? 'dark' : '' }}" data-theme="{{ $ramsAdminTheme }}">
+<html lang="es" class="h-full bg-gray-50" data-theme="{{ $ramsAdminTheme }}">
 <head>
     <meta charset="UTF-8">
+    <script>
+        (function () {
+            var pref = @json($ramsAdminTheme);
+            if (pref !== 'light' && pref !== 'dark' && pref !== 'system') {
+                pref = 'light';
+            }
+            var dark = pref === 'dark'
+                || (pref === 'system' && typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.classList.toggle('dark', dark);
+            document.documentElement.setAttribute('data-theme', pref);
+        })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Deshabilitar Cloudflare Insights beacon -->
@@ -141,19 +153,75 @@
         html.dark .settings-git-version-card .text-slate-700 {
             color: #cbd5e1 !important;
         }
+
+        /* Selector de tema (segmento tipo píldora: sol / luna / sistema) */
+        .theme-segment-bar {
+            background-color: #f3f4f6;
+        }
+        html.dark .theme-segment-bar {
+            background-color: rgba(51, 65, 85, 0.55);
+        }
+        .theme-segment-btn {
+            border-radius: 0.375rem;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .theme-segment-btn--active {
+            background-color: #ffffff;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        }
+        html.dark .theme-segment-btn--active {
+            background-color: #475569;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        }
+        .theme-segment-btn--active i {
+            color: #2563eb !important;
+        }
+        html.dark .theme-segment-btn--active i {
+            color: #60a5fa !important;
+        }
+        .theme-segment-btn:not(.theme-segment-btn--active) i {
+            color: #9ca3af;
+        }
+        html.dark .theme-segment-btn:not(.theme-segment-btn--active) i {
+            color: #64748b;
+        }
     </style>
     <script>
+        function resolvePrefersDark(pref) {
+            if (pref === 'dark') {
+                return true;
+            }
+            if (pref === 'light') {
+                return false;
+            }
+            if (pref === 'system' && typeof matchMedia !== 'undefined') {
+                return matchMedia('(prefers-color-scheme: dark)').matches;
+            }
+            return false;
+        }
         function setTheme(theme) {
-            document.documentElement.classList.toggle('dark', theme === 'dark');
             document.documentElement.setAttribute('data-theme', theme);
-            const isDark = theme === 'dark';
-            const $body = document.body;
+            var isDark = resolvePrefersDark(theme);
+            document.documentElement.classList.toggle('dark', isDark);
+            var $body = document.body;
             if ($body) {
                 $body.classList.toggle('bg-gray-50', !isDark);
                 $body.classList.toggle('bg-slate-900', isDark);
                 $body.classList.toggle('text-gray-900', !isDark);
                 $body.classList.toggle('text-gray-100', isDark);
             }
+            syncThemeSegmentButtons(theme);
+        }
+        function syncThemeSegmentButtons(pref) {
+            ['light', 'dark', 'system'].forEach(function (key) {
+                var el = document.getElementById('theme-' + key + '-btn');
+                if (!el) {
+                    return;
+                }
+                var active = pref === key;
+                el.classList.toggle('theme-segment-btn--active', active);
+                el.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
         }
         function persistTheme(theme) {
             fetch(@json(route('admin.preferences.theme')), {
@@ -168,25 +236,27 @@
                 body: JSON.stringify({ theme: theme })
             }).catch(function () {});
         }
-        document.addEventListener('DOMContentLoaded', function() {
-            const serverTheme = @json($ramsAdminTheme);
+        document.addEventListener('DOMContentLoaded', function () {
+            var serverTheme = @json($ramsAdminTheme);
             setTheme(serverTheme);
-            const toggleLight = document.getElementById('theme-light-btn');
-            const toggleDark = document.getElementById('theme-dark-btn');
-            if (toggleLight) {
-                toggleLight.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    setTheme('light');
-                    persistTheme('light');
+            if (typeof matchMedia !== 'undefined') {
+                matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+                    if (document.documentElement.getAttribute('data-theme') === 'system') {
+                        setTheme('system');
+                    }
                 });
             }
-            if (toggleDark) {
-                toggleDark.addEventListener('click', function(e) {
+            ['light', 'dark', 'system'].forEach(function (key) {
+                var btn = document.getElementById('theme-' + key + '-btn');
+                if (!btn) {
+                    return;
+                }
+                btn.addEventListener('click', function (e) {
                     e.preventDefault();
-                    setTheme('dark');
-                    persistTheme('dark');
+                    setTheme(key);
+                    persistTheme(key);
                 });
-            }
+            });
         });
     </script>
     <meta name="cf-2fa-verify" content="">
@@ -206,7 +276,10 @@
         }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script>
+        tailwind.config = { darkMode: 'class' };
+    </script>
+
     <!-- Flowbite CSS (CDN) -->
     <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />
     
@@ -727,26 +800,36 @@
                              x-transition:leave="transition ease-in duration-75"
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200"
+                             class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-slate-600"
                              style="display: none;">
-                            <div class="px-4 py-3 border-b border-gray-200">
-                                <p class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</p>
-                                <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email }}</p>
+                            <div class="px-4 py-3 border-b border-gray-200 dark:border-slate-600">
+                                <p class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ Auth::user()->name }}</p>
+                                <p class="text-xs text-gray-500 dark:text-slate-400 truncate">{{ Auth::user()->email }}</p>
                             </div>
                             <div class="py-1">
-                                <a href="{{ route('admin.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                <a href="{{ route('admin.profile') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
                                     <i class="fas fa-user mr-2"></i> Mi Perfil
                                 </a>
-                                <div class="px-4 py-2 border-y border-gray-200">
-                                    <span class="text-xs text-gray-500 uppercase tracking-wider">Tema</span>
-                                    <div class="mt-2 flex items-center justify-between gap-2">
-                                        <button id="theme-light-btn" class="w-full text-sm font-medium px-2 py-1 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">☀️ Claro</button>
-                                        <button id="theme-dark-btn" class="w-full text-sm font-medium px-2 py-1 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">🌙 Oscuro</button>
+                                <div class="px-4 py-2 border-y border-gray-200 dark:border-slate-600">
+                                    <span class="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider">Tema</span>
+                                    <div class="theme-segment-bar mt-2 flex rounded-lg p-0.5 gap-0.5" role="group" aria-label="Tema del panel">
+                                        <button type="button" id="theme-light-btn" title="Claro" aria-label="Tema claro" aria-pressed="{{ $ramsAdminTheme === 'light' ? 'true' : 'false' }}"
+                                                class="theme-segment-btn flex flex-1 items-center justify-center py-2 rounded-md {{ $ramsAdminTheme === 'light' ? 'theme-segment-btn--active' : '' }}">
+                                            <i class="fas fa-sun text-base"></i>
+                                        </button>
+                                        <button type="button" id="theme-dark-btn" title="Oscuro" aria-label="Tema oscuro" aria-pressed="{{ $ramsAdminTheme === 'dark' ? 'true' : 'false' }}"
+                                                class="theme-segment-btn flex flex-1 items-center justify-center py-2 rounded-md {{ $ramsAdminTheme === 'dark' ? 'theme-segment-btn--active' : '' }}">
+                                            <i class="fas fa-moon text-base"></i>
+                                        </button>
+                                        <button type="button" id="theme-system-btn" title="Sistema" aria-label="Según el sistema" aria-pressed="{{ $ramsAdminTheme === 'system' ? 'true' : 'false' }}"
+                                                class="theme-segment-btn flex flex-1 items-center justify-center py-2 rounded-md {{ $ramsAdminTheme === 'system' ? 'theme-segment-btn--active' : '' }}">
+                                            <i class="fas fa-desktop text-base"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
                                         <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
                                     </button>
                                 </form>
