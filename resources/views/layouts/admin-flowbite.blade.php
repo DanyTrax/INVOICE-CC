@@ -13,6 +13,27 @@
         html.dark .bg-gray-100 { background-color: #1e293b !important; }
         html.dark .bg-gray-200 { background-color: #1e293b !important; }
         html.dark .bg-gray-300 { background-color: #1e293b !important; }
+        html.dark .bg-blue-50 { background-color: #0f172a !important; }
+        html.dark .bg-green-50 { background-color: #0f173a !important; }
+        html.dark .bg-yellow-50 { background-color: #1e293b !important; }
+        html.dark .bg-amber-50 { background-color: #1e293b !important; }
+
+        /* Calendario (sabados/domingo con contraste) */
+        html.dark .fc-day-sat, html.dark .fc-day-sun,
+        html.dark .fc-col-header-cell-sat, html.dark .fc-col-header-cell-sun {
+            background-color: #0f172a !important;
+            color: #94a3b8 !important;
+        }
+
+        /* Expte timeline cards etiquetas de estado */
+        html.dark .timeline-card-sometimiento,
+        html.dark .timeline-card-radicado,
+        html.dark .timeline-card-auto,
+        html.dark .timeline-card-auto-radicado {
+            background-color: #1f2937 !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
 
         html.dark .text-black,
         html.dark .text-slate-900,
