@@ -7,15 +7,19 @@ use App\Models\ActivityLog;
 use App\Models\User;
 use App\Services\ActivityLogService;
 use App\Services\PermissionService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ActivityLogController extends Controller
 {
-    public function index(Request $request, PermissionService $permissionService): View
+    /**
+     * Misma consulta que el listado: jerarquía + filtros GET (usuario, acción, fechas).
+     */
+    protected function activityLogsQueryForRequest(Request $request, PermissionService $permissionService): Builder
     {
-        $query = ActivityLog::with('user')->orderByDesc('created_at');
+        $query = ActivityLog::query();
 
         $visibleIds = $permissionService->visibleUserIdsForHierarchy();
         if ($visibleIds !== null) {
@@ -45,7 +49,16 @@ class ActivityLogController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $logs = $query->paginate(25)->withQueryString();
+        return $query;
+    }
+
+    public function index(Request $request, PermissionService $permissionService): View
+    {
+        $query = $this->activityLogsQueryForRequest($request, $permissionService)
+            ->with('user')
+            ->orderByDesc('created_at');
+
+        $visibleIds = $permissionService->visibleUserIdsForHierarchy();
 
         $usersQuery = User::query()->orderBy('name');
         if ($visibleIds !== null) {
@@ -57,10 +70,22 @@ class ActivityLogController extends Controller
         }
         $users = $usersQuery->get(['id', 'name', 'email']);
 
+        $logs = $query->paginate(25)->withQueryString();
+
         $actionLabels = ActivityLogService::actionLabels();
         $canDeleteAll = $permissionService->userHasPermission('activity_logs', 'delete');
+        $hasActivityFilters = $request->filled('user_id')
+            || $request->filled('action')
+            || $request->filled('date_from')
+            || $request->filled('date_to');
 
-        return view('admin.activity-logs.index', compact('logs', 'users', 'actionLabels', 'canDeleteAll'));
+        return view('admin.activity-logs.index', compact(
+            'logs',
+            'users',
+            'actionLabels',
+            'canDeleteAll',
+            'hasActivityFilters'
+        ));
     }
 
     /**
@@ -82,7 +107,7 @@ class ActivityLogController extends Controller
     }
 
     /**
-     * Elimina todos los registros de actividad visibles para el usuario actual (jerarquía + permiso eliminar).
+     * Elimina los registros que coinciden con el listado actual (misma consulta que index: jerarquía + filtros).
      */
     public function destroyAll(Request $request, PermissionService $permissionService): RedirectResponse
     {
@@ -90,25 +115,43 @@ class ActivityLogController extends Controller
             abort(403);
         }
 
-        $query = ActivityLog::query();
-        $visibleIds = $permissionService->visibleUserIdsForHierarchy();
-        if ($visibleIds !== null) {
-            if ($visibleIds === []) {
-                $deleted = 0;
-            } else {
-                $deleted = (clone $query)->whereIn('user_id', $visibleIds)->delete();
-            }
-        } else {
-            $deleted = $query->delete();
-        }
+        $deleted = $this->activityLogsQueryForRequest($request, $permissionService)->delete();
 
+        $filterNote = $this->describeActivityFiltersForLog($request);
         app(ActivityLogService::class)->log(
             'deleted',
-            'Eliminó en bloque los registros de actividad visibles ('.(int) $deleted.' filas).'
+            'Eliminó en bloque registros de actividad ('.(int) $deleted.' filas). '.$filterNote
         );
 
+        $redirectQuery = array_filter([
+            'user_id' => $request->input('user_id'),
+            'action' => $request->input('action'),
+            'date_from' => $request->input('date_from'),
+            'date_to' => $request->input('date_to'),
+        ], fn ($v) => $v !== null && $v !== '');
+
         return redirect()
-            ->route('admin.activity-logs.index')
-            ->with('success', 'Se eliminaron '.(int) $deleted.' registro(s) de actividad.');
+            ->route('admin.activity-logs.index', $redirectQuery)
+            ->with('success', 'Se eliminaron '.(int) $deleted.' registro(s) (mismo alcance que el listado mostrado).');
+    }
+
+    protected function describeActivityFiltersForLog(Request $request): string
+    {
+        $parts = [];
+        if ($request->filled('user_id')) {
+            $u = User::find((int) $request->user_id);
+            $parts[] = 'usuario: '.($u ? $u->email : '#'.$request->user_id);
+        }
+        if ($request->filled('action')) {
+            $parts[] = 'acción: '.$request->action;
+        }
+        if ($request->filled('date_from')) {
+            $parts[] = 'desde: '.$request->date_from;
+        }
+        if ($request->filled('date_to')) {
+            $parts[] = 'hasta: '.$request->date_to;
+        }
+
+        return $parts === [] ? 'Sin filtros (todo lo visible por jerarquía).' : 'Filtros: '.implode('; ', $parts).'.';
     }
 }

@@ -61,11 +61,31 @@
         </form>
         @if($canDeleteAll)
             <form method="POST" action="{{ route('admin.activity-logs.destroy-all') }}" class="shrink-0"
-                  onsubmit="return confirm('¿Eliminar todos los registros de actividad que puedes ver según tu jerarquía? Esta acción no se puede deshacer.');">
+                  onsubmit='return confirm(@json($hasActivityFilters
+                      ? "Se eliminarán solo los registros que coinciden con el listado filtrado actual (mismas filas que ves en la tabla). ¿Continuar?"
+                      : "Se eliminarán todos los registros visibles según tu jerarquía (sin filtros en pantalla). ¿Continuar?"
+                  ));'>
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="w-full lg:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
-                    <i class="fas fa-trash-alt mr-2"></i> Eliminar todo (visible)
+                @if(request('user_id'))
+                    <input type="hidden" name="user_id" value="{{ request('user_id') }}">
+                @endif
+                @if(request('action'))
+                    <input type="hidden" name="action" value="{{ request('action') }}">
+                @endif
+                @if(request('date_from'))
+                    <input type="hidden" name="date_from" value="{{ request('date_from') }}">
+                @endif
+                @if(request('date_to'))
+                    <input type="hidden" name="date_to" value="{{ request('date_to') }}">
+                @endif
+                <button type="submit" class="w-full lg:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm" title="Borra exactamente lo que muestra la tabla con los filtros actuales">
+                    <i class="fas fa-trash-alt mr-2"></i>
+                    @if(!empty($hasActivityFilters))
+                        Eliminar listado filtrado
+                    @else
+                        Eliminar todo (visible)
+                    @endif
                 </button>
             </form>
         @endif
