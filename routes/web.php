@@ -118,6 +118,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
 
     // Registros de actividad por usuario
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::delete('activity-logs', [ActivityLogController::class, 'destroyAll'])->name('activity-logs.destroy-all');
     Route::get('activity-logs/user/{user}', [ActivityLogController::class, 'show'])->name('activity-logs.show');
 
     // Companies (Empresas)

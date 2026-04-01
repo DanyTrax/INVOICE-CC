@@ -14,9 +14,16 @@
 @endsection
 
 @section('content')
+    @if(session('success'))
+        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <!-- Filtros -->
     <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <form method="GET" action="{{ route('admin.activity-logs.index') }}" class="flex flex-wrap gap-3 items-end">
+        <div class="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between">
+        <form method="GET" action="{{ route('admin.activity-logs.index') }}" class="flex flex-wrap gap-3 items-end flex-1">
             <div class="min-w-[180px]">
                 <label for="user_id" class="block text-xs font-medium text-gray-700 mb-1">Usuario</label>
                 <select name="user_id" id="user_id" class="border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2 text-sm">
@@ -52,6 +59,17 @@
                 </a>
             @endif
         </form>
+        @if($canDeleteAll)
+            <form method="POST" action="{{ route('admin.activity-logs.destroy-all') }}" class="shrink-0"
+                  onsubmit="return confirm('¿Eliminar todos los registros de actividad que puedes ver según tu jerarquía? Esta acción no se puede deshacer.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="w-full lg:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
+                    <i class="fas fa-trash-alt mr-2"></i> Eliminar todo (visible)
+                </button>
+            </form>
+        @endif
+        </div>
     </div>
 
     <!-- Tabla -->

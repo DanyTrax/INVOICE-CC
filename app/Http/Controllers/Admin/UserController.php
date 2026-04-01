@@ -64,35 +64,7 @@ class UserController extends Controller
      */
     protected function getAllowedRolesToView(): array
     {
-        $user = auth()->user();
-
-        // Intentar usar el servicio de permisos
-        try {
-            $permissionService = app(PermissionService::class);
-            foreach ($user->roles as $role) {
-                $canView = $permissionService->getRolesCanView($role->name);
-                if (! empty($canView)) {
-                    return $canView;
-                }
-            }
-        } catch (\Exception $e) {
-            // Si falla, usar lógica hardcodeada
-        }
-
-        // Lógica hardcodeada como fallback
-        if ($user->hasRole('super_admin')) {
-            return ['super_admin', 'admin', 'agent', 'client'];
-        }
-
-        if ($user->hasRole('admin')) {
-            return ['admin', 'agent', 'client'];
-        }
-
-        if ($user->hasRole('agent')) {
-            return ['agent', 'client'];
-        }
-
-        return [];
+        return app(PermissionService::class)->getAllowedRolesToViewForUser();
     }
 
     /**

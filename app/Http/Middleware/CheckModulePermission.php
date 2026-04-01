@@ -206,8 +206,12 @@ class CheckModulePermission
             return ['permissions', 'edit'];
         }
 
-        // Activity logs
+        // Activity logs (ver listado / línea de tiempo; borrar todo requiere eliminar)
         if (str_starts_with($routeName, 'admin.activity-logs')) {
+            if ($routeName === 'admin.activity-logs.destroy-all' && $method === 'DELETE') {
+                return ['activity_logs', 'delete'];
+            }
+
             return ['activity_logs', 'view'];
         }
 

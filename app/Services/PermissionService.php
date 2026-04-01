@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\RoleHierarchy;
 use App\Models\RolePermission;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Models\Role;
 
@@ -300,5 +301,111 @@ class PermissionService
     public function clearCache(): void
     {
         Cache::flush();
+    }
+
+    /**
+     * Roles que el usuario puede ver en directorio / jerarquía (misma lógica que UserController).
+     *
+     * @return list<string>
+     */
+    public function getAllowedRolesToViewForUser(?User $user = null): array
+    {
+        $user = $user ?? auth()->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        try {
+            foreach ($user->roles as $role) {
+                $canView = $this->getRolesCanView($role->name);
+                if (! empty($canView)) {
+                    return $canView;
+                }
+            }
+        } catch (\Exception $e) {
+        }
+
+        if ($user->hasRole('super_admin')) {
+            return ['super_admin', 'admin', 'agent', 'client'];
+        }
+
+        if ($user->hasRole('admin')) {
+            return ['admin', 'agent', 'client'];
+        }
+
+        if ($user->hasRole('agent')) {
+            return ['agent', 'client'];
+        }
+
+        return [];
+    }
+
+    /**
+     * ¿Puede el observador ver al usuario objetivo según jerarquía de roles?
+     */
+    public function canViewUserInHierarchy(User $viewer, User $target): bool
+    {
+        if ($viewer->hasRole('super_admin')) {
+            return true;
+        }
+
+        $allowedRoles = $this->getAllowedRolesToViewForUser($viewer);
+
+        if ($target->roles->isEmpty()) {
+            return in_array(self::NO_ROLE, $allowedRoles, true);
+        }
+
+        foreach ($target->roles as $role) {
+            if (in_array($role->name, $allowedRoles, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * IDs de usuarios visibles por jerarquía para listados (p. ej. registros de actividad).
+     * null = sin filtro (super_admin ve todos).
+     *
+     * @return list<int>|null
+     */
+    public function visibleUserIdsForHierarchy(?User $viewer = null): ?array
+    {
+        $viewer = $viewer ?? auth()->user();
+
+        if (! $viewer) {
+            return [];
+        }
+
+        if ($viewer->hasRole('super_admin')) {
+            return null;
+        }
+
+        $allowed = $this->getAllowedRolesToViewForUser($viewer);
+
+        if (empty($allowed)) {
+            return [];
+        }
+
+        $roleNames = array_values(array_filter($allowed, fn ($r) => $r !== self::NO_ROLE));
+        $hasNoRole = in_array(self::NO_ROLE, $allowed, true);
+
+        return User::query()
+            ->where(function ($q) use ($hasNoRole, $roleNames) {
+                if ($hasNoRole && empty($roleNames)) {
+                    $q->whereDoesntHave('roles');
+                } elseif ($hasNoRole && ! empty($roleNames)) {
+                    $q->where(function ($q2) use ($roleNames) {
+                        $q2->whereDoesntHave('roles')
+                            ->orWhereHas('roles', fn ($r) => $r->whereIn('name', $roleNames));
+                    });
+                } elseif (! empty($roleNames)) {
+                    $q->whereHas('roles', fn ($r) => $r->whereIn('name', $roleNames));
+                }
+            })
+            ->pluck('id')
+            ->all();
     }
 }
