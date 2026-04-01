@@ -147,6 +147,17 @@ class SettingsController extends Controller
             $gitInfo = app(GitWorkingCopyService::class)->getInfo();
         }
 
+        $allowedSystemSubs = ['git', 'delete-user', 'customization'];
+        $systemSub = 'git';
+        if ($section === 'system') {
+            if (! $request->has('system_sub') && session('user_to_delete_id')) {
+                $systemSub = 'delete-user';
+            } else {
+                $q = (string) $request->query('system_sub', 'git');
+                $systemSub = in_array($q, $allowedSystemSubs, true) ? $q : 'git';
+            }
+        }
+
         return view('admin.settings.index', [
             'settings' => $settings,
             'emailTemplates' => $emailTemplates,
@@ -156,6 +167,7 @@ class SettingsController extends Controller
             'activeSection' => $section,
             'userToDelete' => $userToDelete,
             'gitInfo' => $gitInfo,
+            'systemSub' => $systemSub,
         ]);
     }
 
@@ -168,7 +180,7 @@ class SettingsController extends Controller
             abort(403, 'No tienes permiso para esta acción.');
         }
 
-        $redirectSettings = redirect()->route('admin.settings.section', 'system');
+        $redirectSettings = redirect()->to(route('admin.settings.section', 'system').'?system_sub=delete-user');
 
         // Confirmar eliminación (segundo paso)
         if ($request->filled('user_id')) {
@@ -333,9 +345,14 @@ class SettingsController extends Controller
             $redirectSection = $request->input('current_section', 'agency');
         }
 
-        $redirect = redirect()
-            ->route('admin.settings.section', $redirectSection)
-            ->with('success', 'Configuración actualizada exitosamente.');
+        if ($redirectSection === 'system') {
+            $redirect = redirect()->to(route('admin.settings.section', 'system').'?system_sub=customization')
+                ->with('success', 'Configuración actualizada exitosamente.');
+        } else {
+            $redirect = redirect()
+                ->route('admin.settings.section', $redirectSection)
+                ->with('success', 'Configuración actualizada exitosamente.');
+        }
 
         // Si hay un tab específico, agregarlo a la URL
         if ($request->has('tab')) {

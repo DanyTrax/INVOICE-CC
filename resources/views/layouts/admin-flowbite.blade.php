@@ -97,6 +97,38 @@
         html.dark .border-gray-400 { border-color: #334155 !important; }
         html.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
         html.dark .hover\:bg-gray-200:hover { background-color: #334155 !important; }
+
+        /* Configuración → Sistema: tarjeta versión Git (evita parche claro sobre fondo oscuro) */
+        html.dark .settings-git-version-card {
+            background-color: #0f172a !important;
+            border-color: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+        html.dark .settings-git-version-card .settings-git-version-heading {
+            color: #f1f5f9 !important;
+        }
+        html.dark .settings-git-version-card dt,
+        html.dark .settings-git-version-card .text-slate-600 {
+            color: #94a3b8 !important;
+        }
+        html.dark .settings-git-version-card dd {
+            color: #cbd5e1 !important;
+        }
+        html.dark .settings-git-version-card .text-teal-800 {
+            color: #2dd4bf !important;
+        }
+        html.dark .settings-git-version-card .text-slate-500 {
+            color: #64748b !important;
+        }
+        html.dark .settings-git-version-card .border-slate-200 {
+            border-color: #334155 !important;
+        }
+        html.dark .settings-git-version-card .border-t {
+            border-top-color: #334155 !important;
+        }
+        html.dark .settings-git-version-card .text-slate-700 {
+            color: #cbd5e1 !important;
+        }
     </style>
     <script>
         function setTheme(theme) {
