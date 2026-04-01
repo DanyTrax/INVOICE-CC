@@ -15,6 +15,8 @@ class Company extends Model
         'country',
         'phone',
         'logo_path',
+        'logo_base64',
+        'logo_mime',
         'contact_person_name',
         'contact_person_email',
         'drive_folder_id',
@@ -130,5 +132,27 @@ class Company extends Model
                 'contact_person_email' => null,
             ])->saveQuietly();
         }
+    }
+
+    /**
+     * URL o data URI para el src de la imagen del logo (BD o ruta legada en public/).
+     */
+    public function logoSrcForImg(): ?string
+    {
+        if (! empty($this->logo_base64) && ! empty($this->logo_mime)) {
+            return 'data:'.$this->logo_mime.';base64,'.$this->logo_base64;
+        }
+
+        $path = $this->logo_path;
+        if ($path && file_exists(public_path($path))) {
+            return asset($path);
+        }
+
+        return null;
+    }
+
+    public function hasLogo(): bool
+    {
+        return $this->logoSrcForImg() !== null;
     }
 }

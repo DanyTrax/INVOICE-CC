@@ -72,7 +72,6 @@ class CompanyController extends Controller
             ],
             'phone' => 'nullable|string|max:50',
             'invite_email' => 'nullable|email|max:255',
-            'logo_path' => 'nullable|string|max:500',
             'drive_folder_id' => 'nullable|string|max:255',
             'allows_loans' => 'nullable|boolean',
         ], [
@@ -83,6 +82,12 @@ class CompanyController extends Controller
         $validated['allows_loans'] = $request->boolean('allows_loans');
         $inviteEmail = $validated['invite_email'] ?? null;
         unset($validated['invite_email']);
+
+        $request->validate([
+            'logo' => 'nullable|file|max:2048|mimes:jpeg,jpg,png,gif,webp,svg',
+            'remove_logo' => 'nullable|boolean',
+        ], [], ['logo' => 'logo']);
+        $this->mergeCompanyLogoFromRequest($request, $validated);
 
         $this->validateClientAssignments($request);
 
@@ -223,7 +228,6 @@ class CompanyController extends Controller
                 'in:'.implode(',', $countriesList),
             ],
             'phone' => 'nullable|string|max:50',
-            'logo_path' => 'nullable|string|max:500',
             'drive_folder_id' => 'nullable|string|max:255',
             'allows_loans' => 'nullable|boolean',
         ], [
@@ -232,6 +236,12 @@ class CompanyController extends Controller
             'country' => 'país',
         ]);
         $validated['allows_loans'] = $request->boolean('allows_loans');
+
+        $request->validate([
+            'logo' => 'nullable|file|max:2048|mimes:jpeg,jpg,png,gif,webp,svg',
+            'remove_logo' => 'nullable|boolean',
+        ], [], ['logo' => 'logo']);
+        $this->mergeCompanyLogoFromRequest($request, $validated);
 
         $this->validateClientAssignments($request);
 
@@ -601,6 +611,29 @@ class CompanyController extends Controller
             ], [], [
                 'user_id' => 'cliente #'.($index + 1),
             ])->validate();
+        }
+    }
+
+    /**
+     * Rellena logo_base64 / logo_mime (y anula logo_path) según archivo o eliminación.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected function mergeCompanyLogoFromRequest(Request $request, array &$data): void
+    {
+        if ($request->boolean('remove_logo')) {
+            $data['logo_base64'] = null;
+            $data['logo_mime'] = null;
+            $data['logo_path'] = null;
+
+            return;
+        }
+
+        if ($request->hasFile('logo')) {
+            $file = $request->file('logo');
+            $data['logo_mime'] = $file->getMimeType() ?: 'image/png';
+            $data['logo_base64'] = base64_encode((string) file_get_contents($file->getRealPath()));
+            $data['logo_path'] = null;
         }
     }
 

@@ -21,7 +21,7 @@
 
 @section('content')
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <form action="{{ route('admin.companies.update', $company) }}" method="POST">
+        <form action="{{ route('admin.companies.update', $company) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -92,6 +92,28 @@
                            name="phone" 
                            value="{{ old('phone', $company->phone) }}"
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                </div>
+
+                <!-- Logo (se guarda en base de datos en base64; incluido en respaldos JSON) -->
+                <div class="md:col-span-2">
+                    <label for="company_logo" class="block mb-2 text-sm font-medium text-gray-900">
+                        Logo de la empresa
+                    </label>
+                    @if($company->hasLogo())
+                        <div class="flex items-center gap-4 mb-2">
+                            <img src="{{ $company->logoSrcForImg() }}" alt="Logo" class="h-14 w-auto max-w-[200px] object-contain border border-gray-200 rounded-lg p-2 bg-white">
+                            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox" name="remove_logo" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                                Quitar logo
+                            </label>
+                        </div>
+                    @endif
+                    <input type="file" name="logo" id="company_logo" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                    <p class="mt-1 text-xs text-gray-500">PNG, JPG, GIF, WebP o SVG. Máx. 2&nbsp;MB. Se almacena en la base de datos para incluirse en copias de seguridad.</p>
+                    @error('logo')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 @php

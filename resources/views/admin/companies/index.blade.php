@@ -56,7 +56,7 @@
             <table class="w-full text-sm text-left text-gray-500">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3">Nombre</th>
+                        <th scope="col" class="px-6 py-3 pl-4">Empresa</th>
                         <th scope="col" class="px-6 py-3">NIT/RUT</th>
                         <th scope="col" class="px-6 py-3">País</th>
                         <th scope="col" class="px-6 py-3">Contacto</th>
@@ -70,7 +70,12 @@
                     @forelse($companies as $company)
                         <tr class="bg-white border-b hover:bg-gray-50">
                             <td class="px-6 py-4 font-medium text-gray-900">
-                                {{ $company->name }}
+                                <div class="flex items-center gap-3">
+                                    @if($company->hasLogo())
+                                        <img src="{{ $company->logoSrcForImg() }}" alt="" class="h-9 w-9 shrink-0 object-contain rounded border border-gray-100 bg-white" width="36" height="36">
+                                    @endif
+                                    <span>{{ $company->name }}</span>
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 {{ $company->nit_rut }}

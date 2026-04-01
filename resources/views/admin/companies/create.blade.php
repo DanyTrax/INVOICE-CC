@@ -21,7 +21,7 @@
 
 @section('content')
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <form action="{{ route('admin.companies.store') }}" method="POST">
+        <form action="{{ route('admin.companies.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -91,6 +91,18 @@
                            name="phone" 
                            value="{{ old('phone') }}"
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="company_logo" class="block mb-2 text-sm font-medium text-gray-900">
+                        Logo de la empresa (opcional)
+                    </label>
+                    <input type="file" name="logo" id="company_logo" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                    <p class="mt-1 text-xs text-gray-500">PNG, JPG, GIF, WebP o SVG. Máx. 2&nbsp;MB. Se guarda en la base de datos (base64) para respaldos.</p>
+                    @error('logo')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 @include('admin.companies.partials.client-assignments', [
