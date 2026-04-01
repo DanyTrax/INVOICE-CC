@@ -81,6 +81,16 @@ class GeneralSettings extends Settings
 
     public string $timezone = 'America/Bogota';
 
+    /** Títulos de las páginas públicas (y texto del enlace en login si está visible). */
+    public string $legal_privacy_title = 'Política de Privacidad';
+
+    public string $legal_terms_title = 'Términos y Condiciones del Servicio';
+
+    /** Mostrar enlaces en la pantalla de login. */
+    public bool $legal_show_privacy_on_login = true;
+
+    public bool $legal_show_terms_on_login = true;
+
     /** HTML público (política y términos). Vacío = usar texto por defecto del sistema. */
     public string $legal_privacy_html = '';
 

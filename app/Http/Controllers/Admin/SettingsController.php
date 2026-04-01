@@ -534,6 +534,10 @@ class SettingsController extends Controller
             'system_name' => 'Sistema de Gestión Regulatoria',
             'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
             'quote_pdf_footer_text' => '',
+            'legal_privacy_title' => 'Política de Privacidad',
+            'legal_terms_title' => 'Términos y Condiciones del Servicio',
+            'legal_show_privacy_on_login' => true,
+            'legal_show_terms_on_login' => true,
             'legal_privacy_html' => '',
             'legal_terms_html' => '',
         ];
@@ -606,6 +610,10 @@ class SettingsController extends Controller
             'drive_oauth_client_secret' => '',
             'drive_oauth_refresh_token' => '',
             'drive_oauth_access_token' => '',
+            'legal_privacy_title' => 'Política de Privacidad',
+            'legal_terms_title' => 'Términos y Condiciones del Servicio',
+            'legal_show_privacy_on_login' => true,
+            'legal_show_terms_on_login' => true,
             'legal_privacy_html' => '',
             'legal_terms_html' => '',
         ];
@@ -1318,10 +1326,16 @@ class SettingsController extends Controller
     private function updateLegalPoliciesSettings(Request $request, GeneralSettings $settings): void
     {
         $validated = $request->validate([
+            'legal_privacy_title' => 'nullable|string|max:255',
+            'legal_terms_title' => 'nullable|string|max:255',
             'legal_privacy_html' => 'nullable|string|max:500000',
             'legal_terms_html' => 'nullable|string|max:500000',
         ]);
 
+        $settings->legal_privacy_title = trim((string) ($validated['legal_privacy_title'] ?? '')) ?: 'Política de Privacidad';
+        $settings->legal_terms_title = trim((string) ($validated['legal_terms_title'] ?? '')) ?: 'Términos y Condiciones del Servicio';
+        $settings->legal_show_privacy_on_login = $request->boolean('legal_show_privacy_on_login');
+        $settings->legal_show_terms_on_login = $request->boolean('legal_show_terms_on_login');
         $settings->legal_privacy_html = $validated['legal_privacy_html'] ?? '';
         $settings->legal_terms_html = $validated['legal_terms_html'] ?? '';
 

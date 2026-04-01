@@ -107,9 +107,17 @@
             $loginSettings = app(\App\Settings\GeneralSettings::class);
             $loginFooterHtml = $loginSettings->footer_text ?? 'RAMS - Regulatory Affairs Management System';
             $loginAgencyName = trim($loginSettings->agency_name ?? '') ?: 'RAMS';
+            $loginShowPrivacy = $loginSettings->legal_show_privacy_on_login ?? true;
+            $loginShowTerms = $loginSettings->legal_show_terms_on_login ?? true;
+            $loginPrivacyTitle = $loginSettings->legal_privacy_title ?? 'Política de Privacidad';
+            $loginTermsTitle = $loginSettings->legal_terms_title ?? 'Términos y Condiciones del Servicio';
         } catch (\Throwable $e) {
             $loginFooterHtml = 'RAMS - Regulatory Affairs Management System';
             $loginAgencyName = 'RAMS';
+            $loginShowPrivacy = true;
+            $loginShowTerms = true;
+            $loginPrivacyTitle = 'Política de Privacidad';
+            $loginTermsTitle = 'Términos y Condiciones del Servicio';
         }
     @endphp
     <div class="flex-1 flex items-center justify-center px-4 py-10">
@@ -236,11 +244,19 @@
 
     <footer class="w-full max-w-xl mx-auto px-6 pb-8 pt-2 text-center text-sm text-white/95">
         <div class="mb-3 leading-relaxed">{!! $loginFooterHtml !!}</div>
-        <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-            <a href="{{ route('legal.privacy') }}" class="text-white font-medium hover:underline">Política de Privacidad</a>
-            <span class="text-white/50" aria-hidden="true">|</span>
-            <a href="{{ route('legal.terms') }}" class="text-white font-medium hover:underline">Términos y Condiciones del Servicio</a>
-        </div>
+        @if($loginShowPrivacy || $loginShowTerms)
+            <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+                @if($loginShowPrivacy)
+                    <a href="{{ route('legal.privacy') }}" class="text-white font-medium hover:underline">{{ $loginPrivacyTitle }}</a>
+                @endif
+                @if($loginShowPrivacy && $loginShowTerms)
+                    <span class="text-white/50" aria-hidden="true">|</span>
+                @endif
+                @if($loginShowTerms)
+                    <a href="{{ route('legal.terms') }}" class="text-white font-medium hover:underline">{{ $loginTermsTitle }}</a>
+                @endif
+            </div>
+        @endif
         <p class="mt-4 text-white/75 text-xs">© {{ date('Y') }} {{ $loginAgencyName }}. Todos los derechos reservados.</p>
     </footer>
 

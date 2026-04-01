@@ -14,8 +14,11 @@ class LegalPageController extends Controller
             $body = LegalPageDefaults::privacyHtml();
         }
 
+        $pageTitle = trim($settings->legal_privacy_title ?? '') ?: 'Política de Privacidad';
+
         return view('legal.show', [
-            'title' => 'Política de Privacidad',
+            'title' => $pageTitle,
+            'pageTitle' => $pageTitle,
             'bodyHtml' => $body,
             'footerHtml' => $settings->footer_text ?? '',
         ]);
@@ -28,8 +31,11 @@ class LegalPageController extends Controller
             $body = LegalPageDefaults::termsHtml();
         }
 
+        $pageTitle = trim($settings->legal_terms_title ?? '') ?: 'Términos y Condiciones del Servicio';
+
         return view('legal.show', [
-            'title' => 'Términos y Condiciones',
+            'title' => $pageTitle,
+            'pageTitle' => $pageTitle,
             'bodyHtml' => $body,
             'footerHtml' => $settings->footer_text ?? '',
         ]);

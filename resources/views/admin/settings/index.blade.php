@@ -370,9 +370,8 @@
                     Políticas legales (páginas públicas)
                 </h3>
                 <p class="text-sm text-gray-600 mb-6">
-                    El <strong>título visible</strong> (p. ej. «Política de Privacidad») va al inicio del contenido en el editor; puedes editarlo o quitarlo.
-                    La página pública no muestra «Última actualización»; el <strong>texto del pie</strong> es el de Configuración → Sistema → Personalización («Texto del Footer»).
-                    Si dejas un campo vacío y guardas, se usará el texto por defecto del sistema (incluye título sugerido).
+                    <strong>Títulos</strong> de página y del enlace en login se configuran abajo. El <strong>cuerpo</strong> es el editor (sin título duplicado).
+                    El <strong>pie</strong> público usa «Texto del Footer» (Sistema → Personalización). Si el HTML del cuerpo está vacío al guardar, se usa el texto por defecto del sistema.
                     Vista previa: <a href="{{ route('legal.privacy') }}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">Privacidad</a>
                     · <a href="{{ route('legal.terms') }}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">Términos</a>
                 </p>
@@ -387,19 +386,52 @@
                     if ($termsField === '' && ($ld['terms'] ?? '') !== '') {
                         $termsField = $ld['terms'];
                     }
+                    $pvLoginOld = old('legal_show_privacy_on_login');
+                    $tmLoginOld = old('legal_show_terms_on_login');
+                    $showPrivLogin = $pvLoginOld !== null ? filter_var($pvLoginOld, FILTER_VALIDATE_BOOLEAN) : ($settings->legal_show_privacy_on_login ?? true);
+                    $showTermsLogin = $tmLoginOld !== null ? filter_var($tmLoginOld, FILTER_VALIDATE_BOOLEAN) : ($settings->legal_show_terms_on_login ?? true);
                 @endphp
 
                 <form id="legal-policies-form" action="{{ route('admin.settings.update') }}" method="POST" class="space-y-8">
                     @csrf
                     <input type="hidden" name="section" value="legal-policies">
 
-                    <div>
-                        <label for="legal_privacy_html" class="block mb-2 text-sm font-medium text-gray-900">Política de Privacidad</label>
-                        <textarea id="legal_privacy_html" name="legal_privacy_html" rows="16" class="min-h-[240px] w-full rounded-lg border border-gray-300 bg-gray-50 p-2 font-mono text-sm text-gray-900">{{ $privacyField }}</textarea>
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+                        <h4 class="text-sm font-semibold text-gray-900">Política de Privacidad</h4>
+                        <div>
+                            <label for="legal_privacy_title" class="block mb-1 text-sm font-medium text-gray-900">Título de la página</label>
+                            <input type="text" id="legal_privacy_title" name="legal_privacy_title" value="{{ old('legal_privacy_title', $settings->legal_privacy_title ?? 'Política de Privacidad') }}"
+                                   class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5" maxlength="255">
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-800">
+                                <input type="checkbox" name="legal_show_privacy_on_login" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" @checked($showPrivLogin)>
+                                <span>Mostrar enlace en la pantalla de login</span>
+                            </label>
+                        </div>
+                        <div>
+                            <label for="legal_privacy_html" class="block mb-2 text-sm font-medium text-gray-900">Contenido (HTML)</label>
+                            <textarea id="legal_privacy_html" name="legal_privacy_html" rows="16" class="min-h-[240px] w-full rounded-lg border border-gray-300 bg-white p-2 font-mono text-sm text-gray-900">{{ $privacyField }}</textarea>
+                        </div>
                     </div>
-                    <div>
-                        <label for="legal_terms_html" class="block mb-2 text-sm font-medium text-gray-900">Términos y Condiciones del Servicio</label>
-                        <textarea id="legal_terms_html" name="legal_terms_html" rows="16" class="min-h-[240px] w-full rounded-lg border border-gray-300 bg-gray-50 p-2 font-mono text-sm text-gray-900">{{ $termsField }}</textarea>
+
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+                        <h4 class="text-sm font-semibold text-gray-900">Términos y Condiciones</h4>
+                        <div>
+                            <label for="legal_terms_title" class="block mb-1 text-sm font-medium text-gray-900">Título de la página</label>
+                            <input type="text" id="legal_terms_title" name="legal_terms_title" value="{{ old('legal_terms_title', $settings->legal_terms_title ?? 'Términos y Condiciones del Servicio') }}"
+                                   class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5" maxlength="255">
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-800">
+                                <input type="checkbox" name="legal_show_terms_on_login" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" @checked($showTermsLogin)>
+                                <span>Mostrar enlace en la pantalla de login</span>
+                            </label>
+                        </div>
+                        <div>
+                            <label for="legal_terms_html" class="block mb-2 text-sm font-medium text-gray-900">Contenido (HTML)</label>
+                            <textarea id="legal_terms_html" name="legal_terms_html" rows="16" class="min-h-[240px] w-full rounded-lg border border-gray-300 bg-white p-2 font-mono text-sm text-gray-900">{{ $termsField }}</textarea>
+                        </div>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3">
