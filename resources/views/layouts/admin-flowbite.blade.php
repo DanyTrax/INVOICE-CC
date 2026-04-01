@@ -1,10 +1,43 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-gray-50">
+<html lang="es" class="h-full bg-gray-50" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Deshabilitar Cloudflare Insights beacon -->
+    <style>
+        html.dark { background-color: #0f172a; color: #e2e8f0; }
+        html.dark body { background-color: #0f172a; color: #e2e8f0; }
+        html.dark .bg-gray-50 { background-color: #0f172a !important; }
+        html.dark .bg-white { background-color: #1e293b !important; }
+        html.dark .text-gray-900 { color: #e2e8f0 !important; }
+        html.dark .text-gray-700 { color: #cbd5e1 !important; }
+        html.dark .text-gray-500 { color: #94a3b8 !important; }
+        html.dark .border-gray-200 { border-color: #334155 !important; }
+        html.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+        html.dark .bg-gray-100 { background-color: #1e293b !important; }
+    </style>
+    <script>
+        function setTheme(theme) {
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('rams-theme', theme);
+            const isDark = theme === 'dark';
+            const $body = document.body;
+            $body.classList.toggle('bg-gray-50', !isDark);
+            $body.classList.toggle('bg-slate-900', isDark);
+            $body.classList.toggle('text-gray-900', !isDark);
+            $body.classList.toggle('text-gray-100', isDark);
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const saved = localStorage.getItem('rams-theme') || 'light';
+            setTheme(saved);
+            const toggleLight = document.getElementById('theme-light-btn');
+            const toggleDark = document.getElementById('theme-dark-btn');
+            if (toggleLight) { toggleLight.addEventListener('click', function(e){ e.preventDefault(); setTheme('light'); }); }
+            if (toggleDark) { toggleDark.addEventListener('click', function(e){ e.preventDefault(); setTheme('dark'); }); }
+        });
+    </script>
     <meta name="cf-2fa-verify" content="">
     <title>@yield('title', 'RAMS - Regulatory Affairs Management System')</title>
     
@@ -553,6 +586,13 @@
                                 <a href="{{ route('admin.profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                     <i class="fas fa-user mr-2"></i> Mi Perfil
                                 </a>
+                                <div class="px-4 py-2 border-y border-gray-200">
+                                    <span class="text-xs text-gray-500 uppercase tracking-wider">Tema</span>
+                                    <div class="mt-2 flex items-center justify-between gap-2">
+                                        <button id="theme-light-btn" class="w-full text-sm font-medium px-2 py-1 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">☀️ Claro</button>
+                                        <button id="theme-dark-btn" class="w-full text-sm font-medium px-2 py-1 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">🌙 Oscuro</button>
+                                    </div>
+                                </div>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">

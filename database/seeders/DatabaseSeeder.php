@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -38,9 +40,9 @@ class DatabaseSeeder extends Seeder
         }
 
         // Crear plantillas de correo
-        ->call(EmailTemplateSeeder::class);
+        $this->call(EmailTemplateSeeder::class);
 
         // Tipos de trámite (ServiceTypes)
-        ->call(ServiceTypeSeeder::class);
+        $this->call(ServiceTypeSeeder::class);
     }
 }

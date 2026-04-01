@@ -101,6 +101,8 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
     Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
     Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
+    Route::post('/backups/import', [BackupController::class, 'import'])->name('backups.import');
+    Route::post('/backups/{backup}/restore', [BackupController::class, 'restore'])->name('backups.restore');
     Route::post('/backups/wipe', [BackupController::class, 'wipe'])->name('backups.wipe');
 
     // Permisos y roles personalizados

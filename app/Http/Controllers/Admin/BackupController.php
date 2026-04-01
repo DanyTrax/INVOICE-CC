@@ -75,6 +75,48 @@ class BackupController extends Controller
             ->with('success', 'Backup eliminado correctamente.');
     }
 
+    public function import(Request $request, BackupService $service): RedirectResponse
+    {
+        $this->ensureCanAccessBackups();
+
+        $request->validate([
+            'backup_file' => 'required|file|mimes:json,txt',
+            'confirm_restore' => 'accepted',
+        ], [
+            'confirm_restore.accepted' => 'Debes confirmar que entiendes que la importación restablecerá todos los datos.',
+        ]);
+
+        try {
+            $service->restoreBackupFromFile($request->file('backup_file'));
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('admin.backups.index')
+                ->with('error', 'Error al importar el backup: ' . $e->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.backups.index')
+            ->with('success', 'Backup importado correctamente y datos restaurados.');
+    }
+
+    public function restore(SystemBackup $backup, BackupService $service, GoogleDriveService $drive): RedirectResponse
+    {
+        $this->ensureCanAccessBackups();
+
+        try {
+            $content = $drive->downloadFile($backup->drive_file_id);
+            $service->restoreBackupFromJson($content);
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('admin.backups.index')
+                ->with('error', 'Error al restaurar backup desde Drive: ' . $e->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.backups.index')
+            ->with('success', 'Backup restaurado desde Drive correctamente.');
+    }
+
     public function wipe(BackupService $service): RedirectResponse
     {
         $this->ensureCanAccessBackups();

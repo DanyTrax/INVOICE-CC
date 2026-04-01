@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -37,12 +38,25 @@ class BackupService
 
         $tables = [
             'users',
+            'roles',
+            'model_has_roles',
+            'role_has_permissions',
             'companies',
             'company_user',
             'registrations',
+            'processes',
+            'process_documents',
+            'submissions',
             'documents',
+            'quotes',
+            'quote_items',
+            'service_types',
+            'proposals',
             'email_templates',
             'settings',
+            'email_logs',
+            'drive_operations_log',
+            'company_invites',
         ];
 
         foreach ($tables as $table) {
@@ -82,6 +96,66 @@ class BackupService
     /**
      * Vaciar datos de negocio dejando solo el super_admin.
      */
+    public function restoreBackupFromJson(string $content): void
+    {
+        $payload = json_decode($content, true);
+
+        if (!is_array($payload) || empty($payload['tables']) || !is_array($payload['tables'])) {
+            throw new \Exception('Archivo de backup inválido.');
+        }
+
+        DB::transaction(function () use ($payload) {
+            // Deshabilitar temporalmente FK para SQLite y MySQL
+            if (DB::getDriverName() === 'sqlite') {
+                DB::statement('PRAGMA foreign_keys = OFF');
+            }
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            }
+
+            foreach ($payload['tables'] as $table => $rows) {
+                if (!Schema::hasTable($table)) {
+                    continue;
+                }
+
+                DB::table($table)->truncate();
+
+                $tableColumns = Schema::getColumnListing($table);
+
+                if (is_array($rows) && count($rows) > 0) {
+                    $cleanRows = array_map(function ($row) use ($tableColumns) {
+                        $rowArray = (array) $row;
+                        return array_filter(
+                            array_intersect_key($rowArray, array_flip($tableColumns)),
+                            fn ($value, $key) => in_array($key, $tableColumns, true),
+                            ARRAY_FILTER_USE_BOTH
+                        );
+                    }, $rows);
+
+                    foreach (array_chunk($cleanRows, 1000) as $chunk) {
+                        if (count($chunk) > 0) {
+                            DB::table($table)->insert($chunk);
+                        }
+                    }
+                }
+            }
+
+            // Reactivar llaves foráneas
+            if (DB::getDriverName() === 'sqlite') {
+                DB::statement('PRAGMA foreign_keys = ON');
+            }
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            }
+        });
+    }
+
+    public function restoreBackupFromFile(\Illuminate\Http\UploadedFile $file): void
+    {
+        $content = file_get_contents($file->getRealPath());
+        $this->restoreBackupFromJson($content);
+    }
+
     public function wipeDataExceptSuperAdmin(): void
     {
         DB::transaction(function () {

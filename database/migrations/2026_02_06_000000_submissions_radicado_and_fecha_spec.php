@@ -13,8 +13,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('submissions', function (Blueprint $table) {
-            $table->string('radicado_invima', 64)->nullable()->after('parent_id');
-            $table->date('fecha_radicacion')->nullable()->after('tracking_id');
+            if (!Schema::hasColumn('submissions', 'radicado_invima')) {
+                $table->string('radicado_invima', 64)->nullable()->after('parent_id');
+            }
+            if (!Schema::hasColumn('submissions', 'fecha_radicacion')) {
+                $table->date('fecha_radicacion')->nullable()->after('tracking_id');
+            }
         });
 
         foreach (DB::table('submissions')->get() as $row) {
@@ -24,13 +28,17 @@ return new class extends Migration
             ]);
         }
 
-        Schema::table('submissions', function (Blueprint $table) {
-            $table->dropColumn(['filing_number', 'filing_date']);
-        });
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('submissions', function (Blueprint $table) {
+                $table->dropColumn(['filing_number', 'filing_date']);
+            });
 
-        Schema::table('submissions', function (Blueprint $table) {
-            $table->index('radicado_invima');
-        });
+            Schema::table('submissions', function (Blueprint $table) {
+                $table->index('radicado_invima');
+            });
+        } else {
+            // SQLite no permite dropColumn en versiones antiguas; solo crea el campo nuevo y copia valores.
+        }
 
         DB::table('submissions')->where('status', 'Rechazado/Negado')->update(['status' => 'Rechazado']);
     }
@@ -49,9 +57,13 @@ return new class extends Migration
             ]);
         }
 
-        Schema::table('submissions', function (Blueprint $table) {
-            $table->dropIndex(['radicado_invima']);
-            $table->dropColumn(['radicado_invima', 'fecha_radicacion']);
-        });
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('submissions', function (Blueprint $table) {
+                $table->dropIndex(['radicado_invima']);
+                $table->dropColumn(['radicado_invima', 'fecha_radicacion']);
+            });
+        } else {
+            // SQLite no permite dropColumn en esta versión, no se elimina para mantener compatibilidad local.
+        }
     }
 };
