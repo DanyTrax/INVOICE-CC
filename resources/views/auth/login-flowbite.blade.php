@@ -101,7 +101,18 @@
         }
     </style>
 </head>
-<body class="h-full flex items-center justify-center">
+<body class="h-full min-h-screen flex flex-col">
+    @php
+        try {
+            $loginSettings = app(\App\Settings\GeneralSettings::class);
+            $loginFooterHtml = $loginSettings->footer_text ?? 'RAMS - Regulatory Affairs Management System';
+            $loginAgencyName = trim($loginSettings->agency_name ?? '') ?: 'RAMS';
+        } catch (\Throwable $e) {
+            $loginFooterHtml = 'RAMS - Regulatory Affairs Management System';
+            $loginAgencyName = 'RAMS';
+        }
+    @endphp
+    <div class="flex-1 flex items-center justify-center px-4 py-10">
     <div class="w-full max-w-md">
         <div class="bg-white rounded-lg shadow-xl p-8">
             <!-- Logo -->
@@ -219,8 +230,25 @@
                 </button>
             </form>
 
+            <p class="mt-6 text-center text-sm">
+                <a href="{{ route('public.app-purpose') }}" class="text-teal-700 hover:text-teal-900 hover:underline font-medium">
+                    Propósito de la aplicación
+                </a>
+            </p>
+
         </div>
     </div>
+    </div>
+
+    <footer class="w-full max-w-xl mx-auto px-6 pb-8 pt-2 text-center text-sm text-white/95">
+        <div class="mb-3 leading-relaxed">{!! $loginFooterHtml !!}</div>
+        <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <a href="{{ route('legal.privacy') }}" class="text-white font-medium hover:underline">Política de Privacidad</a>
+            <span class="text-white/50" aria-hidden="true">|</span>
+            <a href="{{ route('legal.terms') }}" class="text-white font-medium hover:underline">Términos y Condiciones del Servicio</a>
+        </div>
+        <p class="mt-4 text-white/75 text-xs">© {{ date('Y') }} {{ $loginAgencyName }}. Todos los derechos reservados.</p>
+    </footer>
 
     <!-- Flowbite JS -->
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>

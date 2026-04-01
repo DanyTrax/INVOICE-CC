@@ -30,14 +30,18 @@ use App\Http\Controllers\ClientRegisterController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-// Página principal: si está autenticado va al panel; si no, muestra información pública de la app (requisito verificación OAuth)
+// Raíz: autenticado → panel; invitado → login (información de la app en /acerca y pie en pantalla de login)
 Route::get('/', function () {
     if (Auth::check()) {
         return Auth::user()->hasRole('client') ? redirect()->route('portal.dashboard') : redirect()->route('admin.dashboard');
     }
 
-    return view('home-public');
+    return redirect()->route('login');
 })->name('home');
+
+Route::get('/acerca', function () {
+    return view('public.app-purpose');
+})->name('public.app-purpose');
 
 // Autenticación
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
