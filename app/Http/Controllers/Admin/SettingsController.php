@@ -2,20 +2,26 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Settings\GeneralSettings;
-use App\Models\EmailTemplate;
+use App\Http\Controllers\Controller;
+use App\Models\DriveOperationLog;
 use App\Models\EmailLog;
-use App\Models\QuotePdfTemplate;
+use App\Models\EmailTemplate;
 use App\Models\ProposalPdfTemplate;
+use App\Models\QuotePdfTemplate;
 use App\Models\User;
+use App\Services\GitWorkingCopyService;
+use App\Services\GoogleDriveService;
 use App\Services\MailService;
 use App\Services\PermissionService;
+use App\Settings\GeneralSettings;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Spatie\LaravelSettings\Exceptions\MissingSettings;
 
 class SettingsController extends Controller
 {
@@ -23,10 +29,10 @@ class SettingsController extends Controller
     {
         // Validar que la sección sea válida
         $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system', 'quote-pdf', 'proposal-pdf'];
-        if (!in_array($section, $validSections)) {
+        if (! in_array($section, $validSections)) {
             $section = 'agency';
         }
-        
+
         $permissionService = app(PermissionService::class);
 
         // Mapear secciones a módulos de permisos (drive: acceso si tiene configuración O historial)
@@ -52,20 +58,22 @@ class SettingsController extends Controller
                     break;
                 }
             }
-            if (!$hasAny) {
+            if (! $hasAny) {
                 $firstAllowed = $this->getFirstAllowedSection($permissionService);
+
                 return redirect()->route('admin.settings.section', $firstAllowed)
                     ->with('error', 'No tienes permisos para acceder a esta sección.');
             }
         }
 
         // Sección system: controlada por permiso Config: Sistema (Gestión de Permisos)
-        if ($section === 'system' && !$permissionService->userHasPermission('settings_system', 'view')) {
+        if ($section === 'system' && ! $permissionService->userHasPermission('settings_system', 'view')) {
             $firstAllowed = $this->getFirstAllowedSection($permissionService);
+
             return redirect()->route('admin.settings.section', $firstAllowed)
                 ->with('error', 'No tienes permisos para acceder a esta sección.');
         }
-        
+
         $emailTemplates = EmailTemplate::all();
 
         $quotePdfTemplates = [];
@@ -85,31 +93,31 @@ class SettingsController extends Controller
                 $proposalPdfTemplates = [];
             }
         }
-        
+
         // Verificar si la tabla email_logs existe antes de consultarla
         try {
             $emailLogs = EmailLog::orderBy('created_at', 'desc')
                 ->with('user')
                 ->paginate(20);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             // Si la tabla no existe, crear una colección vacía
-            $emailLogs = new \Illuminate\Pagination\LengthAwarePaginator(
+            $emailLogs = new LengthAwarePaginator(
                 collect([]),
                 0,
                 20,
                 1
             );
         }
-        
+
         // Asegurar que los settings existan en la BD
         $this->ensureSettingsInDatabase();
-        
+
         // Inicializar settings con valores por defecto si no existen
         try {
             $settings = app(GeneralSettings::class);
-        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
+        } catch (MissingSettings $e) {
             // Si aún falla, crear settings con valores por defecto
-            $settings = new GeneralSettings();
+            $settings = new GeneralSettings;
             $this->ensureAllPropertiesSet($settings);
             $settings->save();
         }
@@ -120,12 +128,25 @@ class SettingsController extends Controller
                 session()->forget('user_to_delete_id');
             } elseif (session('user_to_delete_id')) {
                 $userToDelete = User::with('roles', 'companies')->find(session('user_to_delete_id'));
-                if (!$userToDelete) {
+                if (! $userToDelete) {
                     session()->forget('user_to_delete_id');
                 }
             }
         }
-        
+
+        $gitInfo = [
+            'available' => false,
+            'short_hash' => null,
+            'full_hash' => null,
+            'commit_at' => null,
+            'branch' => null,
+            'subject' => null,
+            'error' => null,
+        ];
+        if ($section === 'system') {
+            $gitInfo = app(GitWorkingCopyService::class)->getInfo();
+        }
+
         return view('admin.settings.index', [
             'settings' => $settings,
             'emailTemplates' => $emailTemplates,
@@ -134,6 +155,7 @@ class SettingsController extends Controller
             'proposalPdfTemplates' => $proposalPdfTemplates ?? [],
             'activeSection' => $section,
             'userToDelete' => $userToDelete,
+            'gitInfo' => $gitInfo,
         ]);
     }
 
@@ -142,7 +164,7 @@ class SettingsController extends Controller
      */
     public function deleteUserByEmail(Request $request): RedirectResponse
     {
-        if (!app(PermissionService::class)->userHasPermission('settings_system', 'view')) {
+        if (! app(PermissionService::class)->userHasPermission('settings_system', 'view')) {
             abort(403, 'No tienes permiso para esta acción.');
         }
 
@@ -151,25 +173,30 @@ class SettingsController extends Controller
         // Confirmar eliminación (segundo paso)
         if ($request->filled('user_id')) {
             $user = User::with('roles', 'companies')->find($request->user_id);
-            if (!$user) {
+            if (! $user) {
                 session()->forget('user_to_delete_id');
+
                 return $redirectSettings->with('error', 'Usuario no encontrado.');
             }
             if ($user->id === auth()->id()) {
                 session()->forget('user_to_delete_id');
+
                 return $redirectSettings->with('error', 'No puedes eliminar tu propio usuario.');
             }
             if ($user->assignedRegistrations()->count() > 0) {
                 session()->forget('user_to_delete_id');
+
                 return $redirectSettings->with('error', 'No se puede eliminar: tiene expedientes asignados.');
             }
             $userController = app(AdminUserController::class);
-            if (!$userController->canEditUserPublic($user)) {
+            if (! $userController->canEditUserPublic($user)) {
                 session()->forget('user_to_delete_id');
+
                 return $redirectSettings->with('error', 'No tienes permiso para eliminar a este usuario.');
             }
             if ((int) session('user_to_delete_id') !== (int) $user->id) {
                 session()->forget('user_to_delete_id');
+
                 return $redirectSettings->with('error', 'Confirma la eliminación desde el mismo flujo (busca de nuevo por correo).');
             }
 
@@ -179,7 +206,8 @@ class SettingsController extends Controller
             $companiesText = $user->companies->pluck('name')->join(', ') ?: 'Ninguna';
             $userController->performUserDeletion($user);
             session()->forget('user_to_delete_id');
-            return $redirectSettings->with('success', 'Usuario eliminado: ' . $name . ' (' . $email . '). Rol: ' . $rolesText . '. Empresas: ' . $companiesText . '.');
+
+            return $redirectSettings->with('success', 'Usuario eliminado: '.$name.' ('.$email.'). Rol: '.$rolesText.'. Empresas: '.$companiesText.'.');
         }
 
         // Buscar por correo (primer paso)
@@ -187,7 +215,7 @@ class SettingsController extends Controller
         $email = $request->input('email');
         $user = User::with('roles', 'companies')->where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             return $redirectSettings->with('error', 'No hay ningún usuario con ese correo en el sistema. No está en la lista.');
         }
         if ($user->id === auth()->id()) {
@@ -197,11 +225,12 @@ class SettingsController extends Controller
             return $redirectSettings->with('error', 'No se puede eliminar: tiene expedientes asignados.');
         }
         $userController = app(AdminUserController::class);
-        if (!$userController->canEditUserPublic($user)) {
+        if (! $userController->canEditUserPublic($user)) {
             return $redirectSettings->with('error', 'No tienes permiso para eliminar a este usuario.');
         }
 
         session()->put('user_to_delete_id', $user->id);
+
         return $redirectSettings->with('info', 'Usuario encontrado. Revisa los datos abajo y confirma la eliminación.');
     }
 
@@ -228,6 +257,7 @@ class SettingsController extends Controller
                 if (auth()->user()->hasRole('super_admin')) {
                     return $section;
                 }
+
                 continue;
             }
             foreach ($modules as $module) {
@@ -236,6 +266,7 @@ class SettingsController extends Controller
                 }
             }
         }
+
         return 'agency';
     }
 
@@ -246,22 +277,23 @@ class SettingsController extends Controller
     {
         $permissionService = app(PermissionService::class);
         $section = $this->getFirstAllowedSection($permissionService);
+
         return redirect()->route('admin.settings.section', $section);
     }
 
     public function update(Request $request)
     {
         $section = $request->input('section');
-        
+
         // Asegurar que los settings existan en la BD antes de intentar cargarlos
         $this->ensureSettingsInDatabase();
-        
+
         // Obtener settings completos
         try {
             $settings = app(GeneralSettings::class);
-        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
+        } catch (MissingSettings $e) {
             // Si aún falla después de asegurar settings, crear un nuevo objeto con valores por defecto
-            $settings = new GeneralSettings();
+            $settings = new GeneralSettings;
             $this->ensureAllPropertiesSet($settings);
             $settings->save();
         }
@@ -278,7 +310,7 @@ class SettingsController extends Controller
                 break;
             case 'system':
                 // Solo super_admin puede actualizar configuración del sistema
-                if (!auth()->user()->hasRole('super_admin')) {
+                if (! auth()->user()->hasRole('super_admin')) {
                     return redirect()->route('admin.settings.section', 'agency')
                         ->with('error', 'No tienes permisos para realizar esta acción.');
                 }
@@ -294,22 +326,22 @@ class SettingsController extends Controller
 
         // Redirigir a la misma sección donde se guardó
         $redirectSection = $section;
-        
+
         // Para casos especiales, mantener la sección actual
         if ($section === 'email_template' || $section === 'test_email') {
             // Estos casos ya manejan su propia redirección
             $redirectSection = $request->input('current_section', 'agency');
         }
-        
+
         $redirect = redirect()
             ->route('admin.settings.section', $redirectSection)
             ->with('success', 'Configuración actualizada exitosamente.');
-        
+
         // Si hay un tab específico, agregarlo a la URL
         if ($request->has('tab')) {
             $redirect->with('tab', $request->input('tab'));
         }
-        
+
         return $redirect;
     }
 
@@ -345,8 +377,8 @@ class SettingsController extends Controller
         if ($request->hasFile('agency_logo')) {
             $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
             $extension = strtolower($request->file('agency_logo')->getClientOriginalExtension());
-            
-            if (!in_array($extension, $allowedExtensions)) {
+
+            if (! in_array($extension, $allowedExtensions)) {
                 return redirect()
                     ->route('admin.settings.index')
                     ->withInput()
@@ -356,7 +388,7 @@ class SettingsController extends Controller
 
         // Asegurar que todas las propiedades estén establecidas antes de actualizar
         $this->ensureAllPropertiesSet($settings);
-        
+
         // Actualizar campos del request
         $settings->agency_name = $validated['agency_name'];
         if (isset($validated['agency_nit'])) {
@@ -399,34 +431,34 @@ class SettingsController extends Controller
                     unlink($oldLogoPath);
                 }
             }
-            
+
             // Guardar nuevo logo usando funciones PHP nativas (evita php_fileinfo y finfo)
             $file = $request->file('agency_logo');
             $extension = $file->getClientOriginalExtension();
-            $filename = 'logo_' . time() . '_' . uniqid() . '.' . $extension;
-            
+            $filename = 'logo_'.time().'_'.uniqid().'.'.$extension;
+
             // Crear directorio dentro del repositorio (public/uploads/logos)
             $logoDir = public_path('uploads/logos');
-            if (!is_dir($logoDir)) {
+            if (! is_dir($logoDir)) {
                 mkdir($logoDir, 0755, true);
             }
-            
+
             // Ruta completa del archivo destino
-            $destinationPath = $logoDir . '/' . $filename;
-            
+            $destinationPath = $logoDir.'/'.$filename;
+
             // Mover archivo usando move_uploaded_file (no requiere php_fileinfo)
             move_uploaded_file($file->getRealPath(), $destinationPath);
-            
+
             // Guardar ruta relativa para acceso web (uploads/logos/filename)
-            $settings->agency_logo = 'uploads/logos/' . $filename;
+            $settings->agency_logo = 'uploads/logos/'.$filename;
         }
         // Si no se envía nada, mantener el logo actual (ya está cargado en $settings)
-        
+
         // Asegurar que todas las propiedades estén establecidas antes de guardar
         $this->ensureAllPropertiesSet($settings);
         $settings->save();
     }
-    
+
     /**
      * Asegurar que todos los settings estén en la base de datos
      */
@@ -468,15 +500,15 @@ class SettingsController extends Controller
             'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
             'quote_pdf_footer_text' => '',
         ];
-        
+
         $existingSettings = DB::table('settings')
             ->where('group', 'general')
             ->pluck('name')
             ->toArray();
-        
+
         $missingSettings = array_diff_key($requiredSettings, array_flip($existingSettings));
-        
-        if (!empty($missingSettings)) {
+
+        if (! empty($missingSettings)) {
             // Insertar settings faltantes directamente en la BD
             $now = now();
             foreach ($missingSettings as $name => $defaultValue) {
@@ -491,7 +523,7 @@ class SettingsController extends Controller
             }
         }
     }
-    
+
     /**
      * Asegurar que todas las propiedades de GeneralSettings estén establecidas
      * Spatie Settings requiere que todas las propiedades estén definidas antes de guardar
@@ -500,7 +532,7 @@ class SettingsController extends Controller
     {
         // Establecer todas las propiedades directamente
         // Spatie Settings necesita que todas estén definidas antes de guardar
-        
+
         $defaults = [
             'agency_name' => 'RAMS',
             'agency_nit' => '',
@@ -538,7 +570,7 @@ class SettingsController extends Controller
             'drive_oauth_refresh_token' => '',
             'drive_oauth_access_token' => '',
         ];
-        
+
         // Establecer todas las propiedades, usando valores existentes si están disponibles
         foreach ($defaults as $property => $defaultValue) {
             try {
@@ -577,7 +609,7 @@ class SettingsController extends Controller
         }
 
         // Validar que el JSON sea válido si se proporciona (solo en modo Service Account)
-        if ($driveMode === 'service_account' && !empty($validated['drive_service_account_json'])) {
+        if ($driveMode === 'service_account' && ! empty($validated['drive_service_account_json'])) {
             $jsonData = json_decode($validated['drive_service_account_json'], true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 return redirect()
@@ -585,18 +617,18 @@ class SettingsController extends Controller
                     ->withInput()
                     ->with('error', 'El JSON proporcionado no es válido. Por favor, verifica el formato.');
             }
-            
+
             // Verificar campos requeridos en el JSON
             $requiredFields = ['type', 'project_id', 'private_key', 'client_email'];
             foreach ($requiredFields as $field) {
-                if (!isset($jsonData[$field])) {
+                if (! isset($jsonData[$field])) {
                     return redirect()
                         ->route('admin.settings.section', 'drive')
                         ->withInput()
                         ->with('error', "El JSON no contiene el campo requerido: {$field}");
                 }
             }
-            
+
             // Verificar que sea una Service Account
             if ($jsonData['type'] !== 'service_account') {
                 return redirect()
@@ -608,21 +640,21 @@ class SettingsController extends Controller
 
         // Asegurar que todos los settings estén en la base de datos primero
         $this->ensureSettingsInDatabase();
-        
+
         // Asegurar que todas las propiedades estén establecidas ANTES de actualizar
         $this->ensureAllPropertiesSet($settings);
-        
+
         // Actualizar campos
         if (isset($validated['drive_service_account_json'])) {
             $settings->drive_service_account_json = $validated['drive_service_account_json'] ?? '';
         }
-        
+
         if (isset($validated['drive_folder_id'])) {
             $settings->drive_folder_id = $validated['drive_folder_id'] ?? '';
         }
-        
+
         // Establecer valores por defecto si no están en la base de datos
-        if (!isset($validated['drive_folder_name_no_client'])) {
+        if (! isset($validated['drive_folder_name_no_client'])) {
             // Si no viene en el request, usar el valor existente o el por defecto
             try {
                 $currentValue = $settings->drive_folder_name_no_client ?? null;
@@ -635,8 +667,8 @@ class SettingsController extends Controller
         } else {
             $settings->drive_folder_name_no_client = $validated['drive_folder_name_no_client'] ?: 'Expedientes Sin Cliente';
         }
-        
-        if (!isset($validated['drive_folder_name_with_client'])) {
+
+        if (! isset($validated['drive_folder_name_with_client'])) {
             // Si no viene en el request, usar el valor existente o el por defecto
             try {
                 $currentValue = $settings->drive_folder_name_with_client ?? null;
@@ -653,7 +685,7 @@ class SettingsController extends Controller
         if (array_key_exists('drive_default_country_no_client', $validated)) {
             $settings->drive_default_country_no_client = $validated['drive_default_country_no_client'] ?? '';
         }
-        
+
         $settings->save();
     }
 
@@ -666,7 +698,7 @@ class SettingsController extends Controller
         try {
             $settings = app(GeneralSettings::class);
         } catch (\Exception $e) {
-            $settings = new GeneralSettings();
+            $settings = new GeneralSettings;
             $this->ensureAllPropertiesSet($settings);
             $settings->save();
         }
@@ -699,12 +731,13 @@ class SettingsController extends Controller
 
         if ($error) {
             $desc = $request->input('error_description', $error);
+
             return redirect()
                 ->route('admin.settings.section', 'drive')
-                ->with('error', 'Error en autorización Google: ' . $desc);
+                ->with('error', 'Error en autorización Google: '.$desc);
         }
 
-        if (!$code) {
+        if (! $code) {
             return redirect()
                 ->route('admin.settings.section', 'drive')
                 ->with('error', 'No se recibió el código de autorización de Google.');
@@ -714,7 +747,7 @@ class SettingsController extends Controller
         try {
             $settings = app(GeneralSettings::class);
         } catch (\Exception $e) {
-            $settings = new GeneralSettings();
+            $settings = new GeneralSettings;
             $this->ensureAllPropertiesSet($settings);
             $settings->save();
         }
@@ -726,7 +759,7 @@ class SettingsController extends Controller
         }
 
         $redirectUri = route('admin.settings.drive-oauth.callback');
-        $response = \Illuminate\Support\Facades\Http::asForm()->post('https://oauth2.googleapis.com/token', [
+        $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
             'grant_type' => 'authorization_code',
             'client_id' => $settings->drive_oauth_client_id,
             'client_secret' => $settings->drive_oauth_client_secret,
@@ -734,19 +767,20 @@ class SettingsController extends Controller
             'code' => $code,
         ]);
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             $body = $response->json();
             $msg = $body['error_description'] ?? $body['error'] ?? $response->body();
+
             return redirect()
                 ->route('admin.settings.section', 'drive')
-                ->with('error', 'Error al obtener tokens: ' . $msg);
+                ->with('error', 'Error al obtener tokens: '.$msg);
         }
 
         $data = $response->json();
         $refreshToken = $data['refresh_token'] ?? null;
         $accessToken = $data['access_token'] ?? null;
 
-        if (!$refreshToken) {
+        if (! $refreshToken) {
             return redirect()
                 ->route('admin.settings.section', 'drive')
                 ->with('error', 'Google no devolvió refresh_token. Asegúrate de usar prompt=consent y autorizar de nuevo.');
@@ -786,12 +820,12 @@ class SettingsController extends Controller
 
         // Asegurar que todas las propiedades estén establecidas
         $this->ensureAllPropertiesSet($settings);
-        
+
         // Actualizar proveedor
         if (isset($validated['mail_provider'])) {
             $settings->mail_provider = $validated['mail_provider'];
         }
-        
+
         // Actualizar campos SMTP
         if (isset($validated['mail_mailer'])) {
             $settings->mail_mailer = $validated['mail_mailer'];
@@ -817,7 +851,7 @@ class SettingsController extends Controller
         if (isset($validated['mail_from_name'])) {
             $settings->mail_from_name = $validated['mail_from_name'];
         }
-        
+
         // Actualizar campos Zoho
         if (isset($validated['zoho_client_id'])) {
             $settings->zoho_client_id = $validated['zoho_client_id'] ?? '';
@@ -831,7 +865,7 @@ class SettingsController extends Controller
         if (isset($validated['zoho_from_email'])) {
             $settings->zoho_from_email = $validated['zoho_from_email'] ?? '';
         }
-        
+
         $settings->save();
     }
 
@@ -844,7 +878,7 @@ class SettingsController extends Controller
         ]);
 
         $template = EmailTemplate::findOrFail($validated['template_id']);
-        
+
         // Verificar que el body no esté vacío
         if (empty(trim($validated['body']))) {
             if ($request->expectsJson() || $request->ajax()) {
@@ -853,12 +887,12 @@ class SettingsController extends Controller
                     'message' => 'El cuerpo de la plantilla no puede estar vacío',
                 ], 422);
             }
-            
+
             return redirect()
                 ->route('admin.settings.section', 'templates')
                 ->with('error', 'El cuerpo de la plantilla no puede estar vacío');
         }
-        
+
         $template->subject = $validated['subject'];
         $template->body = $validated['body'];
         $template->save();
@@ -883,10 +917,10 @@ class SettingsController extends Controller
     {
         try {
             $template = EmailTemplate::findOrFail($id);
-            
+
             // Obtener el body directamente de la BD
             $body = $template->body ?? '';
-            
+
             // Logging detallado para debugging
             \Log::info("Obteniendo plantilla {$id}", [
                 'id' => $template->id,
@@ -896,12 +930,12 @@ class SettingsController extends Controller
                 'body_preview' => substr($body, 0, 200),
                 'body_is_empty' => empty(trim($body)),
             ]);
-            
+
             // Si está vacío, loguear warning
             if (empty(trim($body))) {
                 \Log::warning("Plantilla {$id} ({$template->type}) tiene body vacío en la BD");
             }
-            
+
             return response()->json([
                 'success' => true,
                 'template' => [
@@ -913,13 +947,14 @@ class SettingsController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error obteniendo plantilla: ' . $e->getMessage(), [
+            \Log::error('Error obteniendo plantilla: '.$e->getMessage(), [
                 'id' => $id,
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Plantilla no encontrada: ' . $e->getMessage(),
+                'message' => 'Plantilla no encontrada: '.$e->getMessage(),
             ], 404);
         }
     }
@@ -931,11 +966,11 @@ class SettingsController extends Controller
     {
         // Asegurar que los settings existan
         $this->ensureSettingsInDatabase();
-        
+
         try {
             $settings = app(GeneralSettings::class);
-        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
-            $settings = new GeneralSettings();
+        } catch (MissingSettings $e) {
+            $settings = new GeneralSettings;
             $this->ensureAllPropertiesSet($settings);
             $settings->save();
         }
@@ -956,7 +991,7 @@ class SettingsController extends Controller
         $redirectUri = route('admin.settings.zoho.callback');
         $scope = 'ZohoMail.messages.CREATE,ZohoMail.accounts.READ';
         $clientId = $settings->zoho_client_id;
-        
+
         $authUrl = sprintf(
             'https://accounts.zoho.com/oauth/v2/auth?scope=%s&client_id=%s&response_type=code&access_type=offline&redirect_uri=%s&prompt=consent',
             urlencode($scope),
@@ -979,21 +1014,22 @@ class SettingsController extends Controller
 
         if ($error) {
             $errorDescription = $request->input('error_description', $error);
-            
+
             // Mensaje más específico para error de Redirect URI
             if (str_contains(strtolower($errorDescription), 'redirect') || str_contains(strtolower($errorDescription), 'uri')) {
                 $redirectUri = route('admin.settings.zoho.callback');
+
                 return redirect()
                     ->route('admin.settings.section', 'mail')
-                    ->with('error', 'Error: URI de redireccionamiento no válido. Asegúrate de haber configurado EXACTAMENTE esta URL en Zoho API Console: ' . $redirectUri);
+                    ->with('error', 'Error: URI de redireccionamiento no válido. Asegúrate de haber configurado EXACTAMENTE esta URL en Zoho API Console: '.$redirectUri);
             }
-            
+
             return redirect()
                 ->route('admin.settings.section', 'mail')
-                ->with('error', 'Error en la autorización de Zoho: ' . $errorDescription);
+                ->with('error', 'Error en la autorización de Zoho: '.$errorDescription);
         }
 
-        if (!$code) {
+        if (! $code) {
             return redirect()
                 ->route('admin.settings.section', 'mail')
                 ->with('error', 'No se recibió el código de autorización de Zoho.');
@@ -1001,11 +1037,11 @@ class SettingsController extends Controller
 
         // Asegurar que los settings existan
         $this->ensureSettingsInDatabase();
-        
+
         try {
             $settings = app(GeneralSettings::class);
-        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
-            $settings = new GeneralSettings();
+        } catch (MissingSettings $e) {
+            $settings = new GeneralSettings;
             $this->ensureAllPropertiesSet($settings);
             $settings->save();
         }
@@ -1019,9 +1055,9 @@ class SettingsController extends Controller
 
         // Intercambiar código por Refresh Token
         $redirectUri = route('admin.settings.zoho.callback');
-        
+
         try {
-            $response = \Illuminate\Support\Facades\Http::asForm()->post('https://accounts.zoho.com/oauth/v2/token', [
+            $response = Http::asForm()->post('https://accounts.zoho.com/oauth/v2/token', [
                 'grant_type' => 'authorization_code',
                 'client_id' => $settings->zoho_client_id,
                 'client_secret' => $settings->zoho_client_secret,
@@ -1031,7 +1067,7 @@ class SettingsController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
-                
+
                 $refreshToken = $data['refresh_token'] ?? null;
                 $accessToken = $data['access_token'] ?? null;
 
@@ -1048,20 +1084,21 @@ class SettingsController extends Controller
                         ->route('admin.settings.section', 'mail')
                         ->with('success', '¡Autorización exitosa! El Refresh Token ha sido guardado automáticamente.');
                 } else {
-                return redirect()
-                    ->route('admin.settings.section', 'mail')
-                    ->with('error', 'No se recibió el Refresh Token en la respuesta de Zoho.');
+                    return redirect()
+                        ->route('admin.settings.section', 'mail')
+                        ->with('error', 'No se recibió el Refresh Token en la respuesta de Zoho.');
                 }
             } else {
                 $errorMessage = $response->json()['error_description'] ?? $response->body();
+
                 return redirect()
                     ->route('admin.settings.section', 'mail')
-                    ->with('error', 'Error al obtener Refresh Token: ' . $errorMessage);
+                    ->with('error', 'Error al obtener Refresh Token: '.$errorMessage);
             }
         } catch (\Exception $e) {
             return redirect()
                 ->route('admin.settings.section', 'mail')
-                ->with('error', 'Error al procesar la autorización: ' . $e->getMessage());
+                ->with('error', 'Error al procesar la autorización: '.$e->getMessage());
         }
     }
 
@@ -1078,11 +1115,11 @@ class SettingsController extends Controller
 
         // Asegurar que los settings existan
         $this->ensureSettingsInDatabase();
-        
+
         try {
             $settings = app(GeneralSettings::class);
-        } catch (\Spatie\LaravelSettings\Exceptions\MissingSettings $e) {
-            $settings = new GeneralSettings();
+        } catch (MissingSettings $e) {
+            $settings = new GeneralSettings;
             $this->ensureAllPropertiesSet($settings);
             $settings->save();
         }
@@ -1090,7 +1127,7 @@ class SettingsController extends Controller
         // Validar configuración antes de intentar enviar
         if ($settings->mail_provider === 'zoho') {
             $missingConfig = [];
-            
+
             if (empty($settings->zoho_client_id)) {
                 $missingConfig[] = 'Client ID de Zoho';
             }
@@ -1103,17 +1140,17 @@ class SettingsController extends Controller
             if (empty($settings->zoho_from_email)) {
                 $missingConfig[] = 'Email de origen de Zoho';
             }
-            
-            if (!empty($missingConfig)) {
+
+            if (! empty($missingConfig)) {
                 return redirect()
                     ->route('admin.settings.section', 'mail')
-                    ->with('error', 'Configuración incompleta de Zoho. Faltan: ' . implode(', ', $missingConfig) . '. Por favor, completa la configuración antes de enviar.')
+                    ->with('error', 'Configuración incompleta de Zoho. Faltan: '.implode(', ', $missingConfig).'. Por favor, completa la configuración antes de enviar.')
                     ->with('tab', 'history');
             }
         } else {
             // Validar SMTP
             $missingConfig = [];
-            
+
             if (empty($settings->mail_host)) {
                 $missingConfig[] = 'Host SMTP';
             }
@@ -1129,28 +1166,28 @@ class SettingsController extends Controller
             if (empty($settings->mail_from_address)) {
                 $missingConfig[] = 'Email de origen';
             }
-            
-            if (!empty($missingConfig)) {
+
+            if (! empty($missingConfig)) {
                 return redirect()
                     ->route('admin.settings.section', 'mail')
-                    ->with('error', 'Configuración incompleta de SMTP. Faltan: ' . implode(', ', $missingConfig) . '. Por favor, completa la configuración antes de enviar.')
+                    ->with('error', 'Configuración incompleta de SMTP. Faltan: '.implode(', ', $missingConfig).'. Por favor, completa la configuración antes de enviar.')
                     ->with('tab', 'history');
             }
         }
 
         try {
             $mailService = app(MailService::class);
-            
+
             $to = $validated['test_email_to'];
             $subject = $validated['test_email_subject'] ?? 'Correo de Prueba - RAMS';
             $body = $validated['test_email_body'] ?? '<h1>Correo de Prueba</h1><p>Este es un correo de prueba enviado desde el sistema RAMS.</p><p>Si recibes este correo, la configuración de correo está funcionando correctamente.</p>';
-            
+
             $result = $mailService->send($to, $subject, $body, null, null, true);
-            
+
             if ($result) {
                 return redirect()
                     ->route('admin.settings.section', 'history')
-                    ->with('success', 'Correo de prueba enviado exitosamente a ' . $to);
+                    ->with('success', 'Correo de prueba enviado exitosamente a '.$to);
             } else {
                 return redirect()
                     ->route('admin.settings.section', 'history')
@@ -1159,7 +1196,7 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->route('admin.settings.section', 'history')
-                ->with('error', 'Error al enviar correo de prueba: ' . $e->getMessage());
+                ->with('error', 'Error al enviar correo de prueba: '.$e->getMessage());
         }
     }
 
@@ -1193,7 +1230,7 @@ class SettingsController extends Controller
     {
         try {
             $log->delete();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Correo eliminado exitosamente',
@@ -1201,11 +1238,11 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar el correo: ' . $e->getMessage(),
+                'message' => 'Error al eliminar el correo: '.$e->getMessage(),
             ], 500);
         }
     }
-    
+
     /**
      * Actualizar configuración del sistema
      */
@@ -1216,11 +1253,11 @@ class SettingsController extends Controller
             'system_name' => 'nullable|string|max:255',
             'timezone' => 'nullable|string|max:64',
         ]);
-        
+
         if ($request->has('footer_text')) {
             $settings->footer_text = $request->input('footer_text');
         }
-        
+
         if ($request->has('system_name')) {
             $settings->system_name = $request->input('system_name');
         }
@@ -1231,54 +1268,54 @@ class SettingsController extends Controller
                 $settings->timezone = $tz;
             }
         }
-        
+
         $this->ensureAllPropertiesSet($settings);
         $settings->save();
     }
-    
+
     /**
      * Ejecutar git pull
      */
     public function gitPull(Request $request)
     {
         // Solo super_admin puede ejecutar git pull
-        if (!auth()->user()->hasRole('super_admin')) {
+        if (! auth()->user()->hasRole('super_admin')) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tienes permisos para realizar esta acción.',
             ], 403);
         }
-        
+
         $branch = $request->input('branch', 'main');
-        
+
         // Construir comando según el branch
         if ($branch === 'origin main') {
             $command = 'git pull origin main 2>&1';
         } else {
             $command = "git pull {$branch} 2>&1";
         }
-        
+
         try {
             // Cambiar al directorio del proyecto
             $projectPath = base_path();
-            
+
             // Verificar qué funciones están disponibles
             $output = '';
             $returnCode = 0;
-            
+
             // Intentar con exec() primero
-            if (function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')))) {
+            if (function_exists('exec') && ! in_array('exec', explode(',', ini_get('disable_functions')))) {
                 $outputArray = [];
                 \exec("cd {$projectPath} && {$command}", $outputArray, $returnCode);
                 $output = implode("\n", $outputArray);
             }
             // Si exec() no está disponible, intentar con shell_exec()
-            elseif (function_exists('shell_exec') && !in_array('shell_exec', explode(',', ini_get('disable_functions')))) {
+            elseif (function_exists('shell_exec') && ! in_array('shell_exec', explode(',', ini_get('disable_functions')))) {
                 $output = \shell_exec("cd {$projectPath} && {$command}");
                 $returnCode = $output !== null ? 0 : 1;
             }
             // Si ninguna está disponible, usar passthru con output buffering
-            elseif (function_exists('passthru') && !in_array('passthru', explode(',', ini_get('disable_functions')))) {
+            elseif (function_exists('passthru') && ! in_array('passthru', explode(',', ini_get('disable_functions')))) {
                 \ob_start();
                 \passthru("cd {$projectPath} && {$command}", $returnCode);
                 $output = \ob_get_clean();
@@ -1290,13 +1327,13 @@ class SettingsController extends Controller
                     1 => ['pipe', 'w'],
                     2 => ['pipe', 'w'],
                 ];
-                
+
                 $process = \proc_open(
                     "cd {$projectPath} && {$command}",
                     $descriptorspec,
                     $pipes
                 );
-                
+
                 if (is_resource($process)) {
                     \fclose($pipes[0]);
                     $output = \stream_get_contents($pipes[1]);
@@ -1309,7 +1346,7 @@ class SettingsController extends Controller
             } else {
                 throw new \Exception('Las funciones de ejecución de comandos están deshabilitadas en este servidor. Contacta al administrador del servidor.');
             }
-            
+
             if ($returnCode === 0 || $output !== null) {
                 return response()->json([
                     'success' => true,
@@ -1326,27 +1363,27 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
+                'message' => 'Error: '.$e->getMessage(),
                 'output' => 'Las funciones de ejecución pueden estar deshabilitadas. Verifica la configuración de PHP (disable_functions).',
             ], 500);
         }
     }
-    
+
     /**
      * Ejecutar comando artisan
      */
     public function artisanCommand(Request $request)
     {
         // Solo super_admin puede ejecutar comandos artisan
-        if (!auth()->user()->hasRole('super_admin')) {
+        if (! auth()->user()->hasRole('super_admin')) {
             return response()->json([
                 'success' => false,
                 'message' => 'No tienes permisos para realizar esta acción.',
             ], 403);
         }
-        
+
         $command = $request->input('command');
-        
+
         // Validar que el comando esté permitido (seguridad). Permite comando con opciones (ej. migrate --force)
         $allowedCommands = [
             'view:clear',
@@ -1356,7 +1393,7 @@ class SettingsController extends Controller
             'optimize:clear',
             'migrate --force',
         ];
-        
+
         // Si el comando contiene &&, dividirlo en múltiples comandos
         $commands = [];
         $regex = '/php\s+artisan\s+([\w:]+(?:\s+--[\w-]+)*)/';
@@ -1380,38 +1417,38 @@ class SettingsController extends Controller
                 }
             }
         }
-        
+
         if (empty($commands)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Comando no permitido o formato inválido.',
             ], 400);
         }
-        
+
         try {
             $projectPath = base_path();
             $allOutput = [];
             $hasError = false;
-            
+
             foreach ($commands as $cmd) {
                 $fullCommand = "cd {$projectPath} && php artisan {$cmd} 2>&1";
-                
+
                 $output = '';
                 $returnCode = 0;
-                
+
                 // Intentar con exec() primero
-                if (function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')))) {
+                if (function_exists('exec') && ! in_array('exec', explode(',', ini_get('disable_functions')))) {
                     $outputArray = [];
                     \exec($fullCommand, $outputArray, $returnCode);
                     $output = implode("\n", $outputArray);
                 }
                 // Si exec() no está disponible, intentar con shell_exec()
-                elseif (function_exists('shell_exec') && !in_array('shell_exec', explode(',', ini_get('disable_functions')))) {
+                elseif (function_exists('shell_exec') && ! in_array('shell_exec', explode(',', ini_get('disable_functions')))) {
                     $output = \shell_exec($fullCommand);
                     $returnCode = $output !== null ? 0 : 1;
                 }
                 // Si ninguna está disponible, usar passthru con output buffering
-                elseif (function_exists('passthru') && !in_array('passthru', explode(',', ini_get('disable_functions')))) {
+                elseif (function_exists('passthru') && ! in_array('passthru', explode(',', ini_get('disable_functions')))) {
                     \ob_start();
                     \passthru($fullCommand, $returnCode);
                     $output = \ob_get_clean();
@@ -1423,9 +1460,9 @@ class SettingsController extends Controller
                         1 => ['pipe', 'w'],
                         2 => ['pipe', 'w'],
                     ];
-                    
+
                     $process = \proc_open($fullCommand, $descriptorspec, $pipes);
-                    
+
                     if (is_resource($process)) {
                         \fclose($pipes[0]);
                         $output = \stream_get_contents($pipes[1]);
@@ -1438,18 +1475,18 @@ class SettingsController extends Controller
                 } else {
                     throw new \Exception('Las funciones de ejecución de comandos están deshabilitadas en este servidor.');
                 }
-                
+
                 $allOutput[] = "=== php artisan {$cmd} ===";
                 $allOutput[] = $output ?: 'Comando ejecutado (sin salida)';
-                
+
                 if ($returnCode !== 0) {
                     $hasError = true;
                 }
             }
-            
+
             $outputText = implode("\n\n", $allOutput);
-            
-            if (!$hasError) {
+
+            if (! $hasError) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Comando(s) ejecutado(s) exitosamente',
@@ -1465,7 +1502,7 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
+                'message' => 'Error: '.$e->getMessage(),
                 'output' => 'Las funciones de ejecución pueden estar deshabilitadas. Verifica la configuración de PHP (disable_functions).',
             ], 500);
         }
@@ -1477,14 +1514,14 @@ class SettingsController extends Controller
     public function testDriveConnection(Request $request)
     {
         try {
-            $driveService = app(\App\Services\GoogleDriveService::class);
+            $driveService = app(GoogleDriveService::class);
             $result = $driveService->testConnection();
-            
+
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al probar conexión: ' . $e->getMessage(),
+                'message' => 'Error al probar conexión: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1495,11 +1532,11 @@ class SettingsController extends Controller
     public function getDriveOperationsLog(Request $request)
     {
         $permissionService = app(PermissionService::class);
-        if (!$permissionService->userHasPermission('settings_drive_operations_log', 'view')) {
+        if (! $permissionService->userHasPermission('settings_drive_operations_log', 'view')) {
             return response()->json(['success' => false, 'message' => 'No tienes permiso para ver el historial de operaciones.'], 403);
         }
         try {
-            $query = \App\Models\DriveOperationLog::with(['user', 'registration', 'company']);
+            $query = DriveOperationLog::with(['user', 'registration', 'company']);
 
             // Filtro por tipo de operación
             if ($request->has('operation_type') && $request->operation_type !== '' && $request->operation_type !== 'all') {
@@ -1519,19 +1556,19 @@ class SettingsController extends Controller
             // Buscador (por nombre de recurso, usuario, expediente)
             if ($request->has('search') && $request->search) {
                 $search = $request->search;
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('resource_name', 'like', "%{$search}%")
-                      ->orWhereHas('user', function($userQuery) use ($search) {
-                          $userQuery->where('name', 'like', "%{$search}%")
-                                    ->orWhere('email', 'like', "%{$search}%");
-                      })
-                      ->orWhereHas('registration', function($regQuery) use ($search) {
-                          $regQuery->where('product_name', 'like', "%{$search}%")
-                                   ->orWhere('registration_number', 'like', "%{$search}%");
-                      })
-                      ->orWhereHas('company', function($compQuery) use ($search) {
-                          $compQuery->where('name', 'like', "%{$search}%");
-                      });
+                        ->orWhereHas('user', function ($userQuery) use ($search) {
+                            $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('registration', function ($regQuery) use ($search) {
+                            $regQuery->where('product_name', 'like', "%{$search}%")
+                                ->orWhere('registration_number', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('company', function ($compQuery) use ($search) {
+                            $compQuery->where('name', 'like', "%{$search}%");
+                        });
                 });
             }
 
@@ -1544,7 +1581,7 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener historial: ' . $e->getMessage(),
+                'message' => 'Error al obtener historial: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1555,20 +1592,20 @@ class SettingsController extends Controller
     public function deleteDriveOperationsLog(Request $request)
     {
         $permissionService = app(PermissionService::class);
-        if (!$permissionService->userHasPermission('settings_drive_operations_log', 'view')) {
+        if (! $permissionService->userHasPermission('settings_drive_operations_log', 'view')) {
             return response()->json(['success' => false, 'message' => 'No tienes permiso.'], 403);
         }
         try {
             $ids = $request->input('ids', []);
-            
-            if (empty($ids) || !is_array($ids)) {
+
+            if (empty($ids) || ! is_array($ids)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No se proporcionaron IDs para eliminar',
                 ], 400);
             }
 
-            $deleted = \App\Models\DriveOperationLog::whereIn('id', $ids)->delete();
+            $deleted = DriveOperationLog::whereIn('id', $ids)->delete();
 
             return response()->json([
                 'success' => true,
@@ -1578,7 +1615,7 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar registros: ' . $e->getMessage(),
+                'message' => 'Error al eliminar registros: '.$e->getMessage(),
             ], 500);
         }
     }

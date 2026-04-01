@@ -1633,6 +1633,51 @@
                         <i class="fas fa-code-branch text-teal-600 mr-2"></i>
                         Actualización del Sistema (Git)
                     </h3>
+                    @php
+                        $commitAtLocal = !empty($gitInfo['commit_at'] ?? null)
+                            ? \Carbon\Carbon::parse($gitInfo['commit_at'])->timezone(config('app.timezone'))
+                            : null;
+                    @endphp
+                    <div class="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">
+                        <p class="mb-2 font-semibold text-slate-900">
+                            <i class="fas fa-code-commit mr-1.5 text-slate-600"></i>
+                            Versión de código en este servidor
+                        </p>
+                        @if(!empty($gitInfo['available']))
+                            <dl class="space-y-1 font-mono text-xs sm:text-sm">
+                                <div class="flex flex-wrap gap-x-2 gap-y-1">
+                                    <dt class="text-slate-600 shrink-0">Commit:</dt>
+                                    <dd class="break-all">
+                                        <span class="font-semibold text-teal-800">{{ $gitInfo['short_hash'] }}</span>
+                                        <span class="text-slate-500">({{ $gitInfo['full_hash'] }})</span>
+                                    </dd>
+                                </div>
+                                @if($commitAtLocal)
+                                    <div class="flex flex-wrap gap-x-2 gap-y-1">
+                                        <dt class="text-slate-600 shrink-0">Fecha del commit:</dt>
+                                        <dd>{{ $commitAtLocal->format('d/m/Y H:i:s') }} ({{ $commitAtLocal->timezoneName }})</dd>
+                                    </div>
+                                    <div class="flex flex-wrap gap-x-2 gap-y-1">
+                                        <dt class="text-slate-600 shrink-0">ISO:</dt>
+                                        <dd>{{ $gitInfo['commit_at'] }}</dd>
+                                    </div>
+                                @endif
+                                @if(!empty($gitInfo['branch']))
+                                    <div class="flex flex-wrap gap-x-2 gap-y-1">
+                                        <dt class="text-slate-600 shrink-0">Rama:</dt>
+                                        <dd>{{ $gitInfo['branch'] }}</dd>
+                                    </div>
+                                @endif
+                                @if(!empty($gitInfo['subject']))
+                                    <div class="mt-2 border-t border-slate-200 pt-2 text-slate-700 font-sans text-xs sm:text-sm">
+                                        {{ $gitInfo['subject'] }}
+                                    </div>
+                                @endif
+                            </dl>
+                        @else
+                            <p class="text-slate-600 font-sans">{{ $gitInfo['error'] ?? 'Información de Git no disponible.' }}</p>
+                        @endif
+                    </div>
                     <p class="text-sm text-gray-600 mb-6">
                         Ejecuta <code class="bg-gray-100 px-2 py-1 rounded">git pull</code> para actualizar el código desde el repositorio remoto.
                     </p>
