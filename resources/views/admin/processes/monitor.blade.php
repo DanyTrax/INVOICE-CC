@@ -49,7 +49,7 @@
                 </select>
             </div>
             <div>
-                <label for="monitor-step" class="block text-xs font-medium text-gray-600 mb-1">Paso</label>
+                <label for="monitor-step" class="block text-xs font-medium text-gray-600 mb-1">Estado</label>
                 <select id="monitor-step" name="step" class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">
                     <option value="">Todos</option>
                     @foreach(\App\Models\Process::stepFilterLabels() as $num => $label)
@@ -98,7 +98,7 @@
                         <th class="px-4 py-3">Cliente</th>
                         <th class="px-4 py-3">Tipo de Trámite</th>
                         <th class="px-4 py-3">Producto / Referencia</th>
-                        <th class="px-4 py-3">Paso</th>
+                        <th class="px-4 py-3">Estado</th>
                         <th class="px-4 py-3">Fecha Último Evento</th>
                         <th class="px-4 py-3">Equipo</th>
                         <th class="px-4 py-3 w-32">Acciones</th>

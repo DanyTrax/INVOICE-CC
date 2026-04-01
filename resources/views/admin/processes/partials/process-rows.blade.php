@@ -3,11 +3,23 @@
         $tipoTramite = $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '—';
         $fechaUltimoGuardado = $process->updated_at;
         $paso = $process->getCurrentStep();
-        $stepStyles = [1 => 'bg-gray-100 text-gray-800', 2 => 'bg-teal-100 text-teal-800', 3 => 'bg-blue-100 text-blue-800', 4 => 'bg-yellow-100 text-yellow-800', 5 => 'bg-green-100 text-green-800'];
+        $stepStyles = [
+            1 => 'process-step-badge--recoleccion bg-gray-100 text-gray-800',
+            2 => 'bg-teal-100 text-teal-800',
+            3 => 'bg-blue-100 text-blue-800',
+            4 => 'bg-yellow-100 text-yellow-800',
+            5 => 'bg-green-100 text-green-800',
+        ];
         $estadoLabel = $process->getDisplayStatusLabel();
-        $stepClass = str_starts_with($estadoLabel, 'AUTO')
-            ? 'bg-amber-100 text-amber-900'
-            : ($stepStyles[$paso] ?? 'bg-gray-100 text-gray-800');
+        $isAuto = str_starts_with($estadoLabel, 'AUTO');
+        $isRecoleccion = ! $isAuto && ($estadoLabel === 'Recolección' || $paso === 1);
+        if ($isAuto) {
+            $stepClass = 'process-step-badge--auto bg-amber-100 text-amber-900';
+        } elseif ($isRecoleccion) {
+            $stepClass = 'process-step-badge--recoleccion bg-gray-100 text-gray-800';
+        } else {
+            $stepClass = $stepStyles[$paso] ?? 'process-step-badge--recoleccion bg-gray-100 text-gray-800';
+        }
     @endphp
     <tr class="bg-white border-b border-gray-200 hover:bg-gray-50">
         <td class="px-4 py-3 text-sm text-gray-900 font-mono" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID expediente: {{ $process->id }}">{{ $process->id }}</td>
@@ -15,7 +27,7 @@
         <td class="px-4 py-3 text-sm text-gray-700">{{ $tipoTramite }}</td>
         <td class="px-4 py-3 text-sm text-gray-700">{{ $process->product_reference ?? '—' }}</td>
         <td class="px-4 py-3">
-            <span class="px-2 py-1 text-xs font-medium rounded-full {{ $stepClass }}" title="Paso {{ $paso }}">{{ $estadoLabel }}</span>
+            <span class="process-step-badge inline-block max-w-[min(100%,12rem)] text-center align-middle rounded-lg px-2.5 py-1.5 text-xs font-medium leading-snug {{ $stepClass }}" title="Estado · paso {{ $paso }}: {{ $estadoLabel }}">{{ $estadoLabel }}</span>
         </td>
         <td class="px-4 py-3 text-sm text-gray-600">{{ $fechaUltimoGuardado ? $fechaUltimoGuardado->format('d/m/Y H:i') : '—' }}</td>
         <td class="px-4 py-3 align-top max-w-[11rem]">

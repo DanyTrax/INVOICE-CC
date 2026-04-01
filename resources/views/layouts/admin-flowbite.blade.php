@@ -79,6 +79,18 @@
             color: #e2e8f0 !important;
         }
 
+        /* Monitor / historial: badges de estado (bg-gray-100/bg-amber-100 genéricos se aplastan arriba) */
+        html.dark .process-step-badge--auto {
+            background-color: rgba(146, 64, 14, 0.45) !important;
+            color: #fde68a !important;
+            border: 1px solid rgba(251, 191, 36, 0.55) !important;
+        }
+        html.dark .process-step-badge--recoleccion {
+            background-color: #334155 !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #64748b !important;
+        }
+
         html.dark .text-black,
         html.dark .text-slate-900,
         html.dark .text-gray-900 { color: #e2e8f0 !important; }
