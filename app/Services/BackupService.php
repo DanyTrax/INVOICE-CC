@@ -271,6 +271,7 @@ class BackupService
                 'service_types',
                 'concept_catalogs',
                 'email_templates',
+                'settings',
                 'email_logs',
                 'drive_operations_log',
                 'company_invites',
