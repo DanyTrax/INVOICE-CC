@@ -734,6 +734,15 @@
                     </div>
                 @endif
 
+                @if(session('info'))
+                    <div class="mb-4 p-4 text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-lg" role="alert">
+                        <div class="flex items-center">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <span>{{ session('info') }}</span>
+                        </div>
+                    </div>
+                @endif
+
                 @if ($errors->any())
                     <div class="mb-4 p-4 text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg" role="alert">
                         <ul class="list-disc list-inside">

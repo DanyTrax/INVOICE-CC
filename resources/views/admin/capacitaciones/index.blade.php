@@ -14,13 +14,6 @@
 @endsection
 
 @section('content')
-    @if(session('success'))
-        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{{ session('error') }}</div>
-    @endif
-
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <p class="text-sm text-gray-600">Videos de capacitación. Debes ver cada video completo (no se puede adelantar). Si cierras antes de terminar, deberás volver a iniciarlo.</p>
         @if($canManage)

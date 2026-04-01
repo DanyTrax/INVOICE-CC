@@ -20,10 +20,6 @@
 @endsection
 
 @section('content')
-    @if(session('error'))
-        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{{ session('error') }}</div>
-    @endif
-
     <form action="{{ route('admin.capacitaciones.store') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 max-w-2xl">
         @csrf
         <div class="mb-4">

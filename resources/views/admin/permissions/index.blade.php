@@ -14,12 +14,6 @@
 @endsection
 
 @section('content')
-    @if (session('success'))
-        <div class="mb-4 p-4 text-sm text-green-800 bg-green-50 border border-green-200 rounded-lg">
-            {{ session('success') }}
-        </div>
-    @endif
-
     @php
         $actionColumns = [
             'view' => 'Ver',

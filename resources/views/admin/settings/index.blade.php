@@ -246,11 +246,6 @@
                 <p class="text-sm text-gray-600 mb-6">
                     Cree plantillas con logo, cabecera y contexto (texto introductorio) para el PDF de cotizaciones. Al descargar una cotización podrá elegir qué plantilla usar.
                 </p>
-                @if(session('success'))
-                    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-                        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-                    </div>
-                @endif
                 <a href="{{ route('admin.settings.quote-pdf-templates.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium mb-6">
                     <i class="fas fa-plus mr-2"></i> Nueva plantilla
                 </a>
@@ -312,11 +307,6 @@
                 <p class="text-sm text-gray-600 mb-6">
                     Cree plantillas con logo, cabecera y contexto para el PDF de propuestas (concepto, alcance, honorarios). Al descargar una propuesta podrá elegir qué plantilla usar. Las mismas variables que en cotizaciones (<code class="bg-gray-100 px-1 rounded text-xs">@verbatim{{fecha}}, {{ciudad}}, {{cliente}}, {{consecutivo}}, {{destinatario}}@endverbatim</code>) se reemplazan al generar el PDF.
                 </p>
-                @if(session('success'))
-                    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-                        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-                    </div>
-                @endif
                 <a href="{{ route('admin.settings.proposal-pdf-templates.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium mb-6">
                     <i class="fas fa-plus mr-2"></i> Nueva plantilla
                 </a>
@@ -1582,21 +1572,6 @@
         <!-- Tab 6: Sistema (según permiso Config: Sistema) -->
         <div id="panel-system" class="tab-panel {{ $activeSection === 'system' ? '' : 'hidden' }}">
             <div class="space-y-6">
-                @if(session('success') && $activeSection === 'system')
-                    <div class="p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-                        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-                    </div>
-                @endif
-                @if(session('error') && $activeSection === 'system')
-                    <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
-                        <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
-                    </div>
-                @endif
-                @if(session('info') && $activeSection === 'system')
-                    <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
-                        <i class="fas fa-info-circle mr-2"></i>{{ session('info') }}
-                    </div>
-                @endif
 
                 <!-- Eliminar usuario por correo -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

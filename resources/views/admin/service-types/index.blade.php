@@ -17,11 +17,6 @@
     @php
         $permissionService = app(App\Services\PermissionService::class);
     @endphp
-    @if(session('success'))
-        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-            <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-        </div>
-    @endif
 
     <div class="mb-4 flex justify-end">
         <a href="{{ route('admin.service-types.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium">
