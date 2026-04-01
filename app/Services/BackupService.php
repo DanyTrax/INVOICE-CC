@@ -125,15 +125,16 @@ class BackupService
             throw new \Exception('Archivo de backup inválido.');
         }
 
-        DB::transaction(function () use ($payload) {
-            // Deshabilitar temporalmente FK para SQLite y MySQL
-            if (DB::getDriverName() === 'sqlite') {
-                DB::statement('PRAGMA foreign_keys = OFF');
-            }
-            if (DB::getDriverName() === 'mysql') {
-                DB::statement('SET FOREIGN_KEY_CHECKS=0');
-            }
+        // MySQL: TRUNCATE hace COMMIT implícito; no usar DB::transaction() o falla al cerrar ("no active transaction").
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF');
+        }
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        }
 
+        try {
             $restoreOrder = [
                 'users',
                 'roles',
@@ -227,14 +228,14 @@ class BackupService
                 }
             }
 
-            // Reactivar llaves foráneas
-            if (DB::getDriverName() === 'sqlite') {
+        } finally {
+            if ($driver === 'sqlite') {
                 DB::statement('PRAGMA foreign_keys = ON');
             }
-            if (DB::getDriverName() === 'mysql') {
+            if ($driver === 'mysql') {
                 DB::statement('SET FOREIGN_KEY_CHECKS=1');
             }
-        });
+        }
     }
 
     public function restoreBackupFromFile(UploadedFile $file): void
@@ -245,16 +246,16 @@ class BackupService
 
     public function wipeDataExceptSuperAdmin(bool $preserveCurrentUser = true, bool $preserveRolesAndPermissions = true): void
     {
-        DB::transaction(function () use ($preserveCurrentUser, $preserveRolesAndPermissions) {
-            // MySQL: TRUNCATE falla en tablas padre si hay FK desde hijas (aunque estén vacías).
-            // Misma idea que restoreBackupFromJson.
-            if (DB::getDriverName() === 'sqlite') {
-                DB::statement('PRAGMA foreign_keys = OFF');
-            }
-            if (DB::getDriverName() === 'mysql') {
-                DB::statement('SET FOREIGN_KEY_CHECKS=0');
-            }
+        // MySQL: TRUNCATE hace COMMIT implícito; DB::transaction() rompe al finalizar ("no active transaction").
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF');
+        }
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        }
 
+        try {
             $superAdminIds = User::role('super_admin')->pluck('id')->toArray();
 
             if ($preserveCurrentUser && Auth::check()) {
@@ -321,13 +322,13 @@ class BackupService
                     ->whereNotIn('id', $superAdminIds)
                     ->delete();
             }
-
-            if (DB::getDriverName() === 'sqlite') {
+        } finally {
+            if ($driver === 'sqlite') {
                 DB::statement('PRAGMA foreign_keys = ON');
             }
-            if (DB::getDriverName() === 'mysql') {
+            if ($driver === 'mysql') {
                 DB::statement('SET FOREIGN_KEY_CHECKS=1');
             }
-        });
+        }
     }
 }
