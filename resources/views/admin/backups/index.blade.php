@@ -163,12 +163,27 @@
             </div>
 
             <form method="POST" action="{{ route('admin.backups.wipe') }}"
-                  onsubmit="return confirm('¿Estás completamente seguro? Esta acción borrará todos los datos excepto los super_admin.');">
+                  onsubmit="return confirm('¿Estás completamente seguro? Esta acción borrará todos los datos.');">
                 @csrf
+
+                <div class="mb-3">
+                    <label class="inline-flex items-center text-sm text-gray-700">
+                        <input type="checkbox" name="preserve_current_user" value="1" checked class="mr-2" />
+                        Conservar usuario actual autenticado
+                    </label>
+                </div>
+
+                <div class="mb-3">
+                    <label class="inline-flex items-center text-sm text-gray-700">
+                        <input type="checkbox" name="preserve_roles_permissions" value="1" checked class="mr-2" />
+                        Conservar roles y permisos (roles, permisos, asignaciones)
+                    </label>
+                </div>
+
                 <button type="submit"
                         class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700">
                     <i class="fas fa-broom mr-2"></i>
-                    Borrar todos los datos (excepto super_admin)
+                    Borrar datos de negocio (conservar super_admin)
                 </button>
             </form>
         </div>

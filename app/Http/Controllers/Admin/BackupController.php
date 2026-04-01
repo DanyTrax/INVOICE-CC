@@ -117,15 +117,26 @@ class BackupController extends Controller
             ->with('success', 'Backup restaurado desde Drive correctamente.');
     }
 
-    public function wipe(BackupService $service): RedirectResponse
+    public function wipe(Request $request, BackupService $service): RedirectResponse
     {
         $this->ensureCanAccessBackups();
 
-        $service->wipeDataExceptSuperAdmin();
+        $preserveCurrentUser = (bool) $request->input('preserve_current_user', true);
+        $preserveRolesAndPermissions = (bool) $request->input('preserve_roles_permissions', true);
+
+        $service->wipeDataExceptSuperAdmin($preserveCurrentUser, $preserveRolesAndPermissions);
+
+        $message = 'Datos de negocio eliminados.';
+        if ($preserveCurrentUser) {
+            $message .= ' Se conserva el usuario actual (si aplica).';
+        }
+        if ($preserveRolesAndPermissions) {
+            $message .= ' Se conservan roles y permisos.';
+        }
 
         return redirect()
             ->route('admin.backups.index')
-            ->with('success', 'Datos de negocio eliminados. Solo se conservan los usuarios super_admin.');
+            ->with('success', $message);
     }
 }
 

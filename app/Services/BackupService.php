@@ -39,38 +39,56 @@ class BackupService
         $tables = [
             'users',
             'roles',
-            'model_has_roles',
+            'permissions',
             'role_has_permissions',
+            'model_has_roles',
             'companies',
             'company_user',
             'registrations',
             'services',
             'service_types',
+            'concept_catalogs',
             'quotes',
             'quote_items',
             'proposals',
             'proposal_items',
-            'concept_catalogs',
             'processes',
             'process_documents',
+            'process_user',
             'submissions',
+            'regulatory_events',
             'documents',
+            'checklist_items',
+            'capacitacion_videos',
+            'capacitacion_completions',
             'email_templates',
             'settings',
             'email_logs',
             'drive_operations_log',
             'company_invites',
+            'activity_logs',
         ];
 
         foreach ($tables as $table) {
             try {
-                $payload['tables'][$table] = DB::table($table)->get()->toArray();
+                if (Schema::hasTable($table)) {
+                    $payload['tables'][$table] = DB::table($table)->get()->toArray();
+                } else {
+                    $payload['tables'][$table] = [];
+                }
             } catch (Throwable $e) {
                 Log::error('Error exportando tabla para backup', [
                     'table' => $table,
                     'error' => $e->getMessage(),
                 ]);
+                $payload['tables'][$table] = [];
             }
+        }
+
+        // Verificación rápida: se guardaron todas las tablas definidas (si existen)
+        $missing = array_filter($tables, fn($table) => !array_key_exists($table, $payload['tables']));
+        if (!empty($missing)) {
+            Log::warning('Backup incompleto: algunas tablas definidas faltan en payload', ['missing' => $missing]);
         }
 
         file_put_contents($localPath, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -119,24 +137,34 @@ class BackupService
             $restoreOrder = [
                 'users',
                 'roles',
+                'permissions',
                 'role_has_permissions',
                 'model_has_roles',
                 'companies',
                 'company_user',
+                'services',
                 'service_types',
+                'concept_catalogs',
                 'quotes',
                 'quote_items',
                 'proposals',
+                'proposal_items',
+                'registrations',
                 'processes',
                 'process_documents',
+                'process_user',
                 'submissions',
-                'registrations',
+                'regulatory_events',
                 'documents',
+                'checklist_items',
+                'capacitacion_videos',
+                'capacitacion_completions',
                 'email_templates',
                 'settings',
                 'email_logs',
                 'drive_operations_log',
                 'company_invites',
+                'activity_logs',
             ];
 
             foreach ($restoreOrder as $table) {
@@ -213,36 +241,74 @@ class BackupService
         $this->restoreBackupFromJson($content);
     }
 
-    public function wipeDataExceptSuperAdmin(): void
+    public function wipeDataExceptSuperAdmin(bool $preserveCurrentUser = true, bool $preserveRolesAndPermissions = true): void
     {
-        DB::transaction(function () {
-            // IDs de super admins
-            $superAdminIds = User::role('super_admin')->pluck('id');
+        DB::transaction(function () use ($preserveCurrentUser, $preserveRolesAndPermissions) {
+            $superAdminIds = User::role('super_admin')->pluck('id')->toArray();
 
-            // Tablas de negocio que se pueden vaciar
+            if ($preserveCurrentUser && Auth::check()) {
+                $currentUserId = Auth::id();
+                if ($currentUserId && !in_array($currentUserId, $superAdminIds, true)) {
+                    $superAdminIds[] = $currentUserId;
+                }
+            }
+
             $truncateTables = [
                 'company_user',
                 'documents',
                 'registrations',
                 'companies',
+                'process_documents',
+                'process_user',
+                'submissions',
+                'regulatory_events',
+                'checklist_items',
+                'quotes',
+                'quote_items',
+                'proposals',
+                'proposal_items',
+                'services',
+                'service_types',
+                'concept_catalogs',
+                'email_templates',
                 'email_logs',
                 'drive_operations_log',
                 'company_invites',
+                'activity_logs',
+                'capacitacion_videos',
+                'capacitacion_completions',
             ];
 
             foreach ($truncateTables as $table) {
-                DB::table($table)->truncate();
+                if (Schema::hasTable($table)) {
+                    DB::table($table)->truncate();
+                }
             }
 
-            // Eliminar usuarios que no sean super_admin
-            DB::table('model_has_roles')
-                ->where('model_type', User::class)
-                ->whereNotIn('model_id', $superAdminIds)
-                ->delete();
+            if (!$preserveRolesAndPermissions) {
+                foreach (['model_has_roles', 'role_has_permissions', 'roles', 'permissions'] as $table) {
+                    if (Schema::hasTable($table)) {
+                        if ($table === 'model_has_roles') {
+                            DB::table($table)->where('model_type', User::class)->truncate();
+                        } else {
+                            DB::table($table)->truncate();
+                        }
+                    }
+                }
+            } else {
+                if (Schema::hasTable('model_has_roles')) {
+                    DB::table('model_has_roles')
+                        ->where('model_type', User::class)
+                        ->whereNotIn('model_id', $superAdminIds)
+                        ->delete();
+                }
+            }
 
-            DB::table('users')
-                ->whereNotIn('id', $superAdminIds)
-                ->delete();
+            if (Schema::hasTable('users')) {
+                DB::table('users')
+                    ->whereNotIn('id', $superAdminIds)
+                    ->delete();
+            }
         });
     }
 }
