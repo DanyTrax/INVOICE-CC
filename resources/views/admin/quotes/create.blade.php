@@ -130,8 +130,8 @@
                     <span>Usar columna Contacto</span>
                 </label>
                 <label class="inline-flex items-center gap-2" title="Se activa al vincular un expediente a un ítem">
-                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" disabled>
-                    <span class="text-gray-400">Usar columna Trámite</span>
+                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                    <span>Usar columna Trámite</span>
                 </label>
                 <label class="inline-flex items-center gap-2 ml-4">
                     <input type="checkbox" name="apply_tax" id="toggle-apply-tax" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
@@ -445,6 +445,7 @@
         const clientSelect = document.getElementById('client_id');
         const togglePrev = document.getElementById('toggle-prev-license');
         const toggleRaa = document.getElementById('toggle-raa');
+        const toggleTramite = document.getElementById('toggle-tramite');
         const toggleDescription = document.getElementById('toggle-description');
         const toggleRowId = document.getElementById('toggle-row-id');
         const toggleFranquicia = document.getElementById('toggle-franquicia');
@@ -515,7 +516,7 @@
         function updateColumnVisibility() {
             if (togglePrev) setColumnEnabled('prev-license', togglePrev.checked);
             if (toggleRaa) setColumnEnabled('raa', toggleRaa.checked);
-            setColumnEnabled('tramite', false);
+            if (toggleTramite) setColumnEnabled('tramite', toggleTramite.checked);
             if (toggleDescription) setColumnEnabled('description', toggleDescription.checked);
             if (toggleRowId) setColumnEnabled('row-id', toggleRowId.checked);
             if (toggleFranquicia) setColumnEnabled('franquicia', toggleFranquicia.checked);
@@ -642,6 +643,7 @@
         btnAddLoan.addEventListener('click', function() { addRow(true); });
         if (togglePrev) togglePrev.addEventListener('change', updateColumnVisibility);
         if (toggleRaa) toggleRaa.addEventListener('change', updateColumnVisibility);
+        if (toggleTramite) toggleTramite.addEventListener('change', updateColumnVisibility);
         if (toggleDescription) toggleDescription.addEventListener('change', updateColumnVisibility);
         if (toggleRowId) toggleRowId.addEventListener('change', updateColumnVisibility);
         if (toggleFranquicia) toggleFranquicia.addEventListener('change', updateColumnVisibility);

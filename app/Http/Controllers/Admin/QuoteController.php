@@ -127,7 +127,15 @@ class QuoteController extends Controller
             'items.*.service_id.exists' => 'El servicio no es válido. Debe elegirse exactamente uno de la lista de servicios.',
         ]);
 
-        $totalFees = 0;
+        
+        $hasAnyLinkedTramite = $quote->quoteItems()->whereHas('submissions')->exists();
+        if ($hasAnyLinkedTramite && empty($validated['show_service_type_column'])) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['show_service_type_column' => 'No se puede deshabilitar la columna Trámite porque hay ítems con trámite vinculado.']);
+        }
+
+$totalFees = 0;
         $totalLoans = 0;
         $totalInvima = 0;
         foreach ($validated['items'] as $pos => $row) {

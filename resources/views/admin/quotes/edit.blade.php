@@ -114,10 +114,13 @@
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_raa_column', $quote->show_raa_column) ? 'checked' : '' }}>
                     <span>Usar columna RAA</span>
                 </label>
-                <label class="inline-flex items-center gap-2" title="Mostrar columna Trámite">
-                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_service_type_column', $quote->show_service_type_column) ? 'checked' : '' }}>
+                <label class="inline-flex items-center gap-2" title="{{ $has_any_item_with_process ? 'No se puede deshabilitar: hay ítems ya vinculados a trámite.' : 'Mostrar columna Trámite' }}">
+                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_service_type_column', $quote->show_service_type_column) ? 'checked' : '' }} {{ $has_any_item_with_process ? 'disabled' : '' }}>
                     <span>Usar columna Trámite</span>
                 </label>
+                @if($has_any_item_with_process)
+                    <span class="text-xs text-amber-600" title="No se puede deshabilitar mientras haya ítems con trámite vinculado">(No se puede deshabilitar mientras haya ítems con trámite vinculado)</span>
+                @endif
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" id="toggle-description" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_description_column', $quote->show_description_column ?? true) ? 'checked' : '' }}>
                     <span>Usar columna Producto / Descripción</span>
@@ -363,7 +366,7 @@
                 <textarea name="items[__INDEX__][service_type_name]" list="service_types_datalist" rows="2" placeholder="Trámite (opcional)"
                           class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="description">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Producto / Descripción" maxlength="500"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm item-description-input">
             </td>
@@ -422,7 +425,7 @@
                 <textarea name="items[__INDEX__][service_type_name]" list="service_types_datalist" rows="2" placeholder="Trámite (opcional)"
                           class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 resize-y"></textarea>
             </td>
-            <td class="px-2 py-2">
+            <td class="px-2 py-2" data-col="description">
                 <input type="text" name="items[__INDEX__][description]" placeholder="Préstamo / Suplido" maxlength="500"
                        class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 item-description-input">
             </td>
@@ -494,7 +497,7 @@
         function syncColumnHiddenInputs() {
             if (inputShowPrevLicense) inputShowPrevLicense.value = togglePrev?.checked ? '1' : '0';
             if (inputShowRaa) inputShowRaa.value = toggleRaa?.checked ? '1' : '0';
-            if (inputShowTramite && toggleTramite && !toggleTramite.disabled) inputShowTramite.value = toggleTramite.checked ? '1' : '0';
+            if (inputShowTramite && toggleTramite) inputShowTramite.value = toggleTramite.checked ? '1' : '0';
             if (inputShowDescription && toggleDescription) inputShowDescription.value = toggleDescription.checked ? '1' : '0';
             if (inputShowRowId && toggleRowId) inputShowRowId.value = toggleRowId.checked ? '1' : '0';
             if (inputShowFranquicia && toggleFranquicia) inputShowFranquicia.value = toggleFranquicia.checked ? '1' : '0';
@@ -532,7 +535,7 @@
         function updateColumnVisibility() {
             if (togglePrev) setColumnEnabled('prev-license', togglePrev.checked);
             if (toggleRaa) setColumnEnabled('raa', toggleRaa.checked);
-            setColumnEnabled('tramite', toggleTramite && !toggleTramite.disabled && toggleTramite.checked);
+            if (toggleTramite) setColumnEnabled('tramite', toggleTramite.checked);
             if (toggleDescription) setColumnEnabled('description', toggleDescription.checked);
             if (toggleRowId) setColumnEnabled('row-id', toggleRowId.checked);
             if (toggleFranquicia) setColumnEnabled('franquicia', toggleFranquicia.checked);
