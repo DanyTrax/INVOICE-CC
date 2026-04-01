@@ -15,6 +15,7 @@ use App\Services\GoogleDriveService;
 use App\Services\MailService;
 use App\Services\PermissionService;
 use App\Settings\GeneralSettings;
+use App\Support\LegalPageDefaults;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class SettingsController extends Controller
     public function index(Request $request, $section = 'agency')
     {
         // Validar que la sección sea válida
-        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system', 'quote-pdf', 'proposal-pdf'];
+        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system', 'quote-pdf', 'proposal-pdf', 'legal-policies'];
         if (! in_array($section, $validSections)) {
             $section = 'agency';
         }
@@ -45,6 +46,7 @@ class SettingsController extends Controller
             'system' => ['settings_system'],
             'quote-pdf' => ['settings_agency'],
             'proposal-pdf' => ['settings_agency'],
+            'legal-policies' => ['settings_agency'],
         ];
 
         $modules = $sectionModuleMap[$section] ?? null;
@@ -163,6 +165,11 @@ class SettingsController extends Controller
             }
         }
 
+        $legalDefaults = [
+            'privacy' => LegalPageDefaults::privacyHtml(),
+            'terms' => LegalPageDefaults::termsHtml(),
+        ];
+
         return view('admin.settings.index', [
             'settings' => $settings,
             'emailTemplates' => $emailTemplates,
@@ -174,6 +181,7 @@ class SettingsController extends Controller
             'gitInfo' => $gitInfo,
             'systemSub' => $systemSub,
             'timezoneIdentifiers' => $timezoneIdentifiers,
+            'legalDefaults' => $legalDefaults,
         ]);
     }
 
@@ -269,6 +277,7 @@ class SettingsController extends Controller
             'system' => ['settings_system'],
             'quote-pdf' => ['settings_agency'],
             'proposal-pdf' => ['settings_agency'],
+            'legal-policies' => ['settings_agency'],
         ];
         foreach ($order as $section => $modules) {
             if ($section === 'system') {
@@ -333,6 +342,9 @@ class SettingsController extends Controller
                         ->with('error', 'No tienes permisos para realizar esta acción.');
                 }
                 $this->updateSystemSettings($request, $settings);
+                break;
+            case 'legal-policies':
+                $this->updateLegalPoliciesSettings($request, $settings);
                 break;
             case 'email_template':
                 $this->updateEmailTemplate($request);
@@ -522,6 +534,8 @@ class SettingsController extends Controller
             'system_name' => 'Sistema de Gestión Regulatoria',
             'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
             'quote_pdf_footer_text' => '',
+            'legal_privacy_html' => '',
+            'legal_terms_html' => '',
         ];
 
         $existingSettings = DB::table('settings')
@@ -592,6 +606,8 @@ class SettingsController extends Controller
             'drive_oauth_client_secret' => '',
             'drive_oauth_refresh_token' => '',
             'drive_oauth_access_token' => '',
+            'legal_privacy_html' => '',
+            'legal_terms_html' => '',
         ];
 
         // Establecer todas las propiedades, usando valores existentes si están disponibles
@@ -1291,6 +1307,23 @@ class SettingsController extends Controller
                 $settings->timezone = $tz;
             }
         }
+
+        $this->ensureAllPropertiesSet($settings);
+        $settings->save();
+    }
+
+    /**
+     * Política de privacidad y términos (HTML público).
+     */
+    private function updateLegalPoliciesSettings(Request $request, GeneralSettings $settings): void
+    {
+        $validated = $request->validate([
+            'legal_privacy_html' => 'nullable|string|max:500000',
+            'legal_terms_html' => 'nullable|string|max:500000',
+        ]);
+
+        $settings->legal_privacy_html = $validated['legal_privacy_html'] ?? '';
+        $settings->legal_terms_html = $validated['legal_terms_html'] ?? '';
 
         $this->ensureAllPropertiesSet($settings);
         $settings->save();

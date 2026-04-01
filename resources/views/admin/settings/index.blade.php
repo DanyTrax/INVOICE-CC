@@ -27,7 +27,7 @@
                 @if($permService->userHasPermission('settings_agency', 'view'))
                 <a href="{{ route('admin.settings.section', 'agency') }}" 
                         id="tab-empresa"
-                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ in_array($activeSection, ['agency', 'quote-pdf', 'proposal-pdf']) ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ in_array($activeSection, ['agency', 'quote-pdf', 'proposal-pdf', 'legal-policies']) ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                     <i class="fas fa-building mr-2"></i> Empresa
                 </a>
                 @endif
@@ -69,7 +69,7 @@
             </nav>
         </div>
 
-        @if($permService->userHasPermission('settings_agency', 'view') && in_array($activeSection, ['agency', 'quote-pdf', 'proposal-pdf']))
+        @if($permService->userHasPermission('settings_agency', 'view') && in_array($activeSection, ['agency', 'quote-pdf', 'proposal-pdf', 'legal-policies']))
         <div class="flex gap-1 border-b border-gray-200 -mb-px flex-wrap">
             <a href="{{ route('admin.settings.section', 'agency') }}" 
                     class="px-4 py-2 text-sm font-medium {{ $activeSection === 'agency' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
@@ -82,6 +82,10 @@
             <a href="{{ route('admin.settings.section', 'proposal-pdf') }}" 
                     class="px-4 py-2 text-sm font-medium {{ $activeSection === 'proposal-pdf' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
                 Plantilla PDF de Propuestas
+            </a>
+            <a href="{{ route('admin.settings.section', 'legal-policies') }}" 
+                    class="px-4 py-2 text-sm font-medium {{ $activeSection === 'legal-policies' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
+                Políticas
             </a>
         </div>
         @endif
@@ -355,6 +359,57 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- Tab: Políticas legales (públicas) -->
+        <div id="panel-legal-policies" class="tab-panel {{ $activeSection === 'legal-policies' ? '' : 'hidden' }}">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-balance-scale text-teal-600 mr-2"></i>
+                    Políticas legales (páginas públicas)
+                </h3>
+                <p class="text-sm text-gray-600 mb-6">
+                    Edita el contenido HTML de <strong>Política de Privacidad</strong> y <strong>Términos y Condiciones</strong> (rutas públicas).
+                    Si dejas un campo vacío y guardas, en la web se mostrará el texto por defecto del sistema.
+                    Vista previa: <a href="{{ route('legal.privacy') }}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">Privacidad</a>
+                    · <a href="{{ route('legal.terms') }}" target="_blank" rel="noopener" class="text-teal-600 hover:underline">Términos</a>
+                </p>
+
+                @php
+                    $privacyField = old('legal_privacy_html', trim($settings->legal_privacy_html ?? ''));
+                    $termsField = old('legal_terms_html', trim($settings->legal_terms_html ?? ''));
+                    $ld = $legalDefaults ?? [];
+                    if ($privacyField === '' && ($ld['privacy'] ?? '') !== '') {
+                        $privacyField = $ld['privacy'];
+                    }
+                    if ($termsField === '' && ($ld['terms'] ?? '') !== '') {
+                        $termsField = $ld['terms'];
+                    }
+                @endphp
+
+                <form id="legal-policies-form" action="{{ route('admin.settings.update') }}" method="POST" class="space-y-8">
+                    @csrf
+                    <input type="hidden" name="section" value="legal-policies">
+
+                    <div>
+                        <label for="legal_privacy_html" class="block mb-2 text-sm font-medium text-gray-900">Política de Privacidad</label>
+                        <textarea id="legal_privacy_html" name="legal_privacy_html" rows="16" class="min-h-[240px] w-full rounded-lg border border-gray-300 bg-gray-50 p-2 font-mono text-sm text-gray-900">{{ $privacyField }}</textarea>
+                    </div>
+                    <div>
+                        <label for="legal_terms_html" class="block mb-2 text-sm font-medium text-gray-900">Términos y Condiciones del Servicio</label>
+                        <textarea id="legal_terms_html" name="legal_terms_html" rows="16" class="min-h-[240px] w-full rounded-lg border border-gray-300 bg-gray-50 p-2 font-mono text-sm text-gray-900">{{ $termsField }}</textarea>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button type="submit" class="px-6 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700">
+                            <i class="fas fa-save mr-2"></i> Guardar políticas
+                        </button>
+                        <button type="button" id="legal-restore-defaults-btn" class="px-4 py-2.5 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300">
+                            Restaurar texto por defecto (ambas)
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
         @endif
@@ -2288,7 +2343,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentSection = pathParts[pathParts.length - 1] || 'agency';
     
     // Validar que sea una sección válida
-    const validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'quote-pdf', 'proposal-pdf', 'system'];
+    const validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'quote-pdf', 'proposal-pdf', 'legal-policies', 'system'];
     const activeSection = validSections.includes(currentSection) ? currentSection : 'agency';
     
     // Inicializar campos según el proveedor
@@ -3620,8 +3675,52 @@ function initTimezoneAutocompleteField(allZones) {
     });
 }
 
+function initLegalPoliciesEditors() {
+    var form = document.getElementById('legal-policies-form');
+    var taP = document.getElementById('legal_privacy_html');
+    var taT = document.getElementById('legal_terms_html');
+    if (!form || !taP || !taT || typeof tinymce === 'undefined') {
+        return;
+    }
+    var defaults = @json($legalDefaults ?? ['privacy' => '', 'terms' => '']);
+    var common = {
+        license_key: 'gpl',
+        height: 420,
+        menubar: false,
+        promotion: false,
+        branding: false,
+        plugins: 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime table help wordcount',
+        toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | code',
+        content_style: 'body { font-family: system-ui, sans-serif; font-size: 14px; }',
+    };
+    tinymce.init(Object.assign({ selector: '#legal_privacy_html' }, common));
+    tinymce.init(Object.assign({ selector: '#legal_terms_html' }, common));
+
+    form.addEventListener('submit', function() {
+        if (typeof tinymce !== 'undefined') {
+            tinymce.triggerSave();
+        }
+    });
+
+    var restoreBtn = document.getElementById('legal-restore-defaults-btn');
+    if (restoreBtn && defaults.privacy && defaults.terms) {
+        restoreBtn.addEventListener('click', function() {
+            if (!confirm('¿Reemplazar el contenido de ambas políticas por el texto por defecto del sistema?')) {
+                return;
+            }
+            var edP = tinymce.get('legal_privacy_html');
+            var edT = tinymce.get('legal_terms_html');
+            if (edP) edP.setContent(defaults.privacy);
+            else taP.value = defaults.privacy;
+            if (edT) edT.setContent(defaults.terms);
+            else taT.value = defaults.terms;
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initTimezoneAutocompleteField(@json($timezoneIdentifiers ?? []));
+    initLegalPoliciesEditors();
 });
 </script>
 @endpush

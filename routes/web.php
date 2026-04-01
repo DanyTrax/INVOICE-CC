@@ -27,6 +27,7 @@ use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\Auth\TwoFactorProfileController;
 use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\ClientRegisterController;
+use App\Http\Controllers\LegalPageController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -64,13 +65,9 @@ Route::middleware(['guest', 'two_factor.pending', 'throttle:20,1'])->group(funct
 Route::get('/two-factor/recovery/{token}', [TwoFactorChallengeController::class, 'confirmRecovery'])
     ->name('two-factor.recovery.confirm');
 
-// Páginas legales (públicas, para OAuth y usuarios)
-Route::get('/politica-privacidad', function () {
-    return view('legal.politica-privacidad');
-})->name('legal.privacy');
-Route::get('/terminos-condiciones', function () {
-    return view('legal.terminos-condiciones');
-})->name('legal.terms');
+// Páginas legales (públicas; contenido editable en Configuración → Empresa → Políticas)
+Route::get('/politica-privacidad', [LegalPageController::class, 'privacy'])->name('legal.privacy');
+Route::get('/terminos-condiciones', [LegalPageController::class, 'terms'])->name('legal.terms');
 
 // Establecer/restablecer contraseña (link enviado por admin a especialistas)
 Route::get('/establecer-contrasena', [ResetPasswordController::class, 'show'])->name('password.reset');
@@ -262,7 +259,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::get('/settings/proposal-pdf-templates/{proposalPdfTemplate}/edit', [ProposalPdfTemplateController::class, 'edit'])->name('settings.proposal-pdf-templates.edit');
     Route::put('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'update'])->name('settings.proposal-pdf-templates.update');
     Route::delete('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'destroy'])->name('settings.proposal-pdf-templates.destroy');
-    Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system|quote-pdf|proposal-pdf');
+    Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system|quote-pdf|proposal-pdf|legal-policies');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
     // Git Pull (solo super_admin)

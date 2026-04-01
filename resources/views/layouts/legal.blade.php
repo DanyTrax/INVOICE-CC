@@ -17,7 +17,7 @@
                 @yield('content')
             </main>
             <footer class="mt-12 pt-6 border-t border-gray-200 text-sm text-gray-500">
-                <a href="{{ url('/') }}" class="text-teal-600 hover:text-teal-800">Volver al inicio</a>
+                <a href="{{ route('login') }}" class="text-teal-600 hover:text-teal-800">Ir a iniciar sesión</a>
             </footer>
         </div>
     </div>

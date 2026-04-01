@@ -395,6 +395,7 @@ class CheckModulePermission
             'system' => 'settings_system',
             'quote-pdf' => 'settings_templates',
             'proposal-pdf' => 'settings_templates',
+            'legal-policies' => 'settings_agency',
         ];
 
         $module = $map[$section] ?? 'settings_agency';

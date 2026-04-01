@@ -230,12 +230,6 @@
                 </button>
             </form>
 
-            <p class="mt-6 text-center text-sm">
-                <a href="{{ route('public.app-purpose') }}" class="text-teal-700 hover:text-teal-900 hover:underline font-medium">
-                    Propósito de la aplicación
-                </a>
-            </p>
-
         </div>
     </div>
     </div>
