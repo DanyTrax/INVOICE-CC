@@ -4,11 +4,11 @@ namespace App\Services;
 
 use App\Models\SystemBackup;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class BackupService
@@ -19,10 +19,10 @@ class BackupService
         $user = Auth::user();
 
         $now = now();
-        $fileName = 'backup-rams-' . $now->format('Ymd-His') . '.json';
-        $localPath = storage_path('app/tmp/' . $fileName);
+        $fileName = 'backup-rams-'.$now->format('Ymd-His').'.json';
+        $localPath = storage_path('app/tmp/'.$fileName);
 
-        if (!is_dir(dirname($localPath))) {
+        if (! is_dir(dirname($localPath))) {
             mkdir(dirname($localPath), 0775, true);
         }
 
@@ -86,8 +86,8 @@ class BackupService
         }
 
         // Verificación rápida: se guardaron todas las tablas definidas (si existen)
-        $missing = array_filter($tables, fn($table) => !array_key_exists($table, $payload['tables']));
-        if (!empty($missing)) {
+        $missing = array_filter($tables, fn ($table) => ! array_key_exists($table, $payload['tables']));
+        if (! empty($missing)) {
             Log::warning('Backup incompleto: algunas tablas definidas faltan en payload', ['missing' => $missing]);
         }
 
@@ -95,7 +95,7 @@ class BackupService
 
         $size = filesize($localPath) ?: null;
 
-        /** @var \App\Services\GoogleDriveService $drive */
+        /** @var GoogleDriveService $drive */
         $drive = app(GoogleDriveService::class);
 
         // Crear/cargar carpeta "Backups RAMS" en el Drive raíz configurado
@@ -121,7 +121,7 @@ class BackupService
     {
         $payload = json_decode($content, true);
 
-        if (!is_array($payload) || empty($payload['tables']) || !is_array($payload['tables'])) {
+        if (! is_array($payload) || empty($payload['tables']) || ! is_array($payload['tables'])) {
             throw new \Exception('Archivo de backup inválido.');
         }
 
@@ -168,7 +168,7 @@ class BackupService
             ];
 
             foreach ($restoreOrder as $table) {
-                if (!isset($payload['tables'][$table]) || !Schema::hasTable($table)) {
+                if (! isset($payload['tables'][$table]) || ! Schema::hasTable($table)) {
                     continue;
                 }
 
@@ -180,6 +180,7 @@ class BackupService
                 if (is_array($rows) && count($rows) > 0) {
                     $cleanRows = array_map(function ($row) use ($tableColumns) {
                         $rowArray = (array) $row;
+
                         return array_filter(
                             array_intersect_key($rowArray, array_flip($tableColumns)),
                             fn ($value, $key) => in_array($key, $tableColumns, true),
@@ -198,7 +199,7 @@ class BackupService
             // Cargar tablas extra que estén en el payload y no en la lista principal
             $remainingTables = array_diff(array_keys($payload['tables']), $restoreOrder);
             foreach ($remainingTables as $table) {
-                if (!Schema::hasTable($table)) {
+                if (! Schema::hasTable($table)) {
                     continue;
                 }
 
@@ -210,6 +211,7 @@ class BackupService
                 if (is_array($rows) && count($rows) > 0) {
                     $cleanRows = array_map(function ($row) use ($tableColumns) {
                         $rowArray = (array) $row;
+
                         return array_filter(
                             array_intersect_key($rowArray, array_flip($tableColumns)),
                             fn ($value, $key) => in_array($key, $tableColumns, true),
@@ -235,7 +237,7 @@ class BackupService
         });
     }
 
-    public function restoreBackupFromFile(\Illuminate\Http\UploadedFile $file): void
+    public function restoreBackupFromFile(UploadedFile $file): void
     {
         $content = file_get_contents($file->getRealPath());
         $this->restoreBackupFromJson($content);
@@ -244,11 +246,20 @@ class BackupService
     public function wipeDataExceptSuperAdmin(bool $preserveCurrentUser = true, bool $preserveRolesAndPermissions = true): void
     {
         DB::transaction(function () use ($preserveCurrentUser, $preserveRolesAndPermissions) {
+            // MySQL: TRUNCATE falla en tablas padre si hay FK desde hijas (aunque estén vacías).
+            // Misma idea que restoreBackupFromJson.
+            if (DB::getDriverName() === 'sqlite') {
+                DB::statement('PRAGMA foreign_keys = OFF');
+            }
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            }
+
             $superAdminIds = User::role('super_admin')->pluck('id')->toArray();
 
             if ($preserveCurrentUser && Auth::check()) {
                 $currentUserId = Auth::id();
-                if ($currentUserId && !in_array($currentUserId, $superAdminIds, true)) {
+                if ($currentUserId && ! in_array($currentUserId, $superAdminIds, true)) {
                     $superAdminIds[] = $currentUserId;
                 }
             }
@@ -286,7 +297,7 @@ class BackupService
                 }
             }
 
-            if (!$preserveRolesAndPermissions) {
+            if (! $preserveRolesAndPermissions) {
                 foreach (['model_has_roles', 'role_has_permissions', 'roles', 'permissions'] as $table) {
                     if (Schema::hasTable($table)) {
                         if ($table === 'model_has_roles') {
@@ -310,7 +321,13 @@ class BackupService
                     ->whereNotIn('id', $superAdminIds)
                     ->delete();
             }
+
+            if (DB::getDriverName() === 'sqlite') {
+                DB::statement('PRAGMA foreign_keys = ON');
+            }
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            }
         });
     }
 }
-
