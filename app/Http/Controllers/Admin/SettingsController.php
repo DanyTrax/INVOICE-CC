@@ -147,6 +147,11 @@ class SettingsController extends Controller
             $gitInfo = app(GitWorkingCopyService::class)->getInfo();
         }
 
+        $timezoneIdentifiers = [];
+        if ($section === 'system') {
+            $timezoneIdentifiers = \DateTimeZone::listIdentifiers(\DateTimeZone::ALL);
+        }
+
         $allowedSystemSubs = ['git', 'delete-user', 'customization'];
         $systemSub = 'git';
         if ($section === 'system') {
@@ -168,6 +173,7 @@ class SettingsController extends Controller
             'userToDelete' => $userToDelete,
             'gitInfo' => $gitInfo,
             'systemSub' => $systemSub,
+            'timezoneIdentifiers' => $timezoneIdentifiers,
         ]);
     }
 
@@ -1268,7 +1274,7 @@ class SettingsController extends Controller
         $request->validate([
             'footer_text' => 'nullable|string|max:255',
             'system_name' => 'nullable|string|max:255',
-            'timezone' => 'nullable|string|max:64',
+            'timezone' => ['nullable', 'string', 'timezone:all'],
         ]);
 
         if ($request->has('footer_text')) {

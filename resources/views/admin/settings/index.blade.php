@@ -1837,14 +1837,24 @@
                                 <label for="timezone" class="block mb-2 text-sm font-medium text-gray-900">
                                     Zona horaria del sistema
                                 </label>
-                                <input type="text"
-                                       id="timezone"
-                                       name="timezone"
-                                       value="{{ old('timezone', $settings->timezone ?? config('app.timezone')) }}"
-                                       placeholder="Ej: America/Bogota, Europe/Madrid"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <div class="relative" id="timezone-autocomplete-root">
+                                    <input type="text"
+                                           id="timezone"
+                                           name="timezone"
+                                           value="{{ old('timezone', $settings->timezone ?? config('app.timezone')) }}"
+                                           placeholder="Escribe para buscar (ej. bo, chicago, madrid…)"
+                                           autocomplete="off"
+                                           spellcheck="false"
+                                           aria-autocomplete="list"
+                                           aria-controls="timezone-suggestions-list"
+                                           role="combobox"
+                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                    <ul id="timezone-suggestions-list"
+                                        role="listbox"
+                                        class="hidden absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-lg dark:border-slate-600 dark:bg-slate-800"></ul>
+                                </div>
                                 <p class="mt-1 text-xs text-gray-500">
-                                    Se usará para todas las fechas y horas del sistema. Debe ser un identificador de zona horaria PHP válido (por ejemplo: <code>America/Bogota</code>, <code>America/Mexico_City</code>, <code>Europe/Madrid</code>).
+                                    Lista completa de zonas IANA (PHP). Escribe para filtrar y elige una opción; se valida al guardar.
                                 </p>
                             </div>
                         </div>
@@ -3473,6 +3483,145 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.drive-mode-radio').forEach(function(r) {
         r.addEventListener('change', toggleDriveModeBlocks);
     });
+});
+
+/**
+ * Autocompletado de zona horaria (lista completa DateTimeZone::listIdentifiers).
+ */
+function initTimezoneAutocompleteField(allZones) {
+    var root = document.getElementById('timezone-autocomplete-root');
+    var input = document.getElementById('timezone');
+    var list = document.getElementById('timezone-suggestions-list');
+    if (!root || !input || !list || !Array.isArray(allZones) || allZones.length === 0) {
+        return;
+    }
+
+    var max = 50;
+    var activeIndex = -1;
+
+    function filterZones(query) {
+        var q = (query || '').trim().toLowerCase();
+        if (!q) {
+            return [];
+        }
+        var out = [];
+        for (var i = 0; i < allZones.length; i++) {
+            if (allZones[i].toLowerCase().indexOf(q) !== -1) {
+                out.push(allZones[i]);
+            }
+        }
+        out.sort(function(a, b) {
+            var la = a.toLowerCase();
+            var lb = b.toLowerCase();
+            var ia = la.indexOf(q);
+            var ib = lb.indexOf(q);
+            if (ia !== ib) {
+                return ia - ib;
+            }
+            return a.localeCompare(b);
+        });
+        return out.slice(0, max);
+    }
+
+    function hideList() {
+        list.classList.add('hidden');
+        list.innerHTML = '';
+        activeIndex = -1;
+        input.removeAttribute('aria-activedescendant');
+    }
+
+    function showSuggestions() {
+        var items = filterZones(input.value);
+        list.innerHTML = '';
+        activeIndex = -1;
+        if (items.length === 0) {
+            list.classList.add('hidden');
+            return;
+        }
+        items.forEach(function(tz, idx) {
+            var li = document.createElement('li');
+            li.setAttribute('role', 'option');
+            li.id = 'tz-opt-' + idx;
+            li.textContent = tz;
+            li.className = 'cursor-pointer px-3 py-2 text-gray-900 hover:bg-teal-50 dark:text-slate-100 dark:hover:bg-slate-700';
+            li.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                input.value = tz;
+                hideList();
+            });
+            list.appendChild(li);
+        });
+        list.classList.remove('hidden');
+    }
+
+    input.addEventListener('input', function() {
+        showSuggestions();
+    });
+
+    input.addEventListener('focus', function() {
+        if (input.value.trim().length >= 1) {
+            showSuggestions();
+        }
+    });
+
+    input.addEventListener('keydown', function(e) {
+        var items = list.querySelectorAll('li[role="option"]');
+        if (list.classList.contains('hidden') || items.length === 0) {
+            if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && input.value.trim().length >= 1) {
+                e.preventDefault();
+                showSuggestions();
+                items = list.querySelectorAll('li[role="option"]');
+                if (items.length > 0) {
+                    activeIndex = e.key === 'ArrowUp' ? items.length - 1 : 0;
+                    items.forEach(function(el, i) {
+                        el.classList.remove('bg-teal-100', 'dark:bg-slate-600');
+                        if (i === activeIndex) {
+                            el.classList.add('bg-teal-100', 'dark:bg-slate-600');
+                            input.setAttribute('aria-activedescendant', el.id);
+                            el.scrollIntoView({ block: 'nearest' });
+                        }
+                    });
+                }
+            }
+            return;
+        }
+        if (e.key === 'Escape') {
+            hideList();
+            return;
+        }
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, -1);
+        } else if (e.key === 'Enter' && activeIndex >= 0) {
+            e.preventDefault();
+            input.value = items[activeIndex].textContent;
+            hideList();
+            return;
+        } else {
+            return;
+        }
+        items.forEach(function(el, i) {
+            el.classList.remove('bg-teal-100', 'dark:bg-slate-600');
+            if (i === activeIndex) {
+                el.classList.add('bg-teal-100', 'dark:bg-slate-600');
+                input.setAttribute('aria-activedescendant', el.id);
+                el.scrollIntoView({ block: 'nearest' });
+            }
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!root.contains(e.target)) {
+            hideList();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initTimezoneAutocompleteField(@json($timezoneIdentifiers ?? []));
 });
 </script>
 @endpush
