@@ -243,7 +243,7 @@
     </div>
 
     <footer class="w-full max-w-xl mx-auto px-6 pb-8 pt-2 text-center text-sm text-white/95">
-        <div class="mb-3 leading-relaxed">{!! $loginFooterHtml !!}</div>
+        <div class="mb-3 leading-relaxed">{!! nl2br(e($loginFooterHtml)) !!}</div>
         @if($loginShowPrivacy || $loginShowTerms)
             <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                 @if($loginShowPrivacy)

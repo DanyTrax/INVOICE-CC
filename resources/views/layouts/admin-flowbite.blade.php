@@ -3,6 +3,11 @@
     if (! in_array($ramsAdminTheme, ['light', 'dark', 'system'], true)) {
         $ramsAdminTheme = 'light';
     }
+    try {
+        $adminSidebarExpandedDefault = (bool) (app(\App\Settings\GeneralSettings::class)->admin_sidebar_expanded_default ?? false);
+    } catch (\Throwable $e) {
+        $adminSidebarExpandedDefault = false;
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="es" class="h-full bg-gray-50" data-theme="{{ $ramsAdminTheme }}">
@@ -378,7 +383,7 @@
     @stack('styles')
 </head>
 <body class="h-full" x-data="{
-    sidebarExpanded: false,
+    sidebarExpanded: @json($adminSidebarExpandedDefault),
     mobileOpen: false,
     winLg: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
     init() {
@@ -962,7 +967,7 @@
             <footer class="bg-white border-t border-gray-200 py-4 px-6">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-gray-600">
-                        {!! app(\App\Settings\GeneralSettings::class)->footer_text ?? 'RAMS - Regulatory Affairs Management System' !!}
+                        {!! nl2br(e(app(\App\Settings\GeneralSettings::class)->footer_text ?? 'RAMS - Regulatory Affairs Management System')) !!}
                     </span>
                     <span class="text-sm text-gray-600">Versión 1.0</span>
                 </div>

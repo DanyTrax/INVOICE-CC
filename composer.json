@@ -15,7 +15,8 @@
         "owen-it/laravel-auditing": "^14.0",
         "pragmarx/google2fa": "^9.0",
         "spatie/laravel-permission": "^6.0",
-        "spatie/laravel-settings": "^3.6"
+        "spatie/laravel-settings": "^3.6",
+        "symfony/html-sanitizer": "^7.4"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

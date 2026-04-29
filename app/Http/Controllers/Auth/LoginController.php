@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ActivityLogService;
+use App\Services\LoginLockoutService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -23,24 +24,30 @@ class LoginController extends Controller
         return view('auth.login-flowbite');
     }
 
-    public function login(Request $request)
+    public function login(Request $request, LoginLockoutService $lockoutService)
     {
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
+        $lockoutService->assertNotBlocked($request);
+
         $remember = $request->boolean('remember');
 
-        $user = User::query()->where('email', $request->input('email'))->first();
+        $email = (string) $request->input('email');
+
+        $user = User::query()->where('email', $email)->first();
 
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
+            $lockoutService->recordFailedAttempt($request, $email);
             throw ValidationException::withMessages([
                 'email' => ['Las credenciales proporcionadas no son correctas.'],
             ]);
         }
 
         if (! $user->is_active) {
+            $lockoutService->recordFailedAttempt($request, $email);
             throw ValidationException::withMessages([
                 'email' => ['Esta cuenta está desactivada.'],
             ]);
@@ -48,10 +55,13 @@ class LoginController extends Controller
 
         // Cliente explícitamente deshabilitado: no puede entrar. "Pendiente" sí inicia sesión y ve aviso en el portal.
         if ($user->hasRole('client') && $user->client_status === User::CLIENT_STATUS_DESHABILITADO) {
+            $lockoutService->recordFailedAttempt($request, $email);
             throw ValidationException::withMessages([
                 'email' => ['No tienes acceso al portal con esta cuenta.'],
             ]);
         }
+
+        $lockoutService->clearForSuccessfulLogin($request);
 
         if ($user->hasTwoFactorEnabled()) {
             $request->session()->put('two_factor_login.id', $user->id);

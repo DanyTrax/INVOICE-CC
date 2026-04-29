@@ -326,6 +326,10 @@ class CheckModulePermission
             return ['settings_system', 'edit'];
         }
 
+        if ($routeName === 'admin.settings.login-lockouts.unlock') {
+            return ['settings_system', 'edit'];
+        }
+
         if ($routeName === 'admin.settings.email-logs.show') {
             return ['settings_mail', 'view'];
         }
@@ -400,6 +404,7 @@ class CheckModulePermission
             'quote-pdf' => 'settings_templates',
             'proposal-pdf' => 'settings_templates',
             'legal-policies' => 'settings_agency',
+            'login-lockouts' => 'settings_system',
         ];
 
         $module = $map[$section] ?? 'settings_agency';

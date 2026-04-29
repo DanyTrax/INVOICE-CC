@@ -260,8 +260,10 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::get('/settings/proposal-pdf-templates/{proposalPdfTemplate}/edit', [ProposalPdfTemplateController::class, 'edit'])->name('settings.proposal-pdf-templates.edit');
     Route::put('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'update'])->name('settings.proposal-pdf-templates.update');
     Route::delete('/settings/proposal-pdf-templates/{proposalPdfTemplate}', [ProposalPdfTemplateController::class, 'destroy'])->name('settings.proposal-pdf-templates.destroy');
-    Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system|quote-pdf|proposal-pdf|legal-policies');
+    Route::get('/settings/{section}', [SettingsController::class, 'index'])->name('settings.section')->where('section', 'agency|drive|mail|templates|history|system|quote-pdf|proposal-pdf|legal-policies|login-lockouts');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
+    Route::post('/settings/login-lockouts/{loginIpLockout}/unlock', [SettingsController::class, 'unlockLoginLockout'])->name('settings.login-lockouts.unlock');
 
     // Git Pull (solo super_admin)
     Route::post('/settings/git-pull', [SettingsController::class, 'gitPull'])->name('settings.git-pull');

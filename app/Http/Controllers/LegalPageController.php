@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Settings\GeneralSettings;
 use App\Support\LegalPageDefaults;
+use App\Support\PublicHtmlSanitizer;
 
 class LegalPageController extends Controller
 {
@@ -19,7 +20,7 @@ class LegalPageController extends Controller
         return view('legal.show', [
             'title' => $pageTitle,
             'pageTitle' => $pageTitle,
-            'bodyHtml' => $body,
+            'bodyHtml' => PublicHtmlSanitizer::sanitize($body),
             'footerHtml' => $settings->footer_text ?? '',
         ]);
     }
@@ -36,7 +37,7 @@ class LegalPageController extends Controller
         return view('legal.show', [
             'title' => $pageTitle,
             'pageTitle' => $pageTitle,
-            'bodyHtml' => $body,
+            'bodyHtml' => PublicHtmlSanitizer::sanitize($body),
             'footerHtml' => $settings->footer_text ?? '',
         ]);
     }

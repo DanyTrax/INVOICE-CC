@@ -60,6 +60,13 @@
                 </a>
                 @endif
                 @if($permService->userHasPermission('settings_system', 'view'))
+                <a href="{{ route('admin.settings.section', 'login-lockouts') }}"
+                        id="tab-login-lockouts"
+                        class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'login-lockouts' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                    <i class="fas fa-shield-halved mr-2"></i> Bloqueos de acceso
+                </a>
+                @endif
+                @if($permService->userHasPermission('settings_system', 'view'))
                 <a href="{{ route('admin.settings.section', 'system') }}?system_sub=git" 
                         id="tab-system"
                         class="tab-link px-6 py-3 text-sm font-medium border-b-2 {{ $activeSection === 'system' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
@@ -1657,6 +1664,127 @@
         @endif
 
         @if($permService->userHasPermission('settings_system', 'view'))
+        <div id="panel-login-lockouts" class="tab-panel {{ $activeSection === 'login-lockouts' ? '' : 'hidden' }}">
+            <div class="space-y-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-shield-halved text-teal-600 mr-2"></i>
+                        Protección por intentos fallidos (IP)
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-6">
+                        Tras varios intentos incorrectos de inicio de sesión desde la misma dirección IP, el acceso al formulario de login se bloquea temporalmente.
+                        Puedes ajustar el umbral y el tiempo de bloqueo, y desbloquear IPs manualmente.
+                    </p>
+
+                    <form action="{{ route('admin.settings.update') }}" method="POST" class="space-y-6">
+                        @csrf
+                        <input type="hidden" name="section" value="login-lockouts">
+
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="login_lockout_enabled" name="login_lockout_enabled" value="1"
+                                   class="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                                   {{ old('login_lockout_enabled', $settings->login_lockout_enabled ?? true) ? 'checked' : '' }}>
+                            <label for="login_lockout_enabled" class="text-sm font-medium text-gray-900">Activar bloqueo por IP</label>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="login_max_failed_attempts" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Intentos fallidos antes de bloquear
+                                </label>
+                                <input type="number" name="login_max_failed_attempts" id="login_max_failed_attempts" min="1" max="100" required
+                                       value="{{ old('login_max_failed_attempts', $settings->login_max_failed_attempts ?? 5) }}"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <p class="mt-1 text-xs text-gray-500">Credenciales incorrectas, cuenta inactiva o cliente deshabilitado cuentan como intento fallido.</p>
+                            </div>
+                            <div>
+                                <label for="login_lockout_duration_minutes" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Duración del bloqueo (minutos)
+                                </label>
+                                <input type="number" name="login_lockout_duration_minutes" id="login_lockout_duration_minutes" min="1" max="10080" required
+                                       value="{{ old('login_lockout_duration_minutes', $settings->login_lockout_duration_minutes ?? 30) }}"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                            </div>
+                        </div>
+
+                        @if($permService->userHasPermission('settings_system', 'edit'))
+                            <button type="submit" class="text-white bg-teal-600 hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5">
+                                Guardar parámetros
+                            </button>
+                        @else
+                            <p class="text-sm text-gray-500">No tienes permiso para editar esta configuración.</p>
+                        @endif
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-network-wired text-teal-600 mr-2"></i>
+                        Registro por dirección IP
+                    </h3>
+                    @if(isset($loginIpLockouts) && $loginIpLockouts->count() === 0)
+                        <p class="text-sm text-gray-600">No hay registros de intentos recientes.</p>
+                    @elseif(isset($loginIpLockouts))
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-600">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3">IP</th>
+                                        <th scope="col" class="px-4 py-3">Último correo probado</th>
+                                        <th scope="col" class="px-4 py-3">Navegador (resumen)</th>
+                                        <th scope="col" class="px-4 py-3">Intentos</th>
+                                        <th scope="col" class="px-4 py-3">Bloqueo hasta</th>
+                                        <th scope="col" class="px-4 py-3">Último intento</th>
+                                        <th scope="col" class="px-4 py-3 text-right">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($loginIpLockouts as $lockRow)
+                                        <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
+                                            <td class="px-4 py-3 font-mono text-xs">{{ $lockRow->ip_address }}</td>
+                                            <td class="px-4 py-3">{{ $lockRow->email_attempted ?: '—' }}</td>
+                                            <td class="px-4 py-3 max-w-xs truncate" title="{{ $lockRow->user_agent }}">{{ \Illuminate\Support\Str::limit($lockRow->user_agent, 48) }}</td>
+                                            <td class="px-4 py-3">{{ $lockRow->failed_attempts }}</td>
+                                            <td class="px-4 py-3">
+                                                @if($lockRow->locked_until)
+                                                    @if($lockRow->locked_until->isFuture())
+                                                        <span class="text-red-700 font-medium">{{ $lockRow->locked_until->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span>
+                                                    @else
+                                                        <span class="text-gray-400">Expirado</span>
+                                                    @endif
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                {{ $lockRow->last_attempt_at?->timezone(config('app.timezone'))->format('d/m/Y H:i') ?? '—' }}
+                                            </td>
+                                            <td class="px-4 py-3 text-right">
+                                                @if($permService->userHasPermission('settings_system', 'edit'))
+                                                    <form action="{{ route('admin.settings.login-lockouts.unlock', $lockRow) }}" method="post" class="inline"
+                                                          onsubmit="return confirm('¿Desbloquear la IP {{ $lockRow->ip_address }} y reiniciar el contador?');">
+                                                        @csrf
+                                                        <button type="submit" class="text-teal-700 hover:text-teal-900 text-sm font-medium">Desbloquear</button>
+                                                    </form>
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-4">
+                            {{ $loginIpLockouts->links() }}
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if($permService->userHasPermission('settings_system', 'view'))
         <!-- Tab 6: Sistema (según permiso Config: Sistema) -->
         <div id="panel-system" class="tab-panel {{ $activeSection === 'system' ? '' : 'hidden' }}">
             @php
@@ -1944,6 +2072,24 @@
                                 <p class="mt-1 text-xs text-gray-500">
                                     Lista completa de zonas IANA (PHP). Escribe para filtrar y elige una opción; se valida al guardar.
                                 </p>
+                            </div>
+
+                            <!-- Menú lateral del panel (escritorio) -->
+                            <div class="rounded-lg border border-gray-200 bg-gray-50/80 p-4">
+                                <label class="flex items-start gap-3 cursor-pointer">
+                                    <input type="checkbox"
+                                           id="admin_sidebar_expanded_default"
+                                           name="admin_sidebar_expanded_default"
+                                           value="1"
+                                           class="mt-1 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                                           @checked(old('admin_sidebar_expanded_default', $settings->admin_sidebar_expanded_default ?? false))>
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-medium text-gray-900">Iniciar menú lateral desplegado (escritorio)</span>
+                                        <span class="block mt-1 text-xs text-gray-500">
+                                            Si está desmarcado, el panel admin abre con la barra solo iconos (más sitio para el contenido). Si está marcado, abre con textos visibles. Cualquier usuario puede cambiar el menú con el botón del encabezado en su sesión; esto solo define el valor inicial.
+                                        </span>
+                                    </span>
+                                </label>
                             </div>
                         </div>
 

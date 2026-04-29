@@ -81,6 +81,16 @@ class GeneralSettings extends Settings
 
     public string $timezone = 'America/Bogota';
 
+    /** En panel admin (escritorio): si es true, el menú lateral inicia desplegado; si false, solo iconos. */
+    public bool $admin_sidebar_expanded_default = false;
+
+    /** Bloqueo por IP tras intentos fallidos en /login (credenciales incorrectas, cuenta inactiva, etc.). */
+    public bool $login_lockout_enabled = true;
+
+    public int $login_max_failed_attempts = 5;
+
+    public int $login_lockout_duration_minutes = 30;
+
     /** Títulos de las páginas públicas (y texto del enlace en login si está visible). */
     public string $legal_privacy_title = 'Política de Privacidad';
 

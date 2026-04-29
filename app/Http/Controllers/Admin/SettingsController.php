@@ -29,7 +29,7 @@ class SettingsController extends Controller
     public function index(Request $request, $section = 'agency')
     {
         // Validar que la sección sea válida
-        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system', 'quote-pdf', 'proposal-pdf', 'legal-policies'];
+        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system', 'quote-pdf', 'proposal-pdf', 'legal-policies', 'login-lockouts'];
         if (! in_array($section, $validSections)) {
             $section = 'agency';
         }
@@ -47,6 +47,7 @@ class SettingsController extends Controller
             'quote-pdf' => ['settings_agency'],
             'proposal-pdf' => ['settings_agency'],
             'legal-policies' => ['settings_agency'],
+            'login-lockouts' => ['settings_system'],
         ];
 
         $modules = $sectionModuleMap[$section] ?? null;
@@ -170,6 +171,19 @@ class SettingsController extends Controller
             'terms' => LegalPageDefaults::termsHtml(),
         ];
 
+        $loginIpLockouts = null;
+        if ($section === 'login-lockouts') {
+            try {
+                $loginIpLockouts = \App\Models\LoginIpLockout::query()
+                    ->orderByRaw('(locked_until IS NOT NULL AND locked_until > ?) DESC', [now()])
+                    ->orderByDesc('last_attempt_at')
+                    ->orderByDesc('id')
+                    ->paginate(25);
+            } catch (\Throwable $e) {
+                $loginIpLockouts = new LengthAwarePaginator(collect([]), 0, 25, 1);
+            }
+        }
+
         return view('admin.settings.index', [
             'settings' => $settings,
             'emailTemplates' => $emailTemplates,
@@ -182,7 +196,24 @@ class SettingsController extends Controller
             'systemSub' => $systemSub,
             'timezoneIdentifiers' => $timezoneIdentifiers,
             'legalDefaults' => $legalDefaults,
+            'loginIpLockouts' => $loginIpLockouts,
         ]);
+    }
+
+    /**
+     * Desbloquear una IP desde Configuración → Bloqueos de acceso.
+     */
+    public function unlockLoginLockout(\App\Models\LoginIpLockout $loginIpLockout): RedirectResponse
+    {
+        if (! app(PermissionService::class)->userHasPermission('settings_system', 'edit')) {
+            abort(403, 'No tienes permiso para esta acción.');
+        }
+
+        app(\App\Services\LoginLockoutService::class)->unlock($loginIpLockout);
+
+        return redirect()
+            ->route('admin.settings.section', 'login-lockouts')
+            ->with('success', 'La IP '.$loginIpLockout->ip_address.' ha sido desbloqueada.');
     }
 
     /**
@@ -274,6 +305,7 @@ class SettingsController extends Controller
             'mail' => ['settings_mail'],
             'templates' => ['settings_templates'],
             'history' => ['settings_history'],
+            'login-lockouts' => ['settings_system'],
             'system' => ['settings_system'],
             'quote-pdf' => ['settings_agency'],
             'proposal-pdf' => ['settings_agency'],
@@ -342,6 +374,13 @@ class SettingsController extends Controller
                         ->with('error', 'No tienes permisos para realizar esta acción.');
                 }
                 $this->updateSystemSettings($request, $settings);
+                break;
+            case 'login-lockouts':
+                if (! app(PermissionService::class)->userHasPermission('settings_system', 'edit')) {
+                    return redirect()->route('admin.settings.section', 'login-lockouts')
+                        ->with('error', 'No tienes permisos para realizar esta acción.');
+                }
+                $this->updateLoginLockoutSettings($request, $settings);
                 break;
             case 'legal-policies':
                 $this->updateLegalPoliciesSettings($request, $settings);
@@ -540,6 +579,10 @@ class SettingsController extends Controller
             'legal_show_terms_on_login' => true,
             'legal_privacy_html' => '',
             'legal_terms_html' => '',
+            'admin_sidebar_expanded_default' => false,
+            'login_lockout_enabled' => true,
+            'login_max_failed_attempts' => 5,
+            'login_lockout_duration_minutes' => 30,
         ];
 
         $existingSettings = DB::table('settings')
@@ -616,9 +659,11 @@ class SettingsController extends Controller
             'legal_show_terms_on_login' => true,
             'legal_privacy_html' => '',
             'legal_terms_html' => '',
+            'admin_sidebar_expanded_default' => false,
+            'login_lockout_enabled' => true,
+            'login_max_failed_attempts' => 5,
+            'login_lockout_duration_minutes' => 30,
         ];
-
-        // Establecer todas las propiedades, usando valores existentes si están disponibles
         foreach ($defaults as $property => $defaultValue) {
             try {
                 $currentValue = $settings->$property ?? null;
@@ -1315,6 +1360,23 @@ class SettingsController extends Controller
                 $settings->timezone = $tz;
             }
         }
+
+        $settings->admin_sidebar_expanded_default = $request->boolean('admin_sidebar_expanded_default');
+
+        $this->ensureAllPropertiesSet($settings);
+        $settings->save();
+    }
+
+    private function updateLoginLockoutSettings(Request $request, GeneralSettings $settings): void
+    {
+        $validated = $request->validate([
+            'login_max_failed_attempts' => 'required|integer|min:1|max:100',
+            'login_lockout_duration_minutes' => 'required|integer|min:1|max:10080',
+        ]);
+
+        $settings->login_lockout_enabled = $request->boolean('login_lockout_enabled');
+        $settings->login_max_failed_attempts = (int) $validated['login_max_failed_attempts'];
+        $settings->login_lockout_duration_minutes = (int) $validated['login_lockout_duration_minutes'];
 
         $this->ensureAllPropertiesSet($settings);
         $settings->save();
