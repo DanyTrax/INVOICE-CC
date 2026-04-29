@@ -117,7 +117,7 @@ class BackupController extends Controller
             ->with('success', $msg);
     }
 
-    public function restore(SystemBackup $backup, BackupService $service, GoogleDriveService $drive): RedirectResponse
+    public function restore(Request $request, SystemBackup $backup, BackupService $service, GoogleDriveService $drive): RedirectResponse
     {
         $this->ensureCanAccessBackups();
 
