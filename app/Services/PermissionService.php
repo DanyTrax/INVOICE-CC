@@ -10,6 +10,8 @@ use Spatie\Permission\Models\Role;
 
 class PermissionService
 {
+    private const MEMO_ATTR = '_permission_service_memo';
+
     /** Valor especial en jerarquía: usuarios sin rol asignado (crear/ver/editar). */
     public const NO_ROLE = 'no_role';
 
@@ -97,14 +99,22 @@ class PermissionService
      */
     public function hasPermission(string $roleName, string $module, string $action): bool
     {
+        if ($roleName === 'super_admin') {
+            return true;
+        }
+
+        $memoKey = 'hp:'.$roleName.'|'.$module.'|'.$action;
+        $cached = $this->memoGet($memoKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
         $role = Role::where('name', $roleName)->first();
 
         if (! $role) {
-            return false;
-        }
+            $this->memoSet($memoKey, false);
 
-        if ($roleName === 'super_admin') {
-            return true;
+            return false;
         }
 
         $permission = RolePermission::where('role_id', $role->id)
@@ -112,7 +122,10 @@ class PermissionService
             ->where('action', $action)
             ->first();
 
-        return $permission && $permission->enabled;
+        $allowed = $permission && $permission->enabled;
+        $this->memoSet($memoKey, $allowed);
+
+        return $allowed;
     }
 
     /**
@@ -211,13 +224,59 @@ class PermissionService
             return true;
         }
 
-        foreach ($user->roles as $role) {
-            if ($this->hasPermission($role->name, $module, $action)) {
-                return true;
-            }
+        $memoKey = 'uhp:'.$user->getKey().'|'.$module.'|'.$action;
+        $cached = $this->memoGet($memoKey);
+        if ($cached !== null) {
+            return $cached;
         }
 
-        return false;
+        $user->loadMissing('roles');
+        $roleIds = $user->roles->pluck('id')->all();
+
+        if ($roleIds === []) {
+            $this->memoSet($memoKey, false);
+
+            return false;
+        }
+
+        $allowed = RolePermission::query()
+            ->whereIn('role_id', $roleIds)
+            ->where('module', $module)
+            ->where('action', $action)
+            ->where('enabled', true)
+            ->exists();
+
+        $this->memoSet($memoKey, $allowed);
+
+        return $allowed;
+    }
+
+    private function memoGet(string $key): ?bool
+    {
+        if (! app()->bound('request')) {
+            return null;
+        }
+
+        $memo = request()->attributes->get(self::MEMO_ATTR);
+        if (! is_array($memo) || ! array_key_exists($key, $memo)) {
+            return null;
+        }
+
+        return $memo[$key];
+    }
+
+    private function memoSet(string $key, bool $value): void
+    {
+        if (! app()->bound('request')) {
+            return;
+        }
+
+        $memo = request()->attributes->get(self::MEMO_ATTR, []);
+        if (! is_array($memo)) {
+            $memo = [];
+        }
+        $memo[$key] = $value;
+        request()->attributes->set(self::MEMO_ATTR, $memo);
     }
 
     /**
