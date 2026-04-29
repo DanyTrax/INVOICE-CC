@@ -20,6 +20,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Spatie\LaravelSettings\Exceptions\MissingSettings;
@@ -117,7 +118,7 @@ class SettingsController extends Controller
 
         // Inicializar settings con valores por defecto si no existen
         try {
-            $settings = app(GeneralSettings::class);
+            $settings = $this->resolveGeneralSettingsAfterEnsuringDatabase();
         } catch (MissingSettings $e) {
             // Si aún falla, crear settings con valores por defecto
             $settings = new GeneralSettings;
@@ -347,9 +348,9 @@ class SettingsController extends Controller
         // Asegurar que los settings existan en la BD antes de intentar cargarlos
         $this->ensureSettingsInDatabase();
 
-        // Obtener settings completos
+        // Obtener settings completos (recargar: boot() pudo resolver GeneralSettings antes de existir timezone en BD)
         try {
-            $settings = app(GeneralSettings::class);
+            $settings = $this->resolveGeneralSettingsAfterEnsuringDatabase();
         } catch (MissingSettings $e) {
             // Si aún falla después de asegurar settings, crear un nuevo objeto con valores por defecto
             $settings = new GeneralSettings;
@@ -534,6 +535,26 @@ class SettingsController extends Controller
     }
 
     /**
+     * Tras sincronizar filas en `settings`, forzar una nueva resolución de GeneralSettings.
+     * Sin esto, una instancia cargada antes (p. ej. en AppServiceProvider::boot) puede quedar sin
+     * claves recién insertadas (p. ej. timezone) y Spatie lanza MissingSettings al guardar.
+     */
+    private function resolveGeneralSettingsAfterEnsuringDatabase(): GeneralSettings
+    {
+        try {
+            Artisan::call('settings:clear-cache');
+        } catch (\Throwable) {
+        }
+
+        $app = app();
+        if ($app->resolved(GeneralSettings::class)) {
+            $app->forgetInstance(GeneralSettings::class);
+        }
+
+        return $app->make(GeneralSettings::class);
+    }
+
+    /**
      * Asegurar que todos los settings estén en la base de datos
      */
     private function ensureSettingsInDatabase()
@@ -548,6 +569,7 @@ class SettingsController extends Controller
             'agency_logo' => '',
             'drive_service_account_json' => '',
             'drive_folder_id' => '',
+            'drive_default_country_no_client' => '',
             'drive_folder_name_no_client' => 'Expedientes Sin Cliente',
             'drive_folder_name_with_client' => 'Clientes',
             'drive_mode' => 'service_account',
@@ -571,6 +593,7 @@ class SettingsController extends Controller
             'zoho_from_email' => '',
             'footer_text' => 'RAMS - Regulatory Affairs Management System',
             'system_name' => 'Sistema de Gestión Regulatoria',
+            'timezone' => 'America/Bogota',
             'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
             'quote_pdf_footer_text' => '',
             'legal_privacy_title' => 'Política de Privacidad',
@@ -627,6 +650,7 @@ class SettingsController extends Controller
             'agency_logo' => '',
             'drive_service_account_json' => '',
             'drive_folder_id' => '',
+            'drive_default_country_no_client' => '',
             'mail_provider' => 'smtp',
             'mail_mailer' => 'smtp',
             'mail_host' => 'smtp.gmail.com',
