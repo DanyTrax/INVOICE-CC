@@ -20,6 +20,10 @@ class BackupService
 
     public const SCOPE_EMPRESA = 'empresa';
 
+    public const SCOPE_MAIL = 'mail_connection';
+
+    public const SCOPE_DRIVE = 'drive_connection';
+
     /**
      * Bloques disponibles para restauración selectiva (sin tocar el resto de tablas).
      *
@@ -56,6 +60,44 @@ class BackupService
                     'legal_show_terms_on_login',
                     'legal_privacy_html',
                     'legal_terms_html',
+                ],
+            ],
+            self::SCOPE_MAIL => [
+                'label' => 'Conexión de correo (SMTP y Zoho)',
+                'description' => 'Proveedor de envío, servidor SMTP, credenciales, remitente y tokens Zoho Mail según estén guardados en el backup.',
+                'tables' => [],
+                'settings_keys' => [
+                    'mail_provider',
+                    'mail_mailer',
+                    'mail_host',
+                    'mail_port',
+                    'mail_username',
+                    'mail_password',
+                    'mail_encryption',
+                    'mail_from_address',
+                    'mail_from_name',
+                    'zoho_client_id',
+                    'zoho_client_secret',
+                    'zoho_refresh_token',
+                    'zoho_access_token',
+                    'zoho_from_email',
+                ],
+            ],
+            self::SCOPE_DRIVE => [
+                'label' => 'Conexión Google Drive',
+                'description' => 'Modo (Service Account / OAuth), JSON de cuenta de servicio, carpeta raíz, nombres de carpetas y credenciales OAuth según el backup.',
+                'tables' => [],
+                'settings_keys' => [
+                    'drive_mode',
+                    'drive_service_account_json',
+                    'drive_folder_id',
+                    'drive_folder_name_no_client',
+                    'drive_folder_name_with_client',
+                    'drive_default_country_no_client',
+                    'drive_oauth_client_id',
+                    'drive_oauth_client_secret',
+                    'drive_oauth_refresh_token',
+                    'drive_oauth_access_token',
                 ],
             ],
         ];
