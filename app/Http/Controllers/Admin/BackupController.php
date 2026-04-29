@@ -140,9 +140,15 @@ class BackupController extends Controller
             $content = $drive->downloadFile($backup->drive_file_id);
             $service->restoreBackupFromJson($content, $selective);
         } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            $hint = '';
+            if (str_contains($msg, 'Google Drive') || str_contains($msg, 'OAuth') || str_contains($msg, 'Drive')) {
+                $hint = ' Puedes descargar este backup (icono azul) e importar el archivo JSON abajo en «Importar backup»: la importación no requiere que Drive esté configurado en el servidor.';
+            }
+
             return redirect()
                 ->route('admin.backups.index')
-                ->with('error', 'Error al restaurar backup desde Drive: '.$e->getMessage());
+                ->with('error', 'Error al restaurar backup desde Drive: '.$msg.$hint);
         }
 
         $msg = $selective === null

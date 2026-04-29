@@ -123,6 +123,9 @@
                         Elige si quieres reemplazar <strong>todo</strong> el sistema o solo algunas partes del backup.
                         La restauración parcial solo afecta las tablas y ajustes del bloque elegido; el resto de datos actuales no se modifica.
                     </p>
+                    <p class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-4">
+                        Esta acción <strong>descarga el archivo desde Google Drive</strong>. Si en Configuración no tienes Drive conectado (service account o OAuth), usa el icono <strong>descargar</strong> en la fila y luego «Importar backup» con el JSON.
+                    </p>
                     <form method="POST"
                           :action="`{{ url('/admin/backups') }}/${restoreBackupId}/restore`"
                           @submit="if (!(restoreMode === 'full' ? confirm('Se sustituirán TODOS los datos del sistema por el contenido de este backup. No se puede deshacer. ¿Continuar?') : confirm('Se sobrescribirán solo los bloques marcados con los datos del backup. ¿Continuar?'))) { $event.preventDefault(); }">
