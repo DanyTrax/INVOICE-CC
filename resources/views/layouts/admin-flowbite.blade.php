@@ -377,21 +377,50 @@
     
     @stack('styles')
 </head>
-<body class="h-full" x-data="{ 
-    sidebarOpen: window.innerWidth >= 1024,
+<body class="h-full" x-data="{
+    sidebarExpanded: false,
+    mobileOpen: false,
+    winLg: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
     init() {
+        this.winLg = window.innerWidth >= 1024;
         window.addEventListener('resize', () => {
-            if (window.innerWidth >= 1024 && !this.sidebarOpen) {
-                this.sidebarOpen = true;
+            this.winLg = window.innerWidth >= 1024;
+            if (this.winLg) {
+                this.mobileOpen = false;
             }
         });
-    }
+    },
+    toggleSidebar() {
+        if (this.winLg) {
+            this.sidebarExpanded = !this.sidebarExpanded;
+        } else {
+            this.mobileOpen = !this.mobileOpen;
+        }
+    },
+    asideWidthClass() {
+        if (!this.winLg) {
+            return 'w-64';
+        }
+        return this.sidebarExpanded ? 'w-64' : 'w-16 min-w-[4rem]';
+    },
+    asideXClass() {
+        if (this.winLg) {
+            return 'translate-x-0';
+        }
+        return this.mobileOpen ? 'translate-x-0' : '-translate-x-full';
+    },
+    mainMarginStyle() {
+        if (!this.winLg) {
+            return '';
+        }
+        return this.sidebarExpanded ? 'margin-left: 16rem' : 'margin-left: 4rem';
+    },
 }">
     <div class="flex h-screen bg-gray-50">
         <!-- Overlay para móvil -->
-        <div x-show="sidebarOpen" 
+        <div x-show="!winLg && mobileOpen" 
              x-cloak
-             @click="sidebarOpen = false"
+             @click="mobileOpen = false"
              x-transition:enter="transition-opacity ease-linear duration-300"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -404,12 +433,18 @@
 
         <!-- Sidebar -->
         <aside id="sidebar" 
-               class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform duration-300 ease-in-out shadow-lg" 
-               :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out shadow-lg" 
+               :class="[asideWidthClass(), asideXClass()]"
                style="background-color: #1e293b;">
-            <div class="h-full px-3 py-4 overflow-y-auto">
-                <!-- Logo -->
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center ps-2.5 mb-5">
+            <div class="h-full py-4 overflow-y-auto overflow-x-hidden"
+                 :class="winLg && !sidebarExpanded ? 'px-1.5' : 'px-3'">
+                <!-- Logo (compacto cuando el menú está solo iconos en escritorio) -->
+                <div class="mb-5" x-show="winLg && !sidebarExpanded" x-cloak>
+                    <a href="{{ route('admin.dashboard') }}" class="flex items-center justify-center rounded-lg py-2 text-white hover:bg-teal-700/50" title="Inicio">
+                        <span class="text-2xl font-bold text-teal-400">R</span>
+                    </a>
+                </div>
+                <a href="{{ route('admin.dashboard') }}" class="flex items-center ps-2.5 mb-5" x-show="!winLg || sidebarExpanded" x-cloak>
                     @php
                         try {
                             $settings = app(\App\Settings\GeneralSettings::class);
@@ -451,16 +486,18 @@
                     @if($permService->userHasPermission('dashboard', 'view'))
                         <li>
                             <a href="{{ route('admin.dashboard') }}" 
-                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.dashboard') ? 'bg-teal-700' : '' }}">
+                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.dashboard') ? 'bg-teal-700' : '' }}"
+                               :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                               title="Inicio">
                                 <i class="fas fa-home w-5 h-5 shrink-0"></i>
-                                <span class="ms-3">Inicio</span>
+                                <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Inicio</span>
                             </a>
                         </li>
                     @endif
 
                     <!-- OPERACIÓN -->
                     @if($permService->userHasPermission('processes', 'view') || $permService->userHasPermission('service_types', 'view'))
-                    <li class="pt-4">
+                    <li class="pt-4" x-show="!winLg || sidebarExpanded" x-cloak>
                         <span class="text-gray-400 text-xs font-semibold uppercase px-2">OPERACIÓN</span>
                     </li>
                     @php
@@ -472,14 +509,19 @@
                     @endphp
                     @if($permService->userHasPermission('processes', 'view'))
                     <li x-data="{ expedientesOpen: {{ $expedientesSubOpen ? 'true' : 'false' }} }">
-                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $expedientesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}">
+                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $expedientesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}"
+                             :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''">
                             <a href="{{ route('admin.processes.monitor') }}"
-                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium">
+                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium"
+                               :class="(winLg && !sidebarExpanded) ? 'justify-center flex-none' : ''"
+                               title="Expedientes">
                                 <i class="fas fa-folder w-5 h-5 shrink-0"></i>
-                                <span class="truncate">Expedientes</span>
+                                <span class="truncate" x-show="!winLg || sidebarExpanded" x-cloak>Expedientes</span>
                             </a>
                             @if($permService->userHasPermission('service_types', 'view'))
                             <button type="button"
+                                    x-show="!winLg || sidebarExpanded"
+                                    x-cloak
                                     @click.stop="expedientesOpen = !expedientesOpen"
                                     class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30"
                                     title="Mostrar Trámite">
@@ -488,7 +530,7 @@
                             @endif
                         </div>
                         @if($permService->userHasPermission('service_types', 'view'))
-                        <ul x-show="expedientesOpen" x-cloak
+                        <ul x-show="expedientesOpen && (!winLg || sidebarExpanded)" x-cloak
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 -translate-y-1"
                             x-transition:enter-end="opacity-100 translate-y-0"
@@ -500,7 +542,7 @@
                                 <a href="{{ route('admin.service-types.index') }}"
                                    class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ $tramiteActive ? 'bg-teal-700/50 text-white' : '' }}">
                                     <i class="fas fa-list-alt w-4 h-4"></i>
-                                    <span class="ms-2 text-sm">Trámite</span>
+                                    <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Trámite</span>
                                 </a>
                             </li>
                         </ul>
@@ -508,17 +550,21 @@
                     </li>
                     <li>
                         <a href="{{ route('admin.processes.history') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.history') ? 'bg-teal-700' : '' }}">
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.history') ? 'bg-teal-700' : '' }}"
+                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                           title="Historial de Expedientes">
                             <i class="fas fa-clock-rotate-left w-5 h-5"></i>
-                            <span class="ms-3">Historial de Expedientes</span>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Historial de Expedientes</span>
                         </a>
                     </li>
                     @elseif($permService->userHasPermission('service_types', 'view'))
                     <li>
                         <a href="{{ route('admin.service-types.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.service-types.*') ? 'bg-teal-700' : '' }}">
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.service-types.*') ? 'bg-teal-700' : '' }}"
+                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                           title="Trámite">
                             <i class="fas fa-list-alt w-5 h-5 shrink-0"></i>
-                            <span class="ms-3">Trámite</span>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Trámite</span>
                         </a>
                     </li>
                     @endif
@@ -537,21 +583,26 @@
                         $cotizacionesRowActive = $cotizacionesLinkActive || $serviciosActive;
                         $cotizacionesSubOpen = $serviciosActive;
                     @endphp
-                    <li class="pt-4">
+                    <li class="pt-4" x-show="!winLg || sidebarExpanded" x-cloak>
                         <span class="text-gray-400 text-xs font-semibold uppercase px-2">CONTABILIDAD</span>
                     </li>
                     @if($permService->userHasPermission('proposals', 'view') || $permService->userHasPermission('concept_catalogs', 'view'))
                     <li x-data="{ propuestasOpen: {{ $propuestasSubOpen ? 'true' : 'false' }} }">
-                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $propuestasRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}">
+                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $propuestasRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}"
+                             :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''">
                             @if($permService->userHasPermission('proposals', 'view'))
                             <a href="{{ route('admin.proposals.index') }}"
-                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium">
+                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium"
+                               :class="(winLg && !sidebarExpanded) ? 'justify-center flex-none' : ''"
+                               title="Propuestas">
                                 <i class="fas fa-file-signature w-5 h-5 shrink-0"></i>
-                                <span class="truncate">Propuestas</span>
+                                <span class="truncate" x-show="!winLg || sidebarExpanded" x-cloak>Propuestas</span>
                             </a>
                             @endif
                             @if($permService->userHasPermission('concept_catalogs', 'view'))
                             <button type="button"
+                                    x-show="!winLg || sidebarExpanded"
+                                    x-cloak
                                     @click.stop="propuestasOpen = !propuestasOpen"
                                     class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30 {{ $permService->userHasPermission('proposals', 'view') ? '' : 'flex-1 justify-start pl-3' }}"
                                     title="Mostrar Conceptos">
@@ -560,7 +611,7 @@
                             @endif
                         </div>
                         @if($permService->userHasPermission('concept_catalogs', 'view'))
-                        <ul x-show="propuestasOpen" x-cloak
+                        <ul x-show="propuestasOpen && (!winLg || sidebarExpanded)" x-cloak
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 -translate-y-1"
                             x-transition:enter-end="opacity-100 translate-y-0"
@@ -572,7 +623,7 @@
                                 <a href="{{ route('admin.concept-catalogs.index') }}"
                                    class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ $conceptosActive ? 'bg-teal-700/50 text-white' : '' }}">
                                     <i class="fas fa-list-ul w-4 h-4"></i>
-                                    <span class="ms-2 text-sm">Conceptos</span>
+                                    <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Conceptos</span>
                                 </a>
                             </li>
                         </ul>
@@ -581,16 +632,21 @@
                     @endif
                     @if($permService->userHasPermission('quotes', 'view') || $permService->userHasPermission('services', 'view'))
                     <li x-data="{ contabilidadOpen: {{ $cotizacionesSubOpen ? 'true' : 'false' }} }">
-                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $cotizacionesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}">
+                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $cotizacionesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}"
+                             :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''">
                             @if($permService->userHasPermission('quotes', 'view'))
                             <a href="{{ route('admin.quotes.index') }}"
-                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium">
+                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium"
+                               :class="(winLg && !sidebarExpanded) ? 'justify-center flex-none' : ''"
+                               title="Cotizaciones">
                                 <i class="fas fa-file-invoice-dollar w-5 h-5 shrink-0"></i>
-                                <span class="truncate">Cotizaciones</span>
+                                <span class="truncate" x-show="!winLg || sidebarExpanded" x-cloak>Cotizaciones</span>
                             </a>
                             @endif
                             @if($permService->userHasPermission('services', 'view'))
                             <button type="button"
+                                    x-show="!winLg || sidebarExpanded"
+                                    x-cloak
                                     @click.stop="contabilidadOpen = !contabilidadOpen"
                                     class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30 {{ $permService->userHasPermission('quotes', 'view') ? '' : 'flex-1 justify-start pl-3' }}"
                                     title="Mostrar Servicios">
@@ -599,7 +655,7 @@
                             @endif
                         </div>
                         @if($permService->userHasPermission('services', 'view'))
-                        <ul x-show="contabilidadOpen" x-cloak
+                        <ul x-show="contabilidadOpen && (!winLg || sidebarExpanded)" x-cloak
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 -translate-y-1"
                             x-transition:enter-end="opacity-100 translate-y-0"
@@ -611,7 +667,7 @@
                                 <a href="{{ route('admin.services.index') }}"
                                    class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ $serviciosActive ? 'bg-teal-700/50 text-white' : '' }}">
                                     <i class="fas fa-concierge-bell w-4 h-4"></i>
-                                    <span class="ms-2 text-sm">Servicios</span>
+                                    <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Servicios</span>
                                 </a>
                             </li>
                         </ul>
@@ -623,9 +679,11 @@
                     @if($permService->userHasPermission('capacitaciones', 'view'))
                     <li class="pt-4">
                         <a href="{{ route('admin.capacitaciones.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.capacitaciones.*') ? 'bg-teal-700' : '' }}">
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.capacitaciones.*') ? 'bg-teal-700' : '' }}"
+                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                           title="Capacitaciones">
                             <i class="fas fa-video w-5 h-5 shrink-0"></i>
-                            <span class="ms-3">Capacitaciones</span>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Capacitaciones</span>
                         </a>
                     </li>
                     @endif
@@ -647,16 +705,18 @@
                             || $permService->userHasPermission('activity_logs', 'view');
                     @endphp
                     @if($sistemaSectionVisible)
-                        <li class="pt-4">
+                        <li class="pt-4" x-show="!winLg || sidebarExpanded" x-cloak>
                             <span class="text-gray-400 text-xs font-semibold uppercase px-2">SISTEMA</span>
                         </li>
                     @endif
                     @if($permService->userHasPermission('companies', 'view'))
                         <li>
                             <a href="{{ route('admin.companies.index') }}"
-                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.companies.*') ? 'bg-teal-700' : '' }}">
-                                <i class="fas fa-building w-5 h-5"></i>
-                                <span class="ms-3">Empresas</span>
+                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.companies.*') ? 'bg-teal-700' : '' }}"
+                               :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                               title="Empresas">
+                                <i class="fas fa-building w-5 h-5 shrink-0"></i>
+                                <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Empresas</span>
                             </a>
                         </li>
                     @endif
@@ -670,14 +730,16 @@
                         || $permService->userHasPermission('settings_system', 'view'))
                         @if($permService->userHasPermission('users', 'view'))
                             <li x-data="{ directorioOpen: {{ request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
-                                <button @click="directorioOpen = !directorioOpen"
+                                <button @click="(winLg && !sidebarExpanded) ? (sidebarExpanded = true) : (directorioOpen = !directorioOpen)"
                                         type="button"
-                                        class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}">
-                                    <i class="fas fa-address-book w-5 h-5"></i>
-                                    <span class="ms-3 text-left flex-1">Directorio</span>
-                                    <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': directorioOpen }"></i>
+                                        class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}"
+                                        :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                                        title="Directorio">
+                                    <i class="fas fa-address-book w-5 h-5 shrink-0"></i>
+                                    <span class="ms-3 text-left flex-1" x-show="!winLg || sidebarExpanded" x-cloak>Directorio</span>
+                                    <i class="fas fa-chevron-down w-4 h-4 transition-transform shrink-0" x-show="!winLg || sidebarExpanded" x-cloak :class="{ 'rotate-180': directorioOpen }"></i>
                                 </button>
-                                <ul x-show="directorioOpen" x-cloak
+                                <ul x-show="directorioOpen && (!winLg || sidebarExpanded)" x-cloak
                                     x-transition:enter="transition ease-out duration-150"
                                     x-transition:enter-start="opacity-0 -translate-y-1"
                                     x-transition:enter-end="opacity-100 translate-y-0"
@@ -689,14 +751,14 @@
                                         <a href="{{ route('admin.clients.index') }}"
                                            class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.clients.*') ? 'bg-teal-700/50 text-white' : '' }}">
                                             <i class="fas fa-user-friends w-4 h-4"></i>
-                                            <span class="ms-2 text-sm">Clientes</span>
+                                            <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Clientes</span>
                                         </a>
                                     </li>
                                     <li>
                                         <a href="{{ route('admin.agents.index') }}"
                                            class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700/50 text-white' : '' }}">
                                             <i class="fas fa-user-tie w-4 h-4"></i>
-                                            <span class="ms-2 text-sm">Especialistas</span>
+                                            <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Especialistas</span>
                                         </a>
                                     </li>
                                 </ul>
@@ -711,9 +773,11 @@
                             || $permService->userHasPermission('settings_system', 'view'))
                             <li>
                                 <a href="{{ route('admin.settings.index') }}" 
-                                   class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.settings.*') ? 'bg-teal-700' : '' }}">
-                                    <i class="fas fa-cog w-5 h-5"></i>
-                                    <span class="ms-3">Configuración</span>
+                                   class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.settings.*') ? 'bg-teal-700' : '' }}"
+                                   :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                                   title="Configuración">
+                                    <i class="fas fa-cog w-5 h-5 shrink-0"></i>
+                                    <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Configuración</span>
                                 </a>
                             </li>
                         @endif
@@ -721,27 +785,33 @@
                     @if($permService->userHasPermission('backups', 'view'))
                     <li>
                         <a href="{{ route('admin.backups.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.backups.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-database w-5 h-5"></i>
-                            <span class="ms-3">Backups</span>
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.backups.*') ? 'bg-teal-700' : '' }}"
+                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                           title="Backups">
+                            <i class="fas fa-database w-5 h-5 shrink-0"></i>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Backups</span>
                         </a>
                     </li>
                     @endif
                     @if($permService->userHasPermission('permissions', 'view') || $permService->userHasPermission('permissions', 'edit'))
                     <li>
                         <a href="{{ route('admin.permissions.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.permissions.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-shield-alt w-5 h-5"></i>
-                            <span class="ms-3">Permisos</span>
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.permissions.*') ? 'bg-teal-700' : '' }}"
+                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                           title="Permisos">
+                            <i class="fas fa-shield-alt w-5 h-5 shrink-0"></i>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Permisos</span>
                         </a>
                     </li>
                     @endif
                     @if($permService->userHasPermission('activity_logs', 'view'))
                     <li>
                         <a href="{{ route('admin.activity-logs.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.activity-logs.*') ? 'bg-teal-700' : '' }}">
-                            <i class="fas fa-history w-5 h-5"></i>
-                            <span class="ms-3">Registros de Actividad</span>
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.activity-logs.*') ? 'bg-teal-700' : '' }}"
+                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                           title="Registros de Actividad">
+                            <i class="fas fa-history w-5 h-5 shrink-0"></i>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Registros de Actividad</span>
                         </a>
                     </li>
                     @endif
@@ -751,15 +821,16 @@
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300" 
-             :style="sidebarOpen ? 'margin-left: 16rem;' : 'margin-left: 0;'">
+             :style="mainMarginStyle()">
             <!-- Top Navbar -->
             <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
                 <div class="flex items-center justify-between px-4 py-3">
-                    <!-- Botón Hamburguesa (siempre visible) -->
-                    <button @click="sidebarOpen = !sidebarOpen" 
+                    <!-- Botón Hamburguesa (móvil: drawer; escritorio: expandir/contraer menú) -->
+                    <button type="button"
+                            @click="toggleSidebar()" 
                             class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
-                            title="Mostrar/Ocultar menú">
-                        <i class="fas fa-bars w-5 h-5"></i>
+                            :title="winLg ? (sidebarExpanded ? 'Contraer menú lateral' : 'Expandir menú lateral') : 'Abrir o cerrar menú'">
+                        <i class="fas w-5 h-5" :class="winLg && sidebarExpanded ? 'fa-chevron-left' : 'fa-bars'"></i>
                     </button>
                     
                     <!-- Breadcrumb y título (centro) -->
