@@ -9,6 +9,7 @@ use App\Services\GoogleDriveService;
 use App\Services\PermissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BackupController extends Controller
@@ -29,7 +30,9 @@ class BackupController extends Controller
             ->orderByDesc('created_at')
             ->paginate(15);
 
-        return view('admin.backups.index', compact('backups'));
+        $backupRestoreScopes = BackupService::selectiveRestoreScopeDefinitions();
+
+        return view('admin.backups.index', compact('backups', 'backupRestoreScopes'));
     }
 
     public function store(BackupService $service): RedirectResponse
@@ -79,42 +82,76 @@ class BackupController extends Controller
     {
         $this->ensureCanAccessBackups();
 
-        $request->validate([
+        $scopeKeys = array_keys(BackupService::selectiveRestoreScopeDefinitions());
+
+        $validated = $request->validate([
             'backup_file' => 'required|file|mimes:json,txt',
             'confirm_restore' => 'accepted',
+            'restore_mode' => ['required', Rule::in(['full', 'selective'])],
+            'scopes' => ['required_if:restore_mode,selective', 'array', 'min:1'],
+            'scopes.*' => [Rule::in($scopeKeys)],
         ], [
-            'confirm_restore.accepted' => 'Debes confirmar que entiendes que la importación restablecerá todos los datos.',
+            'confirm_restore.accepted' => 'Debes confirmar que entiendes las consecuencias de la importación.',
+            'scopes.required_if' => 'En modo parcial, marca al menos un bloque a restaurar.',
+            'scopes.min' => 'En modo parcial, marca al menos un bloque a restaurar.',
         ]);
 
+        $selective = $validated['restore_mode'] === 'selective'
+            ? array_values(array_unique($validated['scopes']))
+            : null;
+
         try {
-            $service->restoreBackupFromFile($request->file('backup_file'));
+            $service->restoreBackupFromFile($request->file('backup_file'), $selective);
         } catch (\Throwable $e) {
             return redirect()
                 ->route('admin.backups.index')
                 ->with('error', 'Error al importar el backup: '.$e->getMessage());
         }
 
+        $msg = $selective === null
+            ? 'Backup importado: restauración completa aplicada.'
+            : 'Backup importado: se restauraron solo los bloques seleccionados.';
+
         return redirect()
             ->route('admin.backups.index')
-            ->with('success', 'Backup importado correctamente y datos restaurados.');
+            ->with('success', $msg);
     }
 
     public function restore(SystemBackup $backup, BackupService $service, GoogleDriveService $drive): RedirectResponse
     {
         $this->ensureCanAccessBackups();
 
+        $scopeKeys = array_keys(BackupService::selectiveRestoreScopeDefinitions());
+
+        $validated = $request->validate([
+            'restore_mode' => ['required', Rule::in(['full', 'selective'])],
+            'scopes' => ['required_if:restore_mode,selective', 'array', 'min:1'],
+            'scopes.*' => [Rule::in($scopeKeys)],
+        ], [
+            'scopes.required_if' => 'En modo parcial, marca al menos un bloque a restaurar.',
+            'scopes.min' => 'En modo parcial, marca al menos un bloque a restaurar.',
+        ]);
+
+        $selective = $validated['restore_mode'] === 'selective'
+            ? array_values(array_unique($validated['scopes']))
+            : null;
+
         try {
             $content = $drive->downloadFile($backup->drive_file_id);
-            $service->restoreBackupFromJson($content);
+            $service->restoreBackupFromJson($content, $selective);
         } catch (\Throwable $e) {
             return redirect()
                 ->route('admin.backups.index')
                 ->with('error', 'Error al restaurar backup desde Drive: '.$e->getMessage());
         }
 
+        $msg = $selective === null
+            ? 'Backup restaurado desde Drive (restauración completa).'
+            : 'Backup restaurado desde Drive solo en los bloques seleccionados.';
+
         return redirect()
             ->route('admin.backups.index')
-            ->with('success', 'Backup restaurado desde Drive correctamente.');
+            ->with('success', $msg);
     }
 
     public function wipe(Request $request, BackupService $service): RedirectResponse

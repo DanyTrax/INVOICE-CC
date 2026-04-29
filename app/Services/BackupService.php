@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\SystemBackup;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +16,51 @@ use Throwable;
 
 class BackupService
 {
+    public const SCOPE_EMAIL_TEMPLATES = 'email_templates';
+
+    public const SCOPE_EMPRESA = 'empresa';
+
+    /**
+     * Bloques disponibles para restauración selectiva (sin tocar el resto de tablas).
+     *
+     * @return array<string, array{label: string, description: string, tables: list<string>, settings_keys: list<string>}>
+     */
+    public static function selectiveRestoreScopeDefinitions(): array
+    {
+        return [
+            self::SCOPE_EMAIL_TEMPLATES => [
+                'label' => 'Plantillas de correo electrónico',
+                'description' => 'Todas las plantillas de email del sistema (asunto, cuerpo, tipo).',
+                'tables' => ['email_templates'],
+                'settings_keys' => [],
+            ],
+            self::SCOPE_EMPRESA => [
+                'label' => 'Empresa, legales y plantillas PDF',
+                'description' => 'Marca blanca (nombre, NIT, contacto, logo), pie y nombre del sistema, textos legales públicos, ajustes de PDF en configuración y registros de plantillas PDF de cotización y propuesta.',
+                'tables' => ['quote_pdf_templates', 'proposal_pdf_templates'],
+                'settings_keys' => [
+                    'agency_name',
+                    'agency_nit',
+                    'agency_address',
+                    'agency_phone',
+                    'agency_email',
+                    'agency_website',
+                    'agency_logo',
+                    'footer_text',
+                    'system_name',
+                    'quote_pdf_header_subtitle',
+                    'quote_pdf_footer_text',
+                    'legal_privacy_title',
+                    'legal_terms_title',
+                    'legal_show_privacy_on_login',
+                    'legal_show_terms_on_login',
+                    'legal_privacy_html',
+                    'legal_terms_html',
+                ],
+            ],
+        ];
+    }
+
     public function createBackup(): SystemBackup
     {
         /** @var User $user */
@@ -56,6 +102,8 @@ class BackupService
             'quote_items',
             'proposals',
             'proposal_items',
+            'quote_pdf_templates',
+            'proposal_pdf_templates',
             'processes',
             'process_documents',
             'process_user',
@@ -119,9 +167,11 @@ class BackupService
     }
 
     /**
-     * Vaciar datos de negocio dejando solo el super_admin.
+     * @param  list<string>|null  $selectiveScopes  Claves de {@see selectiveRestoreScopeDefinitions()}; null = restauración completa.
+     *
+     * @throws \Exception
      */
-    public function restoreBackupFromJson(string $content): void
+    public function restoreBackupFromJson(string $content, ?array $selectiveScopes = null): void
     {
         $payload = json_decode($content, true);
 
@@ -129,7 +179,19 @@ class BackupService
             throw new \Exception('Archivo de backup inválido.');
         }
 
-        // MySQL: TRUNCATE hace COMMIT implícito; no usar DB::transaction() o falla al cerrar ("no active transaction").
+        if ($selectiveScopes === null) {
+            $this->restoreFullPayload($payload);
+
+            return;
+        }
+
+        $allowed = array_keys(self::selectiveRestoreScopeDefinitions());
+        $selectiveScopes = array_values(array_unique(array_intersect($selectiveScopes, $allowed)));
+
+        if ($selectiveScopes === []) {
+            throw new \InvalidArgumentException('Selecciona al menos un bloque válido para restauración parcial.');
+        }
+
         $driver = DB::getDriverName();
         if ($driver === 'sqlite') {
             DB::statement('PRAGMA foreign_keys = OFF');
@@ -139,101 +201,15 @@ class BackupService
         }
 
         try {
-            $restoreOrder = [
-                'users',
-                'roles',
-                'permissions',
-                'role_has_permissions',
-                'role_permissions',
-                'role_hierarchy',
-                'model_has_roles',
-                'companies',
-                'company_user',
-                'services',
-                'service_types',
-                'concept_catalogs',
-                'quotes',
-                'quote_items',
-                'proposals',
-                'proposal_items',
-                'registrations',
-                'processes',
-                'process_documents',
-                'process_user',
-                'submissions',
-                'regulatory_events',
-                'documents',
-                'checklist_items',
-                'capacitacion_videos',
-                'capacitacion_completions',
-                'email_templates',
-                'settings',
-                'email_logs',
-                'drive_operations_log',
-                'company_invites',
-                'activity_logs',
-            ];
-
-            foreach ($restoreOrder as $table) {
-                if (! isset($payload['tables'][$table]) || ! Schema::hasTable($table)) {
-                    continue;
+            foreach ($selectiveScopes as $scopeKey) {
+                $def = self::selectiveRestoreScopeDefinitions()[$scopeKey];
+                foreach ($def['tables'] as $table) {
+                    $this->replaceTableFromPayload($payload, $table);
                 }
-
-                $rows = $payload['tables'][$table];
-                DB::table($table)->truncate();
-
-                $tableColumns = Schema::getColumnListing($table);
-
-                if (is_array($rows) && count($rows) > 0) {
-                    $cleanRows = array_map(function ($row) use ($tableColumns) {
-                        $rowArray = (array) $row;
-
-                        return array_filter(
-                            array_intersect_key($rowArray, array_flip($tableColumns)),
-                            fn ($value, $key) => in_array($key, $tableColumns, true),
-                            ARRAY_FILTER_USE_BOTH
-                        );
-                    }, $rows);
-
-                    foreach (array_chunk($cleanRows, 1000) as $chunk) {
-                        if (count($chunk) > 0) {
-                            DB::table($table)->insert($chunk);
-                        }
-                    }
+                if ($def['settings_keys'] !== []) {
+                    $this->mergeGeneralSettingsKeysFromPayload($payload, $def['settings_keys']);
                 }
             }
-
-            // Cargar tablas extra que estén en el payload y no en la lista principal
-            $remainingTables = array_diff(array_keys($payload['tables']), $restoreOrder);
-            foreach ($remainingTables as $table) {
-                if (! Schema::hasTable($table)) {
-                    continue;
-                }
-
-                $rows = $payload['tables'][$table];
-                DB::table($table)->truncate();
-
-                $tableColumns = Schema::getColumnListing($table);
-
-                if (is_array($rows) && count($rows) > 0) {
-                    $cleanRows = array_map(function ($row) use ($tableColumns) {
-                        $rowArray = (array) $row;
-
-                        return array_filter(
-                            array_intersect_key($rowArray, array_flip($tableColumns)),
-                            fn ($value, $key) => in_array($key, $tableColumns, true),
-                            ARRAY_FILTER_USE_BOTH
-                        );
-                    }, $rows);
-
-                    foreach (array_chunk($cleanRows, 1000) as $chunk) {
-                        if (count($chunk) > 0) {
-                            DB::table($table)->insert($chunk);
-                        }
-                    }
-                }
-            }
-
         } finally {
             if ($driver === 'sqlite') {
                 DB::statement('PRAGMA foreign_keys = ON');
@@ -242,14 +218,209 @@ class BackupService
                 DB::statement('SET FOREIGN_KEY_CHECKS=1');
             }
         }
+
+        try {
+            Artisan::call('settings:clear-cache');
+        } catch (\Throwable) {
+            // Ignorar si el comando no está disponible en el entorno
+        }
     }
 
-    public function restoreBackupFromFile(UploadedFile $file): void
+    /**
+     * @param  list<string>|null  $selectiveScopes
+     */
+    public function restoreBackupFromFile(UploadedFile $file, ?array $selectiveScopes = null): void
     {
         $content = file_get_contents($file->getRealPath());
-        $this->restoreBackupFromJson($content);
+        $this->restoreBackupFromJson($content, $selectiveScopes);
     }
 
+    /**
+     * Restauración completa: todas las tablas conocidas del backup.
+     */
+    protected function restoreFullPayload(array $payload): void
+    {
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF');
+        }
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        }
+
+        try {
+            $restoreOrder = $this->fullRestoreTableOrder();
+
+            foreach ($restoreOrder as $table) {
+                $this->replaceTableFromPayload($payload, $table);
+            }
+
+            $remainingTables = array_diff(array_keys($payload['tables']), $restoreOrder);
+            foreach ($remainingTables as $table) {
+                $this->replaceTableFromPayload($payload, $table);
+            }
+        } finally {
+            if ($driver === 'sqlite') {
+                DB::statement('PRAGMA foreign_keys = ON');
+            }
+            if ($driver === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            }
+        }
+
+        try {
+            Artisan::call('settings:clear-cache');
+        } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function fullRestoreTableOrder(): array
+    {
+        return [
+            'users',
+            'roles',
+            'permissions',
+            'role_has_permissions',
+            'role_permissions',
+            'role_hierarchy',
+            'model_has_roles',
+            'companies',
+            'company_user',
+            'services',
+            'service_types',
+            'concept_catalogs',
+            'quotes',
+            'quote_items',
+            'proposals',
+            'proposal_items',
+            'quote_pdf_templates',
+            'proposal_pdf_templates',
+            'registrations',
+            'processes',
+            'process_documents',
+            'process_user',
+            'submissions',
+            'regulatory_events',
+            'documents',
+            'checklist_items',
+            'capacitacion_videos',
+            'capacitacion_completions',
+            'email_templates',
+            'settings',
+            'email_logs',
+            'drive_operations_log',
+            'company_invites',
+            'activity_logs',
+        ];
+    }
+
+    protected function replaceTableFromPayload(array $payload, string $table): void
+    {
+        if (! isset($payload['tables'][$table]) || ! Schema::hasTable($table)) {
+            return;
+        }
+
+        $rows = $payload['tables'][$table];
+        DB::table($table)->truncate();
+
+        $tableColumns = Schema::getColumnListing($table);
+
+        if (! is_array($rows) || count($rows) === 0) {
+            return;
+        }
+
+        $cleanRows = array_map(function ($row) use ($tableColumns) {
+            $rowArray = (array) $row;
+
+            return array_filter(
+                array_intersect_key($rowArray, array_flip($tableColumns)),
+                fn ($value, $key) => in_array($key, $tableColumns, true),
+                ARRAY_FILTER_USE_BOTH
+            );
+        }, $rows);
+
+        foreach (array_chunk($cleanRows, 1000) as $chunk) {
+            if (count($chunk) > 0) {
+                DB::table($table)->insert($chunk);
+            }
+        }
+    }
+
+    /**
+     * @param  list<string>  $settingsKeys  Nombres de filas en group `general`.
+     */
+    protected function mergeGeneralSettingsKeysFromPayload(array $payload, array $settingsKeys): void
+    {
+        if (! Schema::hasTable('settings') || ! isset($payload['tables']['settings'])) {
+            return;
+        }
+
+        $nameSet = array_flip($settingsKeys);
+        $tableColumns = Schema::getColumnListing('settings');
+        $rows = $payload['tables']['settings'];
+
+        if (! is_array($rows)) {
+            return;
+        }
+
+        foreach ($rows as $row) {
+            $rowArray = (array) $row;
+            if (($rowArray['group'] ?? '') !== 'general') {
+                continue;
+            }
+            $name = $rowArray['name'] ?? '';
+            if ($name === '' || ! isset($nameSet[$name])) {
+                continue;
+            }
+
+            $clean = array_filter(
+                array_intersect_key($rowArray, array_flip($tableColumns)),
+                fn ($value, $key) => in_array($key, $tableColumns, true),
+                ARRAY_FILTER_USE_BOTH
+            );
+
+            $payloadVal = $clean['payload'] ?? null;
+            if ($payloadVal !== null && ! is_string($payloadVal)) {
+                $payloadVal = json_encode($payloadVal);
+            }
+            $payloadJson = is_string($payloadVal) ? $payloadVal : 'null';
+
+            $group = $clean['group'];
+            $locked = (bool) ($clean['locked'] ?? false);
+
+            $exists = DB::table('settings')
+                ->where('group', $group)
+                ->where('name', $name)
+                ->exists();
+
+            if ($exists) {
+                DB::table('settings')
+                    ->where('group', $group)
+                    ->where('name', $name)
+                    ->update([
+                        'locked' => $locked,
+                        'payload' => $payloadJson,
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                DB::table('settings')->insert([
+                    'group' => $group,
+                    'name' => $name,
+                    'locked' => $locked,
+                    'payload' => $payloadJson,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Vaciar datos de negocio dejando solo el super_admin.
+     */
     public function wipeDataExceptSuperAdmin(bool $preserveCurrentUser = true, bool $preserveRolesAndPermissions = true): void
     {
         // MySQL: TRUNCATE hace COMMIT implícito; DB::transaction() rompe al finalizar ("no active transaction").
@@ -286,6 +457,8 @@ class BackupService
                 'quotes',
                 'proposal_items',
                 'proposals',
+                'quote_pdf_templates',
+                'proposal_pdf_templates',
                 'companies',
                 'services',
                 'service_types',
