@@ -136,7 +136,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::put('clients/{user}', [UserController::class, 'updateClient'])->name('clients.update');
     Route::get('agents', [UserController::class, 'agents'])->name('agents.index');
 
-    // Registrations (módulo jubilado: se usa Expedientes / Procesos)
+    // Registrations (módulo jubilado: se usa Solicitudes / Procesos)
     // Route::get('/registrations/{registration}/documents/{document}/view', [RegistrationController::class, 'viewDocument'])
     //     ->name('registrations.documents.view');
     // Route::get('/registrations/{registration}/documents/{document}/download', [RegistrationController::class, 'downloadDocument'])
@@ -190,7 +190,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::put('services/{service}', [ServiceController::class, 'update'])->name('services.update');
     Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
 
-    // Expedientes (processes) y eventos regulatorios
+    // Solicitudes (processes) y eventos regulatorios
     Route::get('processes', [ProcessController::class, 'index'])->name('processes.index');
     Route::get('processes/monitor', [ProcessController::class, 'masterList'])->name('processes.monitor');
     Route::get('processes/history', [ProcessController::class, 'history'])->name('processes.history');

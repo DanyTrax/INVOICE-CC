@@ -1,20 +1,20 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Historial de Expedientes - RAMS')
+@section('title', 'Historial de solicitudes - RAMS')
 
-@section('page-title', 'Historial de Expedientes')
+@section('page-title', 'Historial de solicitudes')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.processes.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Expedientes</a>
+            <a href="{{ route('admin.processes.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Solicitudes</a>
         </div>
     </li>
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Historial de Expedientes</span>
+            <span class="text-sm font-medium text-gray-500">Historial de solicitudes</span>
         </div>
     </li>
 @endsection
@@ -63,10 +63,10 @@
 
     <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-gray-700">Expedientes Finalizados</h2>
+            <h2 class="text-sm font-semibold text-gray-700">Solicitudes finalizadas</h2>
             <p class="text-xs text-gray-500">
-                Solo se muestran expedientes en estado <strong>Finalizado</strong>. Si edita un expediente y cambia su estado,
-                volverá a aparecer en el módulo de <strong>Expedientes</strong>.
+                Solo se muestran solicitudes en estado <strong>Finalizado</strong>. Si edita una solicitud y cambia su estado,
+                volverá a aparecer en el módulo de <strong>Solicitudes</strong>.
             </p>
         </div>
         <div class="overflow-x-auto">

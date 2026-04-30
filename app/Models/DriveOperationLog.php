@@ -36,7 +36,7 @@ class DriveOperationLog extends Model
     }
 
     /**
-     * Expediente relacionado
+     * Solicitud (process) relacionada
      */
     public function registration(): BelongsTo
     {
@@ -56,7 +56,7 @@ class DriveOperationLog extends Model
      */
     public function getOperationIconAttribute(): string
     {
-        return match($this->operation_type) {
+        return match ($this->operation_type) {
             'upload' => 'fa-upload',
             'download' => 'fa-download',
             'view' => 'fa-eye',
@@ -73,7 +73,7 @@ class DriveOperationLog extends Model
      */
     public function getStatusColorAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'success' => 'green',
             'failed' => 'red',
             'pending' => 'yellow',

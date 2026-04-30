@@ -65,7 +65,7 @@
             @endif
             @endquoteCan
             <a href="{{ route('admin.processes.monitor', ['quote_id' => $quote->id]) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium">
-                <i class="fas fa-folder-open mr-2"></i> Ver Expedientes
+                <i class="fas fa-folder-open mr-2"></i> Ver solicitudes
             </a>
         </div>
         @if($quote->status !== 'Aprobada')
@@ -87,7 +87,7 @@
         @endif
         @endquoteCan
         @quoteCan('delete')
-        <form action="{{ route('admin.quotes.destroy', $quote) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta cotización y todos sus ítems? Los expedientes vinculados quedarán sin cotización. Esta acción no se puede deshacer.');">
+        <form action="{{ route('admin.quotes.destroy', $quote) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta cotización y todos sus ítems? Las solicitudes vinculadas quedarán sin cotización. Esta acción no se puede deshacer.');">
             @csrf
             @method('DELETE')
             <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 font-medium border border-red-800">
@@ -161,7 +161,7 @@
                             <th class="px-2 py-2">Producto / Descripción</th>
                         @endif
                         @if($quote->show_prev_license_column)
-                            <th class="px-2 py-2">Expediente / INVIMA</th>
+                            <th class="px-2 py-2">Solicitud / INVIMA</th>
                         @endif
                         @if($quote->show_raa_column)
                             <th class="px-2 py-2 w-20">RAA</th>
@@ -192,14 +192,14 @@
                                     @php
                                         $linkedCycle = $item->submissions?->sortByDesc('id')->first();
                                         $linkedProcess = $linkedCycle?->process;
-                                        // Ítem (tras vincular ciclo) o expediente vinculado al ítem
+                                        // Ítem (tras vincular ciclo) o solicitud vinculada al ítem
                                         $tramiteNombre = $item->serviceType?->name
                                             ?? $linkedProcess?->serviceType?->name
                                             ?? $item->process?->serviceType?->name;
                                     @endphp
                                     @if($linkedProcess)
                                         <a href="{{ route('admin.processes.show', $linkedProcess) }}" class="text-teal-600 hover:text-teal-800 hover:underline">
-                                            {{ $tramiteNombre ?: 'Expediente' }}
+                                            {{ $tramiteNombre ?: 'Solicitud' }}
                                         </a>
                                     @else
                                         {{ $tramiteNombre ?: '–' }}

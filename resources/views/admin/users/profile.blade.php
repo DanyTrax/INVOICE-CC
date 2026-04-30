@@ -148,7 +148,7 @@
                         <dd class="text-sm font-semibold text-gray-900">{{ $user->companies_count }}</dd>
                     </div>
                     <div class="flex justify-between items-center">
-                        <dt class="text-sm text-gray-600">Expedientes Asignados</dt>
+                        <dt class="text-sm text-gray-600">Solicitudes asignadas</dt>
                         <dd class="text-sm font-semibold text-gray-900">{{ $user->assigned_registrations_count }}</dd>
                     </div>
                     <div class="flex justify-between items-center">

@@ -16,7 +16,7 @@
 @section('content')
     <!-- Estadísticas Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <!-- Expedientes Activos -->
+        <!-- Solicitudes activas -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
                 <div>
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Detalles del Evento',
                 html: message,
                 icon: 'info',
-                confirmButtonText: 'Ver Expediente',
+                confirmButtonText: 'Ver solicitud',
                 showCancelButton: true,
                 cancelButtonText: 'Cerrar',
                 confirmButtonColor: '#0f766e'

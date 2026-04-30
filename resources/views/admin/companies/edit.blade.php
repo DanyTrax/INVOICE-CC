@@ -76,7 +76,7 @@
                         País
                     </label>
                     @include('admin.companies.partials.country-selector', ['countries' => $countries ?? [], 'value' => old('country', $company->country)])
-                    <p class="mt-1 text-xs text-gray-500">Seleccione un país de la lista. Si cambia el país, la carpeta en Drive (y todos sus expedientes) se moverá al nuevo país.</p>
+                    <p class="mt-1 text-xs text-gray-500">Seleccione un país de la lista. Si cambia el país, la carpeta en Drive (y todas sus solicitudes) se moverá al nuevo país.</p>
                     @error('country')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror

@@ -103,7 +103,7 @@
             <div class="flex flex-wrap items-center gap-4 mb-3 text-sm text-gray-700">
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" id="toggle-prev-license" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                    <span>Usar columna Expediente / INVIMA</span>
+                    <span>Usar columna Solicitud / INVIMA</span>
                 </label>
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
@@ -129,7 +129,7 @@
                     <input type="checkbox" id="toggle-contacto" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                     <span>Usar columna Contacto</span>
                 </label>
-                <label class="inline-flex items-center gap-2" title="Se activa al vincular un expediente a un ítem">
+                <label class="inline-flex items-center gap-2" title="Se activa al vincular una solicitud a un ítem">
                     <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                     <span>Usar columna Trámite</span>
                 </label>
@@ -161,7 +161,7 @@
                             <th class="px-2 py-2">Servicio</th>
                             <th class="px-2 py-2" data-col="tramite">Trámite</th>
                             <th class="px-2 py-2" data-col="description">Producto / Descripción</th>
-                            <th class="px-2 py-2" data-col="prev-license">Expediente / INVIMA</th>
+                            <th class="px-2 py-2" data-col="prev-license">Solicitud / INVIMA</th>
                             <th class="px-2 py-2 w-20" data-col="raa">RAA</th>
                             <th class="px-2 py-2" data-col="franquicia">Franquicia</th>
                             <th class="px-2 py-2" data-col="centro-costos">Centro de costos</th>
@@ -202,7 +202,7 @@
                                         name="items[{{ $idx }}][service_type_name]"
                                         list="service_types_datalist"
                                         rows="2"
-                                        placeholder="Trámite (se activa al vincular expediente)"
+                                        placeholder="Trámite (se activa al vincular solicitud)"
                                         class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
                                 </td>
                                 <td class="px-2 py-2" data-col="description">
@@ -329,7 +329,7 @@
                     name="items[__INDEX__][service_type_name]"
                     list="service_types_datalist"
                     rows="2"
-                    placeholder="Trámite (se activa al vincular expediente)"
+                    placeholder="Trámite (se activa al vincular solicitud)"
                     class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
             </td>
             <td class="px-2 py-2" data-col="description">
@@ -391,7 +391,7 @@
                     name="items[__INDEX__][service_type_name]"
                     list="service_types_datalist"
                     rows="2"
-                    placeholder="Trámite (se activa al vincular expediente)"
+                    placeholder="Trámite (se activa al vincular solicitud)"
                     class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 resize-y"></textarea>
             </td>
             <td class="px-2 py-2" data-col="description">

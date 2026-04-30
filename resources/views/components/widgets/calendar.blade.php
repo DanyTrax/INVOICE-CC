@@ -131,7 +131,7 @@
                     var type = 'Vencimiento de AUTO';
                     var message = '<strong>' + type + '</strong><br>' +
                                  'AUTO: ' + (info.event.extendedProps.auto_number || 'N/A') + '<br>' +
-                                 'Expediente: #' + (info.event.extendedProps.process_id || 'N/A') + '<br>' +
+                                 'Solicitud: #' + (info.event.extendedProps.process_id || 'N/A') + '<br>' +
                                  'Cliente: ' + (info.event.extendedProps.client || 'N/A') + '<br>' +
                                  'Fecha de vencimiento: ' + info.event.start.toLocaleDateString('es-ES');
                     
@@ -140,7 +140,7 @@
                             title: 'Detalles del AUTO',
                             html: message,
                             icon: 'info',
-                            confirmButtonText: 'Ver Expediente',
+                            confirmButtonText: 'Ver solicitud',
                             showCancelButton: true,
                             cancelButtonText: 'Cerrar',
                             confirmButtonColor: '#0f766e'

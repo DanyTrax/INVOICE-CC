@@ -7,9 +7,9 @@
     <h3 class="text-lg font-medium text-gray-900 mb-2">2. Finalidad del tratamiento</h3>
     <p>Los datos personales y de negocio se recaban y procesan para:</p>
     <ul class="list-disc pl-6 mt-2 space-y-1">
-        <li>Gestionar usuarios, empresas (clientes) y expedientes o procesos regulatorios.</li>
+        <li>Gestionar usuarios, empresas (clientes) y solicitudes o procesos regulatorios.</li>
         <li>Gestionar cotizaciones, documentos y comunicaciones relacionadas con los servicios de asesoría regulatoria.</li>
-        <li>Integrar con Google Drive para crear carpetas y subir documentos de los expedientes, de forma organizada por cliente y por país, según la configuración del sistema.</li>
+        <li>Integrar con Google Drive para crear carpetas y subir documentos de las solicitudes, de forma organizada por cliente y por país, según la configuración del sistema.</li>
         <li>Enviar notificaciones por correo electrónico cuando la configuración del sistema lo permita (por ejemplo, invitaciones o avisos del sistema).</li>
     </ul>
 </section>
@@ -20,14 +20,14 @@
     <ul class="list-disc pl-6 mt-2 space-y-1">
         <li><strong>Datos de cuenta:</strong> nombre de usuario, correo electrónico y contraseña (almacenada de forma segura).</li>
         <li><strong>Datos de empresas/clientes:</strong> nombre, NIT/RUT, dirección, país, teléfono, persona de contacto y correo de contacto.</li>
-        <li><strong>Datos de expedientes y documentos:</strong> información de cotizaciones, procesos regulatorios, nombres de documentos y archivos que se suben al sistema y a Google Drive (vinculado a la cuenta de Google que autorice la organización).</li>
+        <li><strong>Datos de solicitudes y documentos:</strong> información de cotizaciones, procesos regulatorios, nombres de documentos y archivos que se suben al sistema y a Google Drive (vinculado a la cuenta de Google que autorice la organización).</li>
         <li><strong>Registros de actividad:</strong> acciones realizadas en el sistema para fines de auditoría y soporte.</li>
     </ul>
 </section>
 
 <section>
     <h3 class="text-lg font-medium text-gray-900 mb-2">4. Uso de Google Drive</h3>
-    <p>El sistema puede solicitar acceso a Google Drive para crear carpetas y subir o organizar archivos en nombre de la organización. El acceso se utiliza únicamente para esta finalidad operativa (gestión documental de expedientes). Los datos que se suben a Drive quedan bajo la cuenta o unidad que la organización configure; Doble Vía no utiliza estos datos para fines distintos a la prestación del servicio.</p>
+    <p>El sistema puede solicitar acceso a Google Drive para crear carpetas y subir o organizar archivos en nombre de la organización. El acceso se utiliza únicamente para esta finalidad operativa (gestión documental de solicitudes). Los datos que se suben a Drive quedan bajo la cuenta o unidad que la organización configure; Doble Vía no utiliza estos datos para fines distintos a la prestación del servicio.</p>
 </section>
 
 <section>

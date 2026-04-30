@@ -131,7 +131,7 @@
         @if(isset($lastSubmission) && $lastSubmission && $submission->id === $lastSubmission->id && $submission->status === \App\Models\Submission::STATUS_PENDIENTE)
             <p class="text-xs text-gray-500 mt-1">
                 @if($isAutoLinkedCycle)
-                    <strong>AUTO · Sometimiento:</strong> al aprobar, registre el radicado de esta subsanación; debajo quedará <strong>AUTO · Radicado</strong> con la opción <strong>Resolución</strong> para cerrar el expediente.
+                    <strong>AUTO · Sometimiento:</strong> al aprobar, registre el radicado de esta subsanación; debajo quedará <strong>AUTO · Radicado</strong> con la opción <strong>Resolución</strong> para cerrar la solicitud.
                 @else
                     Aprobar: registre los datos del radicado; se creará una línea <strong>Radicado</strong> debajo con los botones AUTO y RESOLUCIÓN.
                 @endif

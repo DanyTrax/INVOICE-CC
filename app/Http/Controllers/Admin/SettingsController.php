@@ -244,7 +244,7 @@ class SettingsController extends Controller
             if ($user->assignedRegistrations()->count() > 0) {
                 session()->forget('user_to_delete_id');
 
-                return $redirectSettings->with('error', 'No se puede eliminar: tiene expedientes asignados.');
+                return $redirectSettings->with('error', 'No se puede eliminar: tiene solicitudes asignadas.');
             }
             $userController = app(AdminUserController::class);
             if (! $userController->canEditUserPublic($user)) {
@@ -280,7 +280,7 @@ class SettingsController extends Controller
             return $redirectSettings->with('error', 'No puedes eliminar tu propio usuario.');
         }
         if ($user->assignedRegistrations()->count() > 0) {
-            return $redirectSettings->with('error', 'No se puede eliminar: tiene expedientes asignados.');
+            return $redirectSettings->with('error', 'No se puede eliminar: tiene solicitudes asignadas.');
         }
         $userController = app(AdminUserController::class);
         if (! $userController->canEditUserPublic($user)) {
@@ -570,7 +570,7 @@ class SettingsController extends Controller
             'drive_service_account_json' => '',
             'drive_folder_id' => '',
             'drive_default_country_no_client' => '',
-            'drive_folder_name_no_client' => 'Expedientes Sin Cliente',
+            'drive_folder_name_no_client' => 'Solicitudes sin cliente',
             'drive_folder_name_with_client' => 'Clientes',
             'drive_mode' => 'service_account',
             'drive_oauth_client_id' => '',
@@ -670,7 +670,7 @@ class SettingsController extends Controller
             'timezone' => 'America/Bogota',
             'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
             'quote_pdf_footer_text' => '',
-            'drive_folder_name_no_client' => 'Expedientes Sin Cliente',
+            'drive_folder_name_no_client' => 'Solicitudes sin cliente',
             'drive_folder_name_with_client' => 'Clientes',
             'drive_mode' => 'service_account',
             'drive_oauth_client_id' => '',
@@ -775,13 +775,13 @@ class SettingsController extends Controller
             try {
                 $currentValue = $settings->drive_folder_name_no_client ?? null;
                 if ($currentValue === null) {
-                    $settings->drive_folder_name_no_client = 'Expedientes Sin Cliente';
+                    $settings->drive_folder_name_no_client = 'Solicitudes sin cliente';
                 }
             } catch (\Exception $e) {
-                $settings->drive_folder_name_no_client = 'Expedientes Sin Cliente';
+                $settings->drive_folder_name_no_client = 'Solicitudes sin cliente';
             }
         } else {
-            $settings->drive_folder_name_no_client = $validated['drive_folder_name_no_client'] ?: 'Expedientes Sin Cliente';
+            $settings->drive_folder_name_no_client = $validated['drive_folder_name_no_client'] ?: 'Solicitudes sin cliente';
         }
 
         if (! isset($validated['drive_folder_name_with_client'])) {
@@ -1709,7 +1709,7 @@ class SettingsController extends Controller
                 $query->whereDate('created_at', '<=', $request->date_to);
             }
 
-            // Buscador (por nombre de recurso, usuario, expediente)
+            // Buscador (por nombre de recurso, usuario, solicitud)
             if ($request->has('search') && $request->search) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {

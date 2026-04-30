@@ -8,7 +8,7 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
                         <i class="fas fa-gavel text-yellow-500 mr-2"></i> Registrar Auto
                     </h3>
-                    <p class="text-sm text-gray-600 mb-4">Sometimiento: {{ $submission->radicado_invima ?? $submission->id }}. El expediente pasará a <strong>En Requerimiento</strong> y se calculará la fecha límite (90 días hábiles).</p>
+                    <p class="text-sm text-gray-600 mb-4">Sometimiento: {{ $submission->radicado_invima ?? $submission->id }}. La solicitud pasará a <strong>En Requerimiento</strong> y se calculará la fecha límite (90 días hábiles).</p>
                     <div class="space-y-4">
                         <div>
                             <label for="auto_document_number" class="block text-sm font-medium text-gray-700">Número del Auto</label>

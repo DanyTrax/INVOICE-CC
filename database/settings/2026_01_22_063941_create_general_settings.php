@@ -1,7 +1,7 @@
 <?php
 
-use Spatie\LaravelSettings\Migrations\SettingsMigration;
 use Illuminate\Support\Facades\DB;
+use Spatie\LaravelSettings\Migrations\SettingsMigration;
 
 return new class extends SettingsMigration
 {
@@ -34,7 +34,7 @@ return new class extends SettingsMigration
         $this->addIfNotExists('general.footer_text', 'RAMS - Regulatory Affairs Management System');
         $this->addIfNotExists('general.system_name', 'Sistema de Gestión Regulatoria');
         $this->addIfNotExists('general.timezone', 'America/Bogota');
-        $this->addIfNotExists('general.drive_folder_name_no_client', 'Expedientes Sin Cliente');
+        $this->addIfNotExists('general.drive_folder_name_no_client', 'Solicitudes sin cliente');
         $this->addIfNotExists('general.drive_folder_name_with_client', 'Clientes');
         $this->addIfNotExists('general.drive_mode', 'service_account');
         $this->addIfNotExists('general.drive_oauth_client_id', '');
@@ -53,7 +53,7 @@ return new class extends SettingsMigration
             ->where('name', str_replace('general.', '', $key))
             ->exists();
 
-        if (!$exists) {
+        if (! $exists) {
             $this->migrator->add($key, $defaultValue);
         }
     }

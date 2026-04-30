@@ -619,23 +619,23 @@
                                     Nombres de Directorios Principales
                                 </h4>
                                 <p class="text-sm text-gray-600 mb-4">
-                                    <strong>Con cliente:</strong> Base (ID) → País → Empresa → Expediente → documentos. <strong>Sin cliente:</strong> Base (ID) → Expedientes Sin Cliente → expediente → documentos. El país se define en cada empresa.
+                                    <strong>Con cliente:</strong> Base (ID) → País → Empresa → Solicitud → documentos. <strong>Sin cliente:</strong> Base (ID) → Solicitudes sin cliente → solicitud → documentos. El país se define en cada empresa.
                                 </p>
                                 <div class="space-y-4">
-                                    <!-- Carpeta para Expedientes Sin Cliente -->
+                                    <!-- Carpeta para solicitudes sin cliente -->
                                     <div>
                                         <label for="drive_folder_name_no_client" class="block mb-2 text-sm font-medium text-gray-900">
-                                            Nombre de Carpeta para Expedientes Sin Cliente
+                                            Nombre de carpeta para solicitudes sin cliente
                                         </label>
                                         <input type="text" 
                                                id="drive_folder_name_no_client" 
                                                name="drive_folder_name_no_client" 
-                                               value="{{ old('drive_folder_name_no_client', $settings->drive_folder_name_no_client ?? 'Expedientes Sin Cliente') }}"
-                                               placeholder="Expedientes Sin Cliente"
+                                               value="{{ old('drive_folder_name_no_client', $settings->drive_folder_name_no_client ?? 'Solicitudes sin cliente') }}"
+                                               placeholder="Solicitudes sin cliente"
                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                                         <p class="mt-2 text-xs text-gray-500">
                                             <i class="fas fa-info-circle mr-1"></i>
-                                            Carpeta bajo la Base para expedientes sin cliente (sin nivel país). Ejemplo: <code class="bg-gray-100 px-1 rounded">Base\Expedientes Sin Cliente\Nombre del Expediente</code>
+                                            Carpeta bajo la Base para solicitudes sin cliente (sin nivel país). Ejemplo: <code class="bg-gray-100 px-1 rounded">Base\Solicitudes sin cliente\Nombre de la solicitud</code>
                                         </p>
                                     </div>
 
@@ -886,7 +886,7 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
                                     <input type="text" 
                                            id="drive-log-search" 
-                                           placeholder="Buscar por nombre, usuario, expediente..."
+                                           placeholder="Buscar por nombre, usuario, solicitud..."
                                            onkeyup="if(event.key === 'Enter') loadDriveOperationsLog()"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-teal-500 focus:border-teal-500">
                                 </div>
@@ -3452,7 +3452,7 @@ function loadDriveOperationsLog(page = 1) {
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Recurso</th>';
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>';
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>';
-            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expediente</th>';
+            html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Solicitud</th>';
             html += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>';
             html += '</tr></thead><tbody class="bg-white divide-y divide-gray-200">';
 
@@ -3489,7 +3489,7 @@ function loadDriveOperationsLog(page = 1) {
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + op.resource_name + '</td>';
                 html += '<td class="px-4 py-3 text-sm"><span class="px-2 py-1 rounded-full text-xs font-medium bg-' + statusColor + '-100 text-' + statusColor + '-800"><i class="fas fa-' + statusIcon + ' mr-1"></i>' + (op.status === 'success' ? 'Éxito' : op.status === 'failed' ? 'Error' : 'Pendiente') + '</span></td>';
                 html += '<td class="px-4 py-3 text-sm text-gray-900">' + (op.user ? op.user.name : '-') + '</td>';
-                html += '<td class="px-4 py-3 text-sm text-gray-900">' + (op.registration ? 'Expediente #' + op.registration.id : '-') + '</td>';
+                html += '<td class="px-4 py-3 text-sm text-gray-900">' + (op.registration ? 'Solicitud #' + op.registration.id : '-') + '</td>';
                 html += '<td class="px-4 py-3 text-sm">';
                 if (op.drive_url) {
                     html += '<a href="' + op.drive_url + '" target="_blank" class="text-teal-600 hover:text-teal-800 mr-2" title="Abrir en Drive"><i class="fas fa-external-link-alt"></i></a>';

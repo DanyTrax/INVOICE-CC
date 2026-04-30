@@ -10,7 +10,7 @@
                     </h3>
                     <p class="text-sm text-gray-600 mb-4">
                         Todos los ítems de la checklist deben estar en estado <strong>Aprobado</strong>.
-                        El expediente pasará a <strong>Radicado</strong>. Si en el ciclo actual hubo un sometimiento <strong>rechazado</strong>, puede volver a intentar creando otro sometimiento y vinculándolo a ese intento anterior. La vinculación a cotización se hace desde cada ciclo con el botón &quot;Vincular cotización&quot;.
+                        La solicitud pasará a <strong>Radicado</strong>. Si en el ciclo actual hubo un sometimiento <strong>rechazado</strong>, puede volver a intentar creando otro sometimiento y vinculándolo a ese intento anterior. La vinculación a cotización se hace desde cada ciclo con el botón &quot;Vincular cotización&quot;.
                     </p>
                     <div class="space-y-4">
                         <div>

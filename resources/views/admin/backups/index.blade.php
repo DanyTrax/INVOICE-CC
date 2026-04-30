@@ -180,7 +180,7 @@
                 Reinicio de Datos
             </h2>
             <p class="text-sm text-red-700 mb-3">
-                Esta acción <strong>eliminará todos los datos de empresas, expedientes, documentos, logs y usuarios</strong>,
+                Esta acción <strong>eliminará todos los datos de empresas, solicitudes, documentos, logs y usuarios</strong>,
                 conservando únicamente los usuarios con rol <strong>super_admin</strong>.
             </p>
             <p class="text-sm text-gray-600 mb-4">

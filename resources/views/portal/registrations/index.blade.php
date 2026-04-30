@@ -1,11 +1,11 @@
 @extends('layouts.portal')
 
-@section('title', 'Mis Expedientes')
+@section('title', 'Mis solicitudes')
 
 @section('content')
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 class="text-2xl font-bold text-gray-800">Mis Expedientes</h2>
+        <h2 class="text-2xl font-bold text-gray-800">Mis solicitudes</h2>
         <form method="GET" action="{{ route('portal.registrations.index') }}" class="flex gap-2">
             <div class="relative">
                 <input type="text" name="search" value="{{ request('search') }}"
@@ -28,7 +28,7 @@
         @if($registrations->isEmpty())
             <div class="p-12 text-center text-gray-500">
                 <i class="fas fa-inbox text-4xl mb-4 text-gray-300"></i>
-                <p>No tienes expedientes asignados.</p>
+                <p>No tienes solicitudes asignadas.</p>
                 @if(request('search'))
                     <a href="{{ route('portal.registrations.index') }}" class="text-teal-600 hover:text-teal-700 mt-2 inline-block text-sm">Ver todos</a>
                 @endif

@@ -36,12 +36,12 @@ class CheckModulePermission
         $service = app(PermissionService::class);
 
         if ($module === 'processes') {
-            // Subir a Drive: alimentar línea de tiempo O editar expedientes (gestión documental sin timeline_feed).
+            // Subir a Drive: alimentar línea de tiempo O editar solicitudes (gestión documental sin timeline_feed).
             if ($routeName === 'admin.processes.documents.upload' && $method === 'POST') {
                 $canTimeline = $service->userHasProcessAction(PermissionService::ACTION_TIMELINE_FEED);
                 $canEdit = $service->userHasProcessAction('edit');
                 if (! $canTimeline && ! $canEdit) {
-                    abort(403, 'No tienes permiso para realizar esta acción en expedientes.');
+                    abort(403, 'No tienes permiso para realizar esta acción en solicitudes.');
                 }
 
                 return $next($request);
@@ -52,14 +52,14 @@ class CheckModulePermission
                 $canTimeline = $service->userHasProcessAction(PermissionService::ACTION_TIMELINE_FEED);
                 $canEdit = $service->userHasProcessAction('edit');
                 if (! $canTimeline && ! $canEdit) {
-                    abort(403, 'No tienes permiso para realizar esta acción en expedientes.');
+                    abort(403, 'No tienes permiso para realizar esta acción en solicitudes.');
                 }
 
                 return $next($request);
             }
 
             if (! $service->userHasProcessAction($action)) {
-                abort(403, 'No tienes permiso para realizar esta acción en expedientes.');
+                abort(403, 'No tienes permiso para realizar esta acción en solicitudes.');
             }
 
             return $next($request);
@@ -149,7 +149,7 @@ class CheckModulePermission
             return $this->crudModule($routeName, $method, 'services');
         }
 
-        // Expedientes / submissions / eventos / checklist / documentos
+        // Solicitudes (processes) / submissions / eventos / checklist / documentos
         if ($this->isProcessFamilyRoute($routeName)) {
             return $this->processPermission($routeName, $method);
         }
@@ -254,7 +254,7 @@ class CheckModulePermission
             return ['processes', PermissionService::ACTION_TIMELINE_FEED];
         }
 
-        // Edición de datos ya existentes o creación del expediente maestro
+        // Edición de datos ya existentes o creación de la solicitud maestra
         $editRoutes = [
             'admin.processes.store',
             'admin.processes.link-to-quote',
@@ -285,7 +285,7 @@ class CheckModulePermission
             return ['processes', 'delete'];
         }
 
-        abort(403, 'Acción no reconocida en expedientes.');
+        abort(403, 'Acción no reconocida en solicitudes.');
     }
 
     /**

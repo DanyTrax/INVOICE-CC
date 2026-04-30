@@ -112,7 +112,7 @@
                         <p class="text-2xl font-bold text-gray-900">{{ $user->companies_count }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500">Expedientes Asignados</p>
+                        <p class="text-sm text-gray-500">Solicitudes asignadas</p>
                         <p class="text-2xl font-bold text-gray-900">{{ $user->assigned_registrations_count }}</p>
                     </div>
                 </div>
@@ -130,7 +130,7 @@
                         <h4 class="font-medium text-gray-900">{{ $company->name }}</h4>
                         <p class="text-sm text-gray-500 mt-1">{{ $company->nit_rut }}</p>
                         @if(!$user->hasRole('client') && ($company->pivot->sees_all_processes ?? false))
-                            <p class="text-xs text-teal-700 font-medium mt-2">Ver todos los expedientes</p>
+                            <p class="text-xs text-teal-700 font-medium mt-2">Ver todas las solicitudes</p>
                         @endif
                         <a href="{{ route('admin.companies.show', $company) }}" 
                            class="text-teal-600 hover:text-teal-700 text-sm mt-2 inline-block">

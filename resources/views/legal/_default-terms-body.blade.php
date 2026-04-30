@@ -5,7 +5,7 @@
 
 <section>
     <h3 class="text-lg font-medium text-gray-900 mb-2">2. Descripción del servicio</h3>
-    <p>RAMS es una plataforma de gestión regulatoria destinada a empresas privadas y sus usuarios autorizados. Permite, entre otras funciones: gestión de clientes (empresas), cotizaciones, expedientes o procesos regulatorios, checklist documental, subida y organización de documentos en Google Drive, y flujos de radicación y seguimiento ante autoridades. El servicio se presta en la modalidad y alcance acordados con Doble Vía.</p>
+    <p>RAMS es una plataforma de gestión regulatoria destinada a empresas privadas y sus usuarios autorizados. Permite, entre otras funciones: gestión de clientes (empresas), cotizaciones, solicitudes o procesos regulatorios, checklist documental, subida y organización de documentos en Google Drive, y flujos de radicación y seguimiento ante autoridades. El servicio se presta en la modalidad y alcance acordados con Doble Vía.</p>
 </section>
 
 <section>
@@ -17,7 +17,7 @@
         <li>No utilizar el sistema para actividades ilícitas, fraudulentas o que vulneren derechos de terceros.</li>
         <li>Proporcionar información veraz y actualizada cuando sea requerida para el servicio.</li>
     </ul>
-    <p class="mt-2">La autorización de acceso a Google Drive se utilizará únicamente para crear y organizar carpetas y archivos vinculados a los expedientes gestionados en RAMS, según la configuración establecida.</p>
+    <p class="mt-2">La autorización de acceso a Google Drive se utilizará únicamente para crear y organizar carpetas y archivos vinculados a las solicitudes gestionadas en RAMS, según la configuración establecida.</p>
 </section>
 
 <section>

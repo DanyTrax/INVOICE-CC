@@ -1,6 +1,6 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Ver Expediente - RAMS')
+@section('title', 'Ver solicitud - RAMS')
 
 @section('page-title', $registration->product_name)
 
@@ -8,7 +8,7 @@
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.registrations.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Expedientes</a>
+            <a href="{{ route('admin.registrations.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Solicitudes</a>
         </div>
     </li>
     <li>
@@ -26,7 +26,7 @@
             <!-- Información Básica -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-bold text-gray-900">Información del Expediente</h2>
+                    <h2 class="text-xl font-bold text-gray-900">Información de la solicitud</h2>
                     <div class="flex gap-2">
                         <a href="{{ route('admin.registrations.edit', $registration) }}" 
                            class="px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm">
@@ -241,7 +241,7 @@
                         </p>
                     @endif
                 @else
-                    <p class="text-sm text-gray-500">No hay documentos cargados en este expediente.</p>
+                    <p class="text-sm text-gray-500">No hay documentos cargados en esta solicitud.</p>
                     @if($registration->drive_folder_url)
                         <a href="{{ $registration->drive_folder_url }}" 
                            target="_blank"

@@ -1,20 +1,20 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Expedientes - RAMS')
+@section('title', 'Solicitudes - RAMS')
 
-@section('page-title', 'Expedientes')
+@section('page-title', 'Solicitudes')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.processes.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Expedientes</a>
+            <a href="{{ route('admin.processes.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Solicitudes</a>
         </div>
     </li>
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Expedientes</span>
+            <span class="text-sm font-medium text-gray-500">Solicitudes</span>
         </div>
     </li>
 @endsection
@@ -26,7 +26,7 @@
             <div class="mb-3 p-3 bg-teal-50 border border-teal-200 rounded-lg text-sm text-teal-900 flex flex-wrap items-center justify-between gap-2">
                 <span>
                     <i class="fas fa-filter mr-1"></i>
-                    Expedientes vinculados a la cotización <strong>{{ $filterQuote->consecutive }}</strong> (por ítem, asignación o ciclos/sometimientos).
+                    Solicitudes vinculadas a la cotización <strong>{{ $filterQuote->consecutive }}</strong> (por ítem, asignación o ciclos/sometimientos).
                 </span>
                 <a href="{{ route('admin.processes.monitor') }}" class="text-teal-800 font-medium hover:underline shrink-0">Quitar filtro</a>
             </div>
@@ -71,7 +71,7 @@
         <div class="mt-3 flex flex-wrap justify-end gap-2">
             @processCan('edit')
             <a href="{{ route('admin.processes.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
-                <i class="fas fa-plus mr-2"></i> Nuevo Expediente
+                <i class="fas fa-plus mr-2"></i> Nueva solicitud
             </a>
             @endprocessCan
             <a href="#" id="monitor-export-btn" class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700">

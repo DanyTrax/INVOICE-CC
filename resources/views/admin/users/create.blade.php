@@ -184,7 +184,7 @@
                                                    {{ old('company_sees_all.'.$company->id) ? 'checked' : '' }}
                                                    class="company-sees-all w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500"
                                                    data-company-id="{{ $company->id }}">
-                                            <span>Ver todos los expedientes</span>
+                                            <span>Ver todas las solicitudes</span>
                                         </label>
                                     </div>
                                 @endforeach

@@ -163,7 +163,7 @@ class CompanyController extends Controller
 
         $processes = $company->processes;
 
-        // 2. Filtro por búsqueda (origen, producto, nº expediente, tipo de trámite, etc.)
+        // 2. Filtro por búsqueda (origen, producto, nº INVIMA, tipo de trámite, etc.)
         $search = $request->filled('search') ? trim($request->search) : null;
         if ($search !== null && $search !== '') {
             $searchLower = mb_strtolower($search);
@@ -318,11 +318,11 @@ class CompanyController extends Controller
 
     public function destroy(Company $company)
     {
-        // Verificar si tiene expedientes (processes) o registros antiguos
+        // Verificar si tiene solicitudes (processes) o registros antiguos
         if ($company->processes()->count() > 0 || $company->registrations()->count() > 0) {
             return redirect()
                 ->route('admin.companies.index')
-                ->with('error', 'No se puede eliminar la empresa porque tiene expedientes asociados.');
+                ->with('error', 'No se puede eliminar la empresa porque tiene solicitudes asociadas.');
         }
 
         $company->delete();

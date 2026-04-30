@@ -1,14 +1,14 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Registros (Expedientes) - RAMS')
+@section('title', 'Registros (Solicitudes) - RAMS')
 
-@section('page-title', 'Registros (Expedientes)')
+@section('page-title', 'Registros (Solicitudes)')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Expedientes</span>
+            <span class="text-sm font-medium text-gray-500">Solicitudes</span>
         </div>
     </li>
 @endsection
@@ -69,12 +69,12 @@
         <!-- Botón nuevo -->
         <div class="flex justify-end">
             <a href="{{ route('admin.registrations.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                <i class="fas fa-plus mr-2"></i> Nuevo Expediente
+                <i class="fas fa-plus mr-2"></i> Nueva solicitud
             </a>
         </div>
     </div>
 
-    <!-- Tabla de expedientes -->
+    <!-- Tabla de solicitudes -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-500">
@@ -162,7 +162,7 @@
                                     <form action="{{ route('admin.registrations.destroy', $registration) }}" 
                                           method="POST" 
                                           class="inline"
-                                          onsubmit="return confirm('¿Estás seguro de eliminar este expediente?');">
+                                          onsubmit="return confirm('¿Estás seguro de eliminar esta solicitud?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
@@ -178,10 +178,10 @@
                         <tr>
                             <td colspan="8" class="px-6 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
-                                <p>No se encontraron expedientes</p>
+                                <p>No se encontraron solicitudes</p>
                                 @if(request()->anyFilled(['search', 'company', 'status', 'specialist']))
                                     <a href="{{ route('admin.registrations.index') }}" class="text-teal-600 hover:text-teal-700 mt-2 inline-block">
-                                        Ver todos los expedientes
+                                        Ver todas las solicitudes
                                     </a>
                                 @endif
                             </td>

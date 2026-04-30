@@ -108,7 +108,7 @@
             <div class="flex flex-wrap items-center gap-4 mb-3 text-sm text-gray-700">
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" id="toggle-prev-license" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_prev_license_column', $quote->show_prev_license_column) ? 'checked' : '' }}>
-                    <span>Usar columna Expediente / INVIMA</span>
+                    <span>Usar columna Solicitud / INVIMA</span>
                 </label>
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_raa_column', $quote->show_raa_column) ? 'checked' : '' }}>
@@ -169,7 +169,7 @@
                             <th class="px-2 py-2">Servicio</th>
                             <th class="px-2 py-2" data-col="tramite">Trámite (opcional)</th>
                             <th class="px-2 py-2" data-col="description">Producto / Descripción</th>
-                            <th class="px-2 py-2" data-col="prev-license">Expediente / INVIMA</th>
+                            <th class="px-2 py-2" data-col="prev-license">Solicitud / INVIMA</th>
                             <th class="px-2 py-2 w-20" data-col="raa">RAA</th>
                             <th class="px-2 py-2" data-col="franquicia">Franquicia</th>
                             <th class="px-2 py-2" data-col="centro-costos">Centro de costos</th>

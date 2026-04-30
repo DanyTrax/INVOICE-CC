@@ -133,7 +133,7 @@
                     <th style="width: 18%;">Producto / Descripción</th>
                 @endif
                 @if($quote->show_prev_license_column)
-                    <th style="width: 10%;">Expediente / INVIMA</th>
+                    <th style="width: 10%;">Solicitud / INVIMA</th>
                 @endif
                 @if($quote->show_raa_column)
                     <th style="width: 6%;">RAA</th>

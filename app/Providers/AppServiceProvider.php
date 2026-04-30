@@ -47,7 +47,7 @@ class AppServiceProvider extends ServiceProvider
         Quote::observe(QuoteObserver::class);
         RegulatoryEvent::observe(RegulatoryEventObserver::class);
 
-        // Expedientes: @processCan('delete'|'edit'|'feed'|'view'|...) — solo permiso global
+        // Solicitudes: @processCan('delete'|'edit'|'feed'|'view'|...) — solo permiso global
         Blade::if('processCan', function (string $action) {
             $s = app(PermissionService::class);
             $map = [
@@ -58,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
             return $s->userHasProcessAction($needed);
         });
 
-        // Expedientes con contexto: asignación por expediente + permisos globales (upload = subir a Drive; feed o gestión doc.)
+        // Solicitudes con contexto: asignación por solicitud + permisos globales (upload = subir a Drive; feed o gestión doc.)
         Blade::if('processCanFor', function ($process, string $action) {
             if (! $process instanceof Process) {
                 return false;

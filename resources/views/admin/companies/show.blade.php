@@ -35,7 +35,7 @@
         @endif
         <a href="{{ route('admin.processes.monitor', ['client_id' => $company->id]) }}"
            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
-            <i class="fas fa-folder-open mr-2"></i> Ver Expedientes
+            <i class="fas fa-folder-open mr-2"></i> Ver solicitudes
         </a>
         @if($canCompaniesEdit && ! $inviteContactUser)
             <button type="button"
@@ -250,7 +250,7 @@
                 <input type="text"
                        name="search"
                        value="{{ request('search') }}"
-                       placeholder="Buscar por expediente, trámite, producto..."
+                       placeholder="Buscar por solicitud, trámite, producto..."
                        class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-48 focus:ring-teal-500 focus:border-teal-500">
                 <select name="step_filter" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-teal-500 focus:border-teal-500">
                     <option value="">Todos los pasos</option>
@@ -329,7 +329,7 @@
                             <td class="px-4 py-3">
                                 <a href="{{ route('admin.processes.show', $process) }}"
                                    class="inline-flex items-center px-2 py-1 bg-teal-600 text-white text-xs font-medium rounded hover:bg-teal-700">
-                                    Ver Expediente
+                                    Ver solicitud
                                 </a>
                             </td>
                         </tr>
@@ -337,10 +337,10 @@
                         <tr>
                             <td colspan="6" class="px-4 py-8 text-center text-gray-500">
                                 @if(request('search') || request('step_filter'))
-                                    No hay expedientes que coincidan con el filtro.
+                                    No hay solicitudes que coincidan con el filtro.
                                     <a href="{{ route('admin.companies.show', $company) }}" class="text-teal-600 hover:underline ml-1">Ver todos</a>
                                 @else
-                                    No hay expedientes para este cliente.
+                                    No hay solicitudes para este cliente.
                                 @endif
                             </td>
                         </tr>

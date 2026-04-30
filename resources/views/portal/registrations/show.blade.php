@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 
-@section('title', 'Expediente ' . ($registration->registration_number ?: $registration->product_name))
+@section('title', 'Solicitud ' . ($registration->registration_number ?: $registration->product_name))
 
 @section('content')
 <div class="space-y-6">
@@ -10,7 +10,7 @@
                 <i class="fas fa-arrow-left"></i>
             </a>
             <div>
-                <h3 class="font-bold text-gray-800 text-lg">Expediente: {{ $registration->registration_number ?? $registration->product_name }}</h3>
+                <h3 class="font-bold text-gray-800 text-lg">Solicitud: {{ $registration->registration_number ?? $registration->product_name }}</h3>
                 @php
                     $statusBadge = match($registration->status) {
                         'vigente' => 'text-green-600',

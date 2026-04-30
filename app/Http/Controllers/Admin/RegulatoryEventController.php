@@ -56,7 +56,7 @@ class RegulatoryEventController extends Controller
 
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', 'Auto registrado. El expediente pasó a estado "En Requerimiento".');
+            ->with('success', 'Auto registrado. La solicitud pasó a estado "En Requerimiento".');
     }
 
     /**
@@ -96,7 +96,7 @@ class RegulatoryEventController extends Controller
 
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', 'Resolución registrada. El expediente pasó a estado "Finalizado".');
+            ->with('success', 'Resolución registrada. La solicitud pasó a estado "Finalizado".');
     }
 
     /**
@@ -143,7 +143,7 @@ class RegulatoryEventController extends Controller
 
     /**
      * Eliminar un evento regulatorio.
-     * Si es una Resolución, el expediente deja de estar Finalizado y vuelve a Radicado.
+     * Si es una Resolución, la solicitud deja de estar Finalizado y vuelve a Radicado.
      */
     public function destroy(RegulatoryEvent $regulatoryEvent): RedirectResponse
     {
@@ -165,7 +165,7 @@ class RegulatoryEventController extends Controller
 
             return redirect()
                 ->route('admin.processes.show', $process)
-                ->with('success', 'Resolución eliminada. El expediente volvió a estado Radicado.');
+                ->with('success', 'Resolución eliminada. La solicitud volvió a estado Radicado.');
         }
 
         // Otros eventos (por ahora solo AUTO) simplemente se eliminan.

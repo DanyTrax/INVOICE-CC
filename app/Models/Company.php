@@ -57,7 +57,7 @@ class Company extends Model
     }
 
     /**
-     * Expedientes (processes) donde la empresa es cliente
+     * Solicitudes (processes) donde la empresa es cliente
      */
     public function processes(): HasMany
     {

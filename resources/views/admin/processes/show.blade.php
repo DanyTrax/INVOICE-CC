@@ -1,14 +1,14 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Expediente - RAMS')
+@section('title', 'Solicitud - RAMS')
 
-@section('page-title', 'Expediente #' . $process->id . ($process->expediente_invima ? ' – ' . $process->expediente_invima : ''))
+@section('page-title', 'Solicitud #' . $process->id . ($process->expediente_invima ? ' – ' . $process->expediente_invima : ''))
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.processes.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Expedientes</a>
+            <a href="{{ route('admin.processes.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Solicitudes</a>
         </div>
     </li>
     <li>
@@ -22,7 +22,7 @@
 @section('content')
     {{-- 1. Resumen y Línea de tiempo --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <!-- Resumen del expediente -->
+        <!-- Resumen de la solicitud -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Resumen</h3>
@@ -81,7 +81,7 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-gray-500">Expediente INVIMA</dt>
+                        <dt class="text-gray-500">Nº registro INVIMA</dt>
                         <dd class="font-medium text-gray-900">{{ $process->expediente_invima ?? '-' }}</dd>
                     </div>
                     @php
@@ -136,18 +136,18 @@
                                         <span class="text-gray-500"> — </span>
                                         <span class="text-gray-600">{{ $q->date?->format('d/m/Y') }}</span>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-0.5 font-normal">Cotización del expediente (sin ciclo)</p>
+                                    <p class="text-xs text-gray-500 mt-0.5 font-normal">Cotización de la solicitud (sin ciclo)</p>
                                 </div>
                             </dd>
                         </div>
                     @endif
                 </dl>
                 @processCanFor($process, 'delete')
-                <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="mt-4 pt-4 border-t border-gray-200" onsubmit="return confirm('¿Eliminar este expediente y toda su información (sometimientos, documentos, checklist)? No se puede deshacer.');">
+                <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="mt-4 pt-4 border-t border-gray-200" onsubmit="return confirm('¿Eliminar esta solicitud y toda su información (sometimientos, documentos, checklist)? No se puede deshacer.');">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="w-full inline-flex items-center justify-center px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">
-                        <i class="fas fa-trash-alt mr-2"></i> Eliminar expediente
+                        <i class="fas fa-trash-alt mr-2"></i> Eliminar solicitud
                     </button>
                 </form>
                 @endprocessCanFor
@@ -376,7 +376,7 @@
                             </li>
                         @endif
 
-                        {{-- Ciclo 2: se muestra en cuanto el expediente pasa a AUTO (En Requerimiento) --}}
+                        {{-- Ciclo 2: se muestra en cuanto la solicitud pasa a AUTO (En Requerimiento) --}}
                         @if($roots->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO)
                             <li class="relative pl-12 pb-4">
                                 <div class="absolute left-0 w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center text-white text-xs">
@@ -554,7 +554,7 @@
     </div>
 
     {{-- 2.b Gestión Documental AUTO
-         - Visible mientras haya documentos AUTO en el expediente
+         - Visible mientras haya documentos AUTO en la solicitud
          - O cuando el último sometimiento está En Requerimiento (AUTO)
     --}}
     @if(($autoItems ?? collect())->isNotEmpty() || (isset($lastSubmission) && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO))
@@ -891,7 +891,7 @@
     </div>
     @endprocessCanFor
 
-    {{-- Modal: Vincular / desvincular ciclo (o expediente) a cotización e ítem --}}
+    {{-- Modal: Vincular / desvincular ciclo (o solicitud) a cotización e ítem --}}
     @isset($quotesForClient)
     @processCanFor($process, 'edit')
     <div id="modal-link-quote" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
@@ -996,7 +996,7 @@
         var methodInput = form.querySelector('input[name="_method"]');
         if (methodInput) methodInput.value = 'POST';
         var titleEl = document.getElementById('modal-link-quote-title');
-        if (titleEl) titleEl.textContent = 'Vincular expediente a cotización';
+        if (titleEl) titleEl.textContent = 'Vincular solicitud a cotización';
         var quoteSelect = document.getElementById('link-quote-quote_id');
         var itemSelect = document.getElementById('link-quote-quote_item_id');
         if (quoteSelect) quoteSelect.value = currentProcessQuoteId || '';

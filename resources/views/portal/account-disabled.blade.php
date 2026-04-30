@@ -21,7 +21,7 @@
                 Estimado(a) <strong>{{ auth()->user()->name }}</strong>,
             </p>
             <p class="leading-relaxed">
-                Su usuario en el portal ha sido creado correctamente; sin embargo, el acceso al contenido (resumen, expedientes e historial de procesos) se encuentra temporalmente deshabilitado hasta que su cuenta sea activada.
+                Su usuario en el portal ha sido creado correctamente; sin embargo, el acceso al contenido (resumen, solicitudes e historial de procesos) se encuentra temporalmente deshabilitado hasta que su cuenta sea activada.
             </p>
             <p class="leading-relaxed">
                 Para poder consultar sus trámites y el estado de sus procesos, debe <strong>ponerse en contacto con el agente o asesor que gestiona sus trámites regulatorios</strong>. Ellos realizarán la activación de su usuario y, una vez completada, podrá acceder a todo el contenido del portal con normalidad.

@@ -22,7 +22,7 @@
         }
     @endphp
     <tr class="bg-white border-b border-gray-200 hover:bg-gray-50">
-        <td class="px-4 py-3 text-sm text-gray-900 font-mono" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID expediente: {{ $process->id }}">{{ $process->id }}</td>
+        <td class="px-4 py-3 text-sm text-gray-900 font-mono" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID solicitud: {{ $process->id }}">{{ $process->id }}</td>
         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $process->client->name ?? '—' }}</td>
         <td class="px-4 py-3 text-sm text-gray-700">{{ $tipoTramite }}</td>
         <td class="px-4 py-3 text-sm text-gray-700">{{ $process->product_reference ?? '—' }}</td>
@@ -46,11 +46,11 @@
         </td>
         <td class="px-4 py-3">
             <div class="inline-flex items-center gap-1">
-                <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver expediente">
+                <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver solicitud">
                     <i class="fas fa-eye"></i>
                 </a>
                 @processCanFor($process, 'delete')
-                <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
+                <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta solicitud? No se puede deshacer.');">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50" title="Eliminar">
@@ -64,6 +64,6 @@
 @endforeach
 @if($processes->isEmpty())
     <tr>
-        <td colspan="8" class="px-4 py-8 text-center text-gray-500">No hay expedientes con los filtros aplicados.</td>
+        <td colspan="8" class="px-4 py-8 text-center text-gray-500">No hay solicitudes con los filtros aplicados.</td>
     </tr>
 @endif

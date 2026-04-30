@@ -1,14 +1,14 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Expedientes INVIMA - RAMS')
+@section('title', 'Solicitudes INVIMA - RAMS')
 
-@section('page-title', 'Expedientes')
+@section('page-title', 'Solicitudes')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Expedientes</span>
+            <span class="text-sm font-medium text-gray-500">Solicitudes</span>
         </div>
     </li>
 @endsection
@@ -17,7 +17,7 @@
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         @processCan('edit')
         <a href="{{ route('admin.processes.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 whitespace-nowrap">
-            <i class="fas fa-plus mr-2"></i> Nuevo Expediente
+            <i class="fas fa-plus mr-2"></i> Nueva solicitud
         </a>
         @endprocessCan
     </div>
@@ -25,7 +25,7 @@
     {{-- Sección superior: Acordeones por cotización --}}
     @if($grouped_quotes->isNotEmpty())
         <div class="space-y-2 mb-10">
-            <h2 class="text-lg font-semibold text-gray-900 mb-3">Expedientes por cotización</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Solicitudes por cotización</h2>
             @foreach($grouped_quotes as $quote)
                 <details id="quote-{{ $quote->id }}" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden group">
                     <summary class="flex items-center justify-between px-4 py-3 cursor-pointer list-none bg-gray-50 hover:bg-gray-100 transition-colors">
@@ -57,7 +57,7 @@
                                         @if($item->process)
                                             @php $process = $item->process; @endphp
                                             <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
-                                                <td class="px-4 py-3 font-mono text-sm text-gray-900" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID expediente: {{ $process->id }}">{{ $process->id }}</td>
+                                                <td class="px-4 py-3 font-mono text-sm text-gray-900" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID solicitud: {{ $process->id }}">{{ $process->id }}</td>
                                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                                                 <td class="px-4 py-3">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</td>
                                                 <td class="px-4 py-3">
@@ -75,10 +75,10 @@
                                                 <td class="px-4 py-3">{{ $process->updated_at->format('d/m/Y H:i') }}</td>
                                                 <td class="px-4 py-3">
                                                     <div class="inline-flex items-center gap-1">
-                                                        <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver expediente">
+                                                        <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver solicitud">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
-                                                        <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
+                                                        <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta solicitud? No se puede deshacer.');">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50" title="Eliminar">
@@ -92,7 +92,7 @@
                                     @endforeach
                                     @foreach($quote->processes->whereNotIn('id', $processIdsFromItems) as $process)
                                         <tr class="bg-white border-b border-gray-100 hover:bg-gray-50">
-                                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID expediente: {{ $process->id }}">{{ $process->id }}</td>
+                                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID solicitud: {{ $process->id }}">{{ $process->id }}</td>
                                             <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                                             <td class="px-4 py-3">{{ $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '-' }}</td>
                                             <td class="px-4 py-3">
@@ -110,11 +110,11 @@
                                             <td class="px-4 py-3">{{ $process->updated_at->format('d/m/Y H:i') }}</td>
                                             <td class="px-4 py-3">
                                                 <div class="inline-flex items-center gap-1">
-                                                    <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver expediente">
+                                                    <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver solicitud">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                     @processCan('delete')
-                                                    <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
+                                                    <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta solicitud? No se puede deshacer.');">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50" title="Eliminar">
@@ -156,7 +156,7 @@
                 <tbody>
                     @forelse($orphan_processes as $process)
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID expediente: {{ $process->id }}">{{ $process->id }}</td>
+                            <td class="px-4 py-3 font-mono text-sm text-gray-900" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID solicitud: {{ $process->id }}">{{ $process->id }}</td>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $process->client->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $process->serviceType?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $process->product_reference ?? '-' }}</td>
@@ -175,11 +175,11 @@
                             <td class="px-4 py-3">{{ $process->updated_at->format('d/m/Y H:i') }}</td>
                             <td class="px-4 py-3">
                                 <div class="inline-flex items-center gap-1">
-                                    <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver expediente">
+                                    <a href="{{ route('admin.processes.show', $process) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-teal-200 bg-white text-teal-600 hover:bg-teal-50" title="Ver solicitud">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     @processCan('delete')
-                                    <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar este expediente? No se puede deshacer.');">
+                                    <form action="{{ route('admin.processes.destroy', $process) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta solicitud? No se puede deshacer.');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50" title="Eliminar">

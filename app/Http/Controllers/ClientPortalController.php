@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 class ClientPortalController extends Controller
 {
     /**
-     * Registros (expedientes) a los que el cliente tiene acceso (sus empresas).
+     * Registros (solicitudes) a los que el cliente tiene acceso (sus empresas).
      */
     protected function registrationsQuery(Request $request)
     {
@@ -155,7 +155,7 @@ class ClientPortalController extends Controller
     }
 
     /**
-     * Generar eventos para FullCalendar (solo expedientes del cliente).
+     * Generar eventos para FullCalendar (solo solicitudes del cliente).
      */
     protected function getCalendarEvents($baseQuery, $companyIds)
     {

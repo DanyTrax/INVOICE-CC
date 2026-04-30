@@ -112,7 +112,7 @@ class User extends Authenticatable implements CanResetPasswordContract
     }
 
     /**
-     * Expedientes INVIMA (processes) asignados con permisos por expediente.
+     * Solicitudes INVIMA (processes) asignados con permisos por solicitud.
      */
     public function assignedProcesses(): BelongsToMany
     {

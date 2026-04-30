@@ -79,7 +79,7 @@
                     Permisos por módulo
                 </h2>
                 <p class="text-sm text-gray-600 mb-4">
-                    <strong>super_admin</strong> tiene acceso total (no se lista). En <strong>Expedientes</strong>, «Alimentar línea de tiempo» permite registrar sometimientos, radicado y eventos nuevos sin editar ni borrar lo ya guardado; «Editar» / «Eliminar» aplican a cambios y borrados sobre datos existentes.
+                    <strong>super_admin</strong> tiene acceso total (no se lista). En <strong>Solicitudes</strong>, «Alimentar línea de tiempo» permite registrar sometimientos, radicado y eventos nuevos sin editar ni borrar lo ya guardado; «Editar» / «Eliminar» aplican a cambios y borrados sobre datos existentes.
                 </p>
 
             <form id="permissionsForm" method="POST" action="{{ route('admin.permissions.update') }}">

@@ -7,7 +7,7 @@
 <div class="md:col-span-2 border border-gray-200 rounded-lg p-4 bg-gray-50/50">
     <h3 class="text-sm font-semibold text-gray-900 mb-1">Clientes de la empresa</h3>
     <p class="text-xs text-gray-600 mb-3">
-        Opcional. Elija uno o más usuarios con rol <strong>Cliente</strong> y, si desea, una nota (ej. contabilidad, gestor del expediente).
+        Opcional. Elija uno o más usuarios con rol <strong>Cliente</strong> y, si desea, una nota (ej. contabilidad, gestor de la solicitud).
         Puede guardar la empresa sin asignar clientes.
     </p>
     @if($clientUsers->isEmpty())
@@ -40,7 +40,7 @@
                            name="client_assignments[{{ $idx }}][description]"
                            value="{{ $desc }}"
                            maxlength="500"
-                           placeholder="Ej. Contacto contabilidad, gestor expediente…"
+                           placeholder="Ej. Contacto contabilidad, gestor de solicitud…"
                            class="w-full border border-gray-300 rounded-lg text-sm focus:ring-teal-500 focus:border-teal-500 p-2.5">
                 </div>
                 <div class="md:col-span-1 flex justify-end">

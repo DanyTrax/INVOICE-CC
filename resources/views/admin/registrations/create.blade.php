@@ -1,14 +1,14 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Nuevo Expediente - RAMS')
+@section('title', 'Nueva solicitud - RAMS')
 
-@section('page-title', 'Nuevo Expediente')
+@section('page-title', 'Nueva solicitud')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.registrations.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Expedientes</a>
+            <a href="{{ route('admin.registrations.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Solicitudes</a>
         </div>
     </li>
     <li>
@@ -409,7 +409,7 @@
                 </a>
                 <button type="submit" 
                         class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                    <i class="fas fa-save mr-2"></i> Guardar Expediente
+                    <i class="fas fa-save mr-2"></i> Guardar solicitud
                 </button>
             </div>
         </form>

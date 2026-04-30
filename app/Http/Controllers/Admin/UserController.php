@@ -556,7 +556,7 @@ class UserController extends Controller
             $redirectTo = $user->hasRole('client') ? route('admin.clients.index') : route('admin.agents.index');
 
             return redirect()->to($redirectTo)
-                ->with('error', 'No se puede eliminar el usuario porque tiene expedientes asignados.');
+                ->with('error', 'No se puede eliminar el usuario porque tiene solicitudes asignadas.');
         }
 
         $isClient = $user->hasRole('client');
@@ -707,7 +707,7 @@ class UserController extends Controller
     }
 
     /**
-     * Empresas para agentes/especialistas: pivote con "ver todos los expedientes" por empresa.
+     * Empresas para agentes/especialistas: pivote con "ver todas las solicitudes" por empresa.
      */
     protected function syncAgentCompaniesFromRequest(Request $request, User $user): void
     {
@@ -731,7 +731,7 @@ class UserController extends Controller
     }
 
     /**
-     * Empresas para clientes del portal: sin visión global de expedientes por empresa.
+     * Empresas para clientes del portal: sin visión global de solicitudes por empresa.
      */
     protected function syncClientCompaniesFromRequest(Request $request, User $user): void
     {

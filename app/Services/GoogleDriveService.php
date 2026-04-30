@@ -487,7 +487,7 @@ class GoogleDriveService
     }
 
     /**
-     * Obtener o crear carpeta del expediente en Google Drive
+     * Obtener o crear carpeta de la solicitud en Google Drive
      */
     /**
      * Obtener o crear carpeta de backups en Google Drive.
@@ -529,10 +529,10 @@ class GoogleDriveService
             return $registration->drive_folder_id;
         }
 
-        // Crear carpeta del expediente
+        // Crear carpeta de la solicitud (registro)
         $folderName = $registration->product_name . ' - ' . ($registration->registration_number ?? 'Sin Número');
         
-        // Con cliente: Base → País → Empresa → Expediente. Sin cliente: Base → Expedientes Sin Cliente → Expediente
+        // Con cliente: Base → País → Empresa → Solicitud. Sin cliente: Base → Solicitudes sin cliente → Solicitud
         $parentFolderId = null;
         if ($registration->company_id) {
             $company = $registration->company;
@@ -567,8 +567,8 @@ class GoogleDriveService
     }
 
     /**
-     * Obtener o crear carpeta del proceso (expediente) en Drive.
-     * Con cliente: Base → País → Empresa → Expediente. Sin cliente: Base → Expedientes Sin Cliente → Expediente.
+     * Obtener o crear carpeta del proceso (solicitud) en Drive.
+     * Con cliente: Base → País → Empresa → Solicitud. Sin cliente: Base → Solicitudes sin cliente → Solicitud.
      */
     public function getOrCreateProcessFolder(Process $process): string
     {
@@ -577,7 +577,7 @@ class GoogleDriveService
         }
 
         $process->load(['client', 'serviceType']);
-        $folderName = 'Expediente #' . $process->id . ' - ' . ($process->serviceType?->name ?? $process->product_reference ?? 'Sin nombre');
+        $folderName = 'Solicitud #' . $process->id . ' - ' . ($process->serviceType?->name ?? $process->product_reference ?? 'Sin nombre');
 
         $parentFolderId = null;
         if ($process->client_id) {
@@ -849,7 +849,7 @@ class GoogleDriveService
 
     /**
      * Obtener o crear carpeta de país bajo la carpeta base de Drive.
-     * Estructura: Base → País → (Clientes | Expedientes Sin Cliente)
+     * Estructura: Base → País → (Clientes | Solicitudes sin cliente)
      */
     public function getOrCreateCountryFolder(string $country): string
     {
@@ -888,12 +888,12 @@ class GoogleDriveService
     }
 
     /**
-     * Obtener o crear carpeta para expedientes sin cliente.
-     * Estructura: Base → Expedientes Sin Cliente (sin nivel país).
+     * Obtener o crear carpeta para solicitudes sin cliente.
+     * Estructura: Base → Solicitudes sin cliente (sin nivel país).
      */
     public function getOrCreateNoClientFolder(): string
     {
-        $folderName = $this->settings->drive_folder_name_no_client ?: 'Expedientes Sin Cliente';
+        $folderName = $this->settings->drive_folder_name_no_client ?: 'Solicitudes sin cliente';
         $parentId = $this->settings->drive_folder_id;
         try {
             $token = $this->getAccessToken();
@@ -916,7 +916,7 @@ class GoogleDriveService
             $folder = $this->createFolder($folderName, $parentId ?: null);
             return $folder['id'];
         } catch (\Exception $e) {
-            Log::error('Error al obtener/crear carpeta de expedientes sin cliente', [
+            Log::error('Error al obtener/crear carpeta de solicitudes sin cliente', [
                 'error' => $e->getMessage(),
             ]);
             throw $e;

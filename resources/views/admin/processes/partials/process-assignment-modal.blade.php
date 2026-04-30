@@ -6,7 +6,7 @@
         <div class="relative w-full max-w-lg rounded-xl bg-white shadow-2xl border border-gray-200" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">Asignar equipo al expediente</h3>
+                    <h3 class="text-lg font-bold text-gray-900">Asignar equipo a la solicitud</h3>
                     <p class="text-xs text-gray-500 mt-1" id="pam-subtitle">—</p>
                 </div>
                 <button type="button" onclick="closeProcessAssignmentModal()" class="rounded-lg p-2 text-gray-400 hover:bg-gray-100">
@@ -14,7 +14,7 @@
                 </button>
             </div>
             <div class="px-5 py-4 max-h-[70vh] overflow-y-auto">
-                <p class="text-sm text-gray-600 mb-3">Seleccione usuarios que podrán ver este expediente. Si marca <strong>Línea de tiempo</strong>, podrá alimentar la línea de tiempo, subir a Drive, gestión documental (normal y AUTO) y cambiar estados de checklist, según los permisos del rol.</p>
+                <p class="text-sm text-gray-600 mb-3">Seleccione usuarios que podrán ver esta solicitud. Si marca <strong>Línea de tiempo</strong>, podrá alimentar la línea de tiempo, subir a Drive, gestión documental (normal y AUTO) y cambiar estados de checklist, según los permisos del rol.</p>
                 <div id="pam-loading" class="py-8 text-center text-gray-500">
                     <i class="fas fa-circle-notch fa-spin text-2xl text-teal-600"></i>
                     <p class="mt-2 text-sm">Cargando…</p>

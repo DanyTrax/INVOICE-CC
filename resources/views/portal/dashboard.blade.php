@@ -15,7 +15,7 @@
         </div>
         <a href="{{ route('portal.registrations.index') }}"
            class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm inline-flex items-center gap-2">
-            Ver todos mis expedientes <i class="fas fa-arrow-right"></i>
+            Ver todas mis solicitudes <i class="fas fa-arrow-right"></i>
         </a>
     </div>
 
@@ -63,13 +63,13 @@
 
     <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-gray-800">Mis Expedientes Recientes</h3>
+            <h3 class="font-bold text-gray-800">Mis solicitudes recientes</h3>
             <a href="{{ route('portal.registrations.index') }}" class="text-sm text-teal-600 hover:text-teal-700 font-medium">
                 Ver todos
             </a>
         </div>
         @if($registrations->isEmpty())
-            <p class="text-gray-500 text-sm py-4">No tienes expedientes asignados.</p>
+            <p class="text-gray-500 text-sm py-4">No tienes solicitudes asignadas.</p>
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: 'Detalles del Evento',
                 html: message,
                 icon: 'info',
-                confirmButtonText: 'Ver Expediente',
+                confirmButtonText: 'Ver solicitud',
                 showCancelButton: true,
                 cancelButtonText: 'Cerrar',
                 confirmButtonColor: '#0f766e'

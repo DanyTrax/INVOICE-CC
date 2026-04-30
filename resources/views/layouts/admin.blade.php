@@ -114,7 +114,7 @@
                             <p>Directorio Clientes</p>
                         </a>
                     </li>
-                    {{-- Módulo Cotizaciones y Expedientes --}}
+                    {{-- Módulo Cotizaciones y solicitudes --}}
                     <li class="nav-item">
                         <a href="{{ route('admin.quotes.index') }}" class="nav-link {{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-file-invoice-dollar"></i>
@@ -136,7 +136,7 @@
                     <li class="nav-item">
                         <a href="{{ route('admin.processes.monitor') }}" class="nav-link {{ request()->routeIs('admin.processes.monitor') || request()->routeIs('admin.processes.*') || request()->routeIs('admin.submissions.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-folder"></i>
-                            <p>Expedientes</p>
+                            <p>Solicitudes</p>
                         </a>
                     </li>
 

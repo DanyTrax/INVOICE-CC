@@ -12,7 +12,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Procesos/Expedientes por paso del flujo (Recolección, Sometimiento, Radicado, AUTO, Finalizado)
+        // Procesos/Solicitudes por paso del flujo (Recolección, Sometimiento, Radicado, AUTO, Finalizado)
         $processesWithSubs = Process::with(['submissions' => fn ($q) => $q->orderByDesc('id')])->get();
         $recoleccion = 0;
         $sometimiento = 0;
@@ -53,7 +53,7 @@ class DashboardController extends Controller
     {
         $events = [];
 
-        // Vencimientos de AUTO (due_date) para expedientes en cualquier estado
+        // Vencimientos de AUTO (due_date) para solicitudes en cualquier estado
         $autos = RegulatoryEvent::where('event_type', RegulatoryEvent::EVENT_TYPE_AUTO)
             ->whereNotNull('due_date')
             ->with(['submission.process.client'])
@@ -67,7 +67,7 @@ class DashboardController extends Controller
 
             $titleBase = $process->product_reference
                 ?? $process->expediente_invima
-                ?? ('Expediente #' . $process->id);
+                ?? ('Solicitud #' . $process->id);
 
             $events[] = [
                 'id' => 'auto-' . $auto->id,

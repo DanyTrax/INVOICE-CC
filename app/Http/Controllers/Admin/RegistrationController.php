@@ -106,7 +106,7 @@ class RegistrationController extends Controller
 
         // Crear el registro primero
         $registration = Registration::create($validated);
-        app(ActivityLogService::class)->log('created', 'Creó el expediente "' . $registration->product_name . '"', $registration);
+        app(ActivityLogService::class)->log('created', 'Creó la solicitud "' . $registration->product_name . '"', $registration);
 
         if ($request->hasFile('documents')) {
             try {
@@ -116,21 +116,21 @@ class RegistrationController extends Controller
                     'files_count' => count($request->file('documents')),
                 ]);
             } catch (\Exception $e) {
-                Log::error('Error al subir documentos al crear expediente', [
+                Log::error('Error al subir documentos al crear solicitud', [
                     'registration_id' => $registration->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
                 return redirect()
                     ->route('admin.registrations.edit', $registration)
-                    ->with('error', 'El expediente se creó, pero hubo un error al subir los documentos: ' . $e->getMessage())
+                    ->with('error', 'La solicitud se creó, pero hubo un error al subir los documentos: ' . $e->getMessage())
                     ->withInput();
             }
         }
 
         return redirect()
             ->route('admin.registrations.index')
-            ->with('success', 'Expediente creado exitosamente.');
+            ->with('success', 'Solicitud creada exitosamente.');
     }
 
     public function show(Registration $registration)
@@ -257,9 +257,9 @@ class RegistrationController extends Controller
         $oldCompanyId = $registration->company_id;
         $registration->update($validated);
         $registration->refresh();
-        app(ActivityLogService::class)->log('updated', 'Actualizó el expediente "' . $registration->product_name . '"', $registration);
+        app(ActivityLogService::class)->log('updated', 'Actualizó la solicitud "' . $registration->product_name . '"', $registration);
 
-        // Si se asignó o cambió la empresa y el expediente tiene carpeta en Drive, mover la carpeta a la ruta correcta
+        // Si se asignó o cambió la empresa y la solicitud tiene carpeta en Drive, mover la carpeta a la ruta correcta
         if ($registration->drive_folder_id && (int) $oldCompanyId !== (int) $registration->company_id) {
             try {
                 $driveService = app(GoogleDriveService::class);
@@ -285,19 +285,19 @@ class RegistrationController extends Controller
                 }
                 if ($newParentId) {
                     $driveService->moveFile($registration->drive_folder_id, $newParentId);
-                    Log::info('Carpeta del expediente movida según empresa asignada', [
+                    Log::info('Carpeta de la solicitud movida según empresa asignada', [
                         'registration_id' => $registration->id,
                         'company_id' => $registration->company_id,
                     ]);
                 }
             } catch (\Exception $e) {
-                Log::error('Error al mover carpeta del expediente', [
+                Log::error('Error al mover carpeta de la solicitud', [
                     'registration_id' => $registration->id,
                     'error' => $e->getMessage(),
                 ]);
                 return redirect()
                     ->route('admin.registrations.edit', $registration)
-                    ->with('success', 'Expediente actualizado.')
+                    ->with('success', 'Solicitud actualizada.')
                     ->with('error', 'No se pudo mover la carpeta en Drive: ' . $e->getMessage());
             }
         }
@@ -316,14 +316,14 @@ class RegistrationController extends Controller
                 ]);
                 return redirect()
                     ->route('admin.registrations.edit', $registration)
-                    ->with('error', 'El expediente se actualizó, pero hubo un error al subir los documentos: ' . $e->getMessage())
+                    ->with('error', 'La solicitud se actualizó, pero hubo un error al subir los documentos: ' . $e->getMessage())
                     ->withInput();
             }
         }
 
         return redirect()
             ->route('admin.registrations.index')
-            ->with('success', 'Expediente actualizado exitosamente.');
+            ->with('success', 'Solicitud actualizada exitosamente.');
     }
 
     /**
@@ -333,7 +333,7 @@ class RegistrationController extends Controller
     {
         $driveService = app(GoogleDriveService::class);
         
-        // Obtener o crear carpeta del expediente en Drive
+        // Obtener o crear carpeta de la solicitud en Drive
         $driveFolderId = $driveService->getOrCreateRegistrationFolder($registration);
         
         $uploadedCount = 0;
@@ -676,7 +676,7 @@ class RegistrationController extends Controller
                 try {
                     $driveService->deleteFile($doc->drive_id);
                 } catch (\Exception $e) {
-                    Log::warning('No se pudo eliminar documento de Drive al eliminar expediente', [
+                    Log::warning('No se pudo eliminar documento de Drive al eliminar solicitud', [
                         'document_id' => $doc->id,
                         'drive_id' => $doc->drive_id,
                         'error' => $e->getMessage(),
@@ -690,15 +690,15 @@ class RegistrationController extends Controller
 
         $productName = $registration->product_name;
         $registration->delete();
-        app(ActivityLogService::class)->log('deleted', 'Eliminó el expediente "' . $productName . '"');
+        app(ActivityLogService::class)->log('deleted', 'Eliminó la solicitud "' . $productName . '"');
 
         return redirect()
             ->route('admin.registrations.index')
-            ->with('success', 'Expediente eliminado exitosamente.');
+            ->with('success', 'Solicitud eliminada exitosamente.');
     }
 
     /**
-     * Eliminar un documento del expediente (almacenamiento local y/o Drive legacy).
+     * Eliminar un documento de la solicitud (almacenamiento local y/o Drive legacy).
      */
     public function destroyDocument(Registration $registration, Document $document)
     {

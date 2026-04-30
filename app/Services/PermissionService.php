@@ -16,7 +16,7 @@ class PermissionService
     public const NO_ROLE = 'no_role';
 
     /**
-     * Acción solo para expedientes: registrar en línea de tiempo sin editar/borrar registros existentes.
+     * Acción solo para solicitudes (processes): registrar en línea de tiempo sin editar/borrar registros existentes.
      */
     public const ACTION_TIMELINE_FEED = 'timeline_feed';
 
@@ -35,7 +35,7 @@ class PermissionService
             'concept_catalogs' => 'Conceptos (catálogo)',
             'service_types' => 'Trámite (tipos de servicio)',
             'services' => 'Servicios (catálogo)',
-            'processes' => 'Expedientes INVIMA',
+            'processes' => 'Solicitudes INVIMA',
             'capacitaciones' => 'Capacitaciones',
             'users' => 'Directorio (clientes, agentes, usuarios)',
             'settings_agency' => 'Config: datos empresa',
@@ -52,7 +52,7 @@ class PermissionService
     }
 
     /**
-     * Acciones estándar (todos los módulos excepto variaciones en expedientes).
+     * Acciones estándar (todos los módulos excepto variaciones en solicitudes).
      *
      * @return array<string, string>
      */
@@ -66,7 +66,7 @@ class PermissionService
     }
 
     /**
-     * Acciones por módulo (expedientes incluye alimentar línea de tiempo).
+     * Acciones por módulo (solicitudes incluye alimentar línea de tiempo).
      *
      * @return array<string, string>
      */
@@ -129,7 +129,7 @@ class PermissionService
     }
 
     /**
-     * Permisos de expediente con jerarquía: edit/delete implican capacidades inferiores para rutas.
+     * Permisos de solicitud con jerarquía: edit/delete implican capacidades inferiores para rutas.
      */
     public function userHasProcessAction(string $needed): bool
     {

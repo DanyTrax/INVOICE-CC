@@ -506,36 +506,36 @@
                         <span class="text-gray-400 text-xs font-semibold uppercase px-2">OPERACIÓN</span>
                     </li>
                     @php
-                        $expedientesLinkActive = (request()->routeIs('admin.processes.*') && ! request()->routeIs('admin.processes.history'))
+                        $solicitudesLinkActive = (request()->routeIs('admin.processes.*') && ! request()->routeIs('admin.processes.history'))
                             || request()->routeIs('admin.submissions.*');
                         $tramiteActive = request()->routeIs('admin.service-types.*');
-                        $expedientesRowActive = $expedientesLinkActive || $tramiteActive;
-                        $expedientesSubOpen = $tramiteActive;
+                        $solicitudesRowActive = $solicitudesLinkActive || $tramiteActive;
+                        $solicitudesSubOpen = $tramiteActive;
                     @endphp
                     @if($permService->userHasPermission('processes', 'view'))
-                    <li x-data="{ expedientesOpen: {{ $expedientesSubOpen ? 'true' : 'false' }} }">
-                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $expedientesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}"
+                    <li x-data="{ solicitudesOpen: {{ $solicitudesSubOpen ? 'true' : 'false' }} }">
+                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $solicitudesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}"
                              :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''">
                             <a href="{{ route('admin.processes.monitor') }}"
                                class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium"
                                :class="(winLg && !sidebarExpanded) ? 'justify-center flex-none' : ''"
-                               title="Expedientes">
+                               title="Solicitudes">
                                 <i class="fas fa-folder w-5 h-5 shrink-0"></i>
-                                <span class="truncate" x-show="!winLg || sidebarExpanded" x-cloak>Expedientes</span>
+                                <span class="truncate" x-show="!winLg || sidebarExpanded" x-cloak>Solicitudes</span>
                             </a>
                             @if($permService->userHasPermission('service_types', 'view'))
                             <button type="button"
                                     x-show="!winLg || sidebarExpanded"
                                     x-cloak
-                                    @click.stop="expedientesOpen = !expedientesOpen"
+                                    @click.stop="solicitudesOpen = !solicitudesOpen"
                                     class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30"
                                     title="Mostrar Trámite">
-                                <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': expedientesOpen }"></i>
+                                <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': solicitudesOpen }"></i>
                             </button>
                             @endif
                         </div>
                         @if($permService->userHasPermission('service_types', 'view'))
-                        <ul x-show="expedientesOpen && (!winLg || sidebarExpanded)" x-cloak
+                        <ul x-show="solicitudesOpen && (!winLg || sidebarExpanded)" x-cloak
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 -translate-y-1"
                             x-transition:enter-end="opacity-100 translate-y-0"
@@ -557,9 +557,9 @@
                         <a href="{{ route('admin.processes.history') }}" 
                            class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.history') ? 'bg-teal-700' : '' }}"
                            :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Historial de Expedientes">
+                           title="Historial de solicitudes">
                             <i class="fas fa-clock-rotate-left w-5 h-5"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Historial de Expedientes</span>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Historial de solicitudes</span>
                         </a>
                     </li>
                     @elseif($permService->userHasPermission('service_types', 'view'))

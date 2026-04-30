@@ -8,7 +8,7 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
                         <i class="fas fa-file-signature text-green-500 mr-2"></i> Registrar Resolución
                     </h3>
-                    <p class="text-sm text-gray-600 mb-4">Sometimiento: {{ $submission->radicado_invima ?? $submission->id }}. El expediente pasará a <strong>Finalizado</strong>.</p>
+                    <p class="text-sm text-gray-600 mb-4">Sometimiento: {{ $submission->radicado_invima ?? $submission->id }}. La solicitud pasará a <strong>Finalizado</strong>.</p>
                     <div class="space-y-4">
                         <div>
                             <label for="res_document_number" class="block text-sm font-medium text-gray-700">Número de la Resolución</label>

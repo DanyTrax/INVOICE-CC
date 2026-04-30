@@ -41,7 +41,7 @@ class QuoteController extends Controller
             'client',
             'quoteItems.service',
             'quoteItems.serviceType',
-            // Expediente creado desde el ítem (HasOne) y ciclos vinculados al ítem
+            // Solicitud (process) creada desde el ítem (HasOne) y ciclos vinculados al ítem
             'quoteItems.process.serviceType',
             'quoteItems.submissions.process.serviceType',
         ]);
@@ -229,7 +229,7 @@ $totalFees = 0;
 
         return redirect()
             ->route('admin.quotes.show', $quote)
-            ->with('success', 'Cotización aprobada. Ahora puedes crear y vincular expedientes desde el módulo Expedientes / Procesos.');
+            ->with('success', 'Cotización aprobada. Ahora puedes crear y vincular solicitudes desde el módulo Solicitudes / Procesos.');
     }
 
     /**
@@ -288,7 +288,7 @@ $totalFees = 0;
 
     /**
      * Eliminar cotización (en cualquier estado). Se eliminan también sus ítems.
-     * Los expedientes vinculados a ítems de esta cotización quedan sin cotización (quote_id/quote_item_id a null).
+     * Las solicitudes vinculadas a ítems de esta cotización quedan sin cotización (quote_id/quote_item_id a null).
      */
     public function destroy(Quote $quote): RedirectResponse
     {

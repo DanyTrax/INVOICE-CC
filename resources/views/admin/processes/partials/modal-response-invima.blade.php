@@ -44,7 +44,7 @@
                     </div>
 
                     <div id="panel-auto" class="response-panel hidden space-y-4">
-                        <p class="text-sm text-gray-600">Se registrará un Requerimiento AUTO. Se cierra este ciclo y se crea uno nuevo. El expediente pasará a <strong>En Requerimiento</strong>.</p>
+                        <p class="text-sm text-gray-600">Se registrará un Requerimiento AUTO. Se cierra este ciclo y se crea uno nuevo. La solicitud pasará a <strong>En Requerimiento</strong>.</p>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Número de AUTO <span class="text-red-500">*</span></label>
                             <input type="text" name="document_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Ej: AUTO-2025-123">
@@ -60,7 +60,7 @@
                     </div>
 
                     <div id="panel-aprobado" class="response-panel hidden space-y-4">
-                        <p class="text-sm text-gray-600">Se registrará la Resolución aprobatoria. El expediente pasará a <strong>Finalizado</strong>.</p>
+                        <p class="text-sm text-gray-600">Se registrará la Resolución aprobatoria. La solicitud pasará a <strong>Finalizado</strong>.</p>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Número de resolución <span class="text-red-500">*</span></label>
                             <input type="text" name="resolution_number" maxlength="64" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Número de resolución">

@@ -79,7 +79,7 @@
             <a href="{{ route('portal.registrations.index') }}"
                class="flex items-center px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('portal.registrations.*') ? 'bg-teal-50 text-teal-700 font-bold' : 'text-gray-500 hover:bg-gray-50' }}">
                 <i class="fas fa-file-contract w-6 text-center"></i>
-                <span x-show="sidebarOpen" class="ml-3 text-sm">Mis Expedientes</span>
+                <span x-show="sidebarOpen" class="ml-3 text-sm">Mis solicitudes</span>
             </a>
             <a href="{{ route('portal.profile') }}"
                class="flex items-center px-3 py-2.5 rounded-lg transition-colors {{ request()->routeIs('portal.profile') ? 'bg-teal-50 text-teal-700 font-bold' : 'text-gray-500 hover:bg-gray-50' }}">

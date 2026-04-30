@@ -102,7 +102,7 @@ class ProcessController extends Controller
 
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', 'Expediente creado. Complete la checklist en la vista del expediente.');
+            ->with('success', 'Solicitud creada. Complete la checklist en la vista de la solicitud.');
     }
 
     /**
@@ -335,7 +335,7 @@ class ProcessController extends Controller
 
             return redirect()
                 ->route('admin.processes.show', $process)
-                ->with('success', 'Cotización desvinculada del expediente.');
+                ->with('success', 'Cotización desvinculada de la solicitud.');
         }
 
         // Permite "quitar ítem" enviando vacío desde el formulario (value="").
@@ -351,7 +351,7 @@ class ProcessController extends Controller
         if ($quote->client_id !== $process->client_id) {
             return redirect()
                 ->route('admin.processes.show', $process)
-                ->with('error', 'La cotización debe ser del mismo cliente del expediente.');
+                ->with('error', 'La cotización debe ser del mismo cliente de la solicitud.');
         }
 
         $data = [
@@ -379,7 +379,7 @@ class ProcessController extends Controller
 
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', empty($validated['quote_item_id']) ? 'Expediente asignado a la cotización.' : 'Expediente vinculado a la cotización e ítem seleccionados.');
+            ->with('success', empty($validated['quote_item_id']) ? 'Solicitud asignada a la cotización.' : 'Solicitud vinculada a la cotización e ítem seleccionados.');
     }
 
     /**
@@ -444,7 +444,7 @@ class ProcessController extends Controller
         if ($checklistItems->isEmpty()) {
             return redirect()
                 ->route('admin.processes.show', $process)
-                ->with('error', 'Debe existir al menos un ítem en la checklist del expediente.');
+                ->with('error', 'Debe existir al menos un ítem en la checklist de la solicitud.');
         }
 
         $notApproved = $checklistItems->where('status', '!=', ChecklistItem::STATUS_APROBADO);
@@ -516,7 +516,7 @@ class ProcessController extends Controller
             ]);
             $submission->process->update(['status' => Process::STATUS_RADICADO]);
             $msg = $submission->isAutoFollowUpCycle()
-                ? 'Radicado registrado. En este ciclo de subsanación solo puede registrar RESOLUCIÓN para cerrar el expediente.'
+                ? 'Radicado registrado. En este ciclo de subsanación solo puede registrar RESOLUCIÓN para cerrar la solicitud.'
                 : 'Radicado registrado. En la línea de tiempo use REQUERIMIENTO AUTO o RESOLUCIÓN según corresponda.';
 
             return redirect()
@@ -542,7 +542,7 @@ class ProcessController extends Controller
         if ($type === 'auto') {
             if ($submission->isAutoFollowUpCycle()) {
                 return redirect()->route('admin.processes.show', $submission->process)
-                    ->with('error', 'En el ciclo de subsanación (Ciclo 2 o posterior) solo puede registrar Resolución desde Radicado para cerrar el expediente, no un nuevo AUTO.');
+                    ->with('error', 'En el ciclo de subsanación (Ciclo 2 o posterior) solo puede registrar Resolución desde Radicado para cerrar la solicitud, no un nuevo AUTO.');
             }
             if ($submission->status !== Submission::STATUS_RADICADO) {
                 return redirect()->route('admin.processes.show', $submission->process)
@@ -639,7 +639,7 @@ class ProcessController extends Controller
 
             return redirect()
                 ->route('admin.processes.show', $submission->process)
-                ->with('success', 'Resolución aprobatoria registrada. Expediente finalizado.');
+                ->with('success', 'Resolución aprobatoria registrada. Solicitud finalizada.');
         }
 
         return redirect()->back()->with('error', 'Tipo de respuesta no válido.');
@@ -735,7 +735,7 @@ class ProcessController extends Controller
         $quote = Quote::findOrFail($validated['quote_id']);
         if ($quote->client_id !== $process->client_id) {
             return redirect()->route('admin.processes.show', $process)
-                ->with('error', 'La cotización debe ser del mismo cliente del expediente.');
+                ->with('error', 'La cotización debe ser del mismo cliente de la solicitud.');
         }
 
         $quoteItemId = $validated['quote_item_id'] ?? null;
@@ -1089,7 +1089,7 @@ class ProcessController extends Controller
                 try {
                     app(GoogleDriveService::class)->deleteFile($doc->drive_id);
                 } catch (\Exception $e) {
-                    Log::warning('No se pudo eliminar archivo de Drive al eliminar expediente', [
+                    Log::warning('No se pudo eliminar archivo de Drive al eliminar solicitud', [
                         'process_id' => $process->id,
                         'drive_id' => $doc->drive_id,
                         'error' => $e->getMessage(),
@@ -1101,7 +1101,7 @@ class ProcessController extends Controller
 
         return redirect()
             ->route('admin.processes.monitor')
-            ->with('success', 'Expediente eliminado.');
+            ->with('success', 'Solicitud eliminada.');
     }
 
     /**

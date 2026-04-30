@@ -62,7 +62,7 @@
                         <th scope="col" class="px-6 py-3">Contacto</th>
                         <th scope="col" class="px-6 py-3">Email</th>
                         <th scope="col" class="px-6 py-3">Clientes</th>
-                        <th scope="col" class="px-6 py-3">Expedientes</th>
+                        <th scope="col" class="px-6 py-3">Solicitudes</th>
                         <th scope="col" class="px-6 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>

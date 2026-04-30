@@ -1,20 +1,20 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Nuevo Expediente - RAMS')
+@section('title', 'Nueva solicitud - RAMS')
 
-@section('page-title', 'Nuevo Expediente')
+@section('page-title', 'Nueva solicitud')
 
 @section('breadcrumb')
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.processes.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Expedientes</a>
+            <a href="{{ route('admin.processes.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Solicitudes</a>
         </div>
     </li>
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Nuevo expediente</span>
+            <span class="text-sm font-medium text-gray-500">Nueva solicitud</span>
         </div>
     </li>
 @endsection
@@ -34,7 +34,7 @@
     <form action="{{ route('admin.processes.store') }}" method="POST">
         @csrf
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Datos del expediente (sin cotización)</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Datos de la solicitud (sin cotización)</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                     <label for="client_id" class="block mb-2 text-sm font-medium text-gray-900">Cliente <span class="text-red-500">*</span></label>
@@ -84,7 +84,7 @@
 
         <div class="flex flex-wrap gap-3">
             <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">
-                <i class="fas fa-save mr-2"></i> Crear expediente
+                <i class="fas fa-save mr-2"></i> Crear solicitud
             </button>
             <a href="{{ route('admin.processes.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
                 Cancelar

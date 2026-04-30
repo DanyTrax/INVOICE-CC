@@ -28,10 +28,10 @@
                     <h2 class="text-xl font-semibold text-gray-900 mb-3">Propósito de la aplicación</h2>
                     <p class="mb-3">RAMS es el sistema de gestión regulatoria de <strong>{{ $agencyLabel }}</strong>. Permite a la empresa y a sus clientes:</p>
                     <ul class="list-disc pl-6 space-y-1 text-sm">
-                        <li>Gestionar empresas (clientes), cotizaciones y expedientes o procesos regulatorios.</li>
+                        <li>Gestionar empresas (clientes), cotizaciones y solicitudes o procesos regulatorios.</li>
                         <li>Mantener checklists documentales y el seguimiento de trámites ante autoridades.</li>
                         <li>Organizar y subir documentos en Google Drive, integrado con la estructura de carpetas del servicio.</li>
-                        <li>Consultar estados, líneas de tiempo y documentación asociada a cada expediente.</li>
+                        <li>Consultar estados, líneas de tiempo y documentación asociada a cada solicitud.</li>
                     </ul>
                     <p class="mt-4 text-sm">El acceso a la aplicación está restringido a usuarios autorizados (administradores, especialistas y clientes según corresponda).</p>
                 </section>

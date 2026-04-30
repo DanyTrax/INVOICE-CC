@@ -73,7 +73,7 @@
             icon="flag-checkered"
             color="green"
             :link="route('admin.processes.history')"
-            subtitle="Ver expedientes aprobados"
+            subtitle="Ver solicitudes aprobadas"
         />
 
         <x-widgets.stats-card 
