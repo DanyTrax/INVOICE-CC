@@ -75,7 +75,7 @@ class QuoteController extends Controller
             'quoteItems.submissions.process.serviceType',
         ]);
         $companies = Company::orderBy('name')->get();
-        $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
+        $serviceTypes = ServiceType::orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
         $has_any_item_with_process = $quote->quoteItems->contains(fn ($i) => $i->submissions?->isNotEmpty());
 
@@ -326,7 +326,7 @@ class QuoteController extends Controller
     public function create()
     {
         $companies = Company::orderBy('name')->get();
-        $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
+        $serviceTypes = ServiceType::orderBy('name')->get();
 
         // Sugerir consecutivo automático en formato NNN-AA (ej. 001-26)
         $year = now()->year % 100;

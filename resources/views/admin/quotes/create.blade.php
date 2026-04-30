@@ -416,13 +416,9 @@
             updateTotals();
         }
 
-        function updateBankFeeVisibility() {
-            document.querySelectorAll('[data-col=\"' + key + '\"]').forEach(function(cell) {
-                if (enabled) {
-                    cell.classList.remove('hidden');
-                } else {
-                    cell.classList.add('hidden');
-                }
+        function setColumnEnabled(key, enabled) {
+            document.querySelectorAll('[data-col="' + key + '"]').forEach(function(cell) {
+                cell.classList.toggle('hidden', !enabled);
                 cell.querySelectorAll('input,textarea,select').forEach(function(el) {
                     el.disabled = !enabled;
                 });

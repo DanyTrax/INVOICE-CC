@@ -91,6 +91,38 @@
                            maxlength="255"
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                 </div>
+                <div class="md:col-span-2 lg:col-span-3 pt-2 border-t border-gray-100 mt-2">
+                    @php
+                        $expOp = old('expediente_invima_opcional', '0');
+                        $expOpLast = is_array($expOp) ? (string) end($expOp) : (string) $expOp;
+                        $expedienteChecked = $expOpLast === '1';
+                    @endphp
+                    <input type="hidden" name="expediente_invima_opcional" value="0">
+                    <label class="inline-flex items-center gap-2 cursor-pointer mb-2">
+                        <input type="checkbox"
+                               name="expediente_invima_opcional"
+                               id="expediente_invima_opcional"
+                               value="1"
+                               {{ $expedienteChecked ? 'checked' : '' }}
+                               class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <span class="text-sm font-medium text-gray-900">EXPEDIENTE INVIMA (OPCIONAL)</span>
+                    </label>
+                    <div>
+                        <label for="expediente_invima" class="block mb-2 text-sm font-medium text-gray-500">Nº expediente / registro INVIMA</label>
+                        <input type="text"
+                               name="expediente_invima"
+                               id="expediente_invima"
+                               value="{{ old('expediente_invima') }}"
+                               placeholder="Ej: 2021DM-0006049"
+                               maxlength="64"
+                               autocomplete="off"
+                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full max-w-xl p-2.5 disabled:opacity-50 disabled:cursor-not-allowed @error('expediente_invima') border-red-500 @enderror">
+                        @error('expediente_invima')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500">Active la casilla para escribir. Si no la marca, el campo no se guarda.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -117,20 +149,36 @@
     var sel = document.getElementById('client_id');
     var warn = document.getElementById('client_siglas_warn');
     var link = document.getElementById('client_siglas_edit_link');
-    if (!sel || !warn) return;
-    function sync() {
-        var opt = sel.options[sel.selectedIndex];
-        if (!opt || !opt.value) {
-            warn.classList.add('hidden');
-            return;
+    if (sel && warn) {
+        function sync() {
+            var opt = sel.options[sel.selectedIndex];
+            if (!opt || !opt.value) {
+                warn.classList.add('hidden');
+                return;
+            }
+            var ok = opt.getAttribute('data-siglas-ok') === '1';
+            warn.classList.toggle('hidden', ok);
+            var u = opt.getAttribute('data-edit-url');
+            if (link && u) link.href = u;
         }
-        var ok = opt.getAttribute('data-siglas-ok') === '1';
-        warn.classList.toggle('hidden', ok);
-        var u = opt.getAttribute('data-edit-url');
-        if (link && u) link.href = u;
+        sel.addEventListener('change', sync);
+        sync();
     }
-    sel.addEventListener('change', sync);
-    sync();
+
+    var cb = document.getElementById('expediente_invima_opcional');
+    var inp = document.getElementById('expediente_invima');
+    if (cb && inp) {
+        function syncExpediente() {
+            inp.disabled = !cb.checked;
+        }
+        cb.addEventListener('change', function () {
+            syncExpediente();
+            if (!cb.checked) {
+                inp.value = '';
+            }
+        });
+        syncExpediente();
+    }
 })();
 </script>
 @endpush

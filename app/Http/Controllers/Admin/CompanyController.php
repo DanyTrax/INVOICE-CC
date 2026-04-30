@@ -585,9 +585,6 @@ class CompanyController extends Controller
     }
 
     /**
-     * Obtener el último error de EmailLog para un destinatario (para mostrar al usuario).
-     */
-    /**
      * Usuarios con rol client para asignar a la empresa.
      */
     protected function availableClientUsers()
@@ -634,9 +631,12 @@ class CompanyController extends Controller
                 'user_id' => [
                     'required',
                     'integer',
-                    Rule::exists('users', 'id')->where(function ($q) {
-                        $q->whereHas('roles', fn ($r) => $r->where('name', 'client'));
-                    }),
+                    function (string $attribute, mixed $value, \Closure $fail): void {
+                        $user = User::query()->find((int) $value);
+                        if (! $user || ! $user->hasRole('client')) {
+                            $fail('El usuario no existe o no tiene rol cliente.');
+                        }
+                    },
                 ],
                 'description' => 'nullable|string|max:500',
             ], [], [

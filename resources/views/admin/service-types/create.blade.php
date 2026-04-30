@@ -24,7 +24,7 @@
         <form action="{{ route('admin.service-types.store') }}" method="POST">
             @csrf
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-6 max-w-2xl">
                 <div>
                     <label for="name" class="block mb-2 text-sm font-medium text-gray-900">Nombre <span class="text-red-500">*</span></label>
                     <input type="text" id="name" name="name" value="{{ old('name') }}" required
@@ -34,27 +34,6 @@
                     @enderror
                 </div>
                 <div>
-                    <label for="code" class="block mb-2 text-sm font-medium text-gray-900">Código</label>
-                    <input type="text" id="code" name="code" value="{{ old('code') }}" maxlength="32"
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 @error('code') border-red-500 @enderror">
-                    @error('code')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label for="default_price" class="block mb-2 text-sm font-medium text-gray-900">Precio por defecto</label>
-                    <input type="number" id="default_price" name="default_price" value="{{ old('default_price') }}" min="0" step="0.01"
-                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 @error('default_price') border-red-500 @enderror">
-                    @error('default_price')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div class="flex items-center mt-6">
-                    <input type="checkbox" id="is_active" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}
-                           class="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                    <label for="is_active" class="ml-2 text-sm text-gray-900">Activo</label>
-                </div>
-                <div class="md:col-span-2">
                     <label for="description" class="block mb-2 text-sm font-medium text-gray-900">Descripción</label>
                     <textarea id="description" name="description" rows="3"
                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 @error('description') border-red-500 @enderror">{{ old('description') }}</textarea>

@@ -80,10 +80,12 @@
                             @endforeach
                         </dd>
                     </div>
+                    @if($process->expediente_invima)
                     <div>
-                        <dt class="text-gray-500">Nº registro INVIMA</dt>
-                        <dd class="font-medium text-gray-900">{{ $process->expediente_invima ?? '-' }}</dd>
+                        <dt class="text-gray-500">Expediente INVIMA</dt>
+                        <dd class="font-medium text-gray-900 font-mono">{{ $process->expediente_invima }}</dd>
                     </div>
+                    @endif
                     @php
                         $rootsParaCotizaciones = $process->submissions
                             ->whereNull('parent_id')

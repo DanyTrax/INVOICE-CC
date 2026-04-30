@@ -30,9 +30,7 @@
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
                         <th class="px-4 py-3">Nombre</th>
-                        <th class="px-4 py-3">Código</th>
-                        <th class="px-4 py-3">Precio por defecto</th>
-                        <th class="px-4 py-3">Activo</th>
+                        <th class="px-4 py-3">Descripción</th>
                         <th class="px-4 py-3 w-24">Acciones</th>
                     </tr>
                 </thead>
@@ -40,21 +38,7 @@
                     @forelse($serviceTypes as $type)
                         <tr class="bg-white border-b last:border-b-0">
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $type->name }}</td>
-                            <td class="px-4 py-3">{{ $type->code ?? '-' }}</td>
-                            <td class="px-4 py-3">
-                                @if(!is_null($type->default_price))
-                                    {{ number_format($type->default_price, 2) }}
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td class="px-4 py-3">
-                                @if($type->is_active)
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Sí</span>
-                                @else
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">No</span>
-                                @endif
-                            </td>
+                            <td class="px-4 py-3 text-gray-600 max-w-md truncate" title="{{ $type->description }}">{{ $type->description ? \Illuminate\Support\Str::limit(strip_tags($type->description), 80) : '—' }}</td>
                             <td class="px-4 py-3 text-right">
                                 @if($permissionService->userHasPermission('service_types', 'edit'))
                                     <a href="{{ route('admin.service-types.edit', $type) }}" class="text-teal-600 hover:text-teal-800 px-2" title="Editar">
@@ -74,7 +58,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-500">No hay tipos de trámite configurados.</td>
+                            <td colspan="3" class="px-4 py-8 text-center text-gray-500">No hay tipos de trámite configurados.</td>
                         </tr>
                     @endforelse
                 </tbody>

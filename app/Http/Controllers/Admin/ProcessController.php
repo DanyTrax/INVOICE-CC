@@ -75,7 +75,7 @@ class ProcessController extends Controller
     public function create(): View
     {
         $companies = Company::orderBy('name')->get();
-        $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
+        $serviceTypes = ServiceType::orderBy('name')->get();
 
         return view('admin.processes.create', compact('companies', 'serviceTypes'));
     }
@@ -90,6 +90,7 @@ class ProcessController extends Controller
             'service_type_name' => 'required|string|max:255',
             'product_reference' => 'nullable|string|max:500',
             'email_name' => 'nullable|string|max:255',
+            'expediente_invima' => 'nullable|string|max:64',
         ]);
 
         $serviceType = ServiceType::where('name', $validated['service_type_name'])->first();
@@ -99,6 +100,12 @@ class ProcessController extends Controller
                 ->withErrors(['service_type_name' => 'Seleccione un tipo de trámite de la lista.']);
         }
 
+        $rawOp = $request->input('expediente_invima_opcional', '0');
+        $expedienteOpcionalOn = (is_array($rawOp) ? (string) end($rawOp) : (string) $rawOp) === '1';
+        $expedienteInvima = $expedienteOpcionalOn
+            ? (trim((string) ($validated['expediente_invima'] ?? '')) ?: null)
+            : null;
+
         try {
             $process = Process::createWithSolicitudCode([
                 'quote_item_id' => null,
@@ -106,6 +113,7 @@ class ProcessController extends Controller
                 'service_type_id' => $serviceType->id,
                 'product_reference' => $validated['product_reference'] ?? null,
                 'email_name' => $validated['email_name'] ?? null,
+                'expediente_invima' => $expedienteInvima,
                 'status' => Process::STATUS_RECOLECCION,
             ]);
         } catch (\RuntimeException $e) {
