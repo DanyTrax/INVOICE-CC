@@ -50,6 +50,10 @@
     <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <dl class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div>
+                <dt class="text-gray-500">Siglas solicitudes</dt>
+                <dd class="font-medium text-gray-900 font-mono">{{ $company->code_abbreviation ?: '—' }}</dd>
+            </div>
+            <div>
                 <dt class="text-gray-500">NIT/RUT</dt>
                 <dd class="font-medium text-gray-900">{{ $company->nit_rut }}</dd>
             </div>
@@ -250,7 +254,7 @@
                 <input type="text"
                        name="search"
                        value="{{ request('search') }}"
-                       placeholder="Buscar por solicitud, trámite, producto..."
+                       placeholder="Código solicitud, id interno, trámite, producto…"
                        class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-48 focus:ring-teal-500 focus:border-teal-500">
                 <select name="step_filter" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-teal-500 focus:border-teal-500">
                     <option value="">Todos los pasos</option>
@@ -272,7 +276,7 @@
             <table class="w-full text-sm text-left text-gray-500">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3">#</th>
+                        <th class="px-4 py-3">Solicitud</th>
                         <th class="px-4 py-3">Trámite</th>
                         <th class="px-4 py-3">Estado</th>
                         <th class="px-4 py-3">Hito actual</th>
@@ -302,8 +306,8 @@
                             $paso = $process->getCurrentStep();
                         @endphp
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td class="px-4 py-3 font-medium text-gray-900">
-                                <span class="font-mono text-xs text-gray-700">#{{ $process->id }}</span>
+                            <td class="px-4 py-3 font-medium text-gray-900" title="ID interno: {{ $process->id }}">
+                                <span class="font-mono text-xs text-gray-800">{{ $process->displayReference() }}</span>
                                 @if($process->expediente_invima)
                                     <span class="text-gray-400 mx-1">·</span>
                                     <span class="text-gray-800">{{ $process->expediente_invima }}</span>

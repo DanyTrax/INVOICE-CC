@@ -12,16 +12,20 @@ use App\Models\Service;
 use App\Models\ServiceType;
 use App\Settings\GeneralSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class QuoteController extends Controller
 {
     public const STATUS_BORRADOR = 'Borrador';
+
     public const STATUS_ENVIADA = 'Enviada';
+
     public const STATUS_APROBADA = 'Aprobada';
+
     public const STATUS_RECHAZADA = 'Rechazada';
+
     public const STATUS_ANULADA = 'Anulada';
 
     /**
@@ -50,6 +54,7 @@ class QuoteController extends Controller
         } catch (\Throwable $e) {
             $quotePdfTemplates = collect();
         }
+
         return view('admin.quotes.show', compact('quote', 'quotePdfTemplates'));
     }
 
@@ -73,6 +78,7 @@ class QuoteController extends Controller
         $serviceTypes = ServiceType::where('is_active', true)->orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
         $has_any_item_with_process = $quote->quoteItems->contains(fn ($i) => $i->submissions?->isNotEmpty());
+
         return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services', 'has_any_item_with_process'));
     }
 
@@ -91,7 +97,7 @@ class QuoteController extends Controller
             'date' => 'required|date',
             'currency' => 'required|string|in:COP,USD',
             'exchange_rate' => 'nullable|numeric|min:0',
-            'consecutive' => 'required|string|max:32|unique:quotes,consecutive,' . $quote->id,
+            'consecutive' => 'required|string|max:32|unique:quotes,consecutive,'.$quote->id,
             'show_prev_license_column' => 'nullable|boolean',
             'show_raa_column' => 'nullable|boolean',
             'show_service_type_column' => 'nullable|boolean',
@@ -121,13 +127,11 @@ class QuoteController extends Controller
             'items.*.fee_value' => 'required|numeric|min:0',
             'items.*.invima_rate_code' => 'nullable|string|max:32',
             'items.*.invima_rate_value' => 'nullable|numeric|min:0',
-            'items.*.is_loan' => 'nullable|boolean',
         ], [
             'items.*.service_id.required' => 'Cada ítem debe tener un servicio elegido de la lista (escriba y seleccione uno existente).',
             'items.*.service_id.exists' => 'El servicio no es válido. Debe elegirse exactamente uno de la lista de servicios.',
         ]);
 
-        
         $hasAnyLinkedTramite = $quote->quoteItems()->whereHas('submissions')->exists();
         if ($hasAnyLinkedTramite && empty($validated['show_service_type_column'])) {
             return redirect()->back()
@@ -135,17 +139,10 @@ class QuoteController extends Controller
                 ->withErrors(['show_service_type_column' => 'No se puede deshabilitar la columna Trámite porque hay ítems con trámite vinculado.']);
         }
 
-$totalFees = 0;
-        $totalLoans = 0;
+        $totalFees = 0;
         $totalInvima = 0;
         foreach ($validated['items'] as $pos => $row) {
-            $val = (float) ($row['fee_value'] ?? 0);
-            $isLoan = !empty($row['is_loan']);
-            if ($isLoan) {
-                $totalLoans += $val;
-            } else {
-                $totalFees += $val;
-            }
+            $totalFees += (float) ($row['fee_value'] ?? 0);
             $totalInvima += (float) ($row['invima_rate_value'] ?? 0);
         }
 
@@ -155,21 +152,20 @@ $totalFees = 0;
             'date' => $validated['date'],
             'currency' => $validated['currency'],
             'exchange_rate' => $validated['exchange_rate'] ?? null,
-            'show_prev_license_column' => !empty($validated['show_prev_license_column']),
-            'show_raa_column' => !empty($validated['show_raa_column']),
-            'show_service_type_column' => !empty($validated['show_service_type_column']),
-            'show_description_column' => array_key_exists('show_description_column', $validated) ? !empty($validated['show_description_column']) : true,
-            'show_row_id_column' => !empty($validated['show_row_id_column']),
-            'show_franquicia_column' => !empty($validated['show_franquicia_column']),
-            'show_centro_costos_column' => !empty($validated['show_centro_costos_column']),
-            'show_contacto_column' => !empty($validated['show_contacto_column']),
+            'show_prev_license_column' => ! empty($validated['show_prev_license_column']),
+            'show_raa_column' => ! empty($validated['show_raa_column']),
+            'show_service_type_column' => ! empty($validated['show_service_type_column']),
+            'show_description_column' => array_key_exists('show_description_column', $validated) ? ! empty($validated['show_description_column']) : true,
+            'show_row_id_column' => ! empty($validated['show_row_id_column']),
+            'show_franquicia_column' => ! empty($validated['show_franquicia_column']),
+            'show_centro_costos_column' => ! empty($validated['show_centro_costos_column']),
+            'show_contacto_column' => ! empty($validated['show_contacto_column']),
             'total_professional_fees' => round($totalFees, 2),
             'total_invima_fees' => round($totalInvima, 2),
-            'total_loans' => round($totalLoans, 2),
-            'apply_tax' => !empty($validated['apply_tax']),
+            'apply_tax' => ! empty($validated['apply_tax']),
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
-            'apply_bank_fee' => !empty($validated['apply_bank_fee']),
-            'bank_fee_value' => !empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
+            'apply_bank_fee' => ! empty($validated['apply_bank_fee']),
+            'bank_fee_value' => ! empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
         ]);
 
         $existingIds = [];
@@ -199,7 +195,6 @@ $totalFees = 0;
                 'fee_value' => (float) ($row['fee_value'] ?? 0),
                 'invima_rate_code' => $row['invima_rate_code'] ?? null,
                 'invima_rate_value' => (float) ($row['invima_rate_value'] ?? 0),
-                'is_loan' => !empty($row['is_loan']),
             ];
             if ($itemId && $quote->quoteItems()->where('id', $itemId)->exists()) {
                 $quote->quoteItems()->where('id', $itemId)->update($itemData);
@@ -214,13 +209,12 @@ $totalFees = 0;
         return redirect()->route('admin.quotes.show', $quote)->with('success', 'Cotización actualizada.');
     }
 
-
     /**
      * Aprobar cotización (sin crear procesos automáticamente).
      */
     public function approve(Quote $quote): RedirectResponse
     {
-        if (!in_array($quote->status, self::approvableStatuses(), true)) {
+        if (! in_array($quote->status, self::approvableStatuses(), true)) {
             return redirect()->route('admin.quotes.show', $quote)
                 ->with('error', 'Solo se puede aprobar una cotización en estado Borrador o Enviada.');
         }
@@ -235,19 +229,20 @@ $totalFees = 0;
     /**
      * Descargar cotización en PDF.
      */
-    public function pdf(Quote $quote, \Illuminate\Http\Request $request)
+    public function pdf(Quote $quote, Request $request)
     {
         $quote->load(['client', 'quoteItems.service', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
         $template = null;
         if ($request->filled('template_id')) {
             $template = QuotePdfTemplate::find($request->template_id);
         }
-        if (!$template) {
+        if (! $template) {
             $template = QuotePdfTemplate::getDefault();
         }
         $settings = app(GeneralSettings::class);
         $pdf = Pdf::loadView('admin.quotes.pdf', compact('quote', 'settings', 'template'));
-        $filename = 'cotizacion-' . preg_replace('/[^a-z0-9\-]/i', '-', $quote->consecutive) . '.pdf';
+        $filename = 'cotizacion-'.preg_replace('/[^a-z0-9\-]/i', '-', $quote->consecutive).'.pdf';
+
         return $pdf->download($filename);
     }
 
@@ -262,6 +257,7 @@ $totalFees = 0;
         $quote->update([
             'pdf_footer' => $validated['pdf_footer'] ?? null,
         ]);
+
         return redirect()->route('admin.quotes.show', $quote)
             ->with('success', 'Pie de página del PDF actualizado.');
     }
@@ -282,6 +278,7 @@ $totalFees = 0;
             'status' => self::STATUS_ANULADA,
             'cancellation_note' => $validated['cancellation_note'],
         ]);
+
         return redirect()->route('admin.quotes.show', $quote)
             ->with('success', 'Cotización anulada.');
     }
@@ -293,6 +290,7 @@ $totalFees = 0;
     public function destroy(Quote $quote): RedirectResponse
     {
         $quote->delete();
+
         return redirect()
             ->route('admin.quotes.index')
             ->with('success', 'Cotización eliminada.');
@@ -333,7 +331,7 @@ $totalFees = 0;
         // Sugerir consecutivo automático en formato NNN-AA (ej. 001-26)
         $year = now()->year % 100;
         $yearSuffix = str_pad((string) $year, 2, '0', STR_PAD_LEFT);
-        $lastConsecutive = Quote::where('consecutive', 'like', '%-' . $yearSuffix)
+        $lastConsecutive = Quote::where('consecutive', 'like', '%-'.$yearSuffix)
             ->orderBy('consecutive', 'desc')
             ->value('consecutive');
 
@@ -345,6 +343,7 @@ $totalFees = 0;
         $suggestedConsecutive = sprintf('%03d-%s', $nextNumber, $yearSuffix);
 
         $services = Service::where('is_active', true)->orderBy('name')->get();
+
         return view('admin.quotes.create', [
             'companies' => $companies,
             'serviceTypes' => $serviceTypes,
@@ -392,23 +391,15 @@ $totalFees = 0;
             'items.*.fee_value' => 'required|numeric|min:0',
             'items.*.invima_rate_code' => 'nullable|string|max:32',
             'items.*.invima_rate_value' => 'nullable|numeric|min:0',
-            'items.*.is_loan' => 'nullable|boolean',
         ], [
             'items.*.service_id.required' => 'Cada ítem debe tener un servicio elegido de la lista (escriba y seleccione uno existente).',
             'items.*.service_id.exists' => 'El servicio no es válido. Debe elegirse exactamente uno de la lista de servicios.',
         ]);
 
         $totalFees = 0;
-        $totalLoans = 0;
         $totalInvima = 0;
         foreach ($validated['items'] as $pos => $row) {
-            $val = (float) ($row['fee_value'] ?? 0);
-            $isLoan = !empty($row['is_loan']);
-            if ($isLoan) {
-                $totalLoans += $val;
-            } else {
-                $totalFees += $val;
-            }
+            $totalFees += (float) ($row['fee_value'] ?? 0);
             $totalInvima += (float) ($row['invima_rate_value'] ?? 0);
         }
 
@@ -418,22 +409,21 @@ $totalFees = 0;
             'date' => $validated['date'],
             'currency' => $validated['currency'],
             'exchange_rate' => $validated['exchange_rate'] ?? null,
-            'show_prev_license_column' => !empty($validated['show_prev_license_column']),
-            'show_raa_column' => !empty($validated['show_raa_column']),
-            'show_service_type_column' => !empty($validated['show_service_type_column']),
-            'show_description_column' => array_key_exists('show_description_column', $validated) ? !empty($validated['show_description_column']) : true,
-            'show_row_id_column' => !empty($validated['show_row_id_column']),
-            'show_franquicia_column' => !empty($validated['show_franquicia_column']),
-            'show_centro_costos_column' => !empty($validated['show_centro_costos_column']),
-            'show_contacto_column' => !empty($validated['show_contacto_column']),
+            'show_prev_license_column' => ! empty($validated['show_prev_license_column']),
+            'show_raa_column' => ! empty($validated['show_raa_column']),
+            'show_service_type_column' => ! empty($validated['show_service_type_column']),
+            'show_description_column' => array_key_exists('show_description_column', $validated) ? ! empty($validated['show_description_column']) : true,
+            'show_row_id_column' => ! empty($validated['show_row_id_column']),
+            'show_franquicia_column' => ! empty($validated['show_franquicia_column']),
+            'show_centro_costos_column' => ! empty($validated['show_centro_costos_column']),
+            'show_contacto_column' => ! empty($validated['show_contacto_column']),
             'status' => 'Borrador',
             'total_professional_fees' => round($totalFees, 2),
             'total_invima_fees' => round($totalInvima, 2),
-            'total_loans' => round($totalLoans, 2),
-            'apply_tax' => !empty($validated['apply_tax']),
+            'apply_tax' => ! empty($validated['apply_tax']),
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
-            'apply_bank_fee' => !empty($validated['apply_bank_fee']),
-            'bank_fee_value' => !empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
+            'apply_bank_fee' => ! empty($validated['apply_bank_fee']),
+            'bank_fee_value' => ! empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
         ]);
 
         foreach ($validated['items'] as $pos => $row) {
@@ -464,7 +454,6 @@ $totalFees = 0;
                 'fee_value' => (float) ($row['fee_value'] ?? 0),
                 'invima_rate_code' => $row['invima_rate_code'] ?? null,
                 'invima_rate_value' => (float) ($row['invima_rate_value'] ?? 0),
-                'is_loan' => !empty($row['is_loan']),
             ]);
         }
 

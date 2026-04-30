@@ -27,7 +27,6 @@ class Quote extends Model
         'pdf_footer',
         'total_professional_fees',
         'total_invima_fees',
-        'total_loans',
         'apply_tax',
         'tax_percentage',
         'apply_bank_fee',
@@ -40,7 +39,6 @@ class Quote extends Model
             'date' => 'date',
             'total_professional_fees' => 'decimal:2',
             'total_invima_fees' => 'decimal:2',
-            'total_loans' => 'decimal:2',
             'exchange_rate' => 'decimal:6',
             'show_prev_license_column' => 'boolean',
             'show_raa_column' => 'boolean',
@@ -58,11 +56,11 @@ class Quote extends Model
     }
 
     /**
-     * Subtotal (honorarios + préstamos + tasas INVIMA).
+     * Subtotal (honorarios + tasas INVIMA).
      */
     public function getSubtotalAttribute(): float
     {
-        return (float) $this->total_professional_fees + (float) $this->total_loans + (float) $this->total_invima_fees;
+        return (float) $this->total_professional_fees + (float) $this->total_invima_fees;
     }
 
     /**
@@ -70,9 +68,10 @@ class Quote extends Model
      */
     public function getTaxAmountAttribute(): float
     {
-        if (!$this->apply_tax || $this->tax_percentage === null) {
+        if (! $this->apply_tax || $this->tax_percentage === null) {
             return 0.0;
         }
+
         return round($this->subtotal * (float) $this->tax_percentage / 100, 2);
     }
 
@@ -81,9 +80,10 @@ class Quote extends Model
      */
     public function getBankFeeAmountAttribute(): float
     {
-        if (!$this->apply_bank_fee || $this->bank_fee_value === null) {
+        if (! $this->apply_bank_fee || $this->bank_fee_value === null) {
             return 0.0;
         }
+
         return round((float) $this->bank_fee_value, 2);
     }
 

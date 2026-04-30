@@ -271,6 +271,9 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     // Artisan Commands (solo super_admin)
     Route::post('/settings/artisan', [SettingsController::class, 'artisanCommand'])->name('settings.artisan');
 
+    // Consola mantenimiento: composer / php artisan restringidos (solo super_admin)
+    Route::post('/settings/maintenance-cli', [SettingsController::class, 'maintenanceCli'])->name('settings.maintenance-cli');
+
     // API: Buscar clientes
     Route::get('/api/companies/search', [CompanyController::class, 'search'])->name('api.companies.search');
 

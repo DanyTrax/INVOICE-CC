@@ -4,9 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Models\Submission;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class QuoteItem extends Model
 {
@@ -27,7 +26,6 @@ class QuoteItem extends Model
         'fee_value',
         'invima_rate_code',
         'invima_rate_value',
-        'is_loan',
     ];
 
     protected function casts(): array
@@ -35,7 +33,6 @@ class QuoteItem extends Model
         return [
             'fee_value' => 'decimal:2',
             'invima_rate_value' => 'decimal:2',
-            'is_loan' => 'boolean',
         ];
     }
 

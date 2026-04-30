@@ -52,7 +52,7 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         <option value="">Seleccione...</option>
                         @foreach($companies as $c)
-                            <option value="{{ $c->id }}" data-allows-loans="{{ $c->allows_loans ? '1' : '0' }}" {{ old('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                            <option value="{{ $c->id }}" {{ old('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -94,9 +94,6 @@
                 <div class="flex gap-2">
                     <button type="button" id="btn-add-row" class="inline-flex items-center px-3 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700">
                         <i class="fas fa-plus mr-2"></i> Agregar fila
-                    </button>
-                    <button type="button" id="btn-add-loan-row" class="hidden inline-flex items-center px-3 py-2 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700" title="Ítem de préstamo (suplido)">
-                        <i class="fas fa-hand-holding-usd mr-2"></i> Agregar ítem de préstamo
                     </button>
                 </div>
             </div>
@@ -177,12 +174,12 @@
                             if (empty($oldItems)) {
                                 $oldItems = [array_merge([
                                     'item_position' => 1, 'service_id' => '', 'service_label' => '', 'service_type_id' => '', 'description' => '', 'row_id' => '', 'previous_license' => '', 'raa_code' => '', 'franquicia' => '', 'centro_costos' => '', 'contacto' => '', 'scope' => '',
-                                    'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '', 'is_loan' => 0,
+                                    'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '',
                                 ], [])];
                             }
                         @endphp
                         @foreach($oldItems as $idx => $item)
-                            <tr class="item-row border-b border-gray-200 {{ !empty($item['is_loan']) ? 'bg-amber-50' : '' }}" data-is-loan="{{ !empty($item['is_loan']) ? '1' : '0' }}">
+                            <tr class="item-row border-b border-gray-200">
                                 <td class="px-2 py-2 item-num">{{ $idx + 1 }}</td>
                                 <td class="px-2 py-2" data-col="row-id">
                                     <input type="text" name="items[{{ $idx }}][row_id]" value="{{ $item['row_id'] ?? '' }}" placeholder="ROW ID" maxlength="128"
@@ -197,7 +194,6 @@
                                 </td>
                                 <td class="px-2 py-2" data-col="tramite">
                                     <input type="hidden" name="items[{{ $idx }}][item_position]" value="{{ $idx + 1 }}">
-                                    <input type="hidden" name="items[{{ $idx }}][is_loan]" value="{{ !empty($item['is_loan']) ? '1' : '0' }}" class="item-is-loan-input">
                                     <textarea
                                         name="items[{{ $idx }}][service_type_name]"
                                         list="service_types_datalist"
@@ -252,14 +248,10 @@
         {{-- Resumen financiero (footer) --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Resumen financiero</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-gray-50 rounded-lg p-4">
                     <p class="text-sm text-gray-600">Total honorarios</p>
                     <p class="text-xl font-semibold text-gray-900" id="display-total-fees">0</p>
-                </div>
-                <div class="bg-amber-50 rounded-lg p-4">
-                    <p class="text-sm text-gray-600">Total suplidos / Préstamos</p>
-                    <p class="text-xl font-semibold text-gray-900" id="display-total-loans">0</p>
                 </div>
                 <div class="bg-teal-50 rounded-lg p-4">
                     <p class="text-sm text-gray-600">Tasas INVIMA</p>
@@ -310,7 +302,7 @@
     </datalist>
 
     <template id="row-template-normal">
-        <tr class="item-row border-b border-gray-200" data-is-loan="0">
+        <tr class="item-row border-b border-gray-200">
             <td class="px-2 py-2 item-num"></td>
             <td class="px-2 py-2" data-col="row-id">
                 <input type="text" name="items[__INDEX__][row_id]" placeholder="ROW ID" maxlength="128"
@@ -324,7 +316,6 @@
             </td>
             <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
-                <input type="hidden" name="items[__INDEX__][is_loan]" value="0" class="item-is-loan-input">
                 <textarea
                     name="items[__INDEX__][service_type_name]"
                     list="service_types_datalist"
@@ -371,78 +362,13 @@
             </td>
         </tr>
     </template>
-    <template id="row-template-loan">
-        <tr class="item-row border-b border-gray-200 bg-amber-50" data-is-loan="1">
-            <td class="px-2 py-2 item-num"></td>
-            <td class="px-2 py-2" data-col="row-id">
-                <input type="text" name="items[__INDEX__][row_id]" placeholder="ROW ID" maxlength="128"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
-            </td>
-            <td class="px-2 py-2">
-                <input type="text" placeholder="Escriba y elija de la lista (obligatorio)" autocomplete="one-time-code" spellcheck="false" data-services-list="1"
-                       class="item-service-input border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50">
-                <input type="hidden" name="items[__INDEX__][service_id]" class="item-service-id-input" value="">
-                <input type="hidden" name="items[__INDEX__][service_label]" class="item-service-label-input" value="">
-            </td>
-            <td class="px-2 py-2" data-col="tramite">
-                <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
-                <input type="hidden" name="items[__INDEX__][is_loan]" value="1" class="item-is-loan-input">
-                <textarea
-                    name="items[__INDEX__][service_type_name]"
-                    list="service_types_datalist"
-                    rows="2"
-                    placeholder="Trámite (se activa al vincular solicitud)"
-                    class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 resize-y"></textarea>
-            </td>
-            <td class="px-2 py-2" data-col="description">
-                <input type="text" name="items[__INDEX__][description]" placeholder="Préstamo / Suplido" maxlength="500"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm bg-amber-50 item-description-input">
-            </td>
-            <td class="px-2 py-2" data-col="prev-license">
-                <input type="text" name="items[__INDEX__][previous_license]" placeholder="-" maxlength="64"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
-            </td>
-            <td class="px-2 py-2" data-col="raa">
-                <input type="text" name="items[__INDEX__][raa_code]" placeholder="-" maxlength="64"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
-            </td>
-            <td class="px-2 py-2" data-col="franquicia">
-                <input type="text" name="items[__INDEX__][franquicia]" placeholder="Franquicia" maxlength="255"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
-            </td>
-            <td class="px-2 py-2" data-col="centro-costos">
-                <input type="text" name="items[__INDEX__][centro_costos]" placeholder="Centro de costos" maxlength="255"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
-            </td>
-            <td class="px-2 py-2" data-col="contacto">
-                <input type="text" name="items[__INDEX__][contacto]" placeholder="Contacto" maxlength="255"
-                       class="border border-gray-300 rounded-lg p-2 w-full text-sm">
-            </td>
-            <td class="px-2 py-2">
-                <textarea name="items[__INDEX__][scope]" rows="2" placeholder="Alcance" maxlength="1000"
-                          class="js-autoresize item-scope-input border border-gray-300 rounded-lg p-2 w-full text-sm resize-y"></textarea>
-            </td>
-            <td class="px-2 py-2">
-                <input type="number" name="items[__INDEX__][fee_value]" placeholder="0" min="0" step="0.01" required
-                       class="item-value border border-gray-300 rounded-lg p-2 w-full text-sm">
-                <input type="hidden" name="items[__INDEX__][invima_rate_code]" value="">
-                <input type="hidden" name="items[__INDEX__][invima_rate_value]" value="0">
-            </td>
-            <td class="px-2 py-2">
-                <button type="button" class="btn-remove-row text-red-600 hover:text-red-800 p-1" title="Quitar fila"><i class="fas fa-trash-alt"></i></button>
-            </td>
-        </tr>
-    </template>
 
     @push('scripts')
     <script>
     (function() {
         const tbody = document.getElementById('items-tbody');
         const templateNormal = document.getElementById('row-template-normal');
-        const templateLoan = document.getElementById('row-template-loan');
         const btnAdd = document.getElementById('btn-add-row');
-        const btnAddLoan = document.getElementById('btn-add-loan-row');
-        const clientSelect = document.getElementById('client_id');
         const togglePrev = document.getElementById('toggle-prev-license');
         const toggleRaa = document.getElementById('toggle-raa');
         const toggleTramite = document.getElementById('toggle-tramite');
@@ -490,17 +416,7 @@
             updateTotals();
         }
 
-        function updateLoanButtonVisibility() {
-            const opt = clientSelect.options[clientSelect.selectedIndex];
-            const allowsLoans = opt && opt.getAttribute('data-allows-loans') === '1';
-            if (allowsLoans) {
-                btnAddLoan.classList.remove('hidden');
-            } else {
-                btnAddLoan.classList.add('hidden');
-            }
-        }
-
-        function setColumnEnabled(key, enabled) {
+        function updateBankFeeVisibility() {
             document.querySelectorAll('[data-col=\"' + key + '\"]').forEach(function(cell) {
                 if (enabled) {
                     cell.classList.remove('hidden');
@@ -525,9 +441,8 @@
             syncColumnHiddenInputs();
         }
 
-        function addRow(isLoan) {
-            const template = isLoan ? templateLoan : templateNormal;
-            const html = template.innerHTML.replace(/__INDEX__/g, rowIndex);
+        function addRow() {
+            const html = templateNormal.innerHTML.replace(/__INDEX__/g, rowIndex);
             tbody.insertAdjacentHTML('beforeend', html);
             const row = tbody.lastElementChild;
             const posInput = row.querySelector('.item-position-input');
@@ -583,16 +498,14 @@
         }
 
         function updateTotals() {
-            let totalFees = 0, totalLoans = 0, totalInvima = 0;
+            let totalFees = 0, totalInvima = 0;
             tbody.querySelectorAll('.item-row').forEach(function(row) {
                 const val = parseFloat(row.querySelector('.item-value')?.value || 0) || 0;
+                totalFees += val;
                 const invimaInput = row.querySelector('input[name$="[invima_rate_value]"]');
                 if (invimaInput) totalInvima += parseFloat(invimaInput.value || 0) || 0;
-                const isLoan = row.getAttribute('data-is-loan') === '1';
-                if (isLoan) totalLoans += val;
-                else totalFees += val;
             });
-            const subtotal = totalFees + totalLoans + totalInvima;
+            const subtotal = totalFees + totalInvima;
             const applyTax = toggleApplyTax?.checked;
             const taxPct = parseFloat(document.getElementById('tax_percentage')?.value || 0) || 0;
             const ivaAmount = applyTax ? Math.round(subtotal * taxPct / 100 * 100) / 100 : 0;
@@ -601,10 +514,8 @@
             const totalWithTax = subtotal + ivaAmount + bankFee;
 
             const feesEl = document.getElementById('display-total-fees');
-            const loansEl = document.getElementById('display-total-loans');
             const invimaEl = document.getElementById('display-total-invima');
             if (feesEl) feesEl.textContent = formatNum(totalFees);
-            if (loansEl) loansEl.textContent = formatNum(totalLoans);
             if (invimaEl) invimaEl.textContent = formatNum(totalInvima);
 
             const grandEl = document.getElementById('display-grand-total');
@@ -638,9 +549,7 @@
             return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
         }
 
-        clientSelect.addEventListener('change', updateLoanButtonVisibility);
-        btnAdd.addEventListener('click', function() { addRow(false); });
-        btnAddLoan.addEventListener('click', function() { addRow(true); });
+        btnAdd.addEventListener('click', function() { addRow(); });
         if (togglePrev) togglePrev.addEventListener('change', updateColumnVisibility);
         if (toggleRaa) toggleRaa.addEventListener('change', updateColumnVisibility);
         if (toggleTramite) toggleTramite.addEventListener('change', updateColumnVisibility);
@@ -761,7 +670,6 @@
 
         tbody.querySelectorAll('.item-row').forEach(bindRowEvents);
         updateRowNumbers();
-        updateLoanButtonVisibility();
         updateColumnVisibility();
         updateTaxSectionVisibility();
         updateTotals();

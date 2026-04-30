@@ -1927,6 +1927,35 @@
                                     </button>
                                 </div>
                             </div>
+
+                            <div class="border-t border-gray-200 pt-4 mt-4">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-terminal mr-1 text-gray-500"></i>
+                                    Consola de mantenimiento
+                                </h4>
+                                <p class="text-xs text-gray-600 mb-3">
+                                    Ejecuta una sola línea desde el servidor (raíz del proyecto), para lo que no tiene botón — por ejemplo
+                                    <code class="text-[11px] bg-gray-100 px-1 py-0.5 rounded">composer require doctrine/dbal --no-interaction</code>.
+                                    Solo rol <strong>super_admin</strong>. No uses pipes, punto y coma, <code>&amp;</code>, redirecciones ni comillas.
+                                </p>
+                                <p class="text-xs text-gray-500 mb-3">
+                                    <strong>Composer:</strong> subcomandos permitidos:
+                                    require, install, update, remove, dump-autoload, validate, show, clear-cache.
+                                    <strong>Artisan:</strong> los de los botones más migrate (con o sin <code class="text-[11px] bg-gray-100 px-1 rounded">--force</code>), storage:link, about, db:show, queue:restart, config:cache, route:cache, view:cache.
+                                </p>
+                                <div class="space-y-2">
+                                    <label for="maintenance-cli-command" class="sr-only">Comando</label>
+                                    <textarea id="maintenance-cli-command" rows="3" autocomplete="off" spellcheck="false"
+                                              placeholder="composer require doctrine/dbal --no-interaction"
+                                              class="w-full font-mono text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 text-gray-900 focus:ring-teal-500 focus:border-teal-500"></textarea>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button type="button" id="maintenance-cli-run" onclick="executeMaintenanceCli()"
+                                                class="px-4 py-2 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:ring-4 focus:outline-none focus:ring-slate-400">
+                                            <i class="fas fa-play mr-2"></i>Ejecutar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="git-pull-output" class="hidden mt-4 bg-gray-900 text-green-400 font-mono text-sm rounded-lg p-4 max-h-96 overflow-y-auto">
@@ -3293,6 +3322,67 @@ function executeGitPull(branch) {
     .finally(() => {
         // Rehabilitar botones
         buttons.forEach(btn => btn.disabled = false);
+    });
+}
+
+function executeMaintenanceCli() {
+    const ta = document.getElementById('maintenance-cli-command');
+    const runBtn = document.getElementById('maintenance-cli-run');
+    if (!ta || !runBtn) return;
+
+    const command = String(ta.value || '').trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean)[0] || '';
+    const outputDiv = document.getElementById('git-pull-output');
+    const resultPre = document.getElementById('git-pull-result');
+
+    if (!command) {
+        alert('Escribe un comando (una sola línea).');
+        return;
+    }
+
+    if (!outputDiv || !resultPre) return;
+
+    outputDiv.classList.remove('hidden');
+    resultPre.textContent = 'Ejecutando: ' + command + '\n';
+
+    const disableSelectors = [
+        'button[onclick*="executeGitPull"]',
+        'button[onclick*="executeArtisanCommand"]',
+        '#maintenance-cli-run',
+    ];
+    const toDisable = [];
+    disableSelectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(btn => toDisable.push(btn));
+    });
+    toDisable.forEach(btn => { btn.disabled = true; });
+
+    fetch('{{ route("admin.settings.maintenance-cli") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ command: command })
+    })
+    .then(response => response.json().then(data => ({ ok: response.ok, data })))
+    .then(({ ok, data }) => {
+        if (data.success) {
+            resultPre.textContent = '✅ ' + (data.message || 'OK') + '\n\n' + (data.output || '');
+            resultPre.classList.remove('text-red-400');
+            resultPre.classList.add('text-green-400');
+        } else {
+            resultPre.textContent = '❌ ' + (data.message || 'Error') + '\n\n' + (data.output || '');
+            resultPre.classList.remove('text-green-400');
+            resultPre.classList.add('text-red-400');
+        }
+    })
+    .catch(error => {
+        resultPre.textContent = '❌ Error: ' + error.message;
+        resultPre.classList.remove('text-green-400');
+        resultPre.classList.add('text-red-400');
+    })
+    .finally(() => {
+        toDisable.forEach(btn => { btn.disabled = false; });
     });
 }
 

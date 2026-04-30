@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Process extends Model
 {
@@ -233,6 +234,8 @@ class Process extends Model
         'quote_item_id',
         'quote_id',
         'client_id',
+        'request_sequence',
+        'solicitud_code',
         'service_type_id',
         'product_reference',
         'email_name',
@@ -264,6 +267,56 @@ class Process extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'client_id');
+    }
+
+    /**
+     * Código visible de la solicitud (ej. PG-001). Inmutable tras creación. Si falta, se usa el id interno.
+     */
+    public function displayReference(): string
+    {
+        if (! empty($this->solicitud_code)) {
+            return (string) $this->solicitud_code;
+        }
+
+        return (string) $this->id;
+    }
+
+    /**
+     * Crea un proceso asignando correlativo y código bajo el cliente (transacción + bloqueo).
+     *
+     * @param  array<string, mixed>  $attributes
+     *
+     * @throws \RuntimeException Si la empresa no tiene siglas.
+     */
+    public static function createWithSolicitudCode(array $attributes): self
+    {
+        $clientId = (int) ($attributes['client_id'] ?? 0);
+        if ($clientId < 1) {
+            throw new \InvalidArgumentException('client_id es obligatorio.');
+        }
+
+        return DB::transaction(function () use ($attributes, $clientId) {
+            $company = Company::query()->whereKey($clientId)->lockForUpdate()->first();
+            if (! $company) {
+                throw new \InvalidArgumentException('Empresa no encontrada.');
+            }
+
+            $raw = (string) $company->code_abbreviation;
+            $prefix = strtoupper(preg_replace('/[^A-Za-z]/', '', $raw) ?? '');
+            if ($prefix === '' || mb_strlen($prefix) < 2) {
+                throw new \RuntimeException('La empresa debe tener siglas (2–10 letras) para crear solicitudes. Edite la empresa en el directorio.');
+            }
+
+            $prefix = mb_substr($prefix, 0, 10);
+
+            $max = (int) static::query()->where('client_id', $clientId)->max('request_sequence');
+            $seq = $max + 1;
+            $attributes['request_sequence'] = $seq;
+            $width = max(3, strlen((string) $seq));
+            $attributes['solicitud_code'] = $prefix.'-'.str_pad((string) $seq, $width, '0', STR_PAD_LEFT);
+
+            return static::create($attributes);
+        });
     }
 
     public function checklistItems(): HasMany

@@ -42,9 +42,21 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         <option value="">Seleccione...</option>
                         @foreach($companies as $c)
-                            <option value="{{ $c->id }}" {{ old('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                            @php
+                                $rawAbbr = (string) ($c->code_abbreviation ?? '');
+                                $clean = strtoupper(preg_replace('/[^A-Za-z]/', '', $rawAbbr) ?? '');
+                                $siglasOk = mb_strlen($clean) >= 2;
+                            @endphp
+                            <option value="{{ $c->id }}"
+                                    data-siglas-ok="{{ $siglasOk ? '1' : '0' }}"
+                                    data-edit-url="{{ route('admin.companies.edit', $c) }}"
+                                    {{ old('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                         @endforeach
                     </select>
+                    <p id="client_siglas_warn" class="mt-2 hidden text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2" role="status">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> Esta empresa no tiene siglas válidas para numerar solicitudes (2–10 letras).
+                        <a id="client_siglas_edit_link" href="{{ route('admin.companies.index') }}" class="font-medium underline hover:text-amber-900">Editar empresa</a>
+                    </p>
                 </div>
                 <div>
                     <label for="service_type_name" class="block mb-2 text-sm font-medium text-gray-900">Tipo de trámite <span class="text-red-500">*</span></label>
@@ -70,7 +82,7 @@
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                 </div>
                 <div>
-                    <label for="email_name" class="block mb-2 text-sm font-medium text-gray-900">Nombre de correo</label>
+                    <label for="email_name" class="block mb-2 text-sm font-medium text-gray-900">Nombre del correo de la solicitud</label>
                     <input type="text"
                            name="email_name"
                            id="email_name"
@@ -98,3 +110,27 @@
         @endforeach
     </datalist>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var sel = document.getElementById('client_id');
+    var warn = document.getElementById('client_siglas_warn');
+    var link = document.getElementById('client_siglas_edit_link');
+    if (!sel || !warn) return;
+    function sync() {
+        var opt = sel.options[sel.selectedIndex];
+        if (!opt || !opt.value) {
+            warn.classList.add('hidden');
+            return;
+        }
+        var ok = opt.getAttribute('data-siglas-ok') === '1';
+        warn.classList.toggle('hidden', ok);
+        var u = opt.getAttribute('data-edit-url');
+        if (link && u) link.href = u;
+    }
+    sel.addEventListener('change', sync);
+    sync();
+})();
+</script>
+@endpush

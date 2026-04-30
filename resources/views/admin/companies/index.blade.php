@@ -30,7 +30,7 @@
                     <input type="text" 
                            name="search" 
                            value="{{ request('search') }}"
-                           placeholder="Buscar por nombre, NIT o email..." 
+                           placeholder="Buscar por nombre, siglas, NIT o email..." 
                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500">
                 </div>
                 <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
@@ -57,6 +57,7 @@
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 pl-4">Empresa</th>
+                        <th scope="col" class="px-6 py-3">Siglas</th>
                         <th scope="col" class="px-6 py-3">NIT/RUT</th>
                         <th scope="col" class="px-6 py-3">País</th>
                         <th scope="col" class="px-6 py-3">Contacto</th>
@@ -77,8 +78,10 @@
                                     <span>{{ $company->name }}</span>
                                 </div>
                             </td>
+                            <td class="px-6 py-4 font-mono text-sm text-gray-800" title="Código en solicitudes (PG-001, …)">
+                                {{ $company->code_abbreviation ?: '—' }}
+                            </td>
                             <td class="px-6 py-4">
-                                {{ $company->nit_rut }}
                             </td>
                             <td class="px-6 py-4">
                                 {{ $company->country ?? '-' }}
@@ -150,7 +153,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="9" class="px-6 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
                                 <p>No se encontraron empresas</p>
                                 @if(request('search'))

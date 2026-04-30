@@ -10,6 +10,7 @@ class Company extends Model
 {
     protected $fillable = [
         'name',
+        'code_abbreviation',
         'nit_rut',
         'address',
         'country',
@@ -20,15 +21,7 @@ class Company extends Model
         'contact_person_name',
         'contact_person_email',
         'drive_folder_id',
-        'allows_loans',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'allows_loans' => 'boolean',
-        ];
-    }
 
     /**
      * Usuarios (clientes) asignados a la empresa, con descripción opcional en el vínculo (ej. contabilidad, gestor).
@@ -154,5 +147,39 @@ class Company extends Model
     public function hasLogo(): bool
     {
         return $this->logoSrcForImg() !== null;
+    }
+
+    /**
+     * Sugerencia de siglas (2–3 letras) a partir del nombre comercial, para mostrar en formularios.
+     * Ej. «Peperon Gord» → «PG». El usuario puede editar a PEG, PGO, etc.
+     */
+    public static function suggestCodeAbbreviationFromName(string $name): string
+    {
+        $name = trim(preg_replace('/\s+/u', ' ', $name));
+        if ($name === '') {
+            return '';
+        }
+
+        $parts = preg_split('/\s+/u', $name) ?: [];
+        $parts = array_values(array_filter($parts, fn ($p) => $p !== ''));
+
+        if (count($parts) === 0) {
+            return '';
+        }
+
+        if (count($parts) === 1) {
+            $only = $parts[0];
+            $letters = preg_replace('/[^[:alpha:]]/u', '', $only) ?? '';
+
+            return mb_strtoupper(mb_substr($letters !== '' ? $letters : $only, 0, 3));
+        }
+
+        $out = '';
+        foreach (array_slice($parts, 0, 4) as $p) {
+            $letters = preg_replace('/[^[:alpha:]]/u', '', $p) ?? '';
+            $out .= $letters !== '' ? mb_substr($letters, 0, 1) : mb_substr($p, 0, 1);
+        }
+
+        return mb_strtoupper(mb_substr($out, 0, 3));
     }
 }

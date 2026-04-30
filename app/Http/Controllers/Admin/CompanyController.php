@@ -28,6 +28,7 @@ class CompanyController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('nit_rut', 'like', "%{$search}%")
+                    ->orWhere('code_abbreviation', 'like', "%{$search}%")
                     ->orWhere('contact_person_email', 'like', "%{$search}%")
                     ->orWhereHas('users', function ($uq) use ($search) {
                         $uq->where('name', 'like', "%{$search}%")
@@ -60,9 +61,13 @@ class CompanyController extends Controller
     public function store(Request $request)
     {
         $countriesList = config('countries', []);
+        $request->merge([
+            'nit_rut' => $this->normalizeNitRutForStorage($request->input('nit_rut')),
+        ]);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'nit_rut' => 'required|string|max:50|unique:companies,nit_rut',
+            'code_abbreviation' => 'required|string|min:2|max:10',
+            'nit_rut' => ['nullable', 'string', 'max:50', Rule::unique('companies', 'nit_rut')],
             'address' => 'nullable|string|max:500',
             'country' => [
                 'nullable',
@@ -73,13 +78,19 @@ class CompanyController extends Controller
             'phone' => 'nullable|string|max:50',
             'invite_email' => 'nullable|email|max:255',
             'drive_folder_id' => 'nullable|string|max:255',
-            'allows_loans' => 'nullable|boolean',
         ], [
             'country.in' => 'Debe seleccionar un país de la lista (escriba para buscar y elija una opción).',
+            'code_abbreviation.required' => 'Indique las siglas de la empresa (usadas en el código de cada solicitud, ej. PG-001).',
         ], [
             'country' => 'país',
+            'code_abbreviation' => 'siglas',
         ]);
-        $validated['allows_loans'] = $request->boolean('allows_loans');
+        $validated['code_abbreviation'] = $this->normalizeCodeAbbreviation($validated['code_abbreviation']);
+        if (strlen($validated['code_abbreviation']) < 2) {
+            return redirect()->back()->withInput()->withErrors([
+                'code_abbreviation' => 'Las siglas deben tener al menos 2 letras (A-Z).',
+            ]);
+        }
         $inviteEmail = $validated['invite_email'] ?? null;
         unset($validated['invite_email']);
 
@@ -91,8 +102,19 @@ class CompanyController extends Controller
 
         $this->validateClientAssignments($request);
 
-        // Crear carpeta en Google Drive: Base → País → Empresa (sin carpeta "Clientes" intermedia)
-        if (empty($validated['drive_folder_id'])) {
+        $manualDriveFolderId = isset($validated['drive_folder_id']) && trim((string) $validated['drive_folder_id']) !== ''
+            ? trim((string) $validated['drive_folder_id'])
+            : null;
+        if ($manualDriveFolderId === null) {
+            $validated['drive_folder_id'] = null;
+        }
+
+        $company = Company::create($validated);
+
+        $company->syncClientAssignments($this->parseClientAssignments($request));
+
+        // Carpetas de Drive solo después de persistir la empresa (evita carpetas huérfanas si falla el INSERT)
+        if ($manualDriveFolderId === null) {
             try {
                 $driveService = app(GoogleDriveService::class);
                 $folderName = $validated['name'].' - '.($validated['nit_rut'] ?? 'Sin NIT');
@@ -101,7 +123,7 @@ class CompanyController extends Controller
                     ? $driveService->getOrCreateCountryFolder($country)
                     : $driveService->getOrCreateClientsFolder(null);
                 $folder = $driveService->createFolder($folderName, $parentId);
-                $validated['drive_folder_id'] = $folder['id'];
+                $company->update(['drive_folder_id' => $folder['id']]);
 
                 Log::info('Carpeta de Google Drive creada para cliente', [
                     'company_name' => $validated['name'],
@@ -112,13 +134,8 @@ class CompanyController extends Controller
                     'company_name' => $validated['name'],
                     'error' => $e->getMessage(),
                 ]);
-                // Continuar sin carpeta si hay error
             }
         }
-
-        $company = Company::create($validated);
-
-        $company->syncClientAssignments($this->parseClientAssignments($request));
 
         $sendInvite = $request->boolean('send_invite_email');
         if ($sendInvite && ! empty($inviteEmail)) {
@@ -172,11 +189,15 @@ class CompanyController extends Controller
                 $producto = $p->product_reference ?: ($p->expediente_invima ?? '') ?: ($p->quoteItem?->serviceType?->name ?? $p->serviceType?->name ?? '');
                 $expediente = $p->expediente_invima ?? '';
                 $tipoTramite = $p->quoteItem?->serviceType?->name ?? $p->serviceType?->name ?? '';
+                $codigo = (string) ($p->solicitud_code ?? '');
+                $idStr = (string) $p->getKey();
 
                 return str_contains(mb_strtolower($origen), $searchLower)
                     || str_contains(mb_strtolower($producto), $searchLower)
                     || str_contains(mb_strtolower((string) $expediente), $searchLower)
-                    || str_contains(mb_strtolower($tipoTramite), $searchLower);
+                    || str_contains(mb_strtolower($tipoTramite), $searchLower)
+                    || str_contains(mb_strtolower($codigo), $searchLower)
+                    || str_contains($idStr, $searchLower);
             })->values();
         }
 
@@ -217,9 +238,13 @@ class CompanyController extends Controller
     public function update(Request $request, Company $company)
     {
         $countriesList = config('countries', []);
+        $request->merge([
+            'nit_rut' => $this->normalizeNitRutForStorage($request->input('nit_rut')),
+        ]);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'nit_rut' => 'required|string|max:50|unique:companies,nit_rut,'.$company->id,
+            'code_abbreviation' => 'required|string|min:2|max:10',
+            'nit_rut' => ['nullable', 'string', 'max:50', Rule::unique('companies', 'nit_rut')->ignore($company->id)],
             'address' => 'nullable|string|max:500',
             'country' => [
                 'nullable',
@@ -229,13 +254,19 @@ class CompanyController extends Controller
             ],
             'phone' => 'nullable|string|max:50',
             'drive_folder_id' => 'nullable|string|max:255',
-            'allows_loans' => 'nullable|boolean',
         ], [
             'country.in' => 'Debe seleccionar un país de la lista (escriba para buscar y elija una opción).',
+            'code_abbreviation.required' => 'Indique las siglas de la empresa (usadas en el código de cada solicitud, ej. PG-001).',
         ], [
             'country' => 'país',
+            'code_abbreviation' => 'siglas',
         ]);
-        $validated['allows_loans'] = $request->boolean('allows_loans');
+        $validated['code_abbreviation'] = $this->normalizeCodeAbbreviation($validated['code_abbreviation']);
+        if (strlen($validated['code_abbreviation']) < 2) {
+            return redirect()->back()->withInput()->withErrors([
+                'code_abbreviation' => 'Las siglas deben tener al menos 2 letras (A-Z).',
+            ]);
+        }
 
         $request->validate([
             'logo' => 'nullable|file|max:2048|mimes:jpeg,jpg,png,gif,webp,svg',
@@ -660,5 +691,29 @@ class CompanyController extends Controller
         return $fallback && $fallback->error_message
             ? (strlen($fallback->error_message) > 200 ? substr($fallback->error_message, 0, 197).'…' : $fallback->error_message)
             : null;
+    }
+
+    protected function normalizeCodeAbbreviation(string $value): string
+    {
+        return strtoupper((string) preg_replace('/[^A-Za-z]/', '', $value));
+    }
+
+    /**
+     * Vacío o solo ceros (0, 00…) se guarda como NULL: permite varias filas "sin NIT" sin violar UNIQUE.
+     */
+    protected function normalizeNitRutForStorage(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        $s = trim($value);
+        if ($s === '') {
+            return null;
+        }
+        if (preg_match('/^0+$/', $s) === 1) {
+            return null;
+        }
+
+        return $s;
     }
 }

@@ -2,7 +2,7 @@
 
 @section('title', 'Solicitud - RAMS')
 
-@section('page-title', 'Solicitud #' . $process->id . ($process->expediente_invima ? ' – ' . $process->expediente_invima : ''))
+@section('page-title', 'Solicitud ' . $process->displayReference() . ($process->expediente_invima ? ' – INVIMA ' . $process->expediente_invima : ''))
 
 @section('breadcrumb')
     <li>
@@ -42,7 +42,7 @@
                     </div>
                     @endif
                     <div>
-                        <dt class="text-gray-500">Nombre de correo</dt>
+                        <dt class="text-gray-500">Nombre del correo de la solicitud</dt>
                         <dd class="font-medium text-gray-900">{{ $process->email_name ?? '-' }}</dd>
                     </div>
                     <div>

@@ -60,6 +60,7 @@ class GeneralProcessExport implements FromQuery, WithHeadings, WithMapping
             $query->where(function ($q) use ($search) {
                 $q->where('product_reference', 'like', "%{$search}%")
                     ->orWhere('expediente_invima', 'like', "%{$search}%")
+                    ->orWhere('solicitud_code', 'like', "%{$search}%")
                     ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"))
                     ->orWhereHas('quoteItem.quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"));
@@ -112,6 +113,7 @@ class GeneralProcessExport implements FromQuery, WithHeadings, WithMapping
         }
 
         return [
+            $process->displayReference(),
             $fechaSolicitud ? $fechaSolicitud->format('d/m/Y') : '',
             $process->client?->name ?? '',
             $process->quoteItem?->serviceType?->name ?? $process->serviceType?->name ?? '',
@@ -128,6 +130,7 @@ class GeneralProcessExport implements FromQuery, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
+            'Código solicitud',
             'Fecha Solicitud',
             'Cliente',
             'Tipo Trámite',

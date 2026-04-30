@@ -41,6 +41,34 @@
                     @enderror
                 </div>
 
+                <!-- Siglas (código solicitud PG-001, etc.) -->
+                <div>
+                    <label for="code_abbreviation" class="block mb-2 text-sm font-medium text-gray-900">
+                        Siglas de solicitud <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="text"
+                               id="code_abbreviation"
+                               name="code_abbreviation"
+                               value="{{ old('code_abbreviation') }}"
+                               required
+                               maxlength="10"
+                               pattern="[A-Za-z]{2,10}"
+                               autocomplete="off"
+                               placeholder="Ej: PG, PEG"
+                               title="Solo letras, 2 a 10 caracteres"
+                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full max-w-xs p-2.5 uppercase @error('code_abbreviation') border-red-500 @enderror">
+                        <button type="button" id="btn_suggest_abbr"
+                                class="shrink-0 px-3 py-2 text-sm font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100">
+                            Sugerir desde el nombre
+                        </button>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">2–10 letras (mayúsculas al guardar). Se usarán en el código visible de cada solicitud de esta empresa (ej. <span class="font-mono">PG-001</span>). Puede editarlas cuando quiera.</p>
+                    @error('code_abbreviation')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- NIT/RUT -->
                 <div>
                     <label for="nit_rut" class="block mb-2 text-sm font-medium text-gray-900">
@@ -123,22 +151,6 @@
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                 </div>
 
-                <!-- Préstamos de Tasa INVIMA -->
-                <div class="md:col-span-2">
-                    <div class="flex items-start">
-                        <input type="checkbox" 
-                               id="allows_loans" 
-                               name="allows_loans" 
-                               value="1"
-                               {{ old('allows_loans') ? 'checked' : '' }}
-                               class="mt-1 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                        <label for="allows_loans" class="ml-2 block text-sm text-gray-900">
-                            <span class="font-medium">¿Este cliente opera con Préstamos de Tasa INVIMA?</span>
-                            <span class="block text-gray-500 mt-0.5">Si está marcado, en las cotizaciones se podrá agregar ítems de préstamo (suplidos).</span>
-                        </label>
-                    </div>
-                </div>
-
                 <!-- Invitar correo externo (aún no es usuario) -->
                 <div class="md:col-span-2">
                     <label for="invite_email" class="block mb-2 text-sm font-medium text-gray-900">
@@ -182,3 +194,44 @@
         </form>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    function suggestFromName(name) {
+        name = name.trim().replace(/\s+/g, ' ');
+        if (!name) return '';
+        const parts = name.split(/\s+/).filter(Boolean);
+        if (!parts.length) return '';
+        if (parts.length === 1) {
+            const only = parts[0];
+            const letters = only.replace(/[^a-zA-ZÀ-ÿ]/g, '');
+            const src = letters || only;
+            return src.slice(0, 3).toUpperCase();
+        }
+        let out = '';
+        for (const p of parts.slice(0, 4)) {
+            const letters = p.replace(/[^a-zA-ZÀ-ÿ]/g, '');
+            out += letters ? letters[0] : (p[0] || '');
+        }
+        return out.slice(0, 3).toUpperCase();
+    }
+    const nameEl = document.getElementById('name');
+    const abbrEl = document.getElementById('code_abbreviation');
+    const btn = document.getElementById('btn_suggest_abbr');
+    if (!nameEl || !abbrEl) return;
+    let abbrTouched = {{ filled(old('code_abbreviation')) ? 'true' : 'false' }};
+    nameEl.addEventListener('input', function () {
+        if (abbrTouched) return;
+        const s = suggestFromName(nameEl.value);
+        abbrEl.value = s;
+    });
+    abbrEl.addEventListener('input', function () {
+        abbrTouched = true;
+    });
+    btn && btn.addEventListener('click', function () {
+        abbrEl.value = suggestFromName(nameEl.value);
+    });
+})();
+</script>
+@endpush

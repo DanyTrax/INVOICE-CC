@@ -115,7 +115,10 @@
                                 <td class="px-6 py-3 text-xs">{{ $invite->expires_at?->format('d/m/Y H:i') ?? '—' }}</td>
                                 <td class="px-6 py-3 text-right">
                                     <div class="inline-flex items-center justify-end gap-3">
-                                        <form action="{{ route('admin.company-invites.resend', $invite) }}" method="POST" class="inline">
+                                        <form action="{{ route('admin.company-invites.resend', $invite) }}"
+                                              method="POST"
+                                              class="inline js-confirm-resend-invite-form"
+                                              data-invite-email="{{ e($invite->email) }}">
                                             @csrf
                                             <button type="submit" class="text-teal-700 hover:text-teal-900 text-sm font-medium" title="Generar nuevo enlace y reenviar correo">
                                                 <i class="fas fa-redo mr-1"></i> Reenviar
@@ -233,7 +236,11 @@
                                 @php $canEditThis = in_array($user->id, $editableUserIds ?? []); @endphp
                                 <div class="flex items-center justify-end gap-2">
                                     @if(($listingType === 'agents' || $listingType === 'clients') && $user->id !== auth()->id() && $canEditThis)
-                                        <form action="{{ route('admin.users.send-access-email', $user) }}" method="POST" class="inline">
+                                        <form action="{{ route('admin.users.send-access-email', $user) }}"
+                                              method="POST"
+                                              class="inline js-confirm-send-access-email-form"
+                                              data-recipient-name="{{ e($user->name) }}"
+                                              data-recipient-email="{{ e($user->email) }}">
                                             @csrf
                                             <button type="submit"
                                                     class="text-amber-600 hover:text-amber-800"
@@ -290,3 +297,70 @@
         @endif
     </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    function escapeHtml(s) {
+        if (s == null || s === '') return '';
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    function bindConfirmForms(selector, getSwalOptions) {
+        document.querySelectorAll(selector).forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                if (form.dataset.mailFlowConfirmed === '1') {
+                    return;
+                }
+                e.preventDefault();
+                if (typeof Swal === 'undefined') {
+                    if (window.confirm('¿Confirmar envío del correo?')) {
+                        form.dataset.mailFlowConfirmed = '1';
+                        form.submit();
+                    }
+                    return;
+                }
+                var opts = getSwalOptions(form);
+                Swal.fire(opts).then(function (r) {
+                    if (r.isConfirmed) {
+                        form.dataset.mailFlowConfirmed = '1';
+                        form.submit();
+                    }
+                });
+            });
+        });
+    }
+
+    bindConfirmForms('.js-confirm-send-access-email-form', function (form) {
+        var name = form.getAttribute('data-recipient-name') || '—';
+        var email = form.getAttribute('data-recipient-email') || '—';
+        return {
+            title: '¿Enviar correo de acceso?',
+            html: '<p class="text-left text-gray-600 mb-0">Se enviará un correo a <strong>' + escapeHtml(name) + '</strong> (<strong>' + escapeHtml(email) + '</strong>) con el enlace de activación o recuperación de contraseña, según corresponda.</p>',
+            icon: 'question',
+            showCancelButton: true,
+            focusCancel: true,
+            confirmButtonText: 'Sí, enviar correo',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0f766e',
+        };
+    });
+
+    bindConfirmForms('.js-confirm-resend-invite-form', function (form) {
+        var email = form.getAttribute('data-invite-email') || '—';
+        return {
+            title: '¿Reenviar invitación?',
+            html: '<p class="text-left text-gray-600 mb-0">Se generará un nuevo enlace y se enviará el correo de invitación a <strong>' + escapeHtml(email) + '</strong>. El enlace anterior dejará de ser válido.</p>',
+            icon: 'question',
+            showCancelButton: true,
+            focusCancel: true,
+            confirmButtonText: 'Sí, reenviar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0f766e',
+        };
+    });
+})();
+</script>
+@endpush

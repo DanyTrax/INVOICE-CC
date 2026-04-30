@@ -7,11 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Models\DriveOperationLog;
 use App\Models\EmailLog;
 use App\Models\EmailTemplate;
+use App\Models\LoginIpLockout;
 use App\Models\ProposalPdfTemplate;
 use App\Models\QuotePdfTemplate;
 use App\Models\User;
 use App\Services\GitWorkingCopyService;
 use App\Services\GoogleDriveService;
+use App\Services\LoginLockoutService;
 use App\Services\MailService;
 use App\Services\PermissionService;
 use App\Settings\GeneralSettings;
@@ -175,7 +177,7 @@ class SettingsController extends Controller
         $loginIpLockouts = null;
         if ($section === 'login-lockouts') {
             try {
-                $loginIpLockouts = \App\Models\LoginIpLockout::query()
+                $loginIpLockouts = LoginIpLockout::query()
                     ->orderByRaw('(locked_until IS NOT NULL AND locked_until > ?) DESC', [now()])
                     ->orderByDesc('last_attempt_at')
                     ->orderByDesc('id')
@@ -204,13 +206,13 @@ class SettingsController extends Controller
     /**
      * Desbloquear una IP desde Configuración → Bloqueos de acceso.
      */
-    public function unlockLoginLockout(\App\Models\LoginIpLockout $loginIpLockout): RedirectResponse
+    public function unlockLoginLockout(LoginIpLockout $loginIpLockout): RedirectResponse
     {
         if (! app(PermissionService::class)->userHasPermission('settings_system', 'edit')) {
             abort(403, 'No tienes permiso para esta acción.');
         }
 
-        app(\App\Services\LoginLockoutService::class)->unlock($loginIpLockout);
+        app(LoginLockoutService::class)->unlock($loginIpLockout);
 
         return redirect()
             ->route('admin.settings.section', 'login-lockouts')
@@ -1430,6 +1432,175 @@ class SettingsController extends Controller
     }
 
     /**
+     * Ejecuta un comando en la raíz del proyecto (sin incluir redirección stderr).
+     */
+    protected function runShellInProjectRoot(string $innerCommand): array
+    {
+        $projectPathEscaped = \escapeshellarg(base_path());
+        $fullCommand = "cd {$projectPathEscaped} && {$innerCommand} 2>&1";
+
+        $output = '';
+        $returnCode = 0;
+
+        $disabled = array_filter(array_map('trim', explode(',', (string) ini_get('disable_functions'))));
+
+        if (function_exists('exec') && ! in_array('exec', $disabled, true)) {
+            $outputArray = [];
+            \exec($fullCommand, $outputArray, $returnCode);
+            $output = implode("\n", $outputArray);
+        } elseif (function_exists('shell_exec') && ! in_array('shell_exec', $disabled, true)) {
+            $shellOut = \shell_exec($fullCommand);
+            $output = $shellOut ?? '';
+            $returnCode = $shellOut !== null ? 0 : 1;
+        } elseif (function_exists('passthru') && ! in_array('passthru', $disabled, true)) {
+            \ob_start();
+            \passthru($fullCommand, $returnCode);
+            $output = (string) \ob_get_clean();
+        } elseif (function_exists('proc_open')) {
+            $descriptorspec = [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+
+            $process = \proc_open($fullCommand, $descriptorspec, $pipes);
+
+            if (is_resource($process)) {
+                \fclose($pipes[0]);
+                $output = (string) \stream_get_contents($pipes[1]);
+                \fclose($pipes[1]);
+                \fclose($pipes[2]);
+                $returnCode = \proc_close($process);
+            } else {
+                throw new \Exception('No se pudo ejecutar el comando. Las funciones de ejecución están deshabilitadas.');
+            }
+        } else {
+            throw new \Exception('Las funciones de ejecución de comandos están deshabilitadas en este servidor. Contacta al administrador del servidor.');
+        }
+
+        return ['output' => $output, 'exit_code' => $returnCode];
+    }
+
+    /**
+     * Consola de mantenimiento: solo líneas permitidas (composer / php artisan), sin shell metacharacters.
+     */
+    public function maintenanceCli(Request $request)
+    {
+        if (! auth()->user()->hasRole('super_admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción.',
+            ], 403);
+        }
+
+        $command = trim((string) $request->input('command', ''));
+        if ($command === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Indica un comando.',
+            ], 400);
+        }
+
+        if (strlen($command) > 2000) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Comando demasiado largo.',
+            ], 400);
+        }
+
+        if (! $this->isMaintenanceCliLineAllowed($command)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Comando no permitido o formato inválido. Usa «composer …» (require, install, update, remove, etc.) o «php artisan …» con un comando de la lista permitida, sin pipes ni redirecciones.',
+            ], 400);
+        }
+
+        try {
+            $result = $this->runShellInProjectRoot($command);
+            $ok = $result['exit_code'] === 0;
+
+            return response()->json([
+                'success' => $ok,
+                'message' => $ok ? 'Comando ejecutado' : 'El comando terminó con código '.$result['exit_code'],
+                'output' => $result['output'] !== '' ? $result['output'] : 'Comando ejecutado (sin salida)',
+            ], $ok ? 200 : 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: '.$e->getMessage(),
+                'output' => 'Las funciones de ejecución pueden estar deshabilitadas. Verifica la configuración de PHP (disable_functions).',
+            ], 500);
+        }
+    }
+
+    protected function isMaintenanceCliLineAllowed(string $command): bool
+    {
+        if (preg_match('/[;|&$`(){}\n\r<>\\\\\'\"]/', $command)) {
+            return false;
+        }
+
+        if (str_starts_with(strtolower($command), 'composer')) {
+            return $this->isAllowedComposerMaintenanceLine($command);
+        }
+
+        if (preg_match('/^php\s+artisan\s+/i', $command)) {
+            return $this->isAllowedArtisanMaintenanceLine($command);
+        }
+
+        return false;
+    }
+
+    protected function isAllowedComposerMaintenanceLine(string $command): bool
+    {
+        $allowedSub = ['require', 'install', 'update', 'remove', 'dump-autoload', 'dumpautoload', 'clear-cache', 'validate', 'show'];
+        $tokens = preg_split('/\s+/', trim($command));
+        if (count($tokens) < 2 || strtolower($tokens[0]) !== 'composer') {
+            return false;
+        }
+
+        $i = 1;
+        while ($i < count($tokens) && str_starts_with($tokens[$i], '-')) {
+            $t = $tokens[$i];
+            if (preg_match('/^--working-dir/', $t) || preg_match('/^--file/', $t) || $t === '-d' || str_starts_with($t, '-d=')) {
+                return false;
+            }
+            $i++;
+        }
+
+        $sub = strtolower($tokens[$i] ?? '');
+
+        return in_array($sub, $allowedSub, true);
+    }
+
+    protected function isAllowedArtisanMaintenanceLine(string $command): bool
+    {
+        if (! preg_match('/^php\s+artisan\s+(.+)$/i', $command, $m)) {
+            return false;
+        }
+
+        $rest = trim(preg_replace('/\s+/', ' ', $m[1]));
+
+        $allowed = [
+            'view:clear',
+            'cache:clear',
+            'config:clear',
+            'route:clear',
+            'optimize:clear',
+            'migrate --force',
+            'migrate',
+            'storage:link',
+            'about',
+            'db:show',
+            'queue:restart',
+            'config:cache',
+            'route:cache',
+            'view:cache',
+        ];
+
+        return in_array($rest, $allowed, true);
+    }
+
+    /**
      * Ejecutar git pull
      */
     public function gitPull(Request $request)
@@ -1444,78 +1615,36 @@ class SettingsController extends Controller
 
         $branch = $request->input('branch', 'main');
 
-        // Construir comando según el branch
         if ($branch === 'origin main') {
-            $command = 'git pull origin main 2>&1';
+            $inner = 'git pull origin main';
         } else {
-            $command = "git pull {$branch} 2>&1";
+            if (! is_string($branch) || preg_match('/^[a-zA-Z0-9._\/ -]+$/', $branch) !== 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rama inválida.',
+                ], 400);
+            }
+            $inner = "git pull {$branch}";
         }
 
         try {
-            // Cambiar al directorio del proyecto
-            $projectPath = base_path();
+            $result = $this->runShellInProjectRoot($inner);
+            $output = $result['output'];
+            $returnCode = $result['exit_code'];
 
-            // Verificar qué funciones están disponibles
-            $output = '';
-            $returnCode = 0;
-
-            // Intentar con exec() primero
-            if (function_exists('exec') && ! in_array('exec', explode(',', ini_get('disable_functions')))) {
-                $outputArray = [];
-                \exec("cd {$projectPath} && {$command}", $outputArray, $returnCode);
-                $output = implode("\n", $outputArray);
-            }
-            // Si exec() no está disponible, intentar con shell_exec()
-            elseif (function_exists('shell_exec') && ! in_array('shell_exec', explode(',', ini_get('disable_functions')))) {
-                $output = \shell_exec("cd {$projectPath} && {$command}");
-                $returnCode = $output !== null ? 0 : 1;
-            }
-            // Si ninguna está disponible, usar passthru con output buffering
-            elseif (function_exists('passthru') && ! in_array('passthru', explode(',', ini_get('disable_functions')))) {
-                \ob_start();
-                \passthru("cd {$projectPath} && {$command}", $returnCode);
-                $output = \ob_get_clean();
-            }
-            // Último recurso: usar proc_open
-            elseif (function_exists('proc_open')) {
-                $descriptorspec = [
-                    0 => ['pipe', 'r'],
-                    1 => ['pipe', 'w'],
-                    2 => ['pipe', 'w'],
-                ];
-
-                $process = \proc_open(
-                    "cd {$projectPath} && {$command}",
-                    $descriptorspec,
-                    $pipes
-                );
-
-                if (is_resource($process)) {
-                    \fclose($pipes[0]);
-                    $output = \stream_get_contents($pipes[1]);
-                    \fclose($pipes[1]);
-                    \fclose($pipes[2]);
-                    $returnCode = \proc_close($process);
-                } else {
-                    throw new \Exception('No se pudo ejecutar el comando. Las funciones de ejecución están deshabilitadas.');
-                }
-            } else {
-                throw new \Exception('Las funciones de ejecución de comandos están deshabilitadas en este servidor. Contacta al administrador del servidor.');
-            }
-
-            if ($returnCode === 0 || $output !== null) {
+            if ($returnCode === 0) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Git pull ejecutado exitosamente',
-                    'output' => $output ?: 'Comando ejecutado (sin salida)',
+                    'output' => $output !== '' ? $output : 'Comando ejecutado (sin salida)',
                 ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al ejecutar git pull',
-                    'output' => $output ?: 'No se pudo obtener la salida del comando',
-                ], 500);
             }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al ejecutar git pull',
+                'output' => $output !== '' ? $output : 'No se pudo obtener la salida del comando',
+            ], 500);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -1582,58 +1711,16 @@ class SettingsController extends Controller
         }
 
         try {
-            $projectPath = base_path();
             $allOutput = [];
             $hasError = false;
 
             foreach ($commands as $cmd) {
-                $fullCommand = "cd {$projectPath} && php artisan {$cmd} 2>&1";
-
-                $output = '';
-                $returnCode = 0;
-
-                // Intentar con exec() primero
-                if (function_exists('exec') && ! in_array('exec', explode(',', ini_get('disable_functions')))) {
-                    $outputArray = [];
-                    \exec($fullCommand, $outputArray, $returnCode);
-                    $output = implode("\n", $outputArray);
-                }
-                // Si exec() no está disponible, intentar con shell_exec()
-                elseif (function_exists('shell_exec') && ! in_array('shell_exec', explode(',', ini_get('disable_functions')))) {
-                    $output = \shell_exec($fullCommand);
-                    $returnCode = $output !== null ? 0 : 1;
-                }
-                // Si ninguna está disponible, usar passthru con output buffering
-                elseif (function_exists('passthru') && ! in_array('passthru', explode(',', ini_get('disable_functions')))) {
-                    \ob_start();
-                    \passthru($fullCommand, $returnCode);
-                    $output = \ob_get_clean();
-                }
-                // Último recurso: usar proc_open
-                elseif (function_exists('proc_open')) {
-                    $descriptorspec = [
-                        0 => ['pipe', 'r'],
-                        1 => ['pipe', 'w'],
-                        2 => ['pipe', 'w'],
-                    ];
-
-                    $process = \proc_open($fullCommand, $descriptorspec, $pipes);
-
-                    if (is_resource($process)) {
-                        \fclose($pipes[0]);
-                        $output = \stream_get_contents($pipes[1]);
-                        \fclose($pipes[1]);
-                        \fclose($pipes[2]);
-                        $returnCode = \proc_close($process);
-                    } else {
-                        throw new \Exception('No se pudo ejecutar el comando.');
-                    }
-                } else {
-                    throw new \Exception('Las funciones de ejecución de comandos están deshabilitadas en este servidor.');
-                }
+                $result = $this->runShellInProjectRoot('php artisan '.$cmd);
+                $output = $result['output'];
+                $returnCode = $result['exit_code'];
 
                 $allOutput[] = "=== php artisan {$cmd} ===";
-                $allOutput[] = $output ?: 'Comando ejecutado (sin salida)';
+                $allOutput[] = $output !== '' ? $output : 'Comando ejecutado (sin salida)';
 
                 if ($returnCode !== 0) {
                     $hasError = true;
@@ -1648,13 +1735,13 @@ class SettingsController extends Controller
                     'message' => 'Comando(s) ejecutado(s) exitosamente',
                     'output' => $outputText,
                 ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al ejecutar comando(s)',
-                    'output' => $outputText,
-                ], 500);
             }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al ejecutar comando(s)',
+                'output' => $outputText,
+            ], 500);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

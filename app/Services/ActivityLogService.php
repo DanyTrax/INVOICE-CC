@@ -230,7 +230,7 @@ class ActivityLogService
             $model instanceof User => trim($model->name.' <'.$model->email.'>'),
             $model instanceof Quote => 'Cotización '.($model->consecutive ?? '#'.$model->getKey()),
             $model instanceof Proposal => 'Propuesta '.($model->consecutive ?? '#'.$model->getKey()),
-            $model instanceof Process => 'Solicitud #'.$model->getKey().($model->expediente_invima ? ' (INVIMA '.$model->expediente_invima.')' : ''),
+            $model instanceof Process => 'Solicitud '.$model->displayReference().($model->expediente_invima ? ' (INVIMA '.$model->expediente_invima.')' : ''),
             $model instanceof Submission => 'Sometimiento #'.$model->getKey(),
             $model instanceof RegulatoryEvent => 'Evento regulatorio #'.$model->getKey(),
             $model instanceof ChecklistItem => 'Checklist: '.Str::limit($model->document_name ?? '#'.$model->getKey(), 80),

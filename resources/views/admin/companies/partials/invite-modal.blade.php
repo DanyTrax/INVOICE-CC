@@ -90,8 +90,49 @@
         });
     }
 
+    function escapeHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            if (form.dataset.inviteConfirmed === '1') {
+                return;
+            }
+            e.preventDefault();
+            var cname = companyNameEl ? companyNameEl.textContent.trim() : '—';
+            var doSubmit = function () {
+                form.dataset.inviteConfirmed = '1';
+                form.submit();
+            };
+            if (typeof Swal === 'undefined') {
+                if (window.confirm('¿Enviar la(s) invitación(es) de registro para ' + cname + '?')) {
+                    doSubmit();
+                }
+                return;
+            }
+            Swal.fire({
+                title: '¿Enviar invitación(es)?',
+                html: '<p class="text-left text-gray-600 mb-0">Se enviarán los correos de invitación al registro para la empresa <strong>' + escapeHtml(cname) + '</strong>. Revise los destinatarios seleccionados antes de confirmar.</p>',
+                icon: 'question',
+                showCancelButton: true,
+                focusCancel: true,
+                confirmButtonText: 'Sí, enviar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#0f766e',
+            }).then(function (r) {
+                if (r.isConfirmed) {
+                    doSubmit();
+                }
+            });
+        });
+    }
+
     window.openCompanyInviteModal = function (companyId) {
         if (!form || !clientsList) return;
+        delete form.dataset.inviteConfirmed;
         form.action = baseUrl + '/' + encodeURIComponent(companyId) + '/send-invite';
         form.querySelector('#invite-modal-email').value = '';
         form.querySelector('#invite-modal-name').value = '';
@@ -129,11 +170,6 @@
             });
     };
 
-    function escapeHtml(s) {
-        var d = document.createElement('div');
-        d.textContent = s;
-        return d.innerHTML;
-    }
 })();
 </script>
 @endpush

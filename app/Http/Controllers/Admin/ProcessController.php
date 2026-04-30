@@ -45,15 +45,23 @@ class ProcessController extends Controller
             if ($item->process()->exists()) {
                 continue;
             }
-            Process::create([
-                'quote_item_id' => $item->id,
-                'quote_id' => $quote->id,
-                'client_id' => $quote->client_id,
-                'service_type_id' => $item->service_type_id,
-                'status' => Process::STATUS_RECOLECCION,
-                'expediente_invima' => null,
-            ]);
-            $created++;
+            try {
+                Process::createWithSolicitudCode([
+                    'quote_item_id' => $item->id,
+                    'quote_id' => $quote->id,
+                    'client_id' => $quote->client_id,
+                    'service_type_id' => $item->service_type_id,
+                    'status' => Process::STATUS_RECOLECCION,
+                    'expediente_invima' => null,
+                ]);
+                $created++;
+            } catch (\RuntimeException $e) {
+                Log::warning('No se creó solicitud al aprobar cotización: '.$e->getMessage(), [
+                    'quote_id' => $quote->id,
+                    'client_id' => $quote->client_id,
+                    'quote_item_id' => $item->id,
+                ]);
+            }
         }
 
         // No forzar show_service_type_column; el usuario puede habilitarlo manualmente.
@@ -91,14 +99,20 @@ class ProcessController extends Controller
                 ->withErrors(['service_type_name' => 'Seleccione un tipo de trámite de la lista.']);
         }
 
-        $process = Process::create([
-            'quote_item_id' => null,
-            'client_id' => $validated['client_id'],
-            'service_type_id' => $serviceType->id,
-            'product_reference' => $validated['product_reference'] ?? null,
-            'email_name' => $validated['email_name'] ?? null,
-            'status' => Process::STATUS_RECOLECCION,
-        ]);
+        try {
+            $process = Process::createWithSolicitudCode([
+                'quote_item_id' => null,
+                'client_id' => $validated['client_id'],
+                'service_type_id' => $serviceType->id,
+                'product_reference' => $validated['product_reference'] ?? null,
+                'email_name' => $validated['email_name'] ?? null,
+                'status' => Process::STATUS_RECOLECCION,
+            ]);
+        } catch (\RuntimeException $e) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['client_id' => $e->getMessage()]);
+        }
 
         return redirect()
             ->route('admin.processes.show', $process)
@@ -228,6 +242,7 @@ class ProcessController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('product_reference', 'like', "%{$search}%")
                     ->orWhere('expediente_invima', 'like', "%{$search}%")
+                    ->orWhere('solicitud_code', 'like', "%{$search}%")
                     ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"))
                     ->orWhereHas('quoteItem.quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"));
@@ -281,6 +296,7 @@ class ProcessController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('product_reference', 'like', "%{$search}%")
                     ->orWhere('expediente_invima', 'like', "%{$search}%")
+                    ->orWhere('solicitud_code', 'like', "%{$search}%")
                     ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"))
                     ->orWhereHas('quoteItem.quote', fn ($q2) => $q2->where('consecutive', 'like', "%{$search}%"));

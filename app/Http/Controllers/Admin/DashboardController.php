@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\Process;
-use App\Models\Submission;
 use App\Models\RegulatoryEvent;
 
 class DashboardController extends Controller
@@ -61,17 +60,17 @@ class DashboardController extends Controller
 
         foreach ($autos as $auto) {
             $process = $auto->submission->process ?? null;
-            if (!$process) {
+            if (! $process) {
                 continue;
             }
 
             $titleBase = $process->product_reference
                 ?? $process->expediente_invima
-                ?? ('Solicitud #' . $process->id);
+                ?? ('Solicitud '.$process->displayReference());
 
             $events[] = [
-                'id' => 'auto-' . $auto->id,
-                'title' => 'AUTO: ' . \Str::limit($titleBase, 40),
+                'id' => 'auto-'.$auto->id,
+                'title' => 'AUTO: '.\Str::limit($titleBase, 40),
                 'start' => $auto->due_date->format('Y-m-d'),
                 'backgroundColor' => '#f59e0b', // ámbar
                 'borderColor' => '#d97706',
@@ -79,6 +78,7 @@ class DashboardController extends Controller
                 'extendedProps' => [
                     'type' => 'auto_due',
                     'process_id' => $process->id,
+                    'process_reference' => $process->displayReference(),
                     'client' => $process->client->name ?? 'N/A',
                     'auto_number' => $auto->document_number,
                     'due_date' => $auto->due_date->format('Y-m-d'),

@@ -181,7 +181,7 @@
                 </thead>
                 <tbody>
                     @foreach($quote->quoteItems as $item)
-                        <tr class="border-b border-gray-200 {{ $item->is_loan ? 'bg-amber-50' : '' }}">
+                        <tr class="border-b border-gray-200">
                             <td class="px-2 py-2">{{ $item->item_position }}</td>
                             @if($quote->show_row_id_column ?? false)
                                 <td class="px-2 py-2">{{ $item->row_id ?: '–' }}</td>
@@ -236,14 +236,10 @@
     {{-- Resumen financiero --}}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Resumen financiero</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="bg-gray-50 rounded-lg p-4">
                 <p class="text-sm text-gray-600">Total honorarios</p>
                 <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->total_professional_fees, 2) }}</p>
-            </div>
-            <div class="bg-amber-50 rounded-lg p-4">
-                <p class="text-sm text-gray-600">Total suplidos / Préstamos</p>
-                <p class="text-xl font-semibold text-gray-900">{{ $quote->currency }} {{ number_format($quote->total_loans, 2) }}</p>
             </div>
             <div class="bg-teal-50 rounded-lg p-4">
                 <p class="text-sm text-gray-600">Tasas INVIMA</p>
