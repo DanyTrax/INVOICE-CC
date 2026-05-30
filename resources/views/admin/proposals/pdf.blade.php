@@ -17,6 +17,7 @@
                 $letterheadPath = public_path($settings->agency_logo);
             }
         }
+        $letterheadDataUri = PdfDocumentHelper::resolveLetterheadDataUri($letterheadPath);
         $bodyHtml = PdfDocumentHelper::resolveBodyHtml($useTemplate ? $template : null, $proposal);
         $sideNoteHtml = PdfDocumentHelper::resolveSideNoteHtml($useTemplate ? $template : null, $proposal);
         $closingFooterHtml = PdfDocumentHelper::resolveClosingFooterHtml($useTemplate ? $template : null, $proposal);
@@ -25,9 +26,9 @@
         $fmt = fn ($n) => PdfDocumentHelper::formatMoney((float) $n, $proposal->currency ?? 'COP');
     @endphp
 
-    @if($letterheadPath)
-        <div class="pdf-letterhead">
-            <img src="{{ $letterheadPath }}" alt="">
+    @if($letterheadDataUri)
+        <div class="pdf-letterhead" style="background-image: url('{{ $letterheadDataUri }}');">
+            <img src="{{ $letterheadDataUri }}" alt="">
         </div>
     @endif
 

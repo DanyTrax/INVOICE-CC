@@ -52,6 +52,23 @@ class PdfDocumentHelper
         return null;
     }
 
+    /**
+     * Data URI del membrete para DomPDF (fondo a página completa).
+     */
+    public static function resolveLetterheadDataUri(?string $absolutePath): ?string
+    {
+        if (! $absolutePath || ! is_readable($absolutePath)) {
+            return null;
+        }
+
+        $mime = mime_content_type($absolutePath) ?: 'image/png';
+        if (! str_starts_with($mime, 'image/')) {
+            return null;
+        }
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($absolutePath));
+    }
+
     public static function resolveBodyHtml(?object $template, ?object $document): string
     {
         $raw = trim($document->pdf_body_html ?? '');

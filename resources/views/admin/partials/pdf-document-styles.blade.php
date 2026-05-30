@@ -1,8 +1,29 @@
 <style>
-    @page { size: letter; margin: 14mm 12mm; }
-    body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; line-height: 1.45; }
-    .pdf-letterhead { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1000; }
-    .pdf-letterhead img { width: 100%; height: 100%; object-fit: contain; object-position: top center; }
+    @page { size: letter; margin: 0; }
+    html { margin: 0; padding: 0; }
+    body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 14mm 12mm; line-height: 1.45; }
+    .pdf-letterhead {
+        position: fixed;
+        top: 0;
+        left: 0;
+        /* Carta US @ 96dpi (DomPDF): 8.5in × 11in */
+        width: 816px;
+        height: 1056px;
+        margin: 0;
+        padding: 0;
+        z-index: -1000;
+        background-repeat: no-repeat;
+        background-position: top left;
+        background-size: 816px 1056px;
+    }
+    .pdf-letterhead img {
+        display: block;
+        width: 816px;
+        height: 1056px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
     .pdf-body-content { position: relative; z-index: 1; }
     h1.doc-title { font-size: 11px; font-weight: bold; margin: 0 0 8px 0; color: #111827; text-align: center; }
     .context-body { margin-bottom: 10px; line-height: 1.45; font-size: 11px; color: #1f2937; }
