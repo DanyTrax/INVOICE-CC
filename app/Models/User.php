@@ -33,6 +33,7 @@ class User extends Authenticatable implements CanResetPasswordContract
         'manage_capacitaciones',
         'phone',
         'admin_theme',
+        'admin_ui_font_scale',
     ];
 
     /**

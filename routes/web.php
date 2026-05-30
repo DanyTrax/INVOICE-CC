@@ -97,6 +97,7 @@ Route::middleware(['auth', 'client', 'client.portal.access'])->prefix('portal')-
 // Rutas Admin (auth + no clientes + permisos granulares por módulo)
 Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 'log.admin.mutations'])->prefix('admin')->name('admin.')->group(function () {
     Route::post('/preferences/theme', [UserPreferenceController::class, 'updateTheme'])->name('preferences.theme');
+    Route::post('/preferences/font-scale', [UserPreferenceController::class, 'updateFontScale'])->name('preferences.font-scale');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

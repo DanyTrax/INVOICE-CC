@@ -23,4 +23,20 @@ class UserPreferenceController extends Controller
 
         return response()->json(['ok' => true, 'theme' => $user->admin_theme]);
     }
+
+    /**
+     * Guarda el tamaño de texto del panel admin (porcentaje sobre el tamaño base).
+     */
+    public function updateFontScale(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'scale' => 'required|integer|in:90,100,110,125',
+        ]);
+
+        $user = $request->user();
+        $user->admin_ui_font_scale = (int) $validated['scale'];
+        $user->save();
+
+        return response()->json(['ok' => true, 'scale' => $user->admin_ui_font_scale]);
+    }
 }

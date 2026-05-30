@@ -3,6 +3,11 @@
     if (! in_array($ramsAdminTheme, ['light', 'dark', 'system'], true)) {
         $ramsAdminTheme = 'light';
     }
+    $ramsUiFontScale = 100;
+    if (auth()->check()) {
+        $rawFontScale = (int) (auth()->user()->admin_ui_font_scale ?? 100);
+        $ramsUiFontScale = in_array($rawFontScale, [90, 100, 110, 125], true) ? $rawFontScale : 100;
+    }
     try {
         $adminSidebarExpandedDefault = (bool) (app(\App\Settings\GeneralSettings::class)->admin_sidebar_expanded_default ?? false);
     } catch (\Throwable $e) {
@@ -23,6 +28,14 @@
                 || (pref === 'system' && typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches);
             document.documentElement.classList.toggle('dark', dark);
             document.documentElement.setAttribute('data-theme', pref);
+        })();
+        (function () {
+            var scale = @json($ramsUiFontScale);
+            if ([90, 100, 110, 125].indexOf(scale) === -1) {
+                scale = 100;
+            }
+            document.documentElement.style.fontSize = scale + '%';
+            document.documentElement.setAttribute('data-ui-font-scale', String(scale));
         })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -247,9 +260,43 @@
                 body: JSON.stringify({ theme: theme })
             }).catch(function () {});
         }
+        function setFontScale(scale) {
+            scale = parseInt(scale, 10);
+            if ([90, 100, 110, 125].indexOf(scale) === -1) {
+                scale = 100;
+            }
+            document.documentElement.style.fontSize = scale + '%';
+            document.documentElement.setAttribute('data-ui-font-scale', String(scale));
+            syncFontScaleButtons(scale);
+        }
+        function syncFontScaleButtons(scale) {
+            [90, 100, 110, 125].forEach(function (key) {
+                var el = document.getElementById('font-scale-' + key + '-btn');
+                if (!el) {
+                    return;
+                }
+                var active = scale === key;
+                el.classList.toggle('theme-segment-btn--active', active);
+                el.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+        }
+        function persistFontScale(scale) {
+            fetch(@json(route('admin.preferences.font-scale')), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ scale: scale })
+            }).catch(function () {});
+        }
         document.addEventListener('DOMContentLoaded', function () {
             var serverTheme = @json($ramsAdminTheme);
             setTheme(serverTheme);
+            setFontScale(@json($ramsUiFontScale));
             if (typeof matchMedia !== 'undefined') {
                 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
                     if (document.documentElement.getAttribute('data-theme') === 'system') {
@@ -266,6 +313,17 @@
                     e.preventDefault();
                     setTheme(key);
                     persistTheme(key);
+                });
+            });
+            [90, 100, 110, 125].forEach(function (key) {
+                var btn = document.getElementById('font-scale-' + key + '-btn');
+                if (!btn) {
+                    return;
+                }
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    setFontScale(key);
+                    persistFontScale(key);
                 });
             });
         });
@@ -882,7 +940,7 @@
                              x-transition:leave="transition ease-in duration-75"
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-slate-600"
+                             class="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-slate-600"
                              style="display: none;">
                             <div class="px-4 py-3 border-b border-gray-200 dark:border-slate-600">
                                 <p class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ Auth::user()->name }}</p>
@@ -907,6 +965,23 @@
                                                 class="theme-segment-btn flex flex-1 items-center justify-center py-2 rounded-md {{ $ramsAdminTheme === 'system' ? 'theme-segment-btn--active' : '' }}">
                                             <i class="fas fa-desktop text-base"></i>
                                         </button>
+                                    </div>
+                                    <span class="mt-3 block text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider">Tamaño de texto</span>
+                                    @php
+                                        $uiFontScaleGlyphs = [90 => 'A−', 100 => 'A', 110 => 'A+', 125 => 'A++'];
+                                        $uiFontScaleTitles = [90 => 'Reducir texto', 100 => 'Tamaño normal', 110 => 'Aumentar texto', 125 => 'Texto muy grande'];
+                                    @endphp
+                                    <div class="theme-segment-bar mt-2 flex rounded-lg p-0.5 gap-0.5" role="group" aria-label="Tamaño de texto del panel">
+                                        @foreach ($uiFontScaleGlyphs as $scale => $scaleGlyph)
+                                            <button type="button"
+                                                    id="font-scale-{{ $scale }}-btn"
+                                                    title="{{ $uiFontScaleTitles[$scale] }} ({{ $scale }}%)"
+                                                    aria-label="{{ $uiFontScaleTitles[$scale] }}"
+                                                    aria-pressed="{{ $ramsUiFontScale === $scale ? 'true' : 'false' }}"
+                                                    class="theme-segment-btn flex flex-1 items-center justify-center py-2 rounded-md text-xs font-semibold leading-none tabular-nums {{ $ramsUiFontScale === $scale ? 'theme-segment-btn--active' : '' }}">
+                                                {{ $scaleGlyph }}
+                                            </button>
+                                        @endforeach
                                     </div>
                                 </div>
                                 <form method="POST" action="{{ route('logout') }}">
