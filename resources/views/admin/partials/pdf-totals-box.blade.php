@@ -1,7 +1,7 @@
 @php
     $subtotalLabel = $subtotalLabel ?? 'Subtotal';
 @endphp
-<table class="totals-box" width="230" cellspacing="0" cellpadding="0" style="width:230px;">
+<table class="totals-box" width="230" align="right" cellspacing="0" cellpadding="0" style="width:230px; margin-left:auto;">
     <tr>
         <td class="label">{{ $subtotalLabel }}</td>
         <td style="text-align: right;">{{ $doc->currency }} {{ $fmt($doc->subtotal) }}</td>

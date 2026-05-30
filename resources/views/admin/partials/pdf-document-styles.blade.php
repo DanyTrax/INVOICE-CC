@@ -37,7 +37,8 @@
     table.items tr.alt { background: #f9fafb; }
     table.totals-layout { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
     table.totals-layout td { vertical-align: top; padding: 0; }
-    table.totals-box { border-collapse: collapse; border: 1px solid #9ca3af; }
+    table.totals-layout td.totals-col { text-align: right; }
+    table.totals-box { border-collapse: collapse; border: 1px solid #9ca3af; margin-left: auto; }
     table.totals-box td { padding: 4px 6px; border: 1px solid #9ca3af; font-size: 9px; color: #1f2937; background-color: #ffffff; }
     table.totals-box .label { background-color: #f3f4f6; font-weight: bold; width: 52%; }
     table.totals-box .grand { background-color: #d1d5db; font-weight: bold; }
