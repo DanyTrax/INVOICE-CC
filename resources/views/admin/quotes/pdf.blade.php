@@ -19,8 +19,14 @@
         }
         $letterheadDataUri = PdfDocumentHelper::resolveLetterheadDataUri($letterheadPath);
         $bodyHtml = PdfDocumentHelper::resolveBodyHtml($useTemplate ? $template : null, $quote);
-        $sideNoteHtml = PdfDocumentHelper::resolveSideNoteHtml($useTemplate ? $template : null, $quote);
-        $closingFooterHtml = PdfDocumentHelper::resolveClosingFooterHtml($useTemplate ? $template : null, $quote);
+        $showPdfSideNote = $quote->show_pdf_side_note ?? true;
+        $showPdfFooter = $quote->show_pdf_footer ?? true;
+        $sideNoteHtml = $showPdfSideNote
+            ? PdfDocumentHelper::resolveSideNoteHtml($useTemplate ? $template : null, $quote)
+            : '';
+        $closingFooterHtml = $showPdfFooter
+            ? PdfDocumentHelper::resolveClosingFooterHtml($useTemplate ? $template : null, $quote)
+            : '';
         $sigNameSize = (int) ($useTemplate ? ($template->signature_name_font_size ?? 11) : 11);
         $sigPosSize = (int) ($useTemplate ? ($template->signature_position_font_size ?? 11) : 11);
         $fmt = fn ($n) => PdfDocumentHelper::formatMoney((float) $n, $quote->currency ?? 'COP');

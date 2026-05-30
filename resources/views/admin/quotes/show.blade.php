@@ -278,6 +278,7 @@
         @include('admin.partials.pdf-document-content-fields', [
             'defaultPdfTemplate' => $defaultPdfTemplate,
             'pdfDocument' => $quote,
+            'pdfVisibilityToggles' => true,
         ])
         @error('pdf_footer')
             <p class="text-sm text-red-600 -mt-4 mb-4 px-6">{{ $message }}</p>

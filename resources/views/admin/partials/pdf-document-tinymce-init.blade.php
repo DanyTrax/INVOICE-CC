@@ -28,6 +28,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    document.querySelectorAll('.pdf-visibility-toggle').forEach(function(cb) {
+        var targetId = cb.getAttribute('data-target');
+        var wrap = document.getElementById(targetId + '_wrap');
+        if (!wrap) return;
+        function syncVisibility() {
+            var on = cb.checked;
+            wrap.classList.toggle('opacity-40', !on);
+            wrap.setAttribute('aria-hidden', on ? 'false' : 'true');
+        }
+        cb.addEventListener('change', syncVisibility);
+        syncVisibility();
+    });
 });
 </script>
 @endpush

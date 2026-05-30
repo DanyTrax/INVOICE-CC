@@ -106,6 +106,7 @@
         @include('admin.partials.pdf-document-content-fields', [
             'defaultPdfTemplate' => $defaultPdfTemplate,
             'pdfDocument' => $quote,
+            'pdfVisibilityToggles' => true,
         ])
 
         {{-- Detalle de ítems --}}

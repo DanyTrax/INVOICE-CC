@@ -99,6 +99,7 @@
 
         @include('admin.partials.pdf-document-content-fields', [
             'defaultPdfTemplate' => $defaultPdfTemplate,
+            'pdfVisibilityToggles' => true,
         ])
 
         {{-- Detalle de ítems (tabla dinámica) --}}

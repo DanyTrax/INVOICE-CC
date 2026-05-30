@@ -125,6 +125,8 @@ class QuoteController extends Controller
             'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
             'pdf_footer' => 'nullable|string|max:10000',
+            'show_pdf_side_note' => 'nullable|boolean',
+            'show_pdf_footer' => 'nullable|boolean',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
@@ -179,6 +181,8 @@ class QuoteController extends Controller
             'pdf_body_html' => $pdfFields['pdf_body_html'],
             'pdf_side_note_html' => $pdfFields['pdf_side_note_html'],
             'pdf_footer' => $pdfFields['pdf_footer'],
+            'show_pdf_side_note' => ! empty($validated['show_pdf_side_note']),
+            'show_pdf_footer' => ! empty($validated['show_pdf_footer']),
         ]);
 
         $existingIds = [];
@@ -268,8 +272,16 @@ class QuoteController extends Controller
             'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
             'pdf_footer' => 'nullable|string|max:10000',
+            'show_pdf_side_note' => 'nullable|boolean',
+            'show_pdf_footer' => 'nullable|boolean',
         ]);
-        $quote->update(PdfDocumentHelper::persistPdfTextFields($validated, QuotePdfTemplate::getDefault()));
+        $quote->update(array_merge(
+            PdfDocumentHelper::persistPdfTextFields($validated, QuotePdfTemplate::getDefault()),
+            [
+                'show_pdf_side_note' => ! empty($validated['show_pdf_side_note']),
+                'show_pdf_footer' => ! empty($validated['show_pdf_footer']),
+            ]
+        ));
 
         return redirect()->route('admin.quotes.show', $quote)
             ->with('success', 'Textos del PDF actualizados.');
@@ -410,6 +422,8 @@ class QuoteController extends Controller
             'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
             'pdf_footer' => 'nullable|string|max:10000',
+            'show_pdf_side_note' => 'nullable|boolean',
+            'show_pdf_footer' => 'nullable|boolean',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
             'items.*.service_id' => 'required|exists:services,id',
@@ -464,6 +478,8 @@ class QuoteController extends Controller
             'pdf_body_html' => $pdfFields['pdf_body_html'],
             'pdf_side_note_html' => $pdfFields['pdf_side_note_html'],
             'pdf_footer' => $pdfFields['pdf_footer'],
+            'show_pdf_side_note' => ! empty($validated['show_pdf_side_note']),
+            'show_pdf_footer' => ! empty($validated['show_pdf_footer']),
         ]);
 
         foreach ($validated['items'] as $pos => $row) {

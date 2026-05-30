@@ -43,18 +43,46 @@
             </p>
         </div>
         <div>
-            <label for="pdf_side_note_html" class="block mb-2 text-sm font-medium text-gray-900">Nota lateral (junto a subtotal / total)</label>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <label for="pdf_side_note_html" class="text-sm font-medium text-gray-900">Nota lateral (junto a subtotal / total)</label>
+                @if($pdfVisibilityToggles ?? false)
+                    <input type="hidden" name="show_pdf_side_note" value="0">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" name="show_pdf_side_note" id="show_pdf_side_note" value="1"
+                               class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 pdf-visibility-toggle"
+                               data-target="pdf_side_note_html"
+                               {{ old('show_pdf_side_note', $doc->show_pdf_side_note ?? true) ? 'checked' : '' }}>
+                        <span>Mostrar en el PDF</span>
+                    </label>
+                @endif
+            </div>
             @include('admin.partials.pdf-field-source-hint', ['field' => $sideField])
-            <textarea name="pdf_side_note_html" id="pdf_side_note_html" rows="6"
-                      class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ $sideField['value'] }}</textarea>
+            <div id="pdf_side_note_html_wrap" class="pdf-field-wrap">
+                <textarea name="pdf_side_note_html" id="pdf_side_note_html" rows="6"
+                          class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ $sideField['value'] }}</textarea>
+            </div>
             <p class="mt-1 text-xs text-gray-500">Texto a la izquierda del cuadro de totales en el PDF.</p>
         </div>
         <div>
-            <label for="pdf_footer" class="block mb-2 text-sm font-medium text-gray-900">Pie de página (debajo del total, encima de firma)</label>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <label for="pdf_footer" class="block text-sm font-medium text-gray-900">Pie de página (debajo del total, encima de firma)</label>
+                @if($pdfVisibilityToggles ?? false)
+                    <input type="hidden" name="show_pdf_footer" value="0">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" name="show_pdf_footer" id="show_pdf_footer" value="1"
+                               class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 pdf-visibility-toggle"
+                               data-target="pdf_footer"
+                               {{ old('show_pdf_footer', $doc->show_pdf_footer ?? true) ? 'checked' : '' }}>
+                        <span>Mostrar en el PDF</span>
+                    </label>
+                @endif
+            </div>
             @include('admin.partials.pdf-field-source-hint', ['field' => $footerField])
-            <textarea name="pdf_footer" id="pdf_footer" rows="5"
-                      class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ $footerField['value'] }}</textarea>
-            <p class="mt-1 text-xs text-gray-500">Aparece después del total y antes de la firma.</p>
+            <div id="pdf_footer_wrap" class="pdf-field-wrap">
+                <textarea name="pdf_footer" id="pdf_footer" rows="5"
+                          class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ $footerField['value'] }}</textarea>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Aparece después del total y antes de la firma. Desactive el interruptor para omitirlo en esta cotización.</p>
         </div>
     </div>
 </div>
