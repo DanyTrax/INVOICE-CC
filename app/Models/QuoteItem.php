@@ -85,7 +85,8 @@ class QuoteItem extends Model
 
         if ($submission?->process) {
             $process = $submission->process;
-            $label = 'Sol. '.$process->displayReference();
+            $label = $process->displayReference();
+            $title = 'Ver solicitud vinculada a este ítem (solo referencia)';
             $roots = $process->relationLoaded('submissions')
                 ? $process->submissions->whereNull('parent_id')->sortBy('id')->values()
                 : $process->submissions()->whereNull('parent_id')->orderBy('id')->get();
@@ -93,14 +94,14 @@ class QuoteItem extends Model
             if ($rootForItem) {
                 $pos = $roots->search(fn ($r) => $r->id === $rootForItem->id);
                 if ($pos !== false) {
-                    $label .= ' · Ciclo '.($pos + 1);
+                    $title = 'Ver solicitud '.$label.' · Ciclo '.($pos + 1).' (solo referencia)';
                 }
             }
 
             return [
                 'url' => route('admin.processes.show', $process),
                 'label' => $label,
-                'title' => 'Ver solicitud vinculada a este ítem (solo referencia)',
+                'title' => $title,
             ];
         }
 
@@ -108,7 +109,7 @@ class QuoteItem extends Model
         if ($process && (int) ($process->quote_item_id ?? 0) === $itemId) {
             return [
                 'url' => route('admin.processes.show', $process),
-                'label' => 'Sol. '.$process->displayReference(),
+                'label' => $process->displayReference(),
                 'title' => 'Ver solicitud vinculada a este ítem (solo referencia)',
             ];
         }

@@ -842,7 +842,7 @@ class ProcessController extends Controller
     }
 
     /**
-     * Agregar un documento (ítem) a la checklist del expediente.
+     * Agregar uno o varios documentos (ítems) a la checklist del expediente.
      */
     public function storeChecklistItem(Request $request, Process $process): RedirectResponse
     {
@@ -850,18 +850,42 @@ class ProcessController extends Controller
         $this->authorizeProcessFeed($process);
 
         $validated = $request->validate([
-            'document_name' => 'required|string|max:255',
+            'document_names' => 'required|array|min:1',
+            'document_names.*' => 'nullable|string|max:255',
+            'is_for_auto' => 'nullable|boolean',
         ]);
-        ChecklistItem::create([
-            'process_id' => $process->id,
-            'document_name' => $validated['document_name'],
-            'status' => ChecklistItem::STATUS_PENDIENTE,
-            'is_for_auto' => $request->boolean('is_for_auto', false),
-        ]);
+
+        $names = collect($validated['document_names'] ?? [])
+            ->map(fn ($name) => trim((string) $name))
+            ->filter(fn ($name) => $name !== '')
+            ->unique()
+            ->values();
+
+        if ($names->isEmpty()) {
+            return redirect()
+                ->route('admin.processes.show', $process)
+                ->withInput()
+                ->with('error', 'Indique al menos un nombre de documento.');
+        }
+
+        $isForAuto = $request->boolean('is_for_auto', false);
+        foreach ($names as $name) {
+            ChecklistItem::create([
+                'process_id' => $process->id,
+                'document_name' => $name,
+                'status' => ChecklistItem::STATUS_PENDIENTE,
+                'is_for_auto' => $isForAuto,
+            ]);
+        }
+
+        $count = $names->count();
+        $message = $count === 1
+            ? 'Documento agregado a la checklist.'
+            : "Se agregaron {$count} documentos a la checklist.";
 
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', 'Documento agregado a la checklist.');
+            ->with('success', $message);
     }
 
     /**

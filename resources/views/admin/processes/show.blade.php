@@ -501,7 +501,7 @@
             </h3>
             @processCanFor($process, 'feed')
             <button type="button"
-                    onclick="document.getElementById('add-doc-is-for-auto').value='0';document.getElementById('modal-add-document').classList.remove('hidden')"
+                    onclick="openAddDocumentModal(0)"
                     class="inline-flex items-center px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
                 <i class="fas fa-plus mr-2"></i> Agregar Documento
             </button>
@@ -567,7 +567,7 @@
             </h3>
             @processCanFor($process, 'feed')
             <button type="button"
-                    onclick="document.getElementById('add-doc-is-for-auto').value='1';document.getElementById('modal-add-document').classList.remove('hidden')"
+                    onclick="openAddDocumentModal(1)"
                     class="inline-flex items-center px-3 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700">
                 <i class="fas fa-plus mr-2"></i> Agregar Documento AUTO
             </button>
@@ -767,18 +767,23 @@
     @processCanFor($process, 'feed')
     <div id="modal-add-document" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="fixed inset-0 bg-black/50" onclick="document.getElementById('modal-add-document').classList.add('hidden')"></div>
+            <div class="fixed inset-0 bg-black/50" onclick="closeAddDocumentModal()"></div>
             <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                <h4 class="text-lg font-semibold text-gray-900 mb-4">Agregar Documento</h4>
-                <form action="{{ route('admin.processes.checklist-items.store', $process) }}" method="post">
+                <h4 id="modal-add-document-title" class="text-lg font-semibold text-gray-900 mb-4">Agregar Documento</h4>
+                <form id="form-add-document" action="{{ route('admin.processes.checklist-items.store', $process) }}" method="post">
                     @csrf
                     <input type="hidden" name="is_for_auto" id="add-doc-is-for-auto" value="0">
-                    <div class="mb-4">
-                        <label for="document_name" class="block text-sm font-medium text-gray-700 mb-1">Nombre del documento / requisito</label>
-                        <input type="text" name="document_name" id="document_name" required maxlength="255" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Ej: Certificado de Buenas Prácticas">
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del documento / requisito</label>
+                        <div id="add-doc-names-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
+                        <button type="button" id="btn-add-doc-name-row"
+                                class="mt-2 inline-flex items-center text-sm text-teal-600 hover:text-teal-800">
+                            <i class="fas fa-plus mr-1"></i> Agregar otro
+                        </button>
+                        <p class="text-xs text-gray-500 mt-2">Escriba un nombre y pulse <kbd class="px-1 py-0.5 rounded bg-gray-100 border border-gray-300 text-xs">Enter</kbd> o use <strong>+ Agregar otro</strong> para añadir más. Al final pulse <strong>Agregar</strong>.</p>
                     </div>
                     <div class="flex justify-end gap-2">
-                        <button type="button" onclick="document.getElementById('modal-add-document').classList.add('hidden')" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">Cancelar</button>
+                        <button type="button" onclick="closeAddDocumentModal()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">Cancelar</button>
                         <button type="submit" class="px-3 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700">Agregar</button>
                     </div>
                 </form>
@@ -1078,6 +1083,112 @@
         document.getElementById('edit_radicado_tracking').value = tracking || '';
         document.getElementById('modal-edit-radicado').classList.remove('hidden');
     };
+
+    (function initAddDocumentModal() {
+        var modal = document.getElementById('modal-add-document');
+        var list = document.getElementById('add-doc-names-list');
+        var form = document.getElementById('form-add-document');
+        var btnAddRow = document.getElementById('btn-add-doc-name-row');
+        var isForAutoInput = document.getElementById('add-doc-is-for-auto');
+        var titleEl = document.getElementById('modal-add-document-title');
+        if (!modal || !list || !form) return;
+
+        function createDocNameRow(value) {
+            var row = document.createElement('div');
+            row.className = 'flex gap-2 add-doc-name-row';
+            row.innerHTML =
+                '<input type="text" name="document_names[]" maxlength="255" value="' + (value || '').replace(/"/g, '&quot;') + '" ' +
+                'class="add-doc-name-input flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" ' +
+                'placeholder="Ej: Certificado de Buenas Prácticas">' +
+                '<button type="button" class="btn-remove-doc-name shrink-0 px-2 py-2 text-gray-400 hover:text-red-600" title="Quitar">' +
+                '<i class="fas fa-times"></i></button>';
+            return row;
+        }
+
+        function syncRemoveButtons() {
+            var rows = list.querySelectorAll('.add-doc-name-row');
+            rows.forEach(function(row, index) {
+                var btn = row.querySelector('.btn-remove-doc-name');
+                if (btn) btn.classList.toggle('hidden', rows.length <= 1);
+            });
+        }
+
+        function resetDocNameRows() {
+            list.innerHTML = '';
+            list.appendChild(createDocNameRow(''));
+            syncRemoveButtons();
+            var first = list.querySelector('.add-doc-name-input');
+            if (first) first.focus();
+        }
+
+        function addDocNameRow(focus) {
+            var row = createDocNameRow('');
+            list.appendChild(row);
+            syncRemoveButtons();
+            if (focus !== false) {
+                var input = row.querySelector('.add-doc-name-input');
+                if (input) input.focus();
+            }
+        }
+
+        window.closeAddDocumentModal = function() {
+            modal.classList.add('hidden');
+        };
+
+        window.openAddDocumentModal = function(isAuto) {
+            if (isForAutoInput) isForAutoInput.value = isAuto ? '1' : '0';
+            if (titleEl) {
+                titleEl.textContent = isAuto ? 'Agregar Documento AUTO' : 'Agregar Documento';
+            }
+            resetDocNameRows();
+            modal.classList.remove('hidden');
+        };
+
+        list.addEventListener('click', function(e) {
+            var btn = e.target.closest('.btn-remove-doc-name');
+            if (!btn) return;
+            var row = btn.closest('.add-doc-name-row');
+            if (!row || list.querySelectorAll('.add-doc-name-row').length <= 1) return;
+            row.remove();
+            syncRemoveButtons();
+        });
+
+        list.addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter' || !e.target.classList.contains('add-doc-name-input')) return;
+            e.preventDefault();
+            var value = e.target.value.trim();
+            if (value === '') return;
+            var rows = list.querySelectorAll('.add-doc-name-row');
+            var lastInput = rows[rows.length - 1].querySelector('.add-doc-name-input');
+            if (e.target === lastInput) {
+                addDocNameRow(true);
+            } else {
+                var nextRow = e.target.closest('.add-doc-name-row').nextElementSibling;
+                var nextInput = nextRow && nextRow.querySelector('.add-doc-name-input');
+                if (nextInput) nextInput.focus();
+            }
+        });
+
+        if (btnAddRow) {
+            btnAddRow.addEventListener('click', function() {
+                addDocNameRow(true);
+            });
+        }
+
+        form.addEventListener('submit', function(e) {
+            var inputs = list.querySelectorAll('.add-doc-name-input');
+            var hasValue = false;
+            inputs.forEach(function(input) {
+                if (input.value.trim() !== '') hasValue = true;
+            });
+            if (!hasValue) {
+                e.preventDefault();
+                alert('Indique al menos un nombre de documento.');
+                if (inputs[0]) inputs[0].focus();
+            }
+        });
+    })();
+
     // Paso intermedio tras REQUERIMIENTO AUTO: advertencia y botón Aceptar antes de permitir "Registrar Sometimiento".
     (function() {
         var acceptBtn = document.getElementById('btn-auto-accept-checklist');

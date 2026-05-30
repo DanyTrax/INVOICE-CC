@@ -143,6 +143,11 @@
     </div>
 
     {{-- Detalle de ítems --}}
+    @php
+        $hasLinkedSolicitud = $quote->quoteItems->contains(
+            fn ($qi) => $qi->resolveLinkedSolicitudButton() !== null
+        );
+    @endphp
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Detalle de ítems</h3>
         <div class="overflow-x-auto">
@@ -154,7 +159,6 @@
                             <th class="px-2 py-2 w-24">ROW ID</th>
                         @endif
                         <th class="px-2 py-2">Servicio</th>
-                        <th class="px-2 py-2">Solicitud vinculada</th>
                         @if($quote->show_service_type_column)
                             <th class="px-2 py-2">Trámite</th>
                         @endif
@@ -178,6 +182,9 @@
                         @endif
                         <th class="px-2 py-2">Alcance</th>
                         <th class="px-2 py-2 w-28">Valor</th>
+                        @if($hasLinkedSolicitud)
+                            <th class="px-2 py-2 w-36">S.Vinculada</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -188,9 +195,6 @@
                                 <td class="px-2 py-2">{{ $item->row_id ?: '–' }}</td>
                             @endif
                             <td class="px-2 py-2">{{ $item->service_label ?: ($item->service?->name ?? '-') }}</td>
-                            <td class="px-2 py-2">
-                                @include('admin.quotes.partials.item-linked-solicitud-button', ['item' => $item])
-                            </td>
                             @if($quote->show_service_type_column)
                                 <td class="px-2 py-2">{{ $item->serviceType?->name ?: '–' }}</td>
                             @endif
@@ -214,6 +218,11 @@
                             @endif
                             <td class="px-2 py-2">{{ Str::limit($item->scope, 40) ?? '-' }}</td>
                             <td class="px-2 py-2">{{ $quote->currency }} {{ number_format($item->fee_value, 2) }}</td>
+                            @if($hasLinkedSolicitud)
+                                <td class="px-2 py-2">
+                                    @include('admin.quotes.partials.item-linked-solicitud-button', ['item' => $item])
+                                </td>
+                            @endif
                         </tr>
                     @endforeach
                 </tbody>

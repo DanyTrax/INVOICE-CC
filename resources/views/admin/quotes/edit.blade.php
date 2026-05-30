@@ -155,13 +155,17 @@
                 </span>
             </div>
             <div class="overflow-x-auto">
+                @php
+                    $hasLinkedSolicitud = $quote->quoteItems->contains(
+                        fn ($qi) => $qi->resolveLinkedSolicitudButton() !== null
+                    );
+                @endphp
                 <table class="w-full text-sm text-left text-gray-700 min-w-[1100px]" id="items-table">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                         <tr>
                             <th class="px-2 py-2 w-12">#</th>
                             <th class="px-2 py-2 w-24" data-col="row-id">ROW ID</th>
                             <th class="px-2 py-2">Servicio</th>
-                            <th class="px-2 py-2">Solicitud vinculada</th>
                             <th class="px-2 py-2" data-col="tramite">Trámite (opcional)</th>
                             <th class="px-2 py-2" data-col="description">Producto / Descripción</th>
                             <th class="px-2 py-2" data-col="prev-license">Solicitud / INVIMA</th>
@@ -171,6 +175,9 @@
                             <th class="px-2 py-2" data-col="contacto">Contacto</th>
                             <th class="px-2 py-2">Alcance</th>
                             <th class="px-2 py-2 w-28">Valor</th>
+                            @if($hasLinkedSolicitud)
+                                <th class="px-2 py-2 w-36">S.Vinculada</th>
+                            @endif
                             <th class="px-2 py-2 w-12"></th>
                         </tr>
                     </thead>
@@ -217,18 +224,6 @@
                                     <input type="hidden" name="items[{{ $idx }}][service_id]" class="item-service-id-input" value="{{ $item['service_id'] ?? '' }}">
                                     <input type="hidden" name="items[{{ $idx }}][service_label]" class="item-service-label-input" value="{{ $item['service_label'] ?? ($selectedService ? $selectedService->name : '') }}">
                                 </td>
-                                <td class="px-2 py-2">
-                                    @php
-                                        $quoteItemForLink = ! empty($item['id'])
-                                            ? $quote->quoteItems->firstWhere('id', (int) $item['id'])
-                                            : null;
-                                    @endphp
-                                    @if($quoteItemForLink)
-                                        @include('admin.quotes.partials.item-linked-solicitud-button', ['item' => $quoteItemForLink])
-                                    @else
-                                        <span class="text-gray-400 text-sm">—</span>
-                                    @endif
-                                </td>
                                 <td class="px-2 py-2" data-col="tramite">
                                     <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item['id'] ?? '' }}">
                                     <input type="hidden" name="items[{{ $idx }}][item_position]" value="{{ $idx + 1 }}">
@@ -273,6 +268,20 @@
                                     <input type="hidden" name="items[{{ $idx }}][invima_rate_code]" value="{{ $item['invima_rate_code'] ?? '' }}">
                                     <input type="hidden" name="items[{{ $idx }}][invima_rate_value]" value="{{ $item['invima_rate_value'] ?? '0' }}">
                                 </td>
+                                @if($hasLinkedSolicitud)
+                                    <td class="px-2 py-2">
+                                        @php
+                                            $quoteItemForLink = ! empty($item['id'])
+                                                ? $quote->quoteItems->firstWhere('id', (int) $item['id'])
+                                                : null;
+                                        @endphp
+                                        @if($quoteItemForLink)
+                                            @include('admin.quotes.partials.item-linked-solicitud-button', ['item' => $quoteItemForLink])
+                                        @else
+                                            <span class="text-gray-400 text-sm">—</span>
+                                        @endif
+                                    </td>
+                                @endif
                                 <td class="px-2 py-2">
                                     <button type="button" class="btn-remove-row text-red-600 hover:text-red-800 p-1" title="Quitar fila"><i class="fas fa-trash-alt"></i></button>
                                 </td>
@@ -350,7 +359,6 @@
                 <input type="hidden" name="items[__INDEX__][service_id]" class="item-service-id-input" value="">
                 <input type="hidden" name="items[__INDEX__][service_label]" class="item-service-label-input" value="">
             </td>
-            <td class="px-2 py-2"><span class="text-gray-400 text-sm">—</span></td>
             <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">
@@ -391,6 +399,9 @@
                 <input type="hidden" name="items[__INDEX__][invima_rate_code]" value="">
                 <input type="hidden" name="items[__INDEX__][invima_rate_value]" value="0">
             </td>
+            @if($hasLinkedSolicitud)
+            <td class="px-2 py-2"><span class="text-gray-400 text-sm">—</span></td>
+            @endif
             <td class="px-2 py-2">
                 <button type="button" class="btn-remove-row text-red-600 hover:text-red-800 p-1" title="Quitar fila"><i class="fas fa-trash-alt"></i></button>
             </td>
