@@ -46,7 +46,8 @@
             <textarea name="pdf_body_html" id="pdf_body_html" rows="12"
                       class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ $bodyField['value'] }}</textarea>
             <p class="mt-1 text-xs text-gray-500">
-                Desde «Señor(es)…» hasta el párrafo previo a la tabla de ítems. La tabla de servicios y totales no se edita aquí.
+                Desde «Señor(es)…» hasta el párrafo previo a la tabla de ítems. Use la barra del editor para
+                <strong>tamaño de fuente</strong>, <strong>colores</strong> e <strong>interlineado</strong> (menú Estilos).
                 El membrete gráfico (imagen de fondo) se configura en la plantilla PDF.
             </p>
         </div>

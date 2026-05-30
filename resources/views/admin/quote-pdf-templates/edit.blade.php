@@ -37,24 +37,6 @@
     </div>
 @endsection
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof tinymce !== 'undefined') {
-        tinymce.init({
-            selector: '#body_html',
-            license_key: 'gpl',
-            height: 320,
-            menubar: false,
-            plugins: 'lists link code',
-            toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | bullist numlist | link | code',
-            content_style: 'body { font-family: sans-serif; font-size: 12px; }',
-            placeholder: 'Ej: Bogotá D. C. {{fecha}}… Señor(a) {{destinatario}}… párrafo introductorio (antes de la tabla).'
-        });
-        document.querySelector('#body_html')?.closest('form')?.addEventListener('submit', function() {
-            tinymce.triggerSave();
-        });
-    }
-});
-</script>
-@endpush
+@include('admin.partials.pdf-template-body-tinymce-init', [
+    'tinymcePlaceholder' => 'Ej: Bogotá D. C. {{fecha}}… Señor(a) {{destinatario}}… párrafo introductorio (antes de la tabla).',
+])
