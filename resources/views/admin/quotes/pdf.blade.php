@@ -115,39 +115,64 @@
             </tbody>
         </table>
 
-        <div class="totals-wrap">
-            @if($sideNoteHtml !== '')
-                <div class="side-note-col">
-                    <div class="side-note">{!! $sideNoteHtml !!}</div>
-                </div>
-            @endif
-            <div class="totals-col">
-                <div class="totals">
-                    <table>
-                        <tr>
-                            <td class="label">Subtotal</td>
-                            <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->subtotal) }}</td>
-                        </tr>
-                        @if($quote->apply_tax && $quote->tax_percentage !== null)
+        <table class="totals-layout" cellpadding="0" cellspacing="0">
+            <tr>
+                @if($sideNoteHtml !== '')
+                    <td class="side-note-col" width="58%" valign="top">
+                        <div class="side-note">{!! $sideNoteHtml !!}</div>
+                    </td>
+                    <td width="42%" valign="top" align="right">
+                        <table class="totals-box" cellpadding="0" cellspacing="0" width="100%">
                             <tr>
-                                <td class="label">IVA ({{ number_format($quote->tax_percentage, 0) }}%)</td>
-                                <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->tax_amount) }}</td>
+                                <td class="label">Subtotal</td>
+                                <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->subtotal) }}</td>
                             </tr>
-                        @endif
-                        @if($quote->apply_bank_fee && $quote->bank_fee_value !== null)
+                            @if($quote->apply_tax && $quote->tax_percentage !== null)
+                                <tr>
+                                    <td class="label">IVA ({{ number_format($quote->tax_percentage, 0) }}%)</td>
+                                    <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->tax_amount) }}</td>
+                                </tr>
+                            @endif
+                            @if($quote->apply_bank_fee && $quote->bank_fee_value !== null)
+                                <tr>
+                                    <td class="label">Gasto bancario</td>
+                                    <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->bank_fee_amount) }}</td>
+                                </tr>
+                            @endif
                             <tr>
-                                <td class="label">Gasto bancario</td>
-                                <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->bank_fee_amount) }}</td>
+                                <td class="label grand">Total</td>
+                                <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->total_with_tax) }}</td>
                             </tr>
-                        @endif
-                        <tr>
-                            <td class="label grand">Total</td>
-                            <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->total_with_tax) }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
+                        </table>
+                    </td>
+                @else
+                    <td width="100%" valign="top" align="right">
+                        <table class="totals-box" cellpadding="0" cellspacing="0" width="42%">
+                            <tr>
+                                <td class="label">Subtotal</td>
+                                <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->subtotal) }}</td>
+                            </tr>
+                            @if($quote->apply_tax && $quote->tax_percentage !== null)
+                                <tr>
+                                    <td class="label">IVA ({{ number_format($quote->tax_percentage, 0) }}%)</td>
+                                    <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->tax_amount) }}</td>
+                                </tr>
+                            @endif
+                            @if($quote->apply_bank_fee && $quote->bank_fee_value !== null)
+                                <tr>
+                                    <td class="label">Gasto bancario</td>
+                                    <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->bank_fee_amount) }}</td>
+                                </tr>
+                            @endif
+                            <tr>
+                                <td class="label grand">Total</td>
+                                <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->total_with_tax) }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                @endif
+            </tr>
+        </table>
 
         @if($closingFooterHtml !== '')
             <div class="closing-footer">{!! $closingFooterHtml !!}</div>

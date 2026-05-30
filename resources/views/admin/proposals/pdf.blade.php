@@ -67,39 +67,64 @@
             </tbody>
         </table>
 
-        <div class="totals-wrap">
-            @if($sideNoteHtml !== '')
-                <div class="side-note-col">
-                    <div class="side-note">{!! $sideNoteHtml !!}</div>
-                </div>
-            @endif
-            <div class="totals-col">
-                <div class="totals">
-                    <table>
-                        <tr>
-                            <td class="label">Subtotal honorarios</td>
-                            <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->subtotal) }}</td>
-                        </tr>
-                        @if($proposal->apply_tax && $proposal->tax_percentage !== null)
+        <table class="totals-layout" cellpadding="0" cellspacing="0">
+            <tr>
+                @if($sideNoteHtml !== '')
+                    <td class="side-note-col" width="58%" valign="top">
+                        <div class="side-note">{!! $sideNoteHtml !!}</div>
+                    </td>
+                    <td width="42%" valign="top" align="right">
+                        <table class="totals-box" cellpadding="0" cellspacing="0" width="100%">
                             <tr>
-                                <td class="label">IVA ({{ number_format($proposal->tax_percentage, 0) }}%)</td>
-                                <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->tax_amount) }}</td>
+                                <td class="label">Subtotal honorarios</td>
+                                <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->subtotal) }}</td>
                             </tr>
-                        @endif
-                        @if($proposal->apply_bank_fee && $proposal->bank_fee_value !== null)
+                            @if($proposal->apply_tax && $proposal->tax_percentage !== null)
+                                <tr>
+                                    <td class="label">IVA ({{ number_format($proposal->tax_percentage, 0) }}%)</td>
+                                    <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->tax_amount) }}</td>
+                                </tr>
+                            @endif
+                            @if($proposal->apply_bank_fee && $proposal->bank_fee_value !== null)
+                                <tr>
+                                    <td class="label">Gasto bancario</td>
+                                    <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->bank_fee_amount) }}</td>
+                                </tr>
+                            @endif
                             <tr>
-                                <td class="label">Gasto bancario</td>
-                                <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->bank_fee_amount) }}</td>
+                                <td class="label grand">Total</td>
+                                <td class="grand" style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->total_with_tax) }}</td>
                             </tr>
-                        @endif
-                        <tr>
-                            <td class="label grand">Total</td>
-                            <td class="grand" style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->total_with_tax) }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
+                        </table>
+                    </td>
+                @else
+                    <td width="100%" valign="top" align="right">
+                        <table class="totals-box" cellpadding="0" cellspacing="0" width="42%">
+                            <tr>
+                                <td class="label">Subtotal honorarios</td>
+                                <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->subtotal) }}</td>
+                            </tr>
+                            @if($proposal->apply_tax && $proposal->tax_percentage !== null)
+                                <tr>
+                                    <td class="label">IVA ({{ number_format($proposal->tax_percentage, 0) }}%)</td>
+                                    <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->tax_amount) }}</td>
+                                </tr>
+                            @endif
+                            @if($proposal->apply_bank_fee && $proposal->bank_fee_value !== null)
+                                <tr>
+                                    <td class="label">Gasto bancario</td>
+                                    <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->bank_fee_amount) }}</td>
+                                </tr>
+                            @endif
+                            <tr>
+                                <td class="label grand">Total</td>
+                                <td class="grand" style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->total_with_tax) }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                @endif
+            </tr>
+        </table>
 
         @if($closingFooterHtml !== '')
             <div class="closing-footer">{!! $closingFooterHtml !!}</div>
