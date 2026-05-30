@@ -24,7 +24,7 @@
         border: 0;
     }
     .pdf-body-content { position: relative; z-index: 1; }
-    h1.doc-title { font-size: 9px; font-weight: bold; margin: 0 0 6px 0; color: #111827; text-align: center; }
+    h1.doc-title { font-size: 9px; font-weight: bold; margin: 0 0 6px 0; color: #111827; text-align: left; }
     .context-body { margin-bottom: 8px; line-height: 1.4; font-size: 9px; color: #1f2937; }
     .context-body * { font-family: DejaVu Sans, sans-serif !important; font-size: 9px !important; color: #1f2937 !important; }
     .side-note { font-size: 9px; line-height: 1.4; color: #1f2937; }
