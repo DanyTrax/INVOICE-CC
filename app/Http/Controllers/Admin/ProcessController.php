@@ -914,12 +914,74 @@ class ProcessController extends Controller
      * Subir un archivo del expediente a Google Drive y registrarlo en Documentos en Drive.
      * Respeta la estructura de carpetas (proceso/cliente/país). Retorna ['drive_id' => id] o lanza.
      */
+    /**
+     * @return list<UploadedFile>
+     */
+    private function collectProcessUploadFiles(Request $request): array
+    {
+        $files = [];
+
+        if ($request->hasFile('document')) {
+            $single = $request->file('document');
+            if ($single instanceof UploadedFile && $single->isValid()) {
+                $files[] = $single;
+            }
+        }
+
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
+                if ($file instanceof UploadedFile && $file->isValid()) {
+                    $files[] = $file;
+                }
+            }
+        }
+
+        return $files;
+    }
+
+    private function formatProcessDriveUploadError(string $message): string
+    {
+        if (str_contains($message, 'OAuth') || str_contains($message, 'token') || str_contains($message, 'Reautoriza')) {
+            return 'Google Drive no está conectado o el acceso ha expirado. Ve a Configuración > Google Drive y haz clic en «Conectar con Google» para reautorizar.';
+        }
+
+        return 'No se pudo subir el documento: '.$message;
+    }
+
+    /**
+     * @param  list<UploadedFile>  $files
+     * @return array{uploaded: int, errors: list<string>}
+     */
+    private function uploadProcessDocumentsToDrive(Process $process, array $files): array
+    {
+        $uploadedCount = 0;
+        $errors = [];
+
+        foreach ($files as $file) {
+            try {
+                $this->uploadProcessFileToDrive($process, $file);
+                $uploadedCount++;
+            } catch (\Exception $e) {
+                $name = $file->getClientOriginalName() ?: 'archivo';
+                $errors[] = $name.': '.$e->getMessage();
+                Log::error('Error al subir documento del proceso', [
+                    'process_id' => $process->id,
+                    'file_name' => $name,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return ['uploaded' => $uploadedCount, 'errors' => $errors];
+    }
+
     private function uploadProcessFileToDrive(Process $process, UploadedFile $file, ?string $fileName = null): array
     {
         $tempDir = storage_path('app/temp');
-        if (! is_dir($tempDir)) {
-            mkdir($tempDir, 0755, true);
+        if (! is_dir($tempDir) && ! mkdir($tempDir, 0755, true)) {
+            throw new \Exception('No se pudo crear el directorio temporal para la subida.');
         }
+
         $originalName = $fileName ?? $file->getClientOriginalName();
         $mimeType = $file->getMimeType() ?: 'application/octet-stream';
         $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
@@ -928,7 +990,17 @@ class ProcessController extends Controller
         $uniqueName = Str::uuid().'_'.$safeName.($extension ? '.'.$extension : '');
         $fullPath = $tempDir.'/'.$uniqueName;
 
-        $file->move($tempDir, $uniqueName);
+        if (! $file->move($tempDir, $uniqueName)) {
+            throw new \Exception('No se pudo preparar el archivo: '.$originalName);
+        }
+
+        if (! file_exists($fullPath) || filesize($fullPath) === 0) {
+            if (file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
+            throw new \Exception('El archivo está vacío o no se pudo leer: '.$originalName);
+        }
+
         try {
             $driveService = app(GoogleDriveService::class);
             $folderId = $driveService->getOrCreateProcessFolder($process);
@@ -958,7 +1030,7 @@ class ProcessController extends Controller
     }
 
     /**
-     * Subir documento del expediente a Google Drive.
+     * Subir uno o varios documentos del expediente a Google Drive.
      */
     public function uploadDocument(Request $request, Process $process): RedirectResponse
     {
@@ -966,27 +1038,39 @@ class ProcessController extends Controller
         $this->authorizeProcessDocumentUpload($process);
 
         $request->validate([
-            'document' => 'required|file|max:10240', // 10MB
+            'document' => 'nullable|file|max:10240',
+            'documents' => 'nullable|array',
+            'documents.*' => 'file|max:10240',
         ]);
 
-        $file = $request->file('document');
-        try {
-            $this->uploadProcessFileToDrive($process, $file);
-        } catch (\Exception $e) {
-            Log::error('Error al subir documento del proceso', ['process_id' => $process->id, 'error' => $e->getMessage()]);
-            $message = $e->getMessage();
-            if (str_contains($message, 'OAuth') || str_contains($message, 'token') || str_contains($message, 'Reautoriza')) {
-                $message = 'Google Drive no está conectado o el acceso ha expirado. Ve a Configuración > Google Drive y haz clic en «Conectar con Google» para reautorizar.';
-            } else {
-                $message = 'No se pudo subir el documento: '.$message;
-            }
-
+        $files = $this->collectProcessUploadFiles($request);
+        if ($files === []) {
             return redirect()->route('admin.processes.show', $process)
-                ->with('error', $message);
+                ->withErrors(['documents' => 'Seleccione al menos un archivo para subir.']);
         }
 
-        return redirect()->route('admin.processes.show', $process)
-            ->with('success', 'Documento subido correctamente.');
+        $result = $this->uploadProcessDocumentsToDrive($process, $files);
+        $uploadedCount = $result['uploaded'];
+        $uploadErrors = $result['errors'];
+
+        if ($uploadedCount === 0) {
+            $message = $uploadErrors !== []
+                ? implode('; ', $uploadErrors)
+                : 'No se pudo subir ningún documento.';
+
+            return redirect()->route('admin.processes.show', $process)
+                ->with('error', $this->formatProcessDriveUploadError($message));
+        }
+
+        $success = $uploadedCount === 1
+            ? 'Documento subido correctamente.'
+            : $uploadedCount.' documentos subidos correctamente.';
+
+        if ($uploadErrors !== []) {
+            $success .= ' No se pudieron subir '.count($uploadErrors).' archivo(s): '.implode('; ', $uploadErrors);
+        }
+
+        return redirect()->route('admin.processes.show', $process)->with('success', $success);
     }
 
     /**

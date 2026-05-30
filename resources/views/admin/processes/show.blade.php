@@ -596,17 +596,7 @@
             <p class="text-sm text-gray-500 mb-3">La carpeta en Drive se creará al subir el primer documento (si está configurado Google Drive en Configuración).</p>
         @endif
         @processCanFor($process, 'upload')
-        <form action="{{ route('admin.processes.documents.upload', $process) }}" method="POST" enctype="multipart/form-data" class="mb-4 flex flex-wrap items-end gap-3">
-            @csrf
-            <div class="flex-1 min-w-[200px]">
-                <label for="process-document-file" class="block text-sm font-medium text-gray-700 mb-1">Subir documento</label>
-                <input type="file" name="document" id="process-document-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" required
-                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
-            </div>
-            <button type="submit" class="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
-                <i class="fas fa-upload mr-2"></i> Subir
-            </button>
-        </form>
+            @include('admin.processes.partials.drive-documents-upload', ['process' => $process])
         @endprocessCanFor
         <div class="border border-gray-200 rounded-lg overflow-hidden">
             <table class="w-full text-sm text-left text-gray-700">
