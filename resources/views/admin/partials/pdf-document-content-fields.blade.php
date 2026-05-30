@@ -22,7 +22,7 @@
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-2">Texto del PDF</h3>
     <p class="text-sm text-gray-600 mb-4">
-        Si el campo queda vacío o igual a la plantilla, al descargar se usa la <strong>plantilla PDF actual</strong>.
+        Si un campo queda vacío o igual a la plantilla, al descargar se usa la <strong>plantilla PDF actual</strong>.
         Si edita y guarda texto distinto, queda solo para esta cotización/propuesta.
         Variables:
         <code class="bg-gray-100 px-1 rounded text-xs">@verbatim{{fecha}}@endverbatim</code>,
@@ -34,35 +34,29 @@
     <div class="space-y-4">
         <div>
             <label for="pdf_body_html" class="block mb-2 text-sm font-medium text-gray-900">Contexto / Cuerpo (texto introductorio del PDF)</label>
-            @if($bodyField['shows_template'])
-                <p class="mb-2 text-xs text-teal-800 bg-teal-50 border border-teal-100 rounded-lg px-3 py-2">
-                    <i class="fas fa-info-circle mr-1"></i> Mostrando la <strong>plantilla</strong> (mismo texto que verá en el PDF). Edite y guarde para un texto propio de este documento.
-                </p>
-            @elseif($bodyField['is_override'])
-                <p class="mb-2 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                    <i class="fas fa-edit mr-1"></i> <strong>Texto de este documento</strong> (la plantilla no se usa en este campo). Borre todo y guarde para volver a la plantilla.
-                </p>
-            @endif
+            @include('admin.partials.pdf-field-source-hint', ['field' => $bodyField])
             <textarea name="pdf_body_html" id="pdf_body_html" rows="12"
                       class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ $bodyField['value'] }}</textarea>
             <p class="mt-1 text-xs text-gray-500">
-                Desde «Señor(es)…» hasta el párrafo previo a la tabla de ítems. Use la barra del editor para
-                <strong>tamaño de fuente</strong>, <strong>colores</strong> e <strong>interlineado</strong> (menú Estilos).
+                Desde «Señor(es)…» hasta el párrafo previo a la tabla de ítems. Tamaño, colores e interlineado en la barra del editor.
                 El membrete gráfico (imagen de fondo) se configura en la plantilla PDF.
             </p>
         </div>
         <div>
-            <label for="pdf_side_note_html" class="block mb-2 text-sm font-medium text-gray-900">Nota lateral (junto a totales)</label>
-            <textarea name="pdf_side_note_html" id="pdf_side_note_html" rows="5"
-                      class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-teal-500 focus:border-teal-500">{{ $sideField['value'] }}</textarea>
+            <label for="pdf_side_note_html" class="block mb-2 text-sm font-medium text-gray-900">Nota lateral (junto a subtotal / total)</label>
+            @include('admin.partials.pdf-field-source-hint', ['field' => $sideField])
+            <textarea name="pdf_side_note_html" id="pdf_side_note_html" rows="6"
+                      class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ $sideField['value'] }}</textarea>
+            <p class="mt-1 text-xs text-gray-500">Texto a la izquierda del cuadro de totales en el PDF.</p>
         </div>
         <div>
             <label for="pdf_footer" class="block mb-2 text-sm font-medium text-gray-900">Pie de página (debajo del total, encima de firma)</label>
-            <textarea name="pdf_footer" id="pdf_footer" rows="4" maxlength="2000"
-                      class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-teal-500 focus:border-teal-500">{{ $footerField['value'] }}</textarea>
-            <p class="mt-1 text-xs text-gray-500">Vacío o igual a plantilla → se usa el pie de la plantilla actual al descargar.</p>
+            @include('admin.partials.pdf-field-source-hint', ['field' => $footerField])
+            <textarea name="pdf_footer" id="pdf_footer" rows="5"
+                      class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ $footerField['value'] }}</textarea>
+            <p class="mt-1 text-xs text-gray-500">Aparece después del total y antes de la firma.</p>
         </div>
     </div>
 </div>
 
-@include('admin.partials.pdf-body-tinymce-init')
+@include('admin.partials.pdf-document-tinymce-init')

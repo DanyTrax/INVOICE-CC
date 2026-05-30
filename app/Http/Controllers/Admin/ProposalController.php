@@ -238,7 +238,7 @@ class ProposalController extends Controller
         $validated = $request->validate([
             'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
-            'pdf_footer' => 'nullable|string|max:2000',
+            'pdf_footer' => 'nullable|string|max:10000',
         ]);
         $proposal->update(PdfDocumentHelper::persistPdfTextFields($validated, ProposalPdfTemplate::getDefault()));
 
@@ -273,7 +273,7 @@ class ProposalController extends Controller
             'bank_fee_value' => 'nullable|numeric|min:0',
             'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
-            'pdf_footer' => 'nullable|string|max:2000',
+            'pdf_footer' => 'nullable|string|max:10000',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:proposal_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',

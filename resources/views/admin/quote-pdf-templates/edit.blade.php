@@ -37,6 +37,4 @@
     </div>
 @endsection
 
-@include('admin.partials.pdf-template-body-tinymce-init', [
-    'tinymcePlaceholder' => 'Ej: Bogotá D. C. {{fecha}}… Señor(a) {{destinatario}}… párrafo introductorio (antes de la tabla).',
-])
+@include('admin.partials.pdf-template-tinymce-init')

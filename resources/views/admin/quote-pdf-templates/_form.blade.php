@@ -53,12 +53,14 @@
     <div class="md:col-span-2">
         <label for="side_note_html" class="block mb-2 text-sm font-medium text-gray-900">Nota lateral (junto a subtotal / total)</label>
         <textarea name="side_note_html" id="side_note_html" rows="6" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('side_note_html', $template->side_note_html ?? '') }}</textarea>
+        <p class="mt-1 text-xs text-gray-500">Editor con tamaño, colores e interlineado (menú Estilos).</p>
         <p class="mt-1 text-xs text-gray-500">Texto libre en el espacio a la izquierda de los totales. Acepta las mismas variables.</p>
     </div>
 
     <div class="md:col-span-2">
         <label for="closing_footer_html" class="block mb-2 text-sm font-medium text-gray-900">Pie de página (debajo del total, encima de la firma)</label>
         <textarea name="closing_footer_html" id="closing_footer_html" rows="5" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('closing_footer_html', $template->closing_footer_html ?? '') }}</textarea>
+        <p class="mt-1 text-xs text-gray-500">Editor con tamaño, colores e interlineado (menú Estilos).</p>
         <p class="mt-1 text-xs text-gray-500">Aparece al final del documento, después del total y antes de la línea de firma.</p>
     </div>
 

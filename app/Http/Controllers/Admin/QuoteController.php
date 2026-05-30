@@ -124,7 +124,7 @@ class QuoteController extends Controller
             'bank_fee_value' => 'nullable|numeric|min:0',
             'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
-            'pdf_footer' => 'nullable|string|max:2000',
+            'pdf_footer' => 'nullable|string|max:10000',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
@@ -267,7 +267,7 @@ class QuoteController extends Controller
         $validated = $request->validate([
             'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
-            'pdf_footer' => 'nullable|string|max:2000',
+            'pdf_footer' => 'nullable|string|max:10000',
         ]);
         $quote->update(PdfDocumentHelper::persistPdfTextFields($validated, QuotePdfTemplate::getDefault()));
 
@@ -409,7 +409,7 @@ class QuoteController extends Controller
             'bank_fee_value' => 'nullable|numeric|min:0',
             'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
-            'pdf_footer' => 'nullable|string|max:2000',
+            'pdf_footer' => 'nullable|string|max:10000',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
             'items.*.service_id' => 'required|exists:services,id',
