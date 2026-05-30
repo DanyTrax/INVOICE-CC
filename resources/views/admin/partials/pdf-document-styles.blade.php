@@ -26,11 +26,11 @@
     .pdf-body-content { position: relative; z-index: 1; }
     h1.doc-title { font-size: 9px; font-weight: bold; margin: 0 0 6px 0; color: #111827; text-align: left; }
     .context-body { margin-bottom: 8px; line-height: 1.4; font-size: 9px; color: #1f2937; }
-    .context-body * { font-family: DejaVu Sans, sans-serif !important; font-size: 9px !important; color: #1f2937 !important; }
+    .context-body * { font-family: DejaVu Sans, sans-serif !important; color: #1f2937 !important; }
     .side-note { font-size: 9px; line-height: 1.4; color: #1f2937; }
-    .side-note * { font-family: DejaVu Sans, sans-serif !important; font-size: 9px !important; color: #1f2937 !important; }
+    .side-note * { font-family: DejaVu Sans, sans-serif !important; color: #1f2937 !important; }
     .closing-footer { margin-top: 10px; font-size: 9px; line-height: 1.4; color: #1f2937; }
-    .closing-footer * { font-family: DejaVu Sans, sans-serif !important; font-size: 9px !important; }
+    .closing-footer * { font-family: DejaVu Sans, sans-serif !important; color: #1f2937 !important; }
     table.items { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; }
     table.items th { background: #ccfbf1; text-align: left; padding: 4px 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; border: 1px solid #99f6e4; word-wrap: break-word; }
     table.items td { padding: 4px; border: 1px solid #e5e7eb; font-size: 9px; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }

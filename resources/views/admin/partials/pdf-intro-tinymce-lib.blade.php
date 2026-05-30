@@ -25,7 +25,7 @@ window.initPdfIntroTinyMce = function(opts) {
             'alignleft aligncenter alignright alignjustify',
             'bullist numlist | link | removeformat code'
         ].join(' | '),
-        font_size_formats: '8pt 9pt 10pt 11pt 12pt 13pt 14pt 16pt 18pt 20pt 24pt',
+        font_size_formats: '4pt 5pt 6pt 7pt 8pt 9pt 10pt 11pt 12pt 13pt 14pt 16pt 18pt 20pt 24pt',
         style_formats: [
             { title: 'Párrafo', block: 'p' },
             { title: 'Interlineado 1.0', block: 'p', styles: { lineHeight: '1' } },
@@ -34,7 +34,8 @@ window.initPdfIntroTinyMce = function(opts) {
             { title: 'Interlineado 1.5', block: 'p', styles: { lineHeight: '1.5' } },
             { title: 'Interlineado 1.75', block: 'p', styles: { lineHeight: '1.75' } },
             { title: 'Interlineado 2.0', block: 'p', styles: { lineHeight: '2' } },
-            { title: 'Texto pequeño', inline: 'span', styles: { fontSize: '9pt' } },
+            { title: 'Texto muy pequeño (6pt)', inline: 'span', styles: { fontSize: '6pt' } },
+            { title: 'Texto pequeño (8pt)', inline: 'span', styles: { fontSize: '8pt' } },
             { title: 'Texto grande', inline: 'span', styles: { fontSize: '14pt' } }
         ],
         color_map: [
