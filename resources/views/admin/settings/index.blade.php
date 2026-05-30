@@ -265,7 +265,7 @@
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                             <tr>
                                 <th class="px-4 py-3">Nombre</th>
-                                <th class="px-4 py-3">Logo</th>
+                                <th class="px-4 py-3">Membrete</th>
                                 <th class="px-4 py-3">Por defecto</th>
                                 <th class="px-4 py-3 w-40">Acciones</th>
                             </tr>
@@ -275,11 +275,7 @@
                                 <tr class="border-b border-gray-200 hover:bg-gray-50">
                                     <td class="px-4 py-3 font-medium">{{ $t->name }}</td>
                                     <td class="px-4 py-3">
-                                        @if($t->logo_path && file_exists(public_path($t->logo_path)))
-                                            <img src="{{ asset($t->logo_path) }}" alt="" class="h-10 w-auto object-contain">
-                                        @else
-                                            <span class="text-gray-400">—</span>
-                                        @endif
+                                        @include('admin.partials.pdf-template-letterhead-thumb', ['template' => $t])
                                     </td>
                                     <td class="px-4 py-3">
                                         @if($t->is_default)
@@ -326,7 +322,7 @@
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                             <tr>
                                 <th class="px-4 py-3">Nombre</th>
-                                <th class="px-4 py-3">Logo</th>
+                                <th class="px-4 py-3">Membrete</th>
                                 <th class="px-4 py-3">Por defecto</th>
                                 <th class="px-4 py-3 w-40">Acciones</th>
                             </tr>
@@ -336,11 +332,7 @@
                                 <tr class="border-b border-gray-200 hover:bg-gray-50">
                                     <td class="px-4 py-3 font-medium">{{ $t->name }}</td>
                                     <td class="px-4 py-3">
-                                        @if($t->logo_path && file_exists(public_path($t->logo_path)))
-                                            <img src="{{ asset($t->logo_path) }}" alt="" class="h-10 w-auto object-contain">
-                                        @else
-                                            <span class="text-gray-400">—</span>
-                                        @endif
+                                        @include('admin.partials.pdf-template-letterhead-thumb', ['template' => $t])
                                     </td>
                                     <td class="px-4 py-3">
                                         @if($t->is_default)
