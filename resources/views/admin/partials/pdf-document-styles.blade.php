@@ -1,12 +1,11 @@
 <style>
     @page { size: letter; margin: 0; }
     html { margin: 0; padding: 0; }
-    body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 27mm 12mm 14mm 12mm; line-height: 1.45; }
+    body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #1f2937; margin: 0; padding: 27mm 12mm 14mm 12mm; line-height: 1.4; }
     .pdf-letterhead {
         position: fixed;
         top: 0;
         left: 0;
-        /* Carta US @ 96dpi (DomPDF): 8.5in × 11in */
         width: 816px;
         height: 1056px;
         margin: 0;
@@ -25,26 +24,25 @@
         border: 0;
     }
     .pdf-body-content { position: relative; z-index: 1; }
-    h1.doc-title { font-size: 11px; font-weight: bold; margin: 0 0 8px 0; color: #111827; text-align: center; }
-    .context-body { margin-bottom: 10px; line-height: 1.45; font-size: 11px; color: #1f2937; }
-    .context-body * { font-family: DejaVu Sans, sans-serif !important; font-size: 11px !important; color: #1f2937 !important; }
-    .side-note { font-size: 11px; line-height: 1.45; color: #1f2937; }
-    .side-note * { font-family: DejaVu Sans, sans-serif !important; font-size: 11px !important; }
-    .closing-footer { margin-top: 14px; font-size: 11px; line-height: 1.45; color: #1f2937; }
-    .closing-footer * { font-family: DejaVu Sans, sans-serif !important; font-size: 11px !important; }
-    table.items { width: 100%; border-collapse: collapse; margin-bottom: 14px; table-layout: fixed; }
-    table.items th { background: #ccfbf1; text-align: left; padding: 6px 5px; font-size: 11px; font-weight: bold; text-transform: uppercase; border: 1px solid #99f6e4; word-wrap: break-word; }
-    table.items td { padding: 5px; border: 1px solid #e5e7eb; font-size: 11px; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }
+    h1.doc-title { font-size: 9px; font-weight: bold; margin: 0 0 6px 0; color: #111827; text-align: center; }
+    .context-body { margin-bottom: 8px; line-height: 1.4; font-size: 9px; color: #1f2937; }
+    .context-body * { font-family: DejaVu Sans, sans-serif !important; font-size: 9px !important; color: #1f2937 !important; }
+    .side-note { font-size: 9px; line-height: 1.4; color: #1f2937; }
+    .side-note * { font-family: DejaVu Sans, sans-serif !important; font-size: 9px !important; color: #1f2937 !important; }
+    .closing-footer { margin-top: 10px; font-size: 9px; line-height: 1.4; color: #1f2937; }
+    .closing-footer * { font-family: DejaVu Sans, sans-serif !important; font-size: 9px !important; }
+    table.items { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; }
+    table.items th { background: #ccfbf1; text-align: left; padding: 4px 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; border: 1px solid #99f6e4; word-wrap: break-word; }
+    table.items td { padding: 4px; border: 1px solid #e5e7eb; font-size: 9px; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; }
     table.items tr.alt { background: #f9fafb; }
-    table.totals-layout { width: 100%; border-collapse: collapse; margin-top: 14px; }
+    table.totals-layout { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
     table.totals-layout td { vertical-align: top; padding: 0; }
-    table.totals-layout .side-note-col { padding-right: 10px; }
-    table.totals-box { width: 100%; border-collapse: collapse; border: 1px solid #9ca3af; }
-    table.totals-box td { padding: 6px 8px; border: 1px solid #9ca3af; font-size: 11px; color: #1f2937; background-color: #ffffff; }
-    table.totals-box .label { background-color: #f3f4f6; font-weight: bold; width: 55%; }
+    table.totals-box { border-collapse: collapse; border: 1px solid #9ca3af; }
+    table.totals-box td { padding: 4px 6px; border: 1px solid #9ca3af; font-size: 9px; color: #1f2937; background-color: #ffffff; }
+    table.totals-box .label { background-color: #f3f4f6; font-weight: bold; width: 52%; }
     table.totals-box .grand { background-color: #d1d5db; font-weight: bold; }
-    .signature { margin-top: 28px; padding-top: 0; }
-    .signature-line { width: 240px; border-bottom: 1px solid #1f2937; margin-top: 28px; margin-bottom: 4px; }
-    .meta { margin-bottom: 8px; font-size: 11px; }
-    .meta p { margin: 3px 0; }
+    .signature { margin-top: 20px; padding-top: 0; font-size: 9px; }
+    .signature-line { width: 200px; border-bottom: 1px solid #1f2937; margin-top: 20px; margin-bottom: 3px; }
+    .meta { margin-bottom: 6px; font-size: 9px; }
+    .meta p { margin: 2px 0; }
 </style>

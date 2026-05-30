@@ -67,64 +67,12 @@
             </tbody>
         </table>
 
-        <table class="totals-layout" cellpadding="0" cellspacing="0">
-            <tr>
-                @if($sideNoteHtml !== '')
-                    <td class="side-note-col" width="58%" valign="top">
-                        <div class="side-note">{!! $sideNoteHtml !!}</div>
-                    </td>
-                    <td width="42%" valign="top" align="right">
-                        <table class="totals-box" cellpadding="0" cellspacing="0" width="100%">
-                            <tr>
-                                <td class="label">Subtotal honorarios</td>
-                                <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->subtotal) }}</td>
-                            </tr>
-                            @if($proposal->apply_tax && $proposal->tax_percentage !== null)
-                                <tr>
-                                    <td class="label">IVA ({{ number_format($proposal->tax_percentage, 0) }}%)</td>
-                                    <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->tax_amount) }}</td>
-                                </tr>
-                            @endif
-                            @if($proposal->apply_bank_fee && $proposal->bank_fee_value !== null)
-                                <tr>
-                                    <td class="label">Gasto bancario</td>
-                                    <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->bank_fee_amount) }}</td>
-                                </tr>
-                            @endif
-                            <tr>
-                                <td class="label grand">Total</td>
-                                <td class="grand" style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->total_with_tax) }}</td>
-                            </tr>
-                        </table>
-                    </td>
-                @else
-                    <td width="100%" valign="top" align="right">
-                        <table class="totals-box" cellpadding="0" cellspacing="0" width="42%">
-                            <tr>
-                                <td class="label">Subtotal honorarios</td>
-                                <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->subtotal) }}</td>
-                            </tr>
-                            @if($proposal->apply_tax && $proposal->tax_percentage !== null)
-                                <tr>
-                                    <td class="label">IVA ({{ number_format($proposal->tax_percentage, 0) }}%)</td>
-                                    <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->tax_amount) }}</td>
-                                </tr>
-                            @endif
-                            @if($proposal->apply_bank_fee && $proposal->bank_fee_value !== null)
-                                <tr>
-                                    <td class="label">Gasto bancario</td>
-                                    <td style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->bank_fee_amount) }}</td>
-                                </tr>
-                            @endif
-                            <tr>
-                                <td class="label grand">Total</td>
-                                <td class="grand" style="text-align: right;">{{ $proposal->currency }} {{ $fmt($proposal->total_with_tax) }}</td>
-                            </tr>
-                        </table>
-                    </td>
-                @endif
-            </tr>
-        </table>
+        @include('admin.partials.pdf-totals-section', [
+            'doc' => $proposal,
+            'fmt' => $fmt,
+            'sideNoteHtml' => $sideNoteHtml,
+            'subtotalLabel' => 'Subtotal honorarios',
+        ])
 
         @if($closingFooterHtml !== '')
             <div class="closing-footer">{!! $closingFooterHtml !!}</div>
@@ -134,13 +82,13 @@
             <div class="signature-line"></div>
             @if($useTemplate && (trim($template->signature_name ?? '') !== '' || trim($template->signature_position ?? '') !== ''))
                 @if(trim($template->signature_name ?? '') !== '')
-                    <div style="font-size: {{ $sigNameSize }}px; font-weight: bold; color: #1f2937;">{{ trim($template->signature_name) }}</div>
+                    <div style="font-size: {{ max(8, (int) $sigNameSize - 2) }}px; font-weight: bold; color: #1f2937;">{{ trim($template->signature_name) }}</div>
                 @endif
                 @if(trim($template->signature_position ?? '') !== '')
-                    <div style="font-size: {{ $sigPosSize }}px; color: #6b7280; margin-top: 1px;">{{ trim($template->signature_position) }}</div>
+                    <div style="font-size: {{ max(8, (int) $sigPosSize - 2) }}px; color: #6b7280; margin-top: 1px;">{{ trim($template->signature_position) }}</div>
                 @endif
             @else
-                <div style="font-size: 11px; color: #6b7280;">Firma autorizada</div>
+                <div style="font-size: 9px; color: #6b7280;">Firma autorizada</div>
             @endif
         </div>
     </div>
