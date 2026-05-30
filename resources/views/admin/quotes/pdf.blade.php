@@ -20,7 +20,7 @@
         ? PdfDocumentHelper::resolveClosingFooterHtml($useTemplate ? $template : null, $quote)
         : '';
     $sigNameSize = (int) ($useTemplate ? ($template->signature_name_font_size ?? 11) : 11);
-    $sigPosSize = (int) ($useTemplate ? ($template->signature_position_font_size ?? 11) : 11);
+    $sigPosSize = (int) ($useTemplate ? ($template->signature_position_font_size ?? 9) : 9);
     $pdfSignatureSpacerPx = $useTemplate ? (int) ($template->signature_margin_top_px ?? 130) : 130;
     $pdfFooterReserveMm = $letterheadDataUri
         ? ($useTemplate ? (int) ($template->letterhead_footer_reserve_mm ?? 42) : 42)

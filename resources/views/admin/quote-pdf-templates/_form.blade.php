@@ -80,15 +80,15 @@
                        placeholder="Ej: Gerente General">
             </div>
             <div>
-                <label for="signature_name_font_size" class="block mb-2 text-sm font-medium text-gray-900">Tamaño texto — Nombre (px)</label>
-                <input type="number" name="signature_name_font_size" id="signature_name_font_size" min="8" max="24"
+                <label for="signature_name_font_size" class="block mb-2 text-sm font-medium text-gray-900">Tamaño texto — Nombre (pt)</label>
+                <input type="number" name="signature_name_font_size" id="signature_name_font_size" min="4" max="24" step="1"
                        value="{{ old('signature_name_font_size', $template->signature_name_font_size ?? 11) }}"
                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
             </div>
             <div>
-                <label for="signature_position_font_size" class="block mb-2 text-sm font-medium text-gray-900">Tamaño texto — Cargo (px)</label>
-                <input type="number" name="signature_position_font_size" id="signature_position_font_size" min="8" max="24"
-                       value="{{ old('signature_position_font_size', $template->signature_position_font_size ?? 11) }}"
+                <label for="signature_position_font_size" class="block mb-2 text-sm font-medium text-gray-900">Tamaño texto — Cargo (pt)</label>
+                <input type="number" name="signature_position_font_size" id="signature_position_font_size" min="4" max="24" step="1"
+                       value="{{ old('signature_position_font_size', $template->signature_position_font_size ?? 9) }}"
                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
             </div>
             <div>
