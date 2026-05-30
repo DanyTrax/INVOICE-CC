@@ -9,13 +9,18 @@ class ProposalPdfTemplate extends Model
     protected $fillable = [
         'name',
         'logo_path',
+        'letterhead_path',
         'header_company_name',
         'header_nit',
         'header_subtitle',
         'body_html',
+        'side_note_html',
+        'closing_footer_html',
         'footer_text',
         'signature_name',
         'signature_position',
+        'signature_name_font_size',
+        'signature_position_font_size',
         'is_default',
     ];
 

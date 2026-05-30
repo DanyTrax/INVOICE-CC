@@ -8,10 +8,14 @@ use App\Models\ConceptCatalog;
 use App\Models\Proposal;
 use App\Models\ProposalItem;
 use App\Models\ProposalPdfTemplate;
+use App\Services\CompanyConsecutiveService;
 use App\Settings\GeneralSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProposalController extends Controller
@@ -32,7 +36,12 @@ class ProposalController extends Controller
             $query->where('status', $request->status);
         }
 
-        $proposals = $query->orderBy('date', 'desc')->paginate(15)->withQueryString();
+        $proposals = $query->join('companies', 'proposals.client_id', '=', 'companies.id')
+            ->orderBy('companies.name')
+            ->orderBy('proposals.consecutive')
+            ->select('proposals.*')
+            ->paginate(15)
+            ->withQueryString();
 
         return view('admin.proposals.index', compact('proposals'));
     }
@@ -41,9 +50,29 @@ class ProposalController extends Controller
     {
         $companies = Company::orderBy('name')->get();
         $conceptCatalog = ConceptCatalog::active()->orderBy('name')->get();
-        $suggestedConsecutive = $this->nextConsecutive();
+        $defaultPdfTemplate = ProposalPdfTemplate::getDefault();
+        $suggestedConsecutive = '';
 
-        return view('admin.proposals.create', compact('companies', 'conceptCatalog', 'suggestedConsecutive'));
+        return view('admin.proposals.create', compact('companies', 'conceptCatalog', 'suggestedConsecutive', 'defaultPdfTemplate'));
+    }
+
+    public function suggestConsecutive(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'client_id' => 'required|exists:companies,id',
+            'year' => 'nullable|integer|min:2000|max:2100',
+        ]);
+
+        try {
+            $year = isset($validated['year']) ? (int) $validated['year'] : null;
+            $consecutive = CompanyConsecutiveService::suggestProposalConsecutive((int) $validated['client_id'], $year);
+
+            return response()->json(['consecutive' => $consecutive]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => collect($e->errors())->flatten()->first() ?? 'Siglas no válidas.',
+            ], 422);
+        }
     }
 
     public function store(Request $request): RedirectResponse
@@ -67,6 +96,9 @@ class ProposalController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => !empty($validated['apply_bank_fee']),
             'bank_fee_value' => !empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
+            'pdf_body_html' => $validated['pdf_body_html'] ?? null,
+            'pdf_side_note_html' => $validated['pdf_side_note_html'] ?? null,
+            'pdf_footer' => $validated['pdf_footer'] ?? null,
         ]);
 
         foreach ($validated['items'] as $pos => $row) {
@@ -136,6 +168,9 @@ class ProposalController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => !empty($validated['apply_bank_fee']),
             'bank_fee_value' => !empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
+            'pdf_body_html' => $validated['pdf_body_html'] ?? null,
+            'pdf_side_note_html' => $validated['pdf_side_note_html'] ?? null,
+            'pdf_footer' => $validated['pdf_footer'] ?? null,
         ]);
 
         $existingIds = [];
@@ -192,14 +227,18 @@ class ProposalController extends Controller
     public function updatePdfFooter(Request $request, Proposal $proposal): RedirectResponse
     {
         $validated = $request->validate([
-            'pdf_footer' => 'nullable|string|max:1000',
+            'pdf_body_html' => 'nullable|string',
+            'pdf_side_note_html' => 'nullable|string',
+            'pdf_footer' => 'nullable|string|max:2000',
         ]);
         $proposal->update([
+            'pdf_body_html' => $validated['pdf_body_html'] ?? null,
+            'pdf_side_note_html' => $validated['pdf_side_note_html'] ?? null,
             'pdf_footer' => $validated['pdf_footer'] ?? null,
         ]);
 
         return redirect()->route('admin.proposals.show', $proposal)
-            ->with('success', 'Pie de página del PDF actualizado.');
+            ->with('success', 'Textos del PDF actualizados.');
     }
 
     public function destroy(Proposal $proposal): RedirectResponse
@@ -211,9 +250,10 @@ class ProposalController extends Controller
 
     protected function validateProposal(Request $request, ?int $proposalId = null): array
     {
-        $consecutiveRule = 'required|string|max:32|unique:proposals,consecutive';
+        $uniqueConsecutive = Rule::unique('proposals', 'consecutive')
+            ->where(fn ($q) => $q->where('client_id', $request->input('client_id')));
         if ($proposalId) {
-            $consecutiveRule .= ',' . $proposalId;
+            $uniqueConsecutive->ignore($proposalId);
         }
 
         return $request->validate([
@@ -221,11 +261,14 @@ class ProposalController extends Controller
             'date' => 'required|date',
             'currency' => 'required|string|in:COP,USD',
             'exchange_rate' => 'nullable|numeric|min:0',
-            'consecutive' => $consecutiveRule,
+            'consecutive' => ['required', 'string', 'max:32', $uniqueConsecutive],
             'apply_tax' => 'nullable|boolean',
             'tax_percentage' => 'nullable|numeric|min:0|max:100',
             'apply_bank_fee' => 'nullable|boolean',
             'bank_fee_value' => 'nullable|numeric|min:0',
+            'pdf_body_html' => 'nullable|string',
+            'pdf_side_note_html' => 'nullable|string',
+            'pdf_footer' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:proposal_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
@@ -234,21 +277,5 @@ class ProposalController extends Controller
             'items.*.scope' => 'nullable|string|max:5000',
             'items.*.fee_value' => 'required|numeric|min:0',
         ]);
-    }
-
-    protected function nextConsecutive(): string
-    {
-        $year = now()->year % 100;
-        $yearSuffix = str_pad((string) $year, 2, '0', STR_PAD_LEFT);
-        $lastConsecutive = Proposal::where('consecutive', 'like', 'P-%' . $yearSuffix)
-            ->orderBy('consecutive', 'desc')
-            ->value('consecutive');
-
-        $nextNumber = 1;
-        if ($lastConsecutive && preg_match('/^P-(\d+)-/', $lastConsecutive, $m)) {
-            $nextNumber = (int) $m[1] + 1;
-        }
-
-        return sprintf('P-%03d-%s', $nextNumber, $yearSuffix);
     }
 }

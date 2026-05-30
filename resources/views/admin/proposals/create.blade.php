@@ -40,9 +40,19 @@
                     <select name="client_id" id="client_id" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
                         <option value="">Seleccione...</option>
                         @foreach($companies as $c)
-                            <option value="{{ $c->id }}" {{ old('client_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                            @php
+                                $clean = strtoupper(preg_replace('/[^A-Za-z]/', '', (string) ($c->code_abbreviation ?? '')) ?? '');
+                                $siglasOk = mb_strlen($clean) >= 2;
+                            @endphp
+                            <option value="{{ $c->id }}" {{ old('client_id') == $c->id ? 'selected' : '' }}
+                                    data-siglas-ok="{{ $siglasOk ? '1' : '0' }}"
+                                    data-code-abbr="{{ $clean }}">{{ $c->name }}</option>
                         @endforeach
                     </select>
+                    <p id="client_siglas_warn" class="mt-2 hidden text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2" role="status">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> Esta empresa no tiene siglas válidas (2–10 letras) para numerar propuestas.
+                        <a id="client_siglas_edit_link" href="{{ route('admin.companies.index') }}" class="font-medium underline hover:text-amber-900">Editar empresa</a>
+                    </p>
                 </div>
                 <div>
                     <label for="date" class="block mb-2 text-sm font-medium text-gray-900">Fecha <span class="text-red-500">*</span></label>
@@ -57,8 +67,8 @@
                 </div>
                 <div>
                     <label for="consecutive" class="block mb-2 text-sm font-medium text-gray-900">Propuesta No. <span class="text-red-500">*</span></label>
-                    <input type="text" name="consecutive" id="consecutive" value="{{ old('consecutive', $suggestedConsecutive ?? '') }}" required maxlength="32" class="bg-gray-50 border border-gray-300 text-sm rounded-lg block w-full p-2.5">
-                    <p class="mt-1 text-xs text-gray-500">Formato sugerido: P-NNN-AA (ej. P-001-26).</p>
+                    <input type="text" name="consecutive" id="consecutive" value="{{ old('consecutive', $suggestedConsecutive ?? '') }}" required maxlength="32" placeholder="Ej: PHILIPS-P-001-26" class="bg-gray-50 border border-gray-300 text-sm rounded-lg block w-full p-2.5">
+                    <p class="mt-1 text-xs text-gray-500">Se sugiere automáticamente con las <strong>siglas del cliente</strong> y numeración propia por empresa (ej. PHILIPS-P-001-26). Puede ajustarlo manualmente.</p>
                 </div>
                 <div class="md:col-span-2">
                     <label for="exchange_rate" class="block mb-2 text-sm font-medium text-gray-900">Tasa de cambio (si aplica)</label>
@@ -82,6 +92,12 @@
                 </span>
             </div>
         </div>
+
+        @include('admin.partials.pdf-document-content-fields', [
+            'pdfBodyHtml' => old('pdf_body_html', $defaultPdfTemplate?->body_html ?? ''),
+            'pdfSideNoteHtml' => old('pdf_side_note_html', $defaultPdfTemplate?->side_note_html ?? ''),
+            'pdfFooter' => old('pdf_footer', $defaultPdfTemplate?->closing_footer_html ?? ''),
+        ])
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
@@ -116,6 +132,10 @@
             <a href="{{ route('admin.proposals.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">Cancelar</a>
         </div>
     </form>
+
+    @include('admin.partials.client-consecutive-suggest-script', [
+        'suggestUrl' => route('admin.proposals.suggest-consecutive'),
+    ])
 @endsection
 
 @php

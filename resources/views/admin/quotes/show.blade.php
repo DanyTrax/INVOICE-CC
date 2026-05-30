@@ -270,22 +270,34 @@
         @endif
     </div>
 
-    {{-- Pie de página del PDF (editable) --}}
+    {{-- Textos del PDF --}}
     @quoteCan('edit')
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Pie de página del PDF</h3>
-        <p class="text-sm text-gray-600 mb-3">Este texto se muestra en la parte inferior de la cotización al descargar el PDF. Si está vacío, se usará el pie definido en la plantilla o en Configuración.</p>
-        <form action="{{ route('admin.quotes.pdf-footer.update', $quote) }}" method="POST" class="flex flex-col gap-3">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Texto del PDF</h3>
+        <p class="text-sm text-gray-600 mb-3">Edite el membrete, la nota lateral o el pie de cierre para esta cotización. Si un campo queda vacío, se usa el de la plantilla al descargar.</p>
+        <form action="{{ route('admin.quotes.pdf-footer.update', $quote) }}" method="POST" class="flex flex-col gap-4">
             @csrf
             @method('PATCH')
-            <textarea name="pdf_footer" rows="3" maxlength="1000" placeholder="Ej: RAMS - Regulatory Affairs Management System"
-                      class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ old('pdf_footer', $quote->pdf_footer ?? '') }}</textarea>
+            <div>
+                <label for="pdf_body_html" class="block mb-1 text-sm font-medium text-gray-700">Membrete / Contexto / Cuerpo</label>
+                <textarea name="pdf_body_html" id="pdf_body_html" rows="8"
+                          class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-teal-500 focus:border-teal-500">{{ old('pdf_body_html', $quote->pdf_body_html ?? '') }}</textarea>
+            </div>
+            <div>
+                <label for="pdf_side_note_html" class="block mb-1 text-sm font-medium text-gray-700">Nota lateral (junto a totales)</label>
+                <textarea name="pdf_side_note_html" id="pdf_side_note_html" rows="4"
+                          class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-teal-500 focus:border-teal-500">{{ old('pdf_side_note_html', $quote->pdf_side_note_html ?? '') }}</textarea>
+            </div>
+            <div>
+                <label for="pdf_footer" class="block mb-1 text-sm font-medium text-gray-700">Pie de página (debajo del total, encima de firma)</label>
+                <textarea name="pdf_footer" id="pdf_footer" rows="4" maxlength="2000"
+                          class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-teal-500 focus:border-teal-500">{{ old('pdf_footer', $quote->pdf_footer ?? '') }}</textarea>
+            </div>
             @error('pdf_footer')
                 <p class="text-sm text-red-600">{{ $message }}</p>
             @enderror
-            <p class="text-xs text-gray-500">Máximo 1000 caracteres.</p>
             <button type="submit" class="self-start inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium text-sm">
-                <i class="fas fa-save mr-2"></i> Guardar pie de página
+                <i class="fas fa-save mr-2"></i> Guardar textos del PDF
             </button>
         </form>
     </div>

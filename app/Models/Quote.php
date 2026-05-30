@@ -25,6 +25,8 @@ class Quote extends Model
         'status',
         'cancellation_note',
         'pdf_footer',
+        'pdf_body_html',
+        'pdf_side_note_html',
         'total_professional_fees',
         'total_invima_fees',
         'apply_tax',

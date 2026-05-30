@@ -3,227 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <title>Cotización {{ $quote->consecutive }}</title>
-    <style>
-        @page { size: letter; margin: 28mm 12mm 14mm 12mm; }
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 0; }
-        .pdf-page-header { position: fixed; top: -28mm; left: 0; right: 0; z-index: 1; background: #fff; padding: 10px 0 0 0; }
-        .pdf-page-footer { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; box-sizing: border-box; z-index: 1; background: #fff; padding: 8px 12mm 10px 12mm; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: left; min-height: 28mm; }
-        .pdf-page-footer-content { width: 100%; white-space: pre-line; word-wrap: break-word; line-height: 1.4; }
-        .pdf-body-content { padding-top: 0; padding-bottom: 80px; }
-        .header { overflow: visible; }
-        .header-left { float: left; width: 28%; }
-        .header-right { float: right; width: 70%; text-align: right; }
-        .header-logo { max-height: 62px; max-width: 208px; display: block; object-fit: contain; margin-bottom: 2px; }
-        .header-company { font-size: 16px; font-weight: bold; color: #0d9488; margin-bottom: 2px; }
-        .header-company-below-logo { font-size: 10px; font-weight: bold; color: #0d9488; margin-bottom: 1px; line-height: 1.15; }
-        .header-nit { font-size: 9px; color: #374151; line-height: 1.2; margin-bottom: 0; }
-        .header-subtitle { font-size: 9px; color: #6b7280; margin-bottom: 6px; }
-        .header-details { font-size: 9px; color: #374151; line-height: 1.4; }
-        h1 { font-size: 15px; margin: 4px 0 6px 0; color: #111827; clear: both; text-align: center; }
-        .context-body { margin-bottom: 8px; line-height: 1.5; font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
-        .context-body * { font-family: DejaVu Sans, sans-serif !important; font-size: 11px !important; color: #1f2937; }
-        .context-body code, .context-body span, .context-body p { font-family: DejaVu Sans, sans-serif !important; font-size: 11px !important; }
-        .meta { margin-bottom: 8px; }
-        .meta p { margin: 3px 0; }
-        table.items { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
-        table.items th { background: #f3f4f6; text-align: left; padding: 8px 6px; font-size: 9px; text-transform: uppercase; border: 1px solid #e5e7eb; }
-        table.items td { padding: 6px; border: 1px solid #e5e7eb; }
-        table.items tr.alt { background: #f9fafb; }
-        .totals { margin-top: 18px; width: 280px; margin-left: auto; }
-        .totals table { width: 100%; border-collapse: collapse; }
-        .totals td { padding: 6px 8px; border: 1px solid #e5e7eb; }
-        .totals .label { background: #f3f4f6; font-weight: bold; width: 55%; }
-        .totals .grand { background: #ccfbf1; font-weight: bold; font-size: 12px; }
-        .signature { margin-top: 36px; padding-top: 0; }
-        .signature-line { width: 240px; border-bottom: 1px solid #1f2937; margin-top: 32px; margin-bottom: 4px; }
-        .signature-label { font-size: 9px; color: #6b7280; }
-        .signature-name { font-size: 12px; font-weight: bold; color: #1f2937; }
-    </style>
+    @include('admin.partials.pdf-document-styles')
 </head>
 <body>
     @php
+        use App\Support\PdfDocumentHelper;
         $template = $template ?? null;
         $useTemplate = $template && $template->id;
-
-        if ($useTemplate) {
-            $logoPath = ($template->logo_path && file_exists(public_path($template->logo_path)))
-                ? public_path($template->logo_path)
-                : null;
-            $footerText = trim($template->footer_text ?? '') ?: 'RAMS - Regulatory Affairs Management System';
-            $fechaTexto = $quote->date ? \Carbon\Carbon::parse($quote->date)->locale('es')->translatedFormat('d \d\e F \d\e Y') : '';
-            $ciudad = 'Bogotá D. C.';
-            $cliente = $quote->client->name ?? '';
-            $consecutivo = $quote->consecutive;
-            $destinatario = $quote->client->name ?? '';
-            $bodyHtml = $template->body_html ?? '';
-            $bodyHtml = str_replace(['{{fecha}}', '{{ciudad}}', '{{cliente}}', '{{consecutivo}}', '{{destinatario}}'], [$fechaTexto, $ciudad, $cliente, $consecutivo, $destinatario], $bodyHtml);
-        } else {
+        $letterheadPath = PdfDocumentHelper::resolveLetterheadPath($useTemplate ? $template : null);
+        if (! $letterheadPath) {
             $settings = $settings ?? app(\App\Settings\GeneralSettings::class);
-            $logoPath = (!empty($settings->agency_logo) && file_exists(public_path($settings->agency_logo)))
-                ? public_path($settings->agency_logo)
-                : null;
-            $footerText = !empty(trim($settings->quote_pdf_footer_text ?? ''))
-                ? $settings->quote_pdf_footer_text
-                : ($settings->footer_text ?? 'RAMS - Regulatory Affairs Management System');
+            if (! empty($settings->agency_logo) && file_exists(public_path($settings->agency_logo))) {
+                $letterheadPath = public_path($settings->agency_logo);
+            }
         }
-        if (!empty(trim($quote->pdf_footer ?? ''))) {
-            $footerText = trim($quote->pdf_footer);
-        }
+        $bodyHtml = PdfDocumentHelper::resolveBodyHtml($useTemplate ? $template : null, $quote);
+        $sideNoteHtml = PdfDocumentHelper::resolveSideNoteHtml($useTemplate ? $template : null, $quote);
+        $closingFooterHtml = PdfDocumentHelper::resolveClosingFooterHtml($useTemplate ? $template : null, $quote);
+        $sigNameSize = (int) ($useTemplate ? ($template->signature_name_font_size ?? 11) : 11);
+        $sigPosSize = (int) ($useTemplate ? ($template->signature_position_font_size ?? 11) : 11);
+        $fmt = fn ($n) => PdfDocumentHelper::formatMoney((float) $n, $quote->currency ?? 'COP');
     @endphp
 
-    {{-- Encabezado fijo: logo, nombre y NIT (se repite en cada página, 10px margen al top) --}}
-    <div class="pdf-page-header">
-        <div class="header">
-            <div class="header-left">
-                @if($logoPath)
-                    <img src="{{ $logoPath }}" alt="" class="header-logo">
-                @endif
-                @if($useTemplate)
-                    @if(!empty(trim($template->header_company_name ?? '')))
-                        <div class="header-company-below-logo">{{ $template->header_company_name }}</div>
-                    @endif
-                    @if(!empty(trim($template->header_nit ?? '')))
-                        <div class="header-nit"><strong>NIT.</strong> {{ $template->header_nit }}</div>
-                    @endif
-                @else
-                    @if(!$logoPath)
-                        <span class="header-company">{{ $settings->agency_name ?? 'RAMS' }}</span>
-                    @endif
-                @endif
-            </div>
+    @if($letterheadPath)
+        <div class="pdf-letterhead">
+            <img src="{{ $letterheadPath }}" alt="">
         </div>
-    </div>
+    @endif
 
-    {{-- Pie de página fijo (ancho completo, hasta 4 párrafos) --}}
-    <div class="pdf-page-footer"><div class="pdf-page-footer-content">{{ $footerText }}</div></div>
-
-    {{-- Cuerpo: toda la información después del encabezado (flujo normal, sin páginas en blanco) --}}
     <div class="pdf-body-content">
-        <h1>COTIZACIÓN No. {{ $quote->consecutive }}</h1>
+        <h1 class="doc-title">COTIZACIÓN No. {{ $quote->consecutive }}</h1>
 
-        @if($useTemplate)
-            @if(!empty(trim($bodyHtml)))
-                <div class="context-body">
-                    {!! $bodyHtml !!}
-                </div>
-            @endif
-        @else
+        @if($bodyHtml !== '')
+            <div class="context-body">{!! $bodyHtml !!}</div>
+        @elseif(! $useTemplate)
+            @php $settings = $settings ?? app(\App\Settings\GeneralSettings::class); @endphp
             <div class="meta">
                 <p><strong>Cliente:</strong> {{ $quote->client->name ?? '-' }}</p>
                 <p><strong>Fecha:</strong> {{ $quote->date?->format('d/m/Y') ?? '-' }}</p>
                 <p><strong>Moneda:</strong> {{ $quote->currency ?? 'COP' }}</p>
-                @if($quote->exchange_rate)
-                    <p><strong>Tasa de cambio:</strong> {{ number_format($quote->exchange_rate, 4) }}</p>
-                @endif
             </div>
         @endif
 
-    <table class="items">
-        <thead>
-            <tr>
-                <th style="width: 4%;">#</th>
-                @if($quote->show_row_id_column ?? false)
-                    <th style="width: 8%;">ROW ID</th>
-                @endif
-                <th style="width: 16%;">Servicio</th>
-                @if($quote->show_service_type_column)
-                    <th style="width: 14%;">Trámite</th>
-                @endif
-                @if($quote->show_description_column ?? true)
-                    <th style="width: 18%;">Producto / Descripción</th>
-                @endif
-                @if($quote->show_prev_license_column)
-                    <th style="width: 10%;">Solicitud / INVIMA</th>
-                @endif
-                @if($quote->show_raa_column)
-                    <th style="width: 6%;">RAA</th>
-                @endif
-                @if($quote->show_franquicia_column ?? false)
-                    <th style="width: 8%;">Franquicia</th>
-                @endif
-                @if($quote->show_centro_costos_column ?? false)
-                    <th style="width: 8%;">Centro de costos</th>
-                @endif
-                @if($quote->show_contacto_column ?? false)
-                    <th style="width: 8%;">Contacto</th>
-                @endif
-                <th style="width: 18%;">Alcance</th>
-                <th style="width: 8%; text-align: right;">Valor</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($quote->quoteItems as $item)
-                <tr class="{{ $loop->iteration % 2 === 0 ? 'alt' : '' }}">
-                    <td>{{ $item->item_position }}</td>
+        <table class="items">
+            <thead>
+                <tr>
+                    <th style="width: 4%;">#</th>
                     @if($quote->show_row_id_column ?? false)
-                        <td>{{ $item->row_id ?: '–' }}</td>
+                        <th style="width: 8%;">ROW ID</th>
                     @endif
-                    <td>{{ $item->service_label ?: ($item->service?->name ?? '-') }}</td>
+                    <th>Servicio</th>
                     @if($quote->show_service_type_column)
-                        <td>{{ $item->serviceType?->name ?? '–' }}</td>
+                        <th>Trámite</th>
                     @endif
                     @if($quote->show_description_column ?? true)
-                        <td>{{ $item->description ?? '-' }}</td>
+                        <th>Producto / Descripción</th>
                     @endif
                     @if($quote->show_prev_license_column)
-                        <td>{{ $item->previous_license ?? '-' }}</td>
+                        <th>Solicitud / INVIMA</th>
                     @endif
                     @if($quote->show_raa_column)
-                        <td>{{ $item->raa_code ?? '-' }}</td>
+                        <th>RAA</th>
                     @endif
                     @if($quote->show_franquicia_column ?? false)
-                        <td>{{ $item->franquicia ?: '–' }}</td>
+                        <th>Franquicia</th>
                     @endif
                     @if($quote->show_centro_costos_column ?? false)
-                        <td>{{ $item->centro_costos ?: '–' }}</td>
+                        <th>Centro de costos</th>
                     @endif
                     @if($quote->show_contacto_column ?? false)
-                        <td>{{ $item->contacto ?: '–' }}</td>
+                        <th>Contacto</th>
                     @endif
-                    <td>{{ Str::limit($item->scope, 50) }}</td>
-                    <td style="text-align: right;">{{ number_format($item->fee_value, 2) }}</td>
+                    <th>Alcance</th>
+                    <th style="width: 12%; text-align: right;">Valor</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <div class="totals">
-        <table>
-            <tr>
-                <td class="label">Subtotal</td>
-                <td style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->subtotal, 2) }}</td>
-            </tr>
-            @if($quote->apply_tax && $quote->tax_percentage !== null)
-                <tr>
-                    <td class="label">IVA ({{ number_format($quote->tax_percentage, 2) }}%)</td>
-                    <td style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->tax_amount, 2) }}</td>
-                </tr>
-            @endif
-            @if($quote->apply_bank_fee && $quote->bank_fee_value !== null)
-                <tr>
-                    <td class="label">Gasto bancario</td>
-                    <td style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->bank_fee_amount, 2) }}</td>
-                </tr>
-            @endif
-            <tr>
-                <td class="label grand">Total</td>
-                <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ number_format($quote->total_with_tax, 2) }}</td>
-            </tr>
+            </thead>
+            <tbody>
+                @foreach($quote->quoteItems as $item)
+                    <tr class="{{ $loop->iteration % 2 === 0 ? 'alt' : '' }}">
+                        <td>{{ $item->item_position }}</td>
+                        @if($quote->show_row_id_column ?? false)
+                            <td>{{ $item->row_id ?: '–' }}</td>
+                        @endif
+                        <td>{{ $item->service_label ?: ($item->service?->name ?? '-') }}</td>
+                        @if($quote->show_service_type_column)
+                            <td>{{ $item->serviceType?->name ?? '–' }}</td>
+                        @endif
+                        @if($quote->show_description_column ?? true)
+                            <td>{{ $item->description ?? '-' }}</td>
+                        @endif
+                        @if($quote->show_prev_license_column)
+                            <td>{{ $item->previous_license ?? '-' }}</td>
+                        @endif
+                        @if($quote->show_raa_column)
+                            <td>{{ $item->raa_code ?? '-' }}</td>
+                        @endif
+                        @if($quote->show_franquicia_column ?? false)
+                            <td>{{ $item->franquicia ?: '–' }}</td>
+                        @endif
+                        @if($quote->show_centro_costos_column ?? false)
+                            <td>{{ $item->centro_costos ?: '–' }}</td>
+                        @endif
+                        @if($quote->show_contacto_column ?? false)
+                            <td>{{ $item->contacto ?: '–' }}</td>
+                        @endif
+                        <td>{{ $item->scope ?? '-' }}</td>
+                        <td style="text-align: right;">{{ $fmt($item->fee_value) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
         </table>
-    </div>
 
-    <div class="signature">
-        <div class="signature-line"></div>
-        @if($useTemplate && (trim($template->signature_name ?? '') !== '' || trim($template->signature_position ?? '') !== ''))
-            <div class="signature-name">{{ trim($template->signature_name ?? '') }}</div>
-            @if(trim($template->signature_position ?? '') !== '')
-                <div class="signature-label" style="margin-top: 1px;">{{ trim($template->signature_position) }}</div>
+        <div class="totals-wrap">
+            @if($sideNoteHtml !== '')
+                <div class="side-note-col">
+                    <div class="side-note">{!! $sideNoteHtml !!}</div>
+                </div>
             @endif
-        @else
-            <div class="signature-label">Firma del Gerente</div>
-        @endif
-    </div>
+            <div class="totals-col">
+                <div class="totals">
+                    <table>
+                        <tr>
+                            <td class="label">Subtotal</td>
+                            <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->subtotal) }}</td>
+                        </tr>
+                        @if($quote->apply_tax && $quote->tax_percentage !== null)
+                            <tr>
+                                <td class="label">IVA ({{ number_format($quote->tax_percentage, 0) }}%)</td>
+                                <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->tax_amount) }}</td>
+                            </tr>
+                        @endif
+                        @if($quote->apply_bank_fee && $quote->bank_fee_value !== null)
+                            <tr>
+                                <td class="label">Gasto bancario</td>
+                                <td style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->bank_fee_amount) }}</td>
+                            </tr>
+                        @endif
+                        <tr>
+                            <td class="label grand">Total</td>
+                            <td class="grand" style="text-align: right;">{{ $quote->currency }} {{ $fmt($quote->total_with_tax) }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-    </div>{{-- .pdf-body-content --}}
+        @if($closingFooterHtml !== '')
+            <div class="closing-footer">{!! $closingFooterHtml !!}</div>
+        @endif
+
+        <div class="signature">
+            <div class="signature-line"></div>
+            @if($useTemplate && (trim($template->signature_name ?? '') !== '' || trim($template->signature_position ?? '') !== ''))
+                @if(trim($template->signature_name ?? '') !== '')
+                    <div style="font-size: {{ $sigNameSize }}px; font-weight: bold; color: #1f2937;">{{ trim($template->signature_name) }}</div>
+                @endif
+                @if(trim($template->signature_position ?? '') !== '')
+                    <div style="font-size: {{ $sigPosSize }}px; color: #6b7280; margin-top: 1px;">{{ trim($template->signature_position) }}</div>
+                @endif
+            @else
+                <div style="font-size: 11px; color: #6b7280;">Firma del Gerente</div>
+            @endif
+        </div>
+    </div>
 </body>
 </html>

@@ -59,9 +59,19 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         <option value="">Seleccione...</option>
                         @foreach($companies as $c)
-                            <option value="{{ $c->id }}" {{ old('client_id', $quote->client_id) == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                            @php
+                                $clean = strtoupper(preg_replace('/[^A-Za-z]/', '', (string) ($c->code_abbreviation ?? '')) ?? '');
+                                $siglasOk = mb_strlen($clean) >= 2;
+                            @endphp
+                            <option value="{{ $c->id }}" {{ old('client_id', $quote->client_id) == $c->id ? 'selected' : '' }}
+                                    data-siglas-ok="{{ $siglasOk ? '1' : '0' }}"
+                                    data-code-abbr="{{ $clean }}">{{ $c->name }}</option>
                         @endforeach
                     </select>
+                    <p id="client_siglas_warn" class="mt-2 hidden text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2" role="status">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> Esta empresa no tiene siglas válidas (2–10 letras) para numerar cotizaciones.
+                        <a id="client_siglas_edit_link" href="{{ route('admin.companies.index') }}" class="font-medium underline hover:text-amber-900">Editar empresa</a>
+                    </p>
                 </div>
                 <div>
                     <label for="date" class="block mb-2 text-sm font-medium text-gray-900">Fecha <span class="text-red-500">*</span></label>
@@ -80,8 +90,9 @@
                     <label for="consecutive" class="block mb-2 text-sm font-medium text-gray-900">COTIZACIÓN No. <span class="text-red-500">*</span></label>
                     <input type="text" name="consecutive" id="consecutive"
                            value="{{ old('consecutive', $quote->consecutive) }}"
-                           placeholder="Ej: 001-26" required maxlength="32"
+                           placeholder="Ej: PHILIPS-001-26" required maxlength="32"
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                    <p class="mt-1 text-xs text-gray-500">Numeración por siglas del cliente (ej. PHILIPS-001-26). Único por empresa.</p>
                 </div>
                 <div class="md:col-span-2">
                     <label for="exchange_rate" class="block mb-2 text-sm font-medium text-gray-900">Tasa de cambio (si aplica)</label>
@@ -91,6 +102,12 @@
                 </div>
             </div>
         </div>
+
+        @include('admin.partials.pdf-document-content-fields', [
+            'pdfBodyHtml' => old('pdf_body_html', $quote->pdf_body_html ?? ''),
+            'pdfSideNoteHtml' => old('pdf_side_note_html', $quote->pdf_side_note_html ?? ''),
+            'pdfFooter' => old('pdf_footer', $quote->pdf_footer ?? ''),
+        ])
 
         {{-- Detalle de ítems --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -705,4 +722,9 @@
     })();
     </script>
     @endpush
+
+    @include('admin.partials.client-consecutive-suggest-script', [
+        'suggestUrl' => route('admin.quotes.suggest-consecutive'),
+        'consecutiveTouched' => true,
+    ])
 @endsection

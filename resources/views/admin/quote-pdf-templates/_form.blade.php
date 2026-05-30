@@ -18,53 +18,48 @@
     </div>
 
     <div class="md:col-span-2">
-        <label for="logo" class="block mb-2 text-sm font-medium text-gray-900">Logo (cabecera del PDF)</label>
-        @if($template && $template->logo_path && file_exists(public_path($template->logo_path)))
+        <label for="letterhead" class="block mb-2 text-sm font-medium text-gray-900">Membrete (imagen de fondo del PDF)</label>
+        @php
+            $letterheadPath = $template->letterhead_path ?? $template->logo_path ?? null;
+        @endphp
+        @if($template && $letterheadPath && file_exists(public_path($letterheadPath)))
             <div class="mb-2">
-                <img src="{{ asset($template->logo_path) }}" alt="Logo actual" class="h-16 w-auto object-contain border border-gray-200 rounded-lg p-2 bg-white">
+                <img src="{{ asset($letterheadPath) }}" alt="Membrete actual" class="max-h-40 w-full object-contain border border-gray-200 rounded-lg p-2 bg-white">
             </div>
             <label class="inline-flex items-center gap-2 text-sm text-gray-600">
-                <input type="checkbox" name="remove_logo" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span>Eliminar logo actual</span>
+                <input type="checkbox" name="remove_letterhead" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                <span>Eliminar membrete actual</span>
             </label>
             <span class="mx-2">|</span>
         @endif
-        <input type="file" name="logo" id="logo" accept="image/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 mt-2">
-        <p class="mt-1 text-xs text-gray-500">JPG, PNG, GIF, SVG o WEBP. Máx. 2MB.</p>
-    </div>
-
-    <div>
-        <label for="header_company_name" class="block mb-2 text-sm font-medium text-gray-900">Nombre empresa (cabecera)</label>
-        <input type="text" name="header_company_name" id="header_company_name" value="{{ old('header_company_name', $template->header_company_name ?? '') }}"
-               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
-               placeholder="Ej: ASESORIAS Y CONSULTORIAS DOBLE VÍA S.A.S.">
-    </div>
-    <div>
-        <label for="header_nit" class="block mb-2 text-sm font-medium text-gray-900">NIT (cabecera)</label>
-        <input type="text" name="header_nit" id="header_nit" value="{{ old('header_nit', $template->header_nit ?? '') }}"
-               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
-               placeholder="Ej: NIT. 900.589.747-6">
-    </div>
-    <div class="md:col-span-2">
-        <label for="header_subtitle" class="block mb-2 text-sm font-medium text-gray-900">Subtítulo / Slogan (cabecera)</label>
-        <input type="text" name="header_subtitle" id="header_subtitle" value="{{ old('header_subtitle', $template->header_subtitle ?? '') }}"
-               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
-               placeholder="Ej: La vía para el crecimiento de su empresa">
+        <input type="file" name="letterhead" id="letterhead" accept="image/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 mt-2">
+        <p class="mt-1 text-xs text-gray-500">Imagen completa membreteada (cabecera y pie incluidos en el diseño). JPG, PNG, GIF, SVG o WEBP. Máx. 5MB. Se adapta al ancho de la hoja.</p>
     </div>
 
     <div class="md:col-span-2">
         <label for="body_html" class="block mb-2 text-sm font-medium text-gray-900">Contexto / Cuerpo (texto introductorio del PDF)</label>
         <textarea name="body_html" id="body_html" rows="12" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('body_html', $template->body_html ?? '') }}</textarea>
         <p class="mt-1 text-xs text-gray-500">
-            Use variables: <code class="bg-gray-100 px-1 rounded">@verbatim {{fecha}} @endverbatim</code> (fecha), <code class="bg-gray-100 px-1 rounded">@verbatim {{ciudad}} @endverbatim</code>, <code class="bg-gray-100 px-1 rounded">@verbatim {{cliente}} @endverbatim</code> (cliente seleccionado en la cotización), <code class="bg-gray-100 px-1 rounded">@verbatim {{consecutivo}} @endverbatim</code>, <code class="bg-gray-100 px-1 rounded">@verbatim {{destinatario}} @endverbatim</code> (nombre del destinatario, mismo cliente). Se reemplazarán al generar el PDF.
+            Desde «Señor(es)…» hasta el párrafo previo a la tabla. Variables:
+            <code class="bg-gray-100 px-1 rounded">@verbatim {{fecha}} @endverbatim</code>,
+            <code class="bg-gray-100 px-1 rounded">@verbatim {{ciudad}} @endverbatim</code>,
+            <code class="bg-gray-100 px-1 rounded">@verbatim {{cliente}} @endverbatim</code>,
+            <code class="bg-gray-100 px-1 rounded">@verbatim {{consecutivo}} @endverbatim</code>,
+            <code class="bg-gray-100 px-1 rounded">@verbatim {{destinatario}} @endverbatim</code>.
+            Al crear la cotización/propuesta se puede editar manualmente.
         </p>
     </div>
 
     <div class="md:col-span-2">
-        <label for="footer_text" class="block mb-2 text-sm font-medium text-gray-900">Pie de página (PDF)</label>
-        <input type="text" name="footer_text" id="footer_text" value="{{ old('footer_text', $template->footer_text ?? '') }}"
-               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
-               placeholder="Ej: RAMS - Regulatory Affairs Management System">
+        <label for="side_note_html" class="block mb-2 text-sm font-medium text-gray-900">Nota lateral (junto a subtotal / total)</label>
+        <textarea name="side_note_html" id="side_note_html" rows="6" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('side_note_html', $template->side_note_html ?? '') }}</textarea>
+        <p class="mt-1 text-xs text-gray-500">Texto libre en el espacio a la izquierda de los totales. Acepta las mismas variables.</p>
+    </div>
+
+    <div class="md:col-span-2">
+        <label for="closing_footer_html" class="block mb-2 text-sm font-medium text-gray-900">Pie de página (debajo del total, encima de la firma)</label>
+        <textarea name="closing_footer_html" id="closing_footer_html" rows="5" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('closing_footer_html', $template->closing_footer_html ?? '') }}</textarea>
+        <p class="mt-1 text-xs text-gray-500">Aparece al final del documento, después del total y antes de la línea de firma.</p>
     </div>
 
     <div class="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
@@ -74,7 +69,7 @@
                 <label for="signature_name" class="block mb-2 text-sm font-medium text-gray-900">Nombre (debajo de la línea)</label>
                 <input type="text" name="signature_name" id="signature_name" value="{{ old('signature_name', $template->signature_name ?? '') }}"
                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
-                       placeholder="Ej: Juan Pérez">
+                       placeholder="Ej: Mónica Zamorano Rubio">
             </div>
             <div>
                 <label for="signature_position" class="block mb-2 text-sm font-medium text-gray-900">Cargo</label>
@@ -82,14 +77,25 @@
                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
                        placeholder="Ej: Gerente General">
             </div>
+            <div>
+                <label for="signature_name_font_size" class="block mb-2 text-sm font-medium text-gray-900">Tamaño texto — Nombre (px)</label>
+                <input type="number" name="signature_name_font_size" id="signature_name_font_size" min="8" max="24"
+                       value="{{ old('signature_name_font_size', $template->signature_name_font_size ?? 11) }}"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+            </div>
+            <div>
+                <label for="signature_position_font_size" class="block mb-2 text-sm font-medium text-gray-900">Tamaño texto — Cargo (px)</label>
+                <input type="number" name="signature_position_font_size" id="signature_position_font_size" min="8" max="24"
+                       value="{{ old('signature_position_font_size', $template->signature_position_font_size ?? 11) }}"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+            </div>
         </div>
-        <p class="mt-1 text-xs text-gray-500">Se mostrará la línea de firma, luego el nombre y el cargo en el PDF.</p>
     </div>
 
     <div class="md:col-span-2">
         <label class="inline-flex items-center gap-2">
             <input type="checkbox" name="is_default" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('is_default', $template->is_default ?? false) ? 'checked' : '' }}>
-            <span class="text-sm font-medium text-gray-900">Usar como plantilla por defecto al generar PDF</span>
+            <span class="text-sm font-medium text-gray-900">{{ $defaultLabel ?? 'Usar como plantilla por defecto al generar PDF' }}</span>
         </label>
     </div>
 </div>

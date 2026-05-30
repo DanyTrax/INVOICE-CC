@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\QuotePdfTemplate;
+use App\Support\PdfDocumentHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -15,6 +16,7 @@ class QuotePdfTemplateController extends Controller
         $templates = QuotePdfTemplate::orderByRaw('is_default DESC')
             ->orderBy('name')
             ->get();
+
         return view('admin.quote-pdf-templates.index', compact('templates'));
     }
 
@@ -25,54 +27,20 @@ class QuotePdfTemplateController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:128',
-            'logo' => 'nullable|file|max:2048',
-            'header_company_name' => 'nullable|string|max:255',
-            'header_nit' => 'nullable|string|max:64',
-            'header_subtitle' => 'nullable|string|max:500',
-            'body_html' => 'nullable|string',
-            'footer_text' => 'nullable|string|max:500',
-            'signature_name' => 'nullable|string|max:128',
-            'signature_position' => 'nullable|string|max:128',
-            'is_default' => 'nullable|boolean',
-        ]);
+        $validated = $request->validate(PdfDocumentHelper::templateValidationRules());
 
-        if ($request->hasFile('logo')) {
-            $ext = strtolower($request->file('logo')->getClientOriginalExtension());
-            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'])) {
-                return redirect()->back()->withInput()->withErrors(['logo' => 'Formato de imagen no válido.']);
-            }
+        $upload = PdfDocumentHelper::processLetterheadUpload($request, null, 'quote-pdf-letterhead', 'quote-pdf');
+        if ($upload['error']) {
+            return redirect()->back()->withInput()->withErrors(['letterhead' => $upload['error']]);
         }
 
-        $logoPath = null;
-        if ($request->hasFile('logo')) {
-            $file = $request->file('logo');
-            $filename = 'quote-pdf-logo-' . time() . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $dir = public_path('uploads/quote-pdf');
-            if (!is_dir($dir)) {
-                mkdir($dir, 0755, true);
-            }
-            $file->move($dir, $filename);
-            $logoPath = 'uploads/quote-pdf/' . $filename;
-        }
-
-        if (!empty($validated['is_default'])) {
+        if (! empty($validated['is_default'])) {
             QuotePdfTemplate::where('id', '>', 0)->update(['is_default' => false]);
         }
 
-        QuotePdfTemplate::create([
-            'name' => $validated['name'],
-            'logo_path' => $logoPath,
-            'header_company_name' => $validated['header_company_name'] ?? null,
-            'header_nit' => $validated['header_nit'] ?? null,
-            'header_subtitle' => $validated['header_subtitle'] ?? null,
-            'body_html' => $validated['body_html'] ?? null,
-            'footer_text' => $validated['footer_text'] ?? null,
-            'signature_name' => $validated['signature_name'] ?? null,
-            'signature_position' => $validated['signature_position'] ?? null,
-            'is_default' => !empty($validated['is_default']),
-        ]);
+        QuotePdfTemplate::create(array_merge(PdfDocumentHelper::templatePayload($validated), [
+            'letterhead_path' => $upload['path'],
+        ]));
 
         return redirect()
             ->route('admin.settings.section', 'quote-pdf')
@@ -86,67 +54,21 @@ class QuotePdfTemplateController extends Controller
 
     public function update(Request $request, QuotePdfTemplate $quotePdfTemplate): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:128',
-            'logo' => 'nullable|file|max:2048',
-            'header_company_name' => 'nullable|string|max:255',
-            'header_nit' => 'nullable|string|max:64',
-            'header_subtitle' => 'nullable|string|max:500',
-            'body_html' => 'nullable|string',
-            'footer_text' => 'nullable|string|max:500',
-            'signature_name' => 'nullable|string|max:128',
-            'signature_position' => 'nullable|string|max:128',
-            'is_default' => 'nullable|boolean',
-            'remove_logo' => 'nullable|boolean',
-        ]);
+        $validated = $request->validate(PdfDocumentHelper::templateValidationRules());
 
-        if ($request->hasFile('logo')) {
-            $ext = strtolower($request->file('logo')->getClientOriginalExtension());
-            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'])) {
-                return redirect()->back()->withInput()->withErrors(['logo' => 'Formato de imagen no válido.']);
-            }
+        $current = $quotePdfTemplate->letterhead_path ?: $quotePdfTemplate->logo_path;
+        $upload = PdfDocumentHelper::processLetterheadUpload($request, $current, 'quote-pdf-letterhead', 'quote-pdf');
+        if ($upload['error']) {
+            return redirect()->back()->withInput()->withErrors(['letterhead' => $upload['error']]);
         }
 
-        $logoPath = $quotePdfTemplate->logo_path;
-        if (!empty($validated['remove_logo']) && $logoPath) {
-            $full = public_path($logoPath);
-            if (file_exists($full)) {
-                unlink($full);
-            }
-            $logoPath = null;
-        } elseif ($request->hasFile('logo')) {
-            if ($quotePdfTemplate->logo_path) {
-                $old = public_path($quotePdfTemplate->logo_path);
-                if (file_exists($old)) {
-                    unlink($old);
-                }
-            }
-            $file = $request->file('logo');
-            $filename = 'quote-pdf-logo-' . time() . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $dir = public_path('uploads/quote-pdf');
-            if (!is_dir($dir)) {
-                mkdir($dir, 0755, true);
-            }
-            $file->move($dir, $filename);
-            $logoPath = 'uploads/quote-pdf/' . $filename;
-        }
-
-        if (!empty($validated['is_default'])) {
+        if (! empty($validated['is_default'])) {
             QuotePdfTemplate::where('id', '!=', $quotePdfTemplate->id)->update(['is_default' => false]);
         }
 
-        $quotePdfTemplate->update([
-            'name' => $validated['name'],
-            'logo_path' => $logoPath,
-            'header_company_name' => $validated['header_company_name'] ?? null,
-            'header_nit' => $validated['header_nit'] ?? null,
-            'header_subtitle' => $validated['header_subtitle'] ?? null,
-            'body_html' => $validated['body_html'] ?? null,
-            'footer_text' => $validated['footer_text'] ?? null,
-            'signature_name' => $validated['signature_name'] ?? null,
-            'signature_position' => $validated['signature_position'] ?? null,
-            'is_default' => !empty($validated['is_default']),
-        ]);
+        $quotePdfTemplate->update(array_merge(PdfDocumentHelper::templatePayload($validated), [
+            'letterhead_path' => $upload['path'],
+        ]));
 
         return redirect()
             ->route('admin.settings.section', 'quote-pdf')
@@ -155,19 +77,23 @@ class QuotePdfTemplateController extends Controller
 
     public function destroy(QuotePdfTemplate $quotePdfTemplate): RedirectResponse
     {
-        if ($quotePdfTemplate->logo_path) {
-            $full = public_path($quotePdfTemplate->logo_path);
-            if (file_exists($full)) {
-                unlink($full);
+        foreach ([$quotePdfTemplate->letterhead_path, $quotePdfTemplate->logo_path] as $path) {
+            if ($path) {
+                $full = public_path($path);
+                if (file_exists($full)) {
+                    @unlink($full);
+                }
             }
         }
+        $wasDefault = $quotePdfTemplate->is_default;
         $quotePdfTemplate->delete();
-        if ($quotePdfTemplate->is_default) {
+        if ($wasDefault) {
             $first = QuotePdfTemplate::orderBy('id')->first();
             if ($first) {
                 $first->update(['is_default' => true]);
             }
         }
+
         return redirect()
             ->route('admin.settings.section', 'quote-pdf')
             ->with('success', 'Plantilla eliminada.');

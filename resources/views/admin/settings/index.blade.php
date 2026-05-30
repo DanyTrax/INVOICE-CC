@@ -255,7 +255,7 @@
                     Plantilla PDF de cotizaciones
                 </h3>
                 <p class="text-sm text-gray-600 mb-6">
-                    Cree plantillas con logo, cabecera y contexto (texto introductorio) para el PDF de cotizaciones. Al descargar una cotización podrá elegir qué plantilla usar.
+                    Cree plantillas con membrete (imagen de fondo), contexto, nota lateral y pie de cierre para el PDF de cotizaciones. Al descargar podrá elegir qué plantilla usar.
                 </p>
                 <a href="{{ route('admin.settings.quote-pdf-templates.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium mb-6">
                     <i class="fas fa-plus mr-2"></i> Nueva plantilla
@@ -316,7 +316,7 @@
                     Plantilla PDF de Propuestas
                 </h3>
                 <p class="text-sm text-gray-600 mb-6">
-                    Cree plantillas con logo, cabecera y contexto para el PDF de propuestas (concepto, alcance, honorarios). Al descargar una propuesta podrá elegir qué plantilla usar. Las mismas variables que en cotizaciones (<code class="bg-gray-100 px-1 rounded text-xs">@verbatim{{fecha}}, {{ciudad}}, {{cliente}}, {{consecutivo}}, {{destinatario}}@endverbatim</code>) se reemplazan al generar el PDF.
+                    Cree plantillas con membrete, contexto, nota lateral y pie de cierre para el PDF de propuestas. Variables: <code class="bg-gray-100 px-1 rounded text-xs">@verbatim{{fecha}}, {{ciudad}}, {{cliente}}, {{consecutivo}}, {{destinatario}}@endverbatim</code> se reemplazan al generar el PDF.
                 </p>
                 <a href="{{ route('admin.settings.proposal-pdf-templates.create') }}" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium mb-6">
                     <i class="fas fa-plus mr-2"></i> Nueva plantilla

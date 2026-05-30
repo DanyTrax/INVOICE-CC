@@ -146,6 +146,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     // Route::resource('registrations', RegistrationController::class);
 
     // Cotizaciones (pre-venta)
+    Route::get('quotes/suggest-consecutive', [QuoteController::class, 'suggestConsecutive'])->name('quotes.suggest-consecutive');
     Route::get('quotes', [QuoteController::class, 'index'])->name('quotes.index');
     Route::get('quotes/create', [QuoteController::class, 'create'])->name('quotes.create');
     Route::post('quotes', [QuoteController::class, 'store'])->name('quotes.store');
@@ -159,6 +160,7 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
     Route::delete('quotes/{quote}', [QuoteController::class, 'destroy'])->name('quotes.destroy');
 
     // Propuestas (honorarios / concepto–alcance)
+    Route::get('proposals/suggest-consecutive', [ProposalController::class, 'suggestConsecutive'])->name('proposals.suggest-consecutive');
     Route::get('proposals', [ProposalController::class, 'index'])->name('proposals.index');
     Route::get('proposals/create', [ProposalController::class, 'create'])->name('proposals.create');
     Route::post('proposals', [ProposalController::class, 'store'])->name('proposals.store');

@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\Process;
 use App\Models\Quote;
-use App\Models\QuoteItem;
 use App\Models\QuotePdfTemplate;
 use App\Models\Service;
 use App\Models\ServiceType;
+use App\Services\CompanyConsecutiveService;
 use App\Settings\GeneralSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class QuoteController extends Controller
@@ -96,7 +99,12 @@ class QuoteController extends Controller
             'date' => 'required|date',
             'currency' => 'required|string|in:COP,USD',
             'exchange_rate' => 'nullable|numeric|min:0',
-            'consecutive' => 'required|string|max:32|unique:quotes,consecutive,'.$quote->id,
+            'consecutive' => [
+                'required',
+                'string',
+                'max:32',
+                Rule::unique('quotes', 'consecutive')->where(fn ($q) => $q->where('client_id', $request->input('client_id')))->ignore($quote->id),
+            ],
             'show_prev_license_column' => 'nullable|boolean',
             'show_raa_column' => 'nullable|boolean',
             'show_service_type_column' => 'nullable|boolean',
@@ -109,6 +117,9 @@ class QuoteController extends Controller
             'tax_percentage' => 'nullable|numeric|min:0|max:100',
             'apply_bank_fee' => 'nullable|boolean',
             'bank_fee_value' => 'nullable|numeric|min:0',
+            'pdf_body_html' => 'nullable|string',
+            'pdf_side_note_html' => 'nullable|string',
+            'pdf_footer' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
@@ -158,6 +169,9 @@ class QuoteController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => ! empty($validated['apply_bank_fee']),
             'bank_fee_value' => ! empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
+            'pdf_body_html' => $validated['pdf_body_html'] ?? null,
+            'pdf_side_note_html' => $validated['pdf_side_note_html'] ?? null,
+            'pdf_footer' => $validated['pdf_footer'] ?? null,
         ]);
 
         $existingIds = [];
@@ -244,14 +258,18 @@ class QuoteController extends Controller
     public function updatePdfFooter(Request $request, Quote $quote): RedirectResponse
     {
         $validated = $request->validate([
-            'pdf_footer' => 'nullable|string|max:1000',
+            'pdf_body_html' => 'nullable|string',
+            'pdf_side_note_html' => 'nullable|string',
+            'pdf_footer' => 'nullable|string|max:2000',
         ]);
         $quote->update([
+            'pdf_body_html' => $validated['pdf_body_html'] ?? null,
+            'pdf_side_note_html' => $validated['pdf_side_note_html'] ?? null,
             'pdf_footer' => $validated['pdf_footer'] ?? null,
         ]);
 
         return redirect()->route('admin.quotes.show', $quote)
-            ->with('success', 'Pie de página del PDF actualizado.');
+            ->with('success', 'Textos del PDF actualizados.');
     }
 
     /**
@@ -307,7 +325,12 @@ class QuoteController extends Controller
             $query->where('status', $request->status);
         }
 
-        $quotes = $query->orderBy('date', 'desc')->paginate(15)->withQueryString();
+        $quotes = $query->join('companies', 'quotes.client_id', '=', 'companies.id')
+            ->orderBy('companies.name')
+            ->orderBy('quotes.consecutive')
+            ->select('quotes.*')
+            ->paginate(15)
+            ->withQueryString();
 
         return view('admin.quotes.index', compact('quotes'));
     }
@@ -319,29 +342,38 @@ class QuoteController extends Controller
     {
         $companies = Company::orderBy('name')->get();
         $serviceTypes = ServiceType::orderBy('name')->get();
-
-        // Sugerir consecutivo automático en formato NNN-AA (ej. 001-26)
-        $year = now()->year % 100;
-        $yearSuffix = str_pad((string) $year, 2, '0', STR_PAD_LEFT);
-        $lastConsecutive = Quote::where('consecutive', 'like', '%-'.$yearSuffix)
-            ->orderBy('consecutive', 'desc')
-            ->value('consecutive');
-
-        $nextNumber = 1;
-        if ($lastConsecutive) {
-            [$numberPart] = explode('-', $lastConsecutive);
-            $nextNumber = (int) $numberPart + 1;
-        }
-        $suggestedConsecutive = sprintf('%03d-%s', $nextNumber, $yearSuffix);
-
         $services = Service::where('is_active', true)->orderBy('name')->get();
+        $defaultPdfTemplate = QuotePdfTemplate::getDefault();
 
         return view('admin.quotes.create', [
             'companies' => $companies,
             'serviceTypes' => $serviceTypes,
             'services' => $services,
-            'suggestedConsecutive' => $suggestedConsecutive,
+            'suggestedConsecutive' => '',
+            'defaultPdfTemplate' => $defaultPdfTemplate,
         ]);
+    }
+
+    /**
+     * Sugerir consecutivo de cotización según siglas del cliente (JSON).
+     */
+    public function suggestConsecutive(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'client_id' => 'required|exists:companies,id',
+            'year' => 'nullable|integer|min:2000|max:2100',
+        ]);
+
+        try {
+            $year = isset($validated['year']) ? (int) $validated['year'] : null;
+            $consecutive = CompanyConsecutiveService::suggestQuoteConsecutive((int) $validated['client_id'], $year);
+
+            return response()->json(['consecutive' => $consecutive]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => collect($e->errors())->flatten()->first() ?? 'Siglas no válidas.',
+            ], 422);
+        }
     }
 
     /**
@@ -354,7 +386,12 @@ class QuoteController extends Controller
             'date' => 'required|date',
             'currency' => 'required|string|in:COP,USD',
             'exchange_rate' => 'nullable|numeric|min:0',
-            'consecutive' => 'required|string|max:32|unique:quotes,consecutive',
+            'consecutive' => [
+                'required',
+                'string',
+                'max:32',
+                Rule::unique('quotes', 'consecutive')->where(fn ($q) => $q->where('client_id', $request->input('client_id'))),
+            ],
             'show_prev_license_column' => 'nullable|boolean',
             'show_raa_column' => 'nullable|boolean',
             'show_service_type_column' => 'nullable|boolean',
@@ -367,6 +404,9 @@ class QuoteController extends Controller
             'tax_percentage' => 'nullable|numeric|min:0|max:100',
             'apply_bank_fee' => 'nullable|boolean',
             'bank_fee_value' => 'nullable|numeric|min:0',
+            'pdf_body_html' => 'nullable|string',
+            'pdf_side_note_html' => 'nullable|string',
+            'pdf_footer' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
             'items.*.service_id' => 'required|exists:services,id',
@@ -416,6 +456,9 @@ class QuoteController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => ! empty($validated['apply_bank_fee']),
             'bank_fee_value' => ! empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
+            'pdf_body_html' => $validated['pdf_body_html'] ?? null,
+            'pdf_side_note_html' => $validated['pdf_side_note_html'] ?? null,
+            'pdf_footer' => $validated['pdf_footer'] ?? null,
         ]);
 
         foreach ($validated['items'] as $pos => $row) {

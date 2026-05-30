@@ -19,6 +19,8 @@ class Proposal extends Model
         'exchange_rate',
         'status',
         'pdf_footer',
+        'pdf_body_html',
+        'pdf_side_note_html',
         'total_professional_fees',
         'apply_tax',
         'tax_percentage',
