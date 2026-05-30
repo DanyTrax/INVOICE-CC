@@ -146,6 +146,24 @@ class PdfDocumentHelper
         ];
     }
 
+    public static function persistBodyHtmlOnly(?string $input, ?object $defaultTemplate): ?string
+    {
+        return self::persistFieldOverride($input, $defaultTemplate?->body_html ?? null);
+    }
+
+    /**
+     * @return array{pdf_side_note_html: ?string, pdf_footer: ?string}
+     */
+    public static function persistSideFooterFields(array $validated, ?object $defaultTemplate): array
+    {
+        $template = $defaultTemplate;
+
+        return [
+            'pdf_side_note_html' => self::persistFieldOverride($validated['pdf_side_note_html'] ?? null, $template?->side_note_html ?? null),
+            'pdf_footer' => self::persistFieldOverride($validated['pdf_footer'] ?? null, $template?->closing_footer_html ?? null),
+        ];
+    }
+
     protected static function resolveHtmlField(?string $documentValue, ?string $templateValue, object $document): string
     {
         if (self::hasMeaningfulHtml($documentValue)) {

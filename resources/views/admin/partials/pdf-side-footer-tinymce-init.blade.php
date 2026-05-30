@@ -1,13 +1,9 @@
 @include('admin.partials.pdf-intro-tinymce-lib')
-@once('pdf-document-tinymce-init')
+@once('pdf-side-footer-tinymce-init')
 @push('scripts')
-@php
-    $pdfBodyTinymcePlaceholder = $pdfBodyTinymcePlaceholder ?? 'Ej: Bogotá D. C. {{fecha}}… Señor(a) {{destinatario}}… párrafo introductorio (antes de la tabla de ítems).';
-@endphp
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var editors = [
-        { selector: '#pdf_body_html', height: 360, placeholder: @json($pdfBodyTinymcePlaceholder) },
         { selector: '#pdf_side_note_html', height: 220, placeholder: 'Nota junto a subtotal / total (ej. tarifas INVIMA)…' },
         { selector: '#pdf_footer', height: 200, placeholder: 'Pie debajo del total, encima de la firma…' }
     ];

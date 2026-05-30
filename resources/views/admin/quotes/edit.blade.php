@@ -103,10 +103,9 @@
             </div>
         </div>
 
-        @include('admin.partials.pdf-document-content-fields', [
+        @include('admin.partials.pdf-document-body-fields', [
             'defaultPdfTemplate' => $defaultPdfTemplate,
             'pdfDocument' => $quote,
-            'pdfVisibilityToggles' => true,
         ])
 
         {{-- Detalle de ítems --}}

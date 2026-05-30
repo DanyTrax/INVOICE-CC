@@ -123,10 +123,6 @@ class QuoteController extends Controller
             'apply_bank_fee' => 'nullable|boolean',
             'bank_fee_value' => 'nullable|numeric|min:0',
             'pdf_body_html' => 'nullable|string',
-            'pdf_side_note_html' => 'nullable|string',
-            'pdf_footer' => 'nullable|string|max:10000',
-            'show_pdf_side_note' => 'nullable|boolean',
-            'show_pdf_footer' => 'nullable|boolean',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:quote_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
@@ -156,7 +152,7 @@ class QuoteController extends Controller
             $totalInvima += (float) ($row['invima_rate_value'] ?? 0);
         }
 
-        $pdfFields = PdfDocumentHelper::persistPdfTextFields($validated, QuotePdfTemplate::getDefault());
+        $defaultPdfTemplate = QuotePdfTemplate::getDefault();
 
         $quote->update([
             'client_id' => $validated['client_id'],
@@ -178,11 +174,10 @@ class QuoteController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => ! empty($validated['apply_bank_fee']),
             'bank_fee_value' => ! empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
-            'pdf_body_html' => $pdfFields['pdf_body_html'],
-            'pdf_side_note_html' => $pdfFields['pdf_side_note_html'],
-            'pdf_footer' => $pdfFields['pdf_footer'],
-            'show_pdf_side_note' => ! empty($validated['show_pdf_side_note']),
-            'show_pdf_footer' => ! empty($validated['show_pdf_footer']),
+            'pdf_body_html' => PdfDocumentHelper::persistBodyHtmlOnly(
+                $validated['pdf_body_html'] ?? null,
+                $defaultPdfTemplate
+            ),
         ]);
 
         $existingIds = [];
@@ -269,14 +264,13 @@ class QuoteController extends Controller
     public function updatePdfFooter(Request $request, Quote $quote): RedirectResponse
     {
         $validated = $request->validate([
-            'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
             'pdf_footer' => 'nullable|string|max:10000',
             'show_pdf_side_note' => 'nullable|boolean',
             'show_pdf_footer' => 'nullable|boolean',
         ]);
         $quote->update(array_merge(
-            PdfDocumentHelper::persistPdfTextFields($validated, QuotePdfTemplate::getDefault()),
+            PdfDocumentHelper::persistSideFooterFields($validated, QuotePdfTemplate::getDefault()),
             [
                 'show_pdf_side_note' => ! empty($validated['show_pdf_side_note']),
                 'show_pdf_footer' => ! empty($validated['show_pdf_footer']),
@@ -284,7 +278,7 @@ class QuoteController extends Controller
         ));
 
         return redirect()->route('admin.quotes.show', $quote)
-            ->with('success', 'Textos del PDF actualizados.');
+            ->with('success', 'Nota lateral y pie del PDF actualizados.');
     }
 
     /**
@@ -420,10 +414,6 @@ class QuoteController extends Controller
             'apply_bank_fee' => 'nullable|boolean',
             'bank_fee_value' => 'nullable|numeric|min:0',
             'pdf_body_html' => 'nullable|string',
-            'pdf_side_note_html' => 'nullable|string',
-            'pdf_footer' => 'nullable|string|max:10000',
-            'show_pdf_side_note' => 'nullable|boolean',
-            'show_pdf_footer' => 'nullable|boolean',
             'items' => 'required|array|min:1',
             'items.*.item_position' => 'nullable|integer|min:0',
             'items.*.service_id' => 'required|exists:services,id',
@@ -452,7 +442,7 @@ class QuoteController extends Controller
             $totalInvima += (float) ($row['invima_rate_value'] ?? 0);
         }
 
-        $pdfFields = PdfDocumentHelper::persistPdfTextFields($validated, QuotePdfTemplate::getDefault());
+        $defaultPdfTemplate = QuotePdfTemplate::getDefault();
 
         $quote = Quote::create([
             'client_id' => $validated['client_id'],
@@ -475,11 +465,10 @@ class QuoteController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => ! empty($validated['apply_bank_fee']),
             'bank_fee_value' => ! empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
-            'pdf_body_html' => $pdfFields['pdf_body_html'],
-            'pdf_side_note_html' => $pdfFields['pdf_side_note_html'],
-            'pdf_footer' => $pdfFields['pdf_footer'],
-            'show_pdf_side_note' => ! empty($validated['show_pdf_side_note']),
-            'show_pdf_footer' => ! empty($validated['show_pdf_footer']),
+            'pdf_body_html' => PdfDocumentHelper::persistBodyHtmlOnly(
+                $validated['pdf_body_html'] ?? null,
+                $defaultPdfTemplate
+            ),
         ]);
 
         foreach ($validated['items'] as $pos => $row) {

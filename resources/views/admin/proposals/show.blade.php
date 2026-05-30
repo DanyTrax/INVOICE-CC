@@ -151,12 +151,12 @@
     <form action="{{ route('admin.proposals.pdf-footer.update', $proposal) }}" method="POST">
         @csrf
         @method('PATCH')
-        @include('admin.partials.pdf-document-content-fields', [
+        @include('admin.partials.pdf-document-side-footer-fields', [
             'defaultPdfTemplate' => $defaultPdfTemplate,
             'pdfDocument' => $proposal,
         ])
         <div class="px-6 pb-6 -mt-2">
-            <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm">Guardar textos del PDF</button>
+            <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm">Guardar nota lateral y pie del PDF</button>
         </div>
     </form>
 @endsection

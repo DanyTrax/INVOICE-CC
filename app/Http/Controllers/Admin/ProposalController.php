@@ -85,7 +85,7 @@ class ProposalController extends Controller
             $totalFees += (float) ($row['fee_value'] ?? 0);
         }
 
-        $pdfFields = PdfDocumentHelper::persistPdfTextFields($validated, ProposalPdfTemplate::getDefault());
+        $defaultPdfTemplate = ProposalPdfTemplate::getDefault();
 
         $proposal = Proposal::create([
             'client_id' => $validated['client_id'],
@@ -99,9 +99,10 @@ class ProposalController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => !empty($validated['apply_bank_fee']),
             'bank_fee_value' => !empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
-            'pdf_body_html' => $pdfFields['pdf_body_html'],
-            'pdf_side_note_html' => $pdfFields['pdf_side_note_html'],
-            'pdf_footer' => $pdfFields['pdf_footer'],
+            'pdf_body_html' => PdfDocumentHelper::persistBodyHtmlOnly(
+                $validated['pdf_body_html'] ?? null,
+                $defaultPdfTemplate
+            ),
         ]);
 
         foreach ($validated['items'] as $pos => $row) {
@@ -164,7 +165,7 @@ class ProposalController extends Controller
             $totalFees += (float) ($row['fee_value'] ?? 0);
         }
 
-        $pdfFields = PdfDocumentHelper::persistPdfTextFields($validated, ProposalPdfTemplate::getDefault());
+        $defaultPdfTemplate = ProposalPdfTemplate::getDefault();
 
         $proposal->update([
             'client_id' => $validated['client_id'],
@@ -177,9 +178,10 @@ class ProposalController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => !empty($validated['apply_bank_fee']),
             'bank_fee_value' => !empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
-            'pdf_body_html' => $pdfFields['pdf_body_html'],
-            'pdf_side_note_html' => $pdfFields['pdf_side_note_html'],
-            'pdf_footer' => $pdfFields['pdf_footer'],
+            'pdf_body_html' => PdfDocumentHelper::persistBodyHtmlOnly(
+                $validated['pdf_body_html'] ?? null,
+                $defaultPdfTemplate
+            ),
         ]);
 
         $existingIds = [];
@@ -236,14 +238,13 @@ class ProposalController extends Controller
     public function updatePdfFooter(Request $request, Proposal $proposal): RedirectResponse
     {
         $validated = $request->validate([
-            'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
             'pdf_footer' => 'nullable|string|max:10000',
         ]);
-        $proposal->update(PdfDocumentHelper::persistPdfTextFields($validated, ProposalPdfTemplate::getDefault()));
+        $proposal->update(PdfDocumentHelper::persistSideFooterFields($validated, ProposalPdfTemplate::getDefault()));
 
         return redirect()->route('admin.proposals.show', $proposal)
-            ->with('success', 'Textos del PDF actualizados.');
+            ->with('success', 'Nota lateral y pie del PDF actualizados.');
     }
 
     public function destroy(Proposal $proposal): RedirectResponse
@@ -272,8 +273,6 @@ class ProposalController extends Controller
             'apply_bank_fee' => 'nullable|boolean',
             'bank_fee_value' => 'nullable|numeric|min:0',
             'pdf_body_html' => 'nullable|string',
-            'pdf_side_note_html' => 'nullable|string',
-            'pdf_footer' => 'nullable|string|max:10000',
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:proposal_items,id',
             'items.*.item_position' => 'nullable|integer|min:0',
