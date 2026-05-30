@@ -18,7 +18,9 @@
         <code class="bg-gray-100 px-1 rounded text-xs">@verbatim{{cliente}}@endverbatim</code>,
         <code class="bg-gray-100 px-1 rounded text-xs">@verbatim{{consecutivo}}@endverbatim</code>,
         <code class="bg-gray-100 px-1 rounded text-xs">@verbatim{{destinatario}}@endverbatim</code>.
-        La nota lateral y el pie se configuran al <strong>ver</strong> el documento.
+        @if(empty($forShowPage))
+            La nota lateral y el pie se configuran al <strong>ver</strong> el documento.
+        @endif
     </p>
     <div>
         <label for="pdf_body_html" class="block mb-2 text-sm font-medium text-gray-900">Contexto / Cuerpo (texto introductorio del PDF)</label>

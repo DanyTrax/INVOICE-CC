@@ -264,13 +264,21 @@ class QuoteController extends Controller
     public function updatePdfFooter(Request $request, Quote $quote): RedirectResponse
     {
         $validated = $request->validate([
+            'pdf_body_html' => 'nullable|string',
             'pdf_side_note_html' => 'nullable|string',
             'pdf_footer' => 'nullable|string|max:10000',
             'show_pdf_side_note' => 'nullable|boolean',
             'show_pdf_footer' => 'nullable|boolean',
         ]);
+        $defaultTemplate = QuotePdfTemplate::getDefault();
         $quote->update(array_merge(
-            PdfDocumentHelper::persistSideFooterFields($validated, QuotePdfTemplate::getDefault()),
+            [
+                'pdf_body_html' => PdfDocumentHelper::persistBodyHtmlOnly(
+                    $validated['pdf_body_html'] ?? null,
+                    $defaultTemplate
+                ),
+            ],
+            PdfDocumentHelper::persistSideFooterFields($validated, $defaultTemplate),
             [
                 'show_pdf_side_note' => ! empty($validated['show_pdf_side_note']),
                 'show_pdf_footer' => ! empty($validated['show_pdf_footer']),
@@ -278,7 +286,7 @@ class QuoteController extends Controller
         ));
 
         return redirect()->route('admin.quotes.show', $quote)
-            ->with('success', 'Nota lateral y pie del PDF actualizados.');
+            ->with('success', 'Textos del PDF actualizados.');
     }
 
     /**

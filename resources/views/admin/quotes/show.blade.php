@@ -275,6 +275,14 @@
     <form action="{{ route('admin.quotes.pdf-footer.update', $quote) }}" method="POST">
         @csrf
         @method('PATCH')
+        @include('admin.partials.pdf-document-body-fields', [
+            'defaultPdfTemplate' => $defaultPdfTemplate,
+            'pdfDocument' => $quote,
+            'forShowPage' => true,
+        ])
+        @error('pdf_body_html')
+            <p class="text-sm text-red-600 -mt-4 mb-4 px-6">{{ $message }}</p>
+        @enderror
         @include('admin.partials.pdf-document-side-footer-fields', [
             'defaultPdfTemplate' => $defaultPdfTemplate,
             'pdfDocument' => $quote,
@@ -285,7 +293,7 @@
         @enderror
         <div class="px-6 pb-6 -mt-2">
             <button type="submit" class="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium text-sm">
-                <i class="fas fa-save mr-2"></i> Guardar nota lateral y pie del PDF
+                <i class="fas fa-save mr-2"></i> Guardar textos del PDF
             </button>
         </div>
     </form>
