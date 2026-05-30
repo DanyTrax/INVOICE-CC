@@ -69,34 +69,103 @@ class PdfDocumentHelper
         return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($absolutePath));
     }
 
-    public static function resolveBodyHtml(?object $template, ?object $document): string
+    public static function hasMeaningfulHtml(?string $html): bool
     {
-        $raw = trim($document->pdf_body_html ?? '');
-        if ($raw === '' && $template) {
-            $raw = trim($template->body_html ?? '');
+        return self::plainTextFromHtml($html) !== '';
+    }
+
+    public static function plainTextFromHtml(?string $html): string
+    {
+        $decoded = html_entity_decode((string) ($html ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim(preg_replace('/\s+/u', ' ', strip_tags($decoded)) ?? '');
+    }
+
+    public static function htmlContentEquals(?string $a, ?string $b): bool
+    {
+        return self::plainTextFromHtml($a) === self::plainTextFromHtml($b);
+    }
+
+    /**
+     * Guardar override solo si el usuario escribió algo distinto a la plantilla (evita copia congelada).
+     */
+    public static function persistFieldOverride(?string $input, ?string $templateDefault): ?string
+    {
+        if (! self::hasMeaningfulHtml($input)) {
+            return null;
         }
 
-        return $raw !== '' ? self::replaceTemplateVariables($raw, $document) : '';
+        if (self::hasMeaningfulHtml($templateDefault) && self::htmlContentEquals($input, $templateDefault)) {
+            return null;
+        }
+
+        return trim((string) $input);
+    }
+
+    /**
+     * Guardado explícito desde el formulario «Texto del PDF» de la cotización/propuesta.
+     */
+    public static function persistFieldFromForm(?string $input): ?string
+    {
+        if (! self::hasMeaningfulHtml($input)) {
+            return null;
+        }
+
+        return trim((string) $input);
+    }
+
+    /**
+     * @return array{pdf_body_html: ?string, pdf_side_note_html: ?string, pdf_footer: ?string}
+     */
+    public static function persistPdfTextFields(array $validated, ?object $defaultTemplate): array
+    {
+        $template = $defaultTemplate;
+
+        return [
+            'pdf_body_html' => self::persistFieldOverride($validated['pdf_body_html'] ?? null, $template?->body_html ?? null),
+            'pdf_side_note_html' => self::persistFieldOverride($validated['pdf_side_note_html'] ?? null, $template?->side_note_html ?? null),
+            'pdf_footer' => self::persistFieldOverride($validated['pdf_footer'] ?? null, $template?->closing_footer_html ?? null),
+        ];
+    }
+
+    protected static function resolveHtmlField(?string $documentValue, ?string $templateValue, object $document): string
+    {
+        if (self::hasMeaningfulHtml($documentValue)) {
+            return self::replaceTemplateVariables(trim((string) $documentValue), $document);
+        }
+
+        if (self::hasMeaningfulHtml($templateValue)) {
+            return self::replaceTemplateVariables(trim((string) $templateValue), $document);
+        }
+
+        return '';
+    }
+
+    public static function resolveBodyHtml(?object $template, ?object $document): string
+    {
+        return self::resolveHtmlField(
+            $document->pdf_body_html ?? null,
+            $template->body_html ?? null,
+            $document
+        );
     }
 
     public static function resolveSideNoteHtml(?object $template, ?object $document): string
     {
-        $raw = trim($document->pdf_side_note_html ?? '');
-        if ($raw === '' && $template) {
-            $raw = trim($template->side_note_html ?? '');
-        }
-
-        return $raw !== '' ? self::replaceTemplateVariables($raw, $document) : '';
+        return self::resolveHtmlField(
+            $document->pdf_side_note_html ?? null,
+            $template->side_note_html ?? null,
+            $document
+        );
     }
 
     public static function resolveClosingFooterHtml(?object $template, ?object $document): string
     {
-        $raw = trim($document->pdf_footer ?? '');
-        if ($raw === '' && $template) {
-            $raw = trim($template->closing_footer_html ?? '');
-        }
-
-        return $raw !== '' ? self::replaceTemplateVariables($raw, $document) : '';
+        return self::resolveHtmlField(
+            $document->pdf_footer ?? null,
+            $template->closing_footer_html ?? null,
+            $document
+        );
     }
 
     /**

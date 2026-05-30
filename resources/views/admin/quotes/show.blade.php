@@ -274,7 +274,7 @@
     @quoteCan('edit')
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-2">Texto del PDF</h3>
-        <p class="text-sm text-gray-600 mb-3">Edite el membrete, la nota lateral o el pie de cierre para esta cotización. Si un campo queda vacío, se usa el de la plantilla al descargar.</p>
+        <p class="text-sm text-gray-600 mb-3">Edite el membrete, la nota lateral o el pie de cierre para esta cotización. Si un campo queda vacío, al descargar se usa la <strong>plantilla PDF actual</strong>. Guarde aquí después de cambiar el pie para que el PDF refleje su texto nuevo.</p>
         <form action="{{ route('admin.quotes.pdf-footer.update', $quote) }}" method="POST" class="flex flex-col gap-4">
             @csrf
             @method('PATCH')
@@ -291,7 +291,9 @@
             <div>
                 <label for="pdf_footer" class="block mb-1 text-sm font-medium text-gray-700">Pie de página (debajo del total, encima de firma)</label>
                 <textarea name="pdf_footer" id="pdf_footer" rows="4" maxlength="2000"
+                          placeholder="Vacío = pie de la plantilla PDF actual"
                           class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-teal-500 focus:border-teal-500">{{ old('pdf_footer', $quote->pdf_footer ?? '') }}</textarea>
+                <p class="mt-1 text-xs text-gray-500">Si ve texto viejo, reemplácelo y pulse «Guardar textos del PDF», o borre el campo para usar solo la plantilla.</p>
             </div>
             @error('pdf_footer')
                 <p class="text-sm text-red-600">{{ $message }}</p>

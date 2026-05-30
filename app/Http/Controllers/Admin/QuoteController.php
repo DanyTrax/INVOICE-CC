@@ -10,6 +10,7 @@ use App\Models\QuotePdfTemplate;
 use App\Models\Service;
 use App\Models\ServiceType;
 use App\Services\CompanyConsecutiveService;
+use App\Support\PdfDocumentHelper;
 use App\Settings\GeneralSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -149,6 +150,8 @@ class QuoteController extends Controller
             $totalInvima += (float) ($row['invima_rate_value'] ?? 0);
         }
 
+        $pdfFields = PdfDocumentHelper::persistPdfTextFields($validated, QuotePdfTemplate::getDefault());
+
         $quote->update([
             'client_id' => $validated['client_id'],
             'consecutive' => $validated['consecutive'],
@@ -169,9 +172,9 @@ class QuoteController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => ! empty($validated['apply_bank_fee']),
             'bank_fee_value' => ! empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
-            'pdf_body_html' => $validated['pdf_body_html'] ?? null,
-            'pdf_side_note_html' => $validated['pdf_side_note_html'] ?? null,
-            'pdf_footer' => $validated['pdf_footer'] ?? null,
+            'pdf_body_html' => $pdfFields['pdf_body_html'],
+            'pdf_side_note_html' => $pdfFields['pdf_side_note_html'],
+            'pdf_footer' => $pdfFields['pdf_footer'],
         ]);
 
         $existingIds = [];
@@ -263,9 +266,9 @@ class QuoteController extends Controller
             'pdf_footer' => 'nullable|string|max:2000',
         ]);
         $quote->update([
-            'pdf_body_html' => $validated['pdf_body_html'] ?? null,
-            'pdf_side_note_html' => $validated['pdf_side_note_html'] ?? null,
-            'pdf_footer' => $validated['pdf_footer'] ?? null,
+            'pdf_body_html' => PdfDocumentHelper::persistFieldFromForm($validated['pdf_body_html'] ?? null),
+            'pdf_side_note_html' => PdfDocumentHelper::persistFieldFromForm($validated['pdf_side_note_html'] ?? null),
+            'pdf_footer' => PdfDocumentHelper::persistFieldFromForm($validated['pdf_footer'] ?? null),
         ]);
 
         return redirect()->route('admin.quotes.show', $quote)
@@ -435,6 +438,8 @@ class QuoteController extends Controller
             $totalInvima += (float) ($row['invima_rate_value'] ?? 0);
         }
 
+        $pdfFields = PdfDocumentHelper::persistPdfTextFields($validated, QuotePdfTemplate::getDefault());
+
         $quote = Quote::create([
             'client_id' => $validated['client_id'],
             'consecutive' => $validated['consecutive'],
@@ -456,9 +461,9 @@ class QuoteController extends Controller
             'tax_percentage' => isset($validated['tax_percentage']) ? round((float) $validated['tax_percentage'], 2) : null,
             'apply_bank_fee' => ! empty($validated['apply_bank_fee']),
             'bank_fee_value' => ! empty($validated['apply_bank_fee']) && isset($validated['bank_fee_value']) ? round((float) $validated['bank_fee_value'], 2) : null,
-            'pdf_body_html' => $validated['pdf_body_html'] ?? null,
-            'pdf_side_note_html' => $validated['pdf_side_note_html'] ?? null,
-            'pdf_footer' => $validated['pdf_footer'] ?? null,
+            'pdf_body_html' => $pdfFields['pdf_body_html'],
+            'pdf_side_note_html' => $pdfFields['pdf_side_note_html'],
+            'pdf_footer' => $pdfFields['pdf_footer'],
         ]);
 
         foreach ($validated['items'] as $pos => $row) {
