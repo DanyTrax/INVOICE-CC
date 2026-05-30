@@ -273,19 +273,7 @@
                                                 <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Checklist documental</p>
                                                 <ul class="mt-2 space-y-1 text-sm">
                                                     @foreach($itemsForThisCycle as $item)
-                                                        @php
-                                                            $itemStyle = match($item->status) {
-                                                                'Aprobado' => 'text-green-700',
-                                                                'Traducción' => 'text-yellow-700',
-                                                                'Recibido' => 'text-blue-700',
-                                                                default => 'text-gray-700',
-                                                            };
-                                                        @endphp
-                                                        <li class="flex items-center gap-2 {{ $itemStyle }}">
-                                                            <i class="fas fa-{{ $item->status === 'Aprobado' ? 'check-circle' : 'circle' }} text-xs"></i>
-                                                            {{ $item->document_name }}
-                                                            <span class="text-xs">({{ $item->status }})</span>
-                                                        </li>
+                                                        @include('admin.processes.partials.checklist-item-timeline-line', ['item' => $item])
                                                     @endforeach
                                                 </ul>
                                             </div>
@@ -340,19 +328,7 @@
                                             @if($normalItems->isNotEmpty())
                                                 <ul class="mt-2 space-y-1 text-sm">
                                                     @foreach($normalItems as $item)
-                                                        @php
-                                                            $itemStyle = match($item->status) {
-                                                                'Aprobado' => 'text-green-700',
-                                                                'Traducción' => 'text-yellow-700',
-                                                                'Recibido' => 'text-blue-700',
-                                                                default => 'text-gray-700',
-                                                            };
-                                                        @endphp
-                                                        <li class="flex items-center gap-2 {{ $itemStyle }}">
-                                                            <i class="fas fa-{{ $item->status === 'Aprobado' ? 'check-circle' : 'circle' }} text-xs"></i>
-                                                            {{ $item->document_name }}
-                                                            <span class="text-xs">({{ $item->status }})</span>
-                                                        </li>
+                                                        @include('admin.processes.partials.checklist-item-timeline-line', ['item' => $item])
                                                     @endforeach
                                                 </ul>
                                                 <p class="text-sm text-gray-500 mt-3">Cuando todos los documentos estén en <strong>Aprobado</strong>, use el botón debajo para continuar con este ciclo.</p>
@@ -398,19 +374,7 @@
                                             @if($autoItems->isNotEmpty())
                                                 <ul class="mt-2 space-y-1 text-sm">
                                                     @foreach($autoItems as $item)
-                                                        @php
-                                                            $itemStyle = match($item->status) {
-                                                                'Aprobado' => 'text-green-700',
-                                                                'Traducción' => 'text-yellow-700',
-                                                                'Recibido' => 'text-blue-700',
-                                                                default => 'text-gray-700',
-                                                            };
-                                                        @endphp
-                                                        <li class="flex items-center gap-2 {{ $itemStyle }}">
-                                                            <i class="fas fa-{{ $item->status === 'Aprobado' ? 'check-circle' : 'circle' }} text-xs"></i>
-                                                            {{ $item->document_name }}
-                                                            <span class="text-xs">({{ $item->status }})</span>
-                                                        </li>
+                                                        @include('admin.processes.partials.checklist-item-timeline-line', ['item' => $item])
                                                     @endforeach
                                                 </ul>
                                                 <p class="text-sm text-gray-600 mt-3">Cuando todos los documentos AUTO estén en <strong>Aprobado</strong>, registre el sometimiento del Ciclo 2.</p>
@@ -528,10 +492,7 @@
                             };
                         @endphp
                         <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            <td class="px-3 py-2 font-medium text-gray-900">
-                                <i class="fas {{ $item->status === 'Aprobado' ? 'fa-check-circle text-green-600' : 'fa-circle text-gray-400' }} mr-2"></i>
-                                {{ $item->document_name }}
-                            </td>
+                            @include('admin.processes.partials.checklist-item-table-document', ['item' => $item])
                             <td class="px-3 py-2">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badgeClass }}">{{ $item->status }}</span>
                             </td>
@@ -594,10 +555,7 @@
                             };
                         @endphp
                         <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            <td class="px-3 py-2 font-medium text-gray-900">
-                                <i class="fas {{ $item->status === 'Aprobado' ? 'fa-check-circle text-green-600' : 'fa-circle text-gray-400' }} mr-2"></i>
-                                {{ $item->document_name }}
-                            </td>
+                            @include('admin.processes.partials.checklist-item-table-document', ['item' => $item])
                             <td class="px-3 py-2">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badgeClass }}">{{ $item->status }}</span>
                             </td>
