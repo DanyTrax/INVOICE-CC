@@ -129,7 +129,9 @@ class ProposalController extends Controller
             $proposalPdfTemplates = collect();
         }
 
-        return view('admin.proposals.show', compact('proposal', 'proposalPdfTemplates'));
+        $defaultPdfTemplate = ProposalPdfTemplate::getDefault();
+
+        return view('admin.proposals.show', compact('proposal', 'proposalPdfTemplates', 'defaultPdfTemplate'));
     }
 
     public function edit(Proposal $proposal): View|RedirectResponse
@@ -143,7 +145,9 @@ class ProposalController extends Controller
         $companies = Company::orderBy('name')->get();
         $conceptCatalog = ConceptCatalog::active()->orderBy('name')->get();
 
-        return view('admin.proposals.edit', compact('proposal', 'companies', 'conceptCatalog'));
+        $defaultPdfTemplate = ProposalPdfTemplate::getDefault();
+
+        return view('admin.proposals.edit', compact('proposal', 'companies', 'conceptCatalog', 'defaultPdfTemplate'));
     }
 
     public function update(Request $request, Proposal $proposal): RedirectResponse
@@ -236,11 +240,7 @@ class ProposalController extends Controller
             'pdf_side_note_html' => 'nullable|string',
             'pdf_footer' => 'nullable|string|max:2000',
         ]);
-        $proposal->update([
-            'pdf_body_html' => PdfDocumentHelper::persistFieldFromForm($validated['pdf_body_html'] ?? null),
-            'pdf_side_note_html' => PdfDocumentHelper::persistFieldFromForm($validated['pdf_side_note_html'] ?? null),
-            'pdf_footer' => PdfDocumentHelper::persistFieldFromForm($validated['pdf_footer'] ?? null),
-        ]);
+        $proposal->update(PdfDocumentHelper::persistPdfTextFields($validated, ProposalPdfTemplate::getDefault()));
 
         return redirect()->route('admin.proposals.show', $proposal)
             ->with('success', 'Textos del PDF actualizados.');

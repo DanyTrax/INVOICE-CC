@@ -94,9 +94,7 @@
         </div>
 
         @include('admin.partials.pdf-document-content-fields', [
-            'pdfBodyHtml' => old('pdf_body_html', $defaultPdfTemplate?->body_html ?? ''),
-            'pdfSideNoteHtml' => old('pdf_side_note_html', $defaultPdfTemplate?->side_note_html ?? ''),
-            'pdfFooter' => old('pdf_footer', $defaultPdfTemplate?->closing_footer_html ?? ''),
+            'defaultPdfTemplate' => $defaultPdfTemplate,
         ])
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">

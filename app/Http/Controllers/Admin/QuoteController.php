@@ -59,7 +59,9 @@ class QuoteController extends Controller
             $quotePdfTemplates = collect();
         }
 
-        return view('admin.quotes.show', compact('quote', 'quotePdfTemplates'));
+        $defaultPdfTemplate = QuotePdfTemplate::getDefault();
+
+        return view('admin.quotes.show', compact('quote', 'quotePdfTemplates', 'defaultPdfTemplate'));
     }
 
     /**
@@ -82,7 +84,9 @@ class QuoteController extends Controller
         $serviceTypes = ServiceType::orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services'));
+        $defaultPdfTemplate = QuotePdfTemplate::getDefault();
+
+        return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services', 'defaultPdfTemplate'));
     }
 
     /**
@@ -265,11 +269,7 @@ class QuoteController extends Controller
             'pdf_side_note_html' => 'nullable|string',
             'pdf_footer' => 'nullable|string|max:2000',
         ]);
-        $quote->update([
-            'pdf_body_html' => PdfDocumentHelper::persistFieldFromForm($validated['pdf_body_html'] ?? null),
-            'pdf_side_note_html' => PdfDocumentHelper::persistFieldFromForm($validated['pdf_side_note_html'] ?? null),
-            'pdf_footer' => PdfDocumentHelper::persistFieldFromForm($validated['pdf_footer'] ?? null),
-        ]);
+        $quote->update(PdfDocumentHelper::persistPdfTextFields($validated, QuotePdfTemplate::getDefault()));
 
         return redirect()->route('admin.quotes.show', $quote)
             ->with('success', 'Textos del PDF actualizados.');

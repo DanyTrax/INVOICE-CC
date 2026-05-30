@@ -104,9 +104,8 @@
         </div>
 
         @include('admin.partials.pdf-document-content-fields', [
-            'pdfBodyHtml' => old('pdf_body_html', $quote->pdf_body_html ?? ''),
-            'pdfSideNoteHtml' => old('pdf_side_note_html', $quote->pdf_side_note_html ?? ''),
-            'pdfFooter' => old('pdf_footer', $quote->pdf_footer ?? ''),
+            'defaultPdfTemplate' => $defaultPdfTemplate,
+            'pdfDocument' => $quote,
         ])
 
         {{-- Detalle de ítems --}}

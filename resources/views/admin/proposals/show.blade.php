@@ -148,32 +148,15 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Texto del PDF</h3>
-        <p class="text-sm text-gray-600 mb-3">Edite el membrete, la nota lateral o el pie de cierre. Si un campo queda vacío, al descargar se usa la <strong>plantilla PDF actual</strong>. Guarde aquí después de cambiar el pie para que el PDF refleje su texto nuevo.</p>
-        <form action="{{ route('admin.proposals.pdf-footer.update', $proposal) }}" method="POST" class="flex flex-col gap-4">
-            @csrf
-            @method('PATCH')
-            <div>
-                <label for="pdf_body_html" class="block mb-1 text-sm font-medium text-gray-700">Contexto / Cuerpo (texto introductorio del PDF)</label>
-                <textarea name="pdf_body_html" id="pdf_body_html" rows="12"
-                          class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ old('pdf_body_html', $proposal->pdf_body_html ?? '') }}</textarea>
-                <p class="mt-1 text-xs text-gray-500">Desde «Señor(es)…» hasta el párrafo previo a la tabla. La tabla de ítems no se edita aquí.</p>
-            </div>
-            <div>
-                <label for="pdf_side_note_html" class="block mb-1 text-sm font-medium text-gray-700">Nota lateral (junto a totales)</label>
-                <textarea name="pdf_side_note_html" id="pdf_side_note_html" rows="4" class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono">{{ old('pdf_side_note_html', $proposal->pdf_side_note_html ?? '') }}</textarea>
-            </div>
-            <div>
-                <label for="pdf_footer" class="block mb-1 text-sm font-medium text-gray-700">Pie de página (debajo del total, encima de firma)</label>
-                <textarea name="pdf_footer" id="pdf_footer" rows="4" maxlength="2000"
-                          placeholder="Vacío = pie de la plantilla PDF actual"
-                          class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono">{{ old('pdf_footer', $proposal->pdf_footer ?? '') }}</textarea>
-                <p class="mt-1 text-xs text-gray-500">Si ve texto viejo, reemplácelo y pulse «Guardar textos del PDF», o borre el campo para usar solo la plantilla.</p>
-            </div>
-            <button type="submit" class="self-start px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm">Guardar textos del PDF</button>
-        </form>
-    </div>
-
-    @include('admin.partials.pdf-body-tinymce-init')
+    <form action="{{ route('admin.proposals.pdf-footer.update', $proposal) }}" method="POST">
+        @csrf
+        @method('PATCH')
+        @include('admin.partials.pdf-document-content-fields', [
+            'defaultPdfTemplate' => $defaultPdfTemplate,
+            'pdfDocument' => $proposal,
+        ])
+        <div class="px-6 pb-6 -mt-2">
+            <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm">Guardar textos del PDF</button>
+        </div>
+    </form>
 @endsection

@@ -103,15 +103,33 @@ class PdfDocumentHelper
     }
 
     /**
-     * Guardado explícito desde el formulario «Texto del PDF» de la cotización/propuesta.
+     * Valor para mostrar en el formulario: override del documento o, si no hay, plantilla actual.
+     *
+     * @return array{value: string, is_override: bool, shows_template: bool}
      */
-    public static function persistFieldFromForm(?string $input): ?string
+    public static function resolveFormField(mixed $oldInput, ?string $documentValue, ?string $templateValue): array
     {
-        if (! self::hasMeaningfulHtml($input)) {
-            return null;
+        if ($oldInput !== null) {
+            return [
+                'value' => (string) $oldInput,
+                'is_override' => self::hasMeaningfulHtml((string) $oldInput),
+                'shows_template' => false,
+            ];
         }
 
-        return trim((string) $input);
+        if (self::hasMeaningfulHtml($documentValue)) {
+            return [
+                'value' => trim((string) $documentValue),
+                'is_override' => true,
+                'shows_template' => false,
+            ];
+        }
+
+        return [
+            'value' => trim((string) ($templateValue ?? '')),
+            'is_override' => false,
+            'shows_template' => self::hasMeaningfulHtml($templateValue),
+        ];
     }
 
     /**
