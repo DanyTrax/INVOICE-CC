@@ -48,7 +48,11 @@ document.addEventListener('DOMContentLoaded', function() {
             menubar: false,
             plugins: 'lists link code',
             toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | bullist numlist | link | code',
-            content_style: 'body { font-family: sans-serif; font-size: 12px; }'
+            content_style: 'body { font-family: sans-serif; font-size: 12px; }',
+            placeholder: 'Ej: Bogotá D. C. {{fecha}}… Señor(a) {{destinatario}}… párrafo introductorio (antes de la tabla).'
+        });
+        document.querySelector('#body_html')?.closest('form')?.addEventListener('submit', function() {
+            tinymce.triggerSave();
         });
     }
 });

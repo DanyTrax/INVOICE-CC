@@ -279,9 +279,10 @@
             @csrf
             @method('PATCH')
             <div>
-                <label for="pdf_body_html" class="block mb-1 text-sm font-medium text-gray-700">Membrete / Contexto / Cuerpo</label>
-                <textarea name="pdf_body_html" id="pdf_body_html" rows="8"
-                          class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-teal-500 focus:border-teal-500">{{ old('pdf_body_html', $quote->pdf_body_html ?? '') }}</textarea>
+                <label for="pdf_body_html" class="block mb-1 text-sm font-medium text-gray-700">Contexto / Cuerpo (texto introductorio del PDF)</label>
+                <textarea name="pdf_body_html" id="pdf_body_html" rows="12"
+                          class="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-teal-500 focus:border-teal-500">{{ old('pdf_body_html', $quote->pdf_body_html ?? '') }}</textarea>
+                <p class="mt-1 text-xs text-gray-500">Desde «Señor(es)…» hasta el párrafo previo a la tabla. La tabla de ítems no se edita aquí.</p>
             </div>
             <div>
                 <label for="pdf_side_note_html" class="block mb-1 text-sm font-medium text-gray-700">Nota lateral (junto a totales)</label>
@@ -304,6 +305,8 @@
         </form>
     </div>
     @endquoteCan
+
+    @include('admin.partials.pdf-body-tinymce-init')
 
     <div class="flex gap-3">
         <a href="{{ route('admin.quotes.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
