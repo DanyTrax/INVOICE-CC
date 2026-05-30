@@ -91,6 +91,20 @@
                        value="{{ old('signature_position_font_size', $template->signature_position_font_size ?? 11) }}"
                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
             </div>
+            <div>
+                <label for="signature_margin_top_px" class="block mb-2 text-sm font-medium text-gray-900">Espacio sobre la firma (px)</label>
+                <input type="number" name="signature_margin_top_px" id="signature_margin_top_px" min="0" max="400"
+                       value="{{ old('signature_margin_top_px', $template->signature_margin_top_px ?? 130) }}"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                <p class="mt-1 text-xs text-gray-500">Aumente para bajar la firma hacia el pie de página (sin invadir el gráfico del membrete).</p>
+            </div>
+            <div>
+                <label for="letterhead_footer_reserve_mm" class="block mb-2 text-sm font-medium text-gray-900">Margen inferior seguro (mm)</label>
+                <input type="number" name="letterhead_footer_reserve_mm" id="letterhead_footer_reserve_mm" min="20" max="80"
+                       value="{{ old('letterhead_footer_reserve_mm', $template->letterhead_footer_reserve_mm ?? 42) }}"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                <p class="mt-1 text-xs text-gray-500">Reserva en la parte baja para datos de contacto / ondas del membrete (por defecto 42).</p>
+            </div>
         </div>
     </div>
 

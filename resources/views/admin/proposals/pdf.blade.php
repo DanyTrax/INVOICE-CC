@@ -1,30 +1,40 @@
+@php
+    use App\Support\PdfDocumentHelper;
+    $template = $template ?? null;
+    $useTemplate = $template && $template->id;
+    $letterheadPath = PdfDocumentHelper::resolveLetterheadPath($useTemplate ? $template : null);
+    if (! $letterheadPath) {
+        $settings = $settings ?? app(\App\Settings\GeneralSettings::class);
+        if (! empty($settings->agency_logo) && file_exists(public_path($settings->agency_logo))) {
+            $letterheadPath = public_path($settings->agency_logo);
+        }
+    }
+    $letterheadDataUri = PdfDocumentHelper::resolveLetterheadDataUri($letterheadPath);
+    $bodyHtml = PdfDocumentHelper::resolveBodyHtml($useTemplate ? $template : null, $proposal);
+    $sideNoteHtml = PdfDocumentHelper::resolveSideNoteHtml($useTemplate ? $template : null, $proposal);
+    $closingFooterHtml = PdfDocumentHelper::resolveClosingFooterHtml($useTemplate ? $template : null, $proposal);
+    $sigNameSize = (int) ($useTemplate ? ($template->signature_name_font_size ?? 11) : 11);
+    $sigPosSize = (int) ($useTemplate ? ($template->signature_position_font_size ?? 11) : 11);
+    $pdfSignatureSpacerPx = $useTemplate ? (int) ($template->signature_margin_top_px ?? 130) : 130;
+    $pdfFooterReserveMm = $letterheadDataUri
+        ? ($useTemplate ? (int) ($template->letterhead_footer_reserve_mm ?? 42) : 42)
+        : 14;
+    if (! $letterheadDataUri) {
+        $pdfSignatureSpacerPx = 20;
+    }
+    $fmt = fn ($n) => PdfDocumentHelper::formatMoney((float) $n, $proposal->currency ?? 'COP');
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Propuesta {{ $proposal->consecutive }}</title>
     @include('admin.partials.pdf-document-styles')
+    @if($letterheadDataUri)
+        <style>body { padding-bottom: {{ $pdfFooterReserveMm }}mm !important; }</style>
+    @endif
 </head>
 <body>
-    @php
-        use App\Support\PdfDocumentHelper;
-        $template = $template ?? null;
-        $useTemplate = $template && $template->id;
-        $letterheadPath = PdfDocumentHelper::resolveLetterheadPath($useTemplate ? $template : null);
-        if (! $letterheadPath) {
-            $settings = $settings ?? app(\App\Settings\GeneralSettings::class);
-            if (! empty($settings->agency_logo) && file_exists(public_path($settings->agency_logo))) {
-                $letterheadPath = public_path($settings->agency_logo);
-            }
-        }
-        $letterheadDataUri = PdfDocumentHelper::resolveLetterheadDataUri($letterheadPath);
-        $bodyHtml = PdfDocumentHelper::resolveBodyHtml($useTemplate ? $template : null, $proposal);
-        $sideNoteHtml = PdfDocumentHelper::resolveSideNoteHtml($useTemplate ? $template : null, $proposal);
-        $closingFooterHtml = PdfDocumentHelper::resolveClosingFooterHtml($useTemplate ? $template : null, $proposal);
-        $sigNameSize = (int) ($useTemplate ? ($template->signature_name_font_size ?? 11) : 11);
-        $sigPosSize = (int) ($useTemplate ? ($template->signature_position_font_size ?? 11) : 11);
-        $fmt = fn ($n) => PdfDocumentHelper::formatMoney((float) $n, $proposal->currency ?? 'COP');
-    @endphp
 
     @if($letterheadDataUri)
         <div class="pdf-letterhead" style="background-image: url('{{ $letterheadDataUri }}');">
@@ -78,19 +88,14 @@
             <div class="closing-footer">{!! $closingFooterHtml !!}</div>
         @endif
 
-        <div class="signature">
-            <div class="signature-line"></div>
-            @if($useTemplate && (trim($template->signature_name ?? '') !== '' || trim($template->signature_position ?? '') !== ''))
-                @if(trim($template->signature_name ?? '') !== '')
-                    <div style="font-size: {{ max(8, (int) $sigNameSize - 2) }}px; font-weight: bold; color: #1f2937;">{{ trim($template->signature_name) }}</div>
-                @endif
-                @if(trim($template->signature_position ?? '') !== '')
-                    <div style="font-size: {{ max(8, (int) $sigPosSize - 2) }}px; color: #6b7280; margin-top: 1px;">{{ trim($template->signature_position) }}</div>
-                @endif
-            @else
-                <div style="font-size: 9px; color: #6b7280;">Firma autorizada</div>
-            @endif
-        </div>
+        @include('admin.partials.pdf-signature-section', [
+            'template' => $template,
+            'useTemplate' => $useTemplate,
+            'sigNameSize' => $sigNameSize,
+            'sigPosSize' => $sigPosSize,
+            'signatureSpacerPx' => $pdfSignatureSpacerPx,
+            'defaultSigLabel' => 'Firma autorizada',
+        ])
     </div>
 </body>
 </html>

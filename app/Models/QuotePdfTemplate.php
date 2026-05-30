@@ -21,6 +21,8 @@ class QuotePdfTemplate extends Model
         'signature_position',
         'signature_name_font_size',
         'signature_position_font_size',
+        'signature_margin_top_px',
+        'letterhead_footer_reserve_mm',
         'is_default',
     ];
 

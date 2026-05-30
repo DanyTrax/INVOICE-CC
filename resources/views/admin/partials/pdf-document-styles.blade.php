@@ -1,7 +1,7 @@
 <style>
     @page { size: letter; margin: 0; }
     html { margin: 0; padding: 0; }
-    body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #1f2937; margin: 0; padding: 27mm 12mm 14mm 12mm; line-height: 1.4; }
+    body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #1f2937; margin: 0; padding: 27mm 12mm 42mm 12mm; line-height: 1.4; }
     .pdf-letterhead {
         position: fixed;
         top: 0;
@@ -29,7 +29,7 @@
     .context-body * { font-family: DejaVu Sans, sans-serif !important; color: #1f2937 !important; }
     .side-note { font-size: 9px; line-height: 1.4; color: #1f2937; }
     .side-note * { font-family: DejaVu Sans, sans-serif !important; color: #1f2937 !important; }
-    .closing-footer { margin-top: 10px; font-size: 9px; line-height: 1.4; color: #1f2937; }
+    .closing-footer { margin-top: 10px; font-size: 9px; line-height: 1.4; color: #1f2937; page-break-after: avoid; }
     .closing-footer * { font-family: DejaVu Sans, sans-serif !important; color: #1f2937 !important; }
     table.items { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; }
     table.items th { background: #ccfbf1; text-align: left; padding: 4px 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; border: 1px solid #99f6e4; word-wrap: break-word; }
@@ -42,8 +42,10 @@
     table.totals-box td { padding: 4px 6px; border: 1px solid #9ca3af; font-size: 9px; color: #1f2937; background-color: #ffffff; }
     table.totals-box .label { background-color: #f3f4f6; font-weight: bold; width: 52%; }
     table.totals-box .grand { background-color: #d1d5db; font-weight: bold; }
-    .signature { margin-top: 20px; padding-top: 0; font-size: 9px; }
-    .signature-line { width: 200px; border-bottom: 1px solid #1f2937; margin-top: 20px; margin-bottom: 3px; }
+    .pdf-signature-area { page-break-inside: avoid; }
+    .pdf-signature-spacer { display: block; width: 100%; overflow: hidden; }
+    .signature { margin-top: 0; padding-top: 0; font-size: 9px; }
+    .signature-line { width: 200px; border-bottom: 1px solid #1f2937; margin-top: 0; margin-bottom: 3px; }
     .meta { margin-bottom: 6px; font-size: 9px; }
     .meta p { margin: 2px 0; }
 </style>

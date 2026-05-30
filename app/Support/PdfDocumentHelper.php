@@ -257,6 +257,8 @@ class PdfDocumentHelper
             'signature_position' => 'nullable|string|max:128',
             'signature_name_font_size' => 'nullable|integer|min:8|max:24',
             'signature_position_font_size' => 'nullable|integer|min:8|max:24',
+            'signature_margin_top_px' => 'nullable|integer|min:0|max:400',
+            'letterhead_footer_reserve_mm' => 'nullable|integer|min:20|max:80',
             'is_default' => 'nullable|boolean',
             'remove_letterhead' => 'nullable|boolean',
         ];
@@ -273,6 +275,8 @@ class PdfDocumentHelper
             'signature_position' => $validated['signature_position'] ?? null,
             'signature_name_font_size' => (int) ($validated['signature_name_font_size'] ?? 11),
             'signature_position_font_size' => (int) ($validated['signature_position_font_size'] ?? 11),
+            'signature_margin_top_px' => (int) ($validated['signature_margin_top_px'] ?? 130),
+            'letterhead_footer_reserve_mm' => (int) ($validated['letterhead_footer_reserve_mm'] ?? 42),
             'is_default' => ! empty($validated['is_default']),
         ];
     }
