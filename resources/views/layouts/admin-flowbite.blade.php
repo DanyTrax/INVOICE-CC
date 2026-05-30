@@ -126,6 +126,12 @@
         html.dark .border-gray-400 { border-color: #334155 !important; }
         html.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
         html.dark .hover\:bg-gray-200:hover { background-color: #334155 !important; }
+        html.dark .hover\:bg-gray-50:hover { background-color: #334155 !important; }
+
+        /* Tablas (Gestión Documental, Documentos en Drive, monitor…): hover legible en oscuro */
+        html.dark table tbody tr:hover {
+            background-color: #334155 !important;
+        }
 
         /* Configuración → Sistema: tarjeta versión Git (evita parche claro sobre fondo oscuro) */
         html.dark .settings-git-version-card {

@@ -71,15 +71,14 @@ class QuoteController extends Controller
             'client',
             'quoteItems.serviceType',
             'quoteItems.service',
-            // Vinculación por ciclo (submission) para mostrar trámite real si aplica
-            'quoteItems.submissions.process.serviceType',
+            'quoteItems.process',
+            'quoteItems.submissions.process',
         ]);
         $companies = Company::orderBy('name')->get();
         $serviceTypes = ServiceType::orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
-        $has_any_item_with_process = $quote->quoteItems->contains(fn ($i) => $i->submissions?->isNotEmpty());
 
-        return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services', 'has_any_item_with_process'));
+        return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services'));
     }
 
     /**
@@ -131,13 +130,6 @@ class QuoteController extends Controller
             'items.*.service_id.required' => 'Cada ítem debe tener un servicio elegido de la lista (escriba y seleccione uno existente).',
             'items.*.service_id.exists' => 'El servicio no es válido. Debe elegirse exactamente uno de la lista de servicios.',
         ]);
-
-        $hasAnyLinkedTramite = $quote->quoteItems()->whereHas('submissions')->exists();
-        if ($hasAnyLinkedTramite && empty($validated['show_service_type_column'])) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['show_service_type_column' => 'No se puede deshabilitar la columna Trámite porque hay ítems con trámite vinculado.']);
-        }
 
         $totalFees = 0;
         $totalInvima = 0;

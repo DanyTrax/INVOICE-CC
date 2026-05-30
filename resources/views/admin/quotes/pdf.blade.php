@@ -160,7 +160,7 @@
                     @endif
                     <td>{{ $item->service_label ?: ($item->service?->name ?? '-') }}</td>
                     @if($quote->show_service_type_column)
-                        <td>{{ $item->serviceType?->name ?? $item->process?->serviceType?->name ?? '–' }}</td>
+                        <td>{{ $item->serviceType?->name ?? '–' }}</td>
                     @endif
                     @if($quote->show_description_column ?? true)
                         <td>{{ $item->description ?? '-' }}</td>

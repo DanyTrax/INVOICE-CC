@@ -901,7 +901,7 @@
             <div class="fixed inset-0 bg-gray-500 bg-opacity-75" onclick="document.getElementById('modal-link-quote').classList.add('hidden')"></div>
             <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
                 <h4 id="modal-link-quote-title" class="text-lg font-semibold text-gray-900 mb-4">Vincular ciclo a cotización</h4>
-                <p class="text-sm text-gray-600 mb-4">Seleccione la cotización y el ítem, o use <strong>Quitar vinculación</strong> para dejar el ciclo sin cotización.</p>
+                <p class="text-sm text-gray-600 mb-4">Seleccione la cotización y el <strong>ítem concreto</strong>. La vinculación es solo referencia (no copia trámite ni datos al ítem). Use <strong>Quitar vinculación</strong> para desvincular.</p>
                 <form id="form-link-quote" method="post" action="">
                     @csrf
                     @method('PUT')
@@ -921,12 +921,12 @@
                             </select>
                         </div>
                         <div>
-                            <label for="link-quote-quote_item_id" class="block text-sm font-medium text-gray-700">Ítem de la cotización</label>
-                            <select name="quote_item_id" id="link-quote-quote_item_id"
+                            <label for="link-quote-quote_item_id" class="block text-sm font-medium text-gray-700">Ítem de la cotización <span class="text-red-500">*</span></label>
+                            <select name="quote_item_id" id="link-quote-quote_item_id" required
                                     class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500"
                                     @if($quotesForClient->isEmpty()) disabled @endif>
-                                <option value="">— Sin ítem (solo cotización, sin línea) —</option>
-                                <option value="" disabled>— Primero seleccione una cotización —</option>
+                                <option value="">— Seleccione ítem —</option>
+                                <option value="" disabled hidden>— Primero seleccione una cotización —</option>
                                 @foreach($quotesForClient as $q)
                                     @foreach($q->quoteItems as $qi)
                                         @php

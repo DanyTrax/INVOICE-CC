@@ -339,8 +339,7 @@ class ProcessController extends Controller
     }
 
     /**
-     * Vincular un proceso (expediente) a una cotización y opcionalmente a un ítem.
-     * Si se envía quote_item_id, el expediente queda vinculado a ese ítem y la cotización muestra la columna Trámite.
+     * Vincular solicitud a cotización e ítem concreto (solo referencia; no copia trámite al ítem).
      */
     public function linkToQuote(Request $request, Process $process): RedirectResponse
     {
@@ -348,27 +347,19 @@ class ProcessController extends Controller
         $this->authorizeProcessDocuments($process);
 
         if ($request->boolean('unlink')) {
-            $unlinkedQuoteId = $process->quote_id;
             $process->update([
                 'quote_id' => null,
                 'quote_item_id' => null,
             ]);
-            if ($unlinkedQuoteId) {
-                $this->syncQuoteTramiteColumnIfNoLinks((int) $unlinkedQuoteId);
-            }
 
             return redirect()
                 ->route('admin.processes.show', $process)
                 ->with('success', 'Cotización desvinculada de la solicitud.');
         }
 
-        // Permite "quitar ítem" enviando vacío desde el formulario (value="").
-        $request->merge([
-            'quote_item_id' => $request->input('quote_item_id') ?: null,
-        ]);
         $validated = $request->validate([
             'quote_id' => 'required|exists:quotes,id',
-            'quote_item_id' => 'nullable|exists:quote_items,id',
+            'quote_item_id' => 'required|exists:quote_items,id',
         ]);
 
         $quote = Quote::findOrFail($validated['quote_id']);
@@ -378,32 +369,21 @@ class ProcessController extends Controller
                 ->with('error', 'La cotización debe ser del mismo cliente de la solicitud.');
         }
 
-        $data = [
-            'quote_id' => $quote->id,
-            'client_id' => $quote->client_id,
-        ];
-        if (! empty($validated['quote_item_id'])) {
-            $quoteItem = QuoteItem::with('quote')->findOrFail($validated['quote_item_id']);
-            if (! $quoteItem->quote || $quoteItem->quote_id != $quote->id) {
-                return redirect()->route('admin.processes.show', $process)
-                    ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
-            }
-            $data['quote_item_id'] = $quoteItem->id;
-            if ($process->service_type_id) {
-                $quoteItem->update(['service_type_id' => $process->service_type_id]);
-            }
-            if (! $quote->show_service_type_column) {
-                $quote->update(['show_service_type_column' => true]);
-            }
-        } else {
-            $data['quote_item_id'] = null;
+        $quoteItem = QuoteItem::with('quote')->findOrFail($validated['quote_item_id']);
+        if (! $quoteItem->quote || (int) $quoteItem->quote_id !== (int) $quote->id) {
+            return redirect()->route('admin.processes.show', $process)
+                ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
         }
 
-        $process->update($data);
+        $process->update([
+            'quote_id' => $quote->id,
+            'quote_item_id' => $quoteItem->id,
+            'client_id' => $quote->client_id,
+        ]);
 
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', empty($validated['quote_item_id']) ? 'Solicitud asignada a la cotización.' : 'Solicitud vinculada a la cotización e ítem seleccionados.');
+            ->with('success', 'Solicitud vinculada al ítem '.$quoteItem->item_position.' de la cotización '.$quote->consecutive.'.');
     }
 
     /**
@@ -735,26 +715,19 @@ class ProcessController extends Controller
         $this->authorizeProcessDocuments($process);
 
         if ($request->boolean('unlink')) {
-            $unlinkedQuoteId = $submission->quote_id;
             $submission->update([
                 'quote_id' => null,
                 'quote_item_id' => null,
             ]);
-            if ($unlinkedQuoteId) {
-                $this->syncQuoteTramiteColumnIfNoLinks((int) $unlinkedQuoteId);
-            }
 
             return redirect()
                 ->route('admin.processes.show', $process)
                 ->with('success', 'Ciclo desvinculado de la cotización.');
         }
 
-        $request->merge([
-            'quote_item_id' => $request->input('quote_item_id') ?: null,
-        ]);
         $validated = $request->validate([
             'quote_id' => 'required|exists:quotes,id',
-            'quote_item_id' => 'nullable|exists:quote_items,id',
+            'quote_item_id' => 'required|exists:quote_items,id',
         ]);
         $quote = Quote::findOrFail($validated['quote_id']);
         if ($quote->client_id !== $process->client_id) {
@@ -762,36 +735,20 @@ class ProcessController extends Controller
                 ->with('error', 'La cotización debe ser del mismo cliente de la solicitud.');
         }
 
-        $quoteItemId = $validated['quote_item_id'] ?? null;
-        if ($quoteItemId) {
-            $quoteItem = QuoteItem::with('quote')->findOrFail($quoteItemId);
-            if (! $quoteItem->quote || $quoteItem->quote_id != $quote->id) {
-                return redirect()->route('admin.processes.show', $process)
-                    ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
-            }
-            $submission->update([
-                'quote_id' => $quote->id,
-                'quote_item_id' => $quoteItem->id,
-            ]);
-            // Trámite del expediente → ítem de cotización (nombre de tipo de trámite en PDF/vista).
-            if ($process->service_type_id) {
-                $quoteItem->update(['service_type_id' => $process->service_type_id]);
-            }
-            // Mostrar columna Trámite en cotización y PDF (el usuario puede desactivarla al editar).
-            if (! $quote->show_service_type_column) {
-                $quote->update(['show_service_type_column' => true]);
-            }
-        } else {
-            // Quitar el ítem del ciclo, manteniendo la cotización seleccionada.
-            $submission->update([
-                'quote_id' => $quote->id,
-                'quote_item_id' => null,
-            ]);
+        $quoteItem = QuoteItem::with('quote')->findOrFail($validated['quote_item_id']);
+        if (! $quoteItem->quote || (int) $quoteItem->quote_id !== (int) $quote->id) {
+            return redirect()->route('admin.processes.show', $process)
+                ->with('error', 'El ítem no pertenece a la cotización seleccionada.');
         }
+
+        $submission->update([
+            'quote_id' => $quote->id,
+            'quote_item_id' => $quoteItem->id,
+        ]);
 
         return redirect()
             ->route('admin.processes.show', $process)
-            ->with('success', 'Ciclo vinculado a la cotización/ítem seleccionado.');
+            ->with('success', 'Ciclo vinculado al ítem '.$quoteItem->item_position.' de la cotización '.$quote->consecutive.'.');
     }
 
     /**
@@ -803,8 +760,6 @@ class ProcessController extends Controller
         $process = $submission->process;
         $this->authorizeProcessView($process);
         $this->authorizeProcessFeed($process);
-        $quoteIdsToSync = $this->collectQuoteIdsFromSubmissionTree($submission);
-
         // Si se elimina un sometimiento (por ejemplo el del Ciclo 1 que ya tenía AUTO),
         // también limpiamos la Gestión Documental AUTO asociada al expediente, ya que
         // deja de aplicar ese requerimiento.
@@ -813,10 +768,6 @@ class ProcessController extends Controller
             ->delete();
 
         $this->deleteSubmissionBranch($submission);
-
-        foreach ($quoteIdsToSync as $qid) {
-            $this->syncQuoteTramiteColumnIfNoLinks($qid);
-        }
 
         $this->recalculateProcessStatus($process);
 
@@ -835,19 +786,6 @@ class ProcessController extends Controller
         }
         $submission->regulatoryEvents()->delete();
         $submission->delete();
-    }
-
-    /**
-     * @return list<int>
-     */
-    private function collectQuoteIdsFromSubmissionTree(Submission $submission): array
-    {
-        $ids = $submission->quote_id ? [(int) $submission->quote_id] : [];
-        foreach ($submission->children as $child) {
-            $ids = array_merge($ids, $this->collectQuoteIdsFromSubmissionTree($child));
-        }
-
-        return array_values(array_unique($ids));
     }
 
     /**
@@ -1156,23 +1094,4 @@ class ProcessController extends Controller
             ->with('success', 'Documento eliminado.');
     }
 
-    /**
-     * Si ya no queda ningún expediente ni ciclo (sometimiento) con esa cotización vinculada,
-     * desactiva la columna "Trámite" (show_service_type_column) en la cotización.
-     * Si otros expedientes o ciclos siguen usando la misma cotización, la casilla se mantiene.
-     */
-    private function syncQuoteTramiteColumnIfNoLinks(int $quoteId): void
-    {
-        $quote = Quote::find($quoteId);
-        if (! $quote || ! $quote->show_service_type_column) {
-            return;
-        }
-
-        $stillLinked = Submission::where('quote_id', $quoteId)->exists()
-            || Process::where('quote_id', $quoteId)->exists();
-
-        if (! $stillLinked) {
-            $quote->update(['show_service_type_column' => false]);
-        }
-    }
 }

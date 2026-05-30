@@ -111,13 +111,10 @@
                     <input type="checkbox" id="toggle-raa" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_raa_column', $quote->show_raa_column) ? 'checked' : '' }}>
                     <span>Usar columna RAA</span>
                 </label>
-                <label class="inline-flex items-center gap-2" title="{{ $has_any_item_with_process ? 'No se puede deshabilitar: hay ítems ya vinculados a trámite.' : 'Mostrar columna Trámite' }}">
-                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_service_type_column', $quote->show_service_type_column) ? 'checked' : '' }} {{ $has_any_item_with_process ? 'disabled' : '' }}>
+                <label class="inline-flex items-center gap-2">
+                    <input type="checkbox" id="toggle-tramite" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_service_type_column', $quote->show_service_type_column) ? 'checked' : '' }}>
                     <span>Usar columna Trámite</span>
                 </label>
-                @if($has_any_item_with_process)
-                    <span class="text-xs text-amber-600" title="No se puede deshabilitar mientras haya ítems con trámite vinculado">(No se puede deshabilitar mientras haya ítems con trámite vinculado)</span>
-                @endif
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" id="toggle-description" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('show_description_column', $quote->show_description_column ?? true) ? 'checked' : '' }}>
                     <span>Usar columna Producto / Descripción</span>
@@ -164,6 +161,7 @@
                             <th class="px-2 py-2 w-12">#</th>
                             <th class="px-2 py-2 w-24" data-col="row-id">ROW ID</th>
                             <th class="px-2 py-2">Servicio</th>
+                            <th class="px-2 py-2">Solicitud vinculada</th>
                             <th class="px-2 py-2" data-col="tramite">Trámite (opcional)</th>
                             <th class="px-2 py-2" data-col="description">Producto / Descripción</th>
                             <th class="px-2 py-2" data-col="prev-license">Solicitud / INVIMA</th>
@@ -181,17 +179,12 @@
                             $oldItems = old('items', []);
                             if (empty($oldItems)) {
                                 $oldItems = $quote->quoteItems->sortBy('item_position')->values()->map(function ($qi) {
-                                    $linkedCycle = $qi->submissions?->sortByDesc('id')->first();
-                                    $linkedProcess = $linkedCycle?->process;
                                     return [
                                         'id' => $qi->id,
                                         'item_position' => $qi->item_position,
                                         'service_id' => $qi->service_id ?? '',
                                         'service_label' => $qi->service_label ?? ($qi->service?->name ?? ''),
                                         'service_type_name' => $qi->serviceType->name ?? '',
-                                        // Si el ítem tiene un ciclo vinculado, se muestra el trámite del proceso y se bloquea el texto manual.
-                                        'has_process' => $linkedProcess !== null,
-                                        'process_tramite_name' => $linkedProcess?->serviceType?->name ?? '',
                                         'description' => $qi->description ?? '',
                                         'row_id' => $qi->row_id ?? '',
                                         'previous_license' => $qi->previous_license ?? '',
@@ -207,7 +200,7 @@
                                 })->toArray();
                             }
                             if (empty($oldItems)) {
-                                $oldItems = [['id' => '', 'item_position' => 1, 'service_id' => '', 'service_type_name' => '', 'has_process' => false, 'process_tramite_name' => '', 'description' => '', 'row_id' => '', 'previous_license' => '', 'raa_code' => '', 'franquicia' => '', 'centro_costos' => '', 'contacto' => '', 'scope' => '', 'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '']];
+                                $oldItems = [['id' => '', 'item_position' => 1, 'service_id' => '', 'service_type_name' => '', 'description' => '', 'row_id' => '', 'previous_license' => '', 'raa_code' => '', 'franquicia' => '', 'centro_costos' => '', 'contacto' => '', 'scope' => '', 'fee_value' => '', 'invima_rate_code' => '', 'invima_rate_value' => '']];
                             }
                         @endphp
                         @foreach($oldItems as $idx => $item)
@@ -224,20 +217,27 @@
                                     <input type="hidden" name="items[{{ $idx }}][service_id]" class="item-service-id-input" value="{{ $item['service_id'] ?? '' }}">
                                     <input type="hidden" name="items[{{ $idx }}][service_label]" class="item-service-label-input" value="{{ $item['service_label'] ?? ($selectedService ? $selectedService->name : '') }}">
                                 </td>
+                                <td class="px-2 py-2">
+                                    @php
+                                        $quoteItemForLink = ! empty($item['id'])
+                                            ? $quote->quoteItems->firstWhere('id', (int) $item['id'])
+                                            : null;
+                                    @endphp
+                                    @if($quoteItemForLink)
+                                        @include('admin.quotes.partials.item-linked-solicitud-button', ['item' => $quoteItemForLink])
+                                    @else
+                                        <span class="text-gray-400 text-sm">—</span>
+                                    @endif
+                                </td>
                                 <td class="px-2 py-2" data-col="tramite">
                                     <input type="hidden" name="items[{{ $idx }}][id]" value="{{ $item['id'] ?? '' }}">
                                     <input type="hidden" name="items[{{ $idx }}][item_position]" value="{{ $idx + 1 }}">
-                                    @if(!empty($item['has_process']) && !empty($item['process_tramite_name']))
-                                        <span class="text-sm text-gray-700">{{ $item['process_tramite_name'] }}</span>
-                                        <input type="hidden" name="items[{{ $idx }}][service_type_name]" value="{{ $item['process_tramite_name'] }}">
-                                    @else
-                                        <textarea
-                                            name="items[{{ $idx }}][service_type_name]"
-                                            list="service_types_datalist"
-                                            rows="2"
-                                            placeholder="Trámite (opcional)"
-                                            class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
-                                    @endif
+                                    <textarea
+                                        name="items[{{ $idx }}][service_type_name]"
+                                        list="service_types_datalist"
+                                        rows="2"
+                                        placeholder="Trámite (opcional)"
+                                        class="js-autoresize border border-gray-300 rounded-lg p-2 w-full text-sm resize-y">{{ $item['service_type_name'] ?? '' }}</textarea>
                                 </td>
                                 <td class="px-2 py-2" data-col="description">
                                     <input type="text" name="items[{{ $idx }}][description]" value="{{ $item['description'] ?? '' }}" placeholder="Producto / Descripción" maxlength="500"
@@ -350,6 +350,7 @@
                 <input type="hidden" name="items[__INDEX__][service_id]" class="item-service-id-input" value="">
                 <input type="hidden" name="items[__INDEX__][service_label]" class="item-service-label-input" value="">
             </td>
+            <td class="px-2 py-2"><span class="text-gray-400 text-sm">—</span></td>
             <td class="px-2 py-2" data-col="tramite">
                 <input type="hidden" name="items[__INDEX__][id]" value="">
                 <input type="hidden" name="items[__INDEX__][item_position]" value="0" class="item-position-input">

@@ -154,6 +154,7 @@
                             <th class="px-2 py-2 w-24">ROW ID</th>
                         @endif
                         <th class="px-2 py-2">Servicio</th>
+                        <th class="px-2 py-2">Solicitud vinculada</th>
                         @if($quote->show_service_type_column)
                             <th class="px-2 py-2">Trámite</th>
                         @endif
@@ -187,24 +188,11 @@
                                 <td class="px-2 py-2">{{ $item->row_id ?: '–' }}</td>
                             @endif
                             <td class="px-2 py-2">{{ $item->service_label ?: ($item->service?->name ?? '-') }}</td>
+                            <td class="px-2 py-2">
+                                @include('admin.quotes.partials.item-linked-solicitud-button', ['item' => $item])
+                            </td>
                             @if($quote->show_service_type_column)
-                                <td class="px-2 py-2">
-                                    @php
-                                        $linkedCycle = $item->submissions?->sortByDesc('id')->first();
-                                        $linkedProcess = $linkedCycle?->process;
-                                        // Ítem (tras vincular ciclo) o solicitud vinculada al ítem
-                                        $tramiteNombre = $item->serviceType?->name
-                                            ?? $linkedProcess?->serviceType?->name
-                                            ?? $item->process?->serviceType?->name;
-                                    @endphp
-                                    @if($linkedProcess)
-                                        <a href="{{ route('admin.processes.show', $linkedProcess) }}" class="text-teal-600 hover:text-teal-800 hover:underline">
-                                            {{ $tramiteNombre ?: 'Solicitud' }}
-                                        </a>
-                                    @else
-                                        {{ $tramiteNombre ?: '–' }}
-                                    @endif
-                                </td>
+                                <td class="px-2 py-2">{{ $item->serviceType?->name ?: '–' }}</td>
                             @endif
                             @if($quote->show_description_column)
                                 <td class="px-2 py-2">{{ $item->description ?? '-' }}</td>
