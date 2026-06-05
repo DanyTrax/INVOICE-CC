@@ -9,7 +9,7 @@
             $letterheadPath = public_path($settings->agency_logo);
         }
     }
-    $letterheadDataUri = PdfDocumentHelper::resolveLetterheadDataUri($letterheadPath);
+    $letterheadSrc = PdfDocumentHelper::resolveLetterheadSrcForPdf($letterheadPath);
     $bodyHtml = PdfDocumentHelper::resolveBodyHtml($useTemplate ? $template : null, $quote);
     $showPdfSideNote = $quote->show_pdf_side_note ?? true;
     $showPdfFooter = $quote->show_pdf_footer ?? true;
@@ -22,10 +22,10 @@
     $sigNameSize = (int) ($useTemplate ? ($template->signature_name_font_size ?? 11) : 11);
     $sigPosSize = (int) ($useTemplate ? ($template->signature_position_font_size ?? 9) : 9);
     $pdfSignatureSpacerPx = $useTemplate ? (int) ($template->signature_margin_top_px ?? 130) : 130;
-    $pdfFooterReserveMm = $letterheadDataUri
+    $pdfFooterReserveMm = $letterheadSrc
         ? ($useTemplate ? (int) ($template->letterhead_footer_reserve_mm ?? 42) : 42)
         : 14;
-    if (! $letterheadDataUri) {
+    if (! $letterheadSrc) {
         $pdfSignatureSpacerPx = 20;
     }
     $fmt = fn ($n) => PdfDocumentHelper::formatMoney((float) $n, $quote->currency ?? 'COP');
@@ -36,17 +36,13 @@
     <meta charset="UTF-8">
     <title>Cotización {{ $quote->consecutive }}</title>
     @include('admin.partials.pdf-document-styles')
-    @if($letterheadDataUri)
+    @if($letterheadSrc)
         <style>body { padding-bottom: {{ $pdfFooterReserveMm }}mm !important; }</style>
     @endif
 </head>
 <body>
 
-    @if($letterheadDataUri)
-        <div class="pdf-letterhead" style="background-image: url('{{ $letterheadDataUri }}');">
-            <img src="{{ $letterheadDataUri }}" alt="">
-        </div>
-    @endif
+    @include('admin.partials.pdf-letterhead-img', ['letterheadSrc' => $letterheadSrc])
 
     <div class="pdf-body-content">
         <h1 class="doc-title">COTIZACIÓN No. {{ $quote->consecutive }}</h1>

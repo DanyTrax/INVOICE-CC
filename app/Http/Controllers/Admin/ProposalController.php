@@ -230,6 +230,7 @@ class ProposalController extends Controller
         }
         $settings = app(GeneralSettings::class);
         $pdf = Pdf::loadView('admin.proposals.pdf', compact('proposal', 'settings', 'template'));
+        $pdf->setOption('chroot', base_path());
         $filename = 'propuesta-' . preg_replace('/[^a-z0-9\-]/i', '-', $proposal->consecutive) . '.pdf';
 
         return $pdf->download($filename);

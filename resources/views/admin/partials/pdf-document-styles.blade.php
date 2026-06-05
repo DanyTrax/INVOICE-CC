@@ -2,7 +2,7 @@
     @page { size: letter; margin: 0; }
     html { margin: 0; padding: 0; }
     body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #1f2937; margin: 0; padding: 27mm 12mm 42mm 12mm; line-height: 1.4; }
-    .pdf-letterhead {
+    .pdf-letterhead-img {
         position: fixed;
         top: 0;
         left: 0;
@@ -10,18 +10,8 @@
         height: 1056px;
         margin: 0;
         padding: 0;
-        z-index: -1000;
-        background-repeat: no-repeat;
-        background-position: top left;
-        background-size: 816px 1056px;
-    }
-    .pdf-letterhead img {
-        display: block;
-        width: 816px;
-        height: 1056px;
-        margin: 0;
-        padding: 0;
         border: 0;
+        z-index: -1000;
     }
     .pdf-body-content { position: relative; z-index: 1; }
     h1.doc-title { font-size: 9px; font-weight: bold; margin: 0 0 6px 0; color: #111827; text-align: left; }

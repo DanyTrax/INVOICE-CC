@@ -108,6 +108,12 @@ class PdfDocumentHelper
         $fullPath = public_path($relativePath);
         file_put_contents($fullPath, $content);
 
+        $mime = mime_content_type($fullPath) ?: '';
+        if (! str_starts_with($mime, 'image/') || $mime === 'image/svg+xml') {
+            @unlink($fullPath);
+            throw new \RuntimeException('El archivo en Drive no es una imagen válida para membrete (use JPG o PNG).');
+        }
+
         if ($template instanceof Model && $template->exists) {
             $template->update(['letterhead_path' => $relativePath]);
         }
@@ -126,20 +132,25 @@ class PdfDocumentHelper
     }
 
     /**
-     * Data URI del membrete para DomPDF (fondo a página completa).
+     * Ruta absoluta del membrete para DomPDF (evita data URI que rompe imágenes grandes → X).
      */
-    public static function resolveLetterheadDataUri(?string $absolutePath): ?string
+    public static function resolveLetterheadSrcForPdf(?string $absolutePath): ?string
     {
         if (! $absolutePath || ! is_readable($absolutePath)) {
             return null;
         }
 
-        $mime = mime_content_type($absolutePath) ?: 'image/png';
-        if (! str_starts_with($mime, 'image/')) {
+        $real = realpath($absolutePath);
+        if (! $real || ! is_file($real)) {
             return null;
         }
 
-        return 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($absolutePath));
+        $mime = mime_content_type($real) ?: '';
+        if (! str_starts_with($mime, 'image/') || $mime === 'image/svg+xml') {
+            return null;
+        }
+
+        return str_replace('\\', '/', $real);
     }
 
     public static function hasMeaningfulHtml(?string $html): bool

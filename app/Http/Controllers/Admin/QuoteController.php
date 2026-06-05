@@ -253,6 +253,7 @@ class QuoteController extends Controller
         }
         $settings = app(GeneralSettings::class);
         $pdf = Pdf::loadView('admin.quotes.pdf', compact('quote', 'settings', 'template'));
+        $pdf->setOption('chroot', base_path());
         $filename = 'cotizacion-'.preg_replace('/[^a-z0-9\-]/i', '-', $quote->consecutive).'.pdf';
 
         return $pdf->download($filename);

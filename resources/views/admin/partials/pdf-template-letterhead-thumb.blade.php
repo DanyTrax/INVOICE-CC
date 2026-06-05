@@ -3,8 +3,10 @@
     $letterheadPath = PdfDocumentHelper::resolveLetterheadRelativePath($template);
 @endphp
 @if($letterheadPath)
-    <img src="{{ asset($letterheadPath) }}" alt="Membrete {{ $template->name }}"
-         class="h-16 w-auto max-w-[140px] object-contain border border-gray-200 rounded shadow-sm bg-white">
+    <div class="inline-block h-20 w-[4.5rem] overflow-hidden border border-gray-200 rounded shadow-sm bg-white">
+        <img src="{{ asset($letterheadPath) }}" alt="Membrete {{ $template->name }}"
+             class="w-full h-auto object-cover object-top">
+    </div>
     @if($template->letterhead_drive_id ?? null)
         <span class="block text-[10px] text-teal-700 mt-0.5" title="Respaldo en Google Drive"><i class="fab fa-google-drive"></i> Drive</span>
     @endif
