@@ -27,7 +27,7 @@ class QuotePdfTemplateController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate(PdfDocumentHelper::templateValidationRules());
+        $validated = PdfDocumentHelper::validateTemplateRequest($request);
 
         $upload = PdfDocumentHelper::processLetterheadUpload($request, null, 'quote-pdf-letterhead', 'quote-pdf');
         if ($upload['error']) {
@@ -57,7 +57,7 @@ class QuotePdfTemplateController extends Controller
 
     public function update(Request $request, QuotePdfTemplate $quotePdfTemplate): RedirectResponse
     {
-        $validated = $request->validate(PdfDocumentHelper::templateValidationRules());
+        $validated = PdfDocumentHelper::validateTemplateRequest($request);
 
         $current = $quotePdfTemplate->letterhead_path ?: $quotePdfTemplate->logo_path;
         $upload = PdfDocumentHelper::processLetterheadUpload(

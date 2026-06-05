@@ -320,7 +320,17 @@ class PdfDocumentHelper
             ];
         }
 
-        $ext = strtolower($request->file('letterhead')->getClientOriginalExtension());
+        $file = $request->file('letterhead');
+        if (! $file->isValid()) {
+            return [
+                'path' => $currentPath,
+                'drive_id' => $currentDriveId,
+                'error' => self::letterheadUploadErrorMessage($file->getError()),
+                'drive_warning' => null,
+            ];
+        }
+
+        $ext = strtolower($file->getClientOriginalExtension());
         if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'], true)) {
             return [
                 'path' => $currentPath,
@@ -338,7 +348,6 @@ class PdfDocumentHelper
         }
         self::deleteLetterheadFromDrive($currentDriveId);
 
-        $file = $request->file('letterhead');
         $filename = $filenamePrefix.'-'.time().'-'.uniqid().'.'.$ext;
         $dir = public_path('uploads/'.$uploadSubdir);
         if (! is_dir($dir)) {
@@ -419,11 +428,29 @@ class PdfDocumentHelper
         return $redirect;
     }
 
-    public static function templateValidationRules(): array
+    public static function letterheadUploadErrorMessage(int $phpUploadError): string
+    {
+        return match ($phpUploadError) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'El membrete supera el tamaño máximo permitido por el servidor (upload_max_filesize / post_max_size en PHP). Reduzca la imagen o pida al administrador aumentar esos límites.',
+            UPLOAD_ERR_PARTIAL => 'La subida del membrete se interrumpió. Intente de nuevo.',
+            UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE, UPLOAD_ERR_EXTENSION => 'El servidor no pudo guardar el membrete temporalmente. Contacte al administrador.',
+            default => 'No se pudo subir el membrete. Si no cambió la imagen, guarde sin seleccionar archivo. Si subió una imagen nueva, use JPG/PNG de menos de 20 MB.',
+        };
+    }
+
+    public static function templateValidationMessages(): array
     {
         return [
+            'letterhead.file' => 'No se pudo subir el membrete. Use JPG o PNG (máx. 20 MB) o guarde sin cambiar la imagen.',
+            'letterhead.max' => 'El membrete es demasiado grande. Tamaño máximo: 20 MB.',
+            'letterhead.uploaded' => 'No se pudo subir el membrete (archivo inválido o límite del servidor). Guarde sin cambiar la imagen o reduzca el tamaño del archivo.',
+        ];
+    }
+
+    public static function templateValidationRules(?\Illuminate\Http\Request $request = null): array
+    {
+        $rules = [
             'name' => 'required|string|max:128',
-            'letterhead' => 'nullable|file|max:5120',
             'body_html' => 'nullable|string',
             'side_note_html' => 'nullable|string',
             'closing_footer_html' => 'nullable|string',
@@ -436,6 +463,63 @@ class PdfDocumentHelper
             'is_default' => 'nullable|boolean',
             'remove_letterhead' => 'nullable|boolean',
         ];
+
+        if ($request && $request->hasFile('letterhead')) {
+            $rules['letterhead'] = ['file', 'max:20480'];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Validación previa cuando el POST supera post_max_size (PHP vacía $_POST).
+     */
+    public static function postPayloadTooLargeMessage(\Illuminate\Http\Request $request): ?string
+    {
+        $contentLength = (int) ($request->server('CONTENT_LENGTH') ?? 0);
+        if ($contentLength <= 0) {
+            return null;
+        }
+
+        $postMax = ini_get('post_max_size');
+        $postMaxBytes = self::iniSizeToBytes($postMax ?: '8M');
+        if ($contentLength > $postMaxBytes && trim((string) $request->input('name', '')) === '') {
+            return 'El formulario es demasiado grande para el servidor (post_max_size='.$postMax.'). Guarde sin cambiar el membrete o reduzca el texto en los editores.';
+        }
+
+        return null;
+    }
+
+    protected static function iniSizeToBytes(string $value): int
+    {
+        $value = trim($value);
+        $unit = strtolower(substr($value, -1));
+        $number = (int) $value;
+
+        return match ($unit) {
+            'g' => $number * 1024 * 1024 * 1024,
+            'm' => $number * 1024 * 1024,
+            'k' => $number * 1024,
+            default => (int) $value,
+        };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function validateTemplateRequest(\Illuminate\Http\Request $request): array
+    {
+        $tooLarge = self::postPayloadTooLargeMessage($request);
+        if ($tooLarge !== null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'letterhead' => $tooLarge,
+            ]);
+        }
+
+        return $request->validate(
+            self::templateValidationRules($request),
+            self::templateValidationMessages()
+        );
     }
 
     public static function templatePayload(array $validated): array

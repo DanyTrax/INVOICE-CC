@@ -20,8 +20,16 @@
     <div class="md:col-span-2">
         <label for="letterhead" class="block mb-2 text-sm font-medium text-gray-900">Membrete (imagen de fondo del PDF)</label>
         @php
-            use App\Support\PdfDocumentHelper;
-            $letterheadPath = $template ? PdfDocumentHelper::resolveLetterheadRelativePath($template) : null;
+            $letterheadPath = null;
+            if ($template) {
+                foreach (['letterhead_path', 'logo_path'] as $field) {
+                    $candidate = $template->{$field} ?? null;
+                    if ($candidate && file_exists(public_path($candidate))) {
+                        $letterheadPath = $candidate;
+                        break;
+                    }
+                }
+            }
         @endphp
         @if($template && $letterheadPath)
             <div class="mb-2">
@@ -36,8 +44,11 @@
             </label>
             <span class="mx-2">|</span>
         @endif
-        <input type="file" name="letterhead" id="letterhead" accept="image/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 mt-2">
-        <p class="mt-1 text-xs text-gray-500">Imagen completa membreteada (cabecera y pie incluidos en el diseño). JPG o PNG recomendado. Máx. 5MB. Se guarda en el servidor y se respalda en <strong>Google Drive</strong> para que no se pierda al actualizar el sistema.</p>
+        <input type="file" name="letterhead" id="letterhead" accept="image/jpeg,image/png,image/gif,image/webp" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 mt-2">
+        @error('letterhead')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        @enderror
+        <p class="mt-1 text-xs text-gray-500">Imagen completa membreteada (cabecera y pie incluidos en el diseño). JPG o PNG recomendado. Máx. 20 MB. Para <strong>guardar sin cambiar el membrete</strong>, no seleccione archivo. Se respalda en <strong>Google Drive</strong>.</p>
     </div>
 
     <div class="md:col-span-2">

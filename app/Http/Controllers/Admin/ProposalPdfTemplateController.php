@@ -18,7 +18,7 @@ class ProposalPdfTemplateController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate(PdfDocumentHelper::templateValidationRules());
+        $validated = PdfDocumentHelper::validateTemplateRequest($request);
 
         $upload = PdfDocumentHelper::processLetterheadUpload($request, null, 'proposal-pdf-letterhead', 'proposal-pdf');
         if ($upload['error']) {
@@ -48,7 +48,7 @@ class ProposalPdfTemplateController extends Controller
 
     public function update(Request $request, ProposalPdfTemplate $proposalPdfTemplate): RedirectResponse
     {
-        $validated = $request->validate(PdfDocumentHelper::templateValidationRules());
+        $validated = PdfDocumentHelper::validateTemplateRequest($request);
 
         $current = $proposalPdfTemplate->letterhead_path ?: $proposalPdfTemplate->logo_path;
         $upload = PdfDocumentHelper::processLetterheadUpload(
