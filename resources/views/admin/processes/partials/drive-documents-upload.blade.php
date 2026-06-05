@@ -28,6 +28,7 @@
         </button>
     </div>
     <div id="process-drive-file-list" class="mt-3 space-y-2 hidden"></div>
+    <div id="process-drive-upload-feedback" class="hidden mt-3 p-3 rounded-lg text-sm" role="alert"></div>
     @error('documents')
         <p class="mt-2 text-sm text-red-600" role="alert">{{ $message }}</p>
     @enderror
@@ -45,11 +46,34 @@
     var list = document.getElementById('process-drive-file-list');
     var submitBtn = document.getElementById('process-drive-upload-submit');
     var form = document.getElementById('process-drive-upload-form');
+    var feedback = document.getElementById('process-drive-upload-feedback');
     var maxBytes = 10 * 1024 * 1024;
     var defaultSubmitHtml = '<i class="fas fa-upload mr-2"></i> Subir';
 
     if (!input || !list || !submitBtn || !form) {
         return;
+    }
+
+    function showUploadFeedback(message, type) {
+        if (!feedback) {
+            alert(message);
+            return;
+        }
+        feedback.textContent = message;
+        feedback.classList.remove('hidden', 'bg-green-50', 'text-green-800', 'border-green-200', 'bg-red-50', 'text-red-800', 'border-red-200', 'border');
+        if (type === 'success') {
+            feedback.classList.add('bg-green-50', 'text-green-800', 'border', 'border-green-200');
+        } else {
+            feedback.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+        }
+    }
+
+    function clearUploadFeedback() {
+        if (!feedback) {
+            return;
+        }
+        feedback.textContent = '';
+        feedback.classList.add('hidden');
     }
 
     function csrfToken() {
@@ -149,6 +173,7 @@
             return;
         }
 
+        clearUploadFeedback();
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Subiendo…';
 
@@ -166,7 +191,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'text/html,application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken(),
                         'X-Requested-With': 'XMLHttpRequest',
                     },
@@ -175,17 +200,62 @@
                         documents_payload: payload,
                     }),
                     credentials: 'same-origin',
-                    redirect: 'follow',
                 });
             })
             .then(function (response) {
-                window.location.href = response.url;
+                return response.json().then(function (data) {
+                    if (!response.ok || !data.ok) {
+                        var err = new Error(data.message || 'No se pudo subir el archivo.');
+                        err.payload = data;
+                        throw err;
+                    }
+                    return data;
+                }).catch(function (parseError) {
+                    if (parseError && parseError.payload) {
+                        throw parseError;
+                    }
+                    if (response.status === 419) {
+                        throw new Error('La sesión expiró. Recargue la página e intente de nuevo.');
+                    }
+                    if (response.status === 413) {
+                        throw new Error('El archivo es demasiado grande para el servidor. Reduzca el tamaño o pida aumentar post_max_size.');
+                    }
+                    throw new Error('El servidor respondió de forma inesperada (código ' + response.status + ').');
+                });
             })
-            .catch(function () {
+            .then(function (data) {
+                showUploadFeedback(data.message, 'success');
+                try {
+                    sessionStorage.setItem('driveUploadFlash', JSON.stringify({
+                        type: 'success',
+                        message: data.message,
+                    }));
+                } catch (storageError) {
+                    // ignore
+                }
+                window.setTimeout(function () {
+                    window.location.href = data.redirect || window.location.href;
+                }, 700);
+            })
+            .catch(function (error) {
+                var message = (error && error.message) ? error.message : 'No se pudo subir el archivo. Intente de nuevo.';
+                showUploadFeedback(message, 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = defaultSubmitHtml;
-                alert('No se pudo subir el archivo. Intente de nuevo.');
             });
     });
+
+    try {
+        var storedFlash = sessionStorage.getItem('driveUploadFlash');
+        if (storedFlash) {
+            sessionStorage.removeItem('driveUploadFlash');
+            var flashData = JSON.parse(storedFlash);
+            if (flashData && flashData.message) {
+                showUploadFeedback(flashData.message, flashData.type === 'success' ? 'success' : 'error');
+            }
+        }
+    } catch (storageError) {
+        // ignore
+    }
 })();
 </script>

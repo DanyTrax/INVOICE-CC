@@ -259,6 +259,7 @@ class ActivityLogService
             'updated' => 'Actualizó',
             'deleted' => 'Eliminó',
             'mutation' => 'Envió / registró (POST)',
+            'mutation_failed' => 'Falló acción (POST)',
             'viewed' => 'Consultó',
             'sent_email' => 'Envió correo',
         ];

@@ -14,11 +14,13 @@ use App\Models\QuoteItem;
 use App\Models\RegulatoryEvent;
 use App\Models\ServiceType;
 use App\Models\Submission;
+use App\Services\ActivityLogService;
 use App\Services\GoogleDriveService;
 use App\Services\ProcessAccessService;
 use App\Support\PdfDocumentHelper;
 use App\Support\UploadHelper;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -1129,51 +1131,59 @@ class ProcessController extends Controller
     /**
      * Subir uno o varios documentos del expediente a Google Drive.
      */
-    public function uploadDocument(Request $request, Process $process): RedirectResponse
+    public function uploadDocument(Request $request, Process $process): RedirectResponse|JsonResponse
     {
         $this->authorizeProcessView($process);
         $this->authorizeProcessDocumentUpload($process);
 
-        if ($request->hasFile('documents') || $request->hasFile('document')) {
-            return redirect()->route('admin.processes.show', $process)
-                ->withErrors(['documents' => 'La página usa el método de subida antiguo. Recargue con Ctrl+F5. En el servidor ejecute: git pull origin main && php artisan view:clear']);
-        }
+        $payload = $this->extractDocumentsPayload($request);
+        $usesPayload = $payload !== [];
 
-        $payload = $request->input('documents_payload', []);
-        $usesPayload = is_array($payload) && $payload !== [];
+        $this->logDriveUploadAttempt($request, $process, $payload);
+
+        if ($request->hasFile('documents') || $request->hasFile('document')) {
+            return $this->respondDriveUpload(
+                $request,
+                $process,
+                false,
+                'La página usa el método de subida antiguo. Recargue con Ctrl+F5. En el servidor ejecute: git pull origin main && php artisan view:clear'
+            );
+        }
 
         $contentLength = (int) ($request->server('CONTENT_LENGTH') ?? 0);
         if (! $usesPayload && $contentLength > 0) {
             $tooLargeOnEmptyBody = UploadHelper::postPayloadTooLargeMessage($request, true);
             if ($tooLargeOnEmptyBody !== null) {
-                return redirect()->route('admin.processes.show', $process)
-                    ->withErrors(['documents' => $tooLargeOnEmptyBody]);
+                return $this->respondDriveUpload($request, $process, false, $tooLargeOnEmptyBody);
             }
         }
 
         $tooLarge = UploadHelper::postPayloadTooLargeMessage($request, $usesPayload)
             ?? PdfDocumentHelper::postPayloadTooLargeMessage($request);
         if ($tooLarge !== null) {
-            return redirect()->route('admin.processes.show', $process)
-                ->withErrors(['documents' => $tooLarge]);
+            return $this->respondDriveUpload($request, $process, false, $tooLarge);
         }
 
         try {
             UploadHelper::ensureProcessUploadTempDir();
         } catch (\RuntimeException $e) {
-            return redirect()->route('admin.processes.show', $process)
-                ->withErrors(['documents' => $e->getMessage()]);
+            return $this->respondDriveUpload($request, $process, false, $e->getMessage());
         }
 
         if ($usesPayload) {
             $materialized = UploadHelper::materializeBase64PayloadUploads($payload);
+            Log::info('Subida documentos Drive: archivos preparados', [
+                'process_id' => $process->id,
+                'prepared_count' => count($materialized['files']),
+                'prepared_names' => array_column($materialized['files'], 'name'),
+                'prepare_errors' => $materialized['errors'],
+            ]);
+
             if ($materialized['files'] === [] && $materialized['errors'] === []) {
-                return redirect()->route('admin.processes.show', $process)
-                    ->withErrors(['documents' => 'Seleccione al menos un archivo para subir.']);
+                return $this->respondDriveUpload($request, $process, false, 'Seleccione al menos un archivo para subir.');
             }
             if ($materialized['errors'] !== [] && $materialized['files'] === []) {
-                return redirect()->route('admin.processes.show', $process)
-                    ->withErrors(['documents' => implode(' ', $materialized['errors'])]);
+                return $this->respondDriveUpload($request, $process, false, implode(' ', $materialized['errors']));
             }
 
             $result = $this->uploadPreparedProcessDocumentsToDrive($process, $materialized['files']);
@@ -1182,27 +1192,32 @@ class ProcessController extends Controller
         } else {
             $uploadValidationErrors = $this->collectProcessUploadValidationErrors($request);
             if ($uploadValidationErrors !== []) {
-                return redirect()->route('admin.processes.show', $process)
-                    ->withErrors(['documents' => implode(' ', $uploadValidationErrors)]);
+                return $this->respondDriveUpload($request, $process, false, implode(' ', $uploadValidationErrors));
             }
 
             $files = $this->collectProcessUploadFiles($request);
             if ($files === []) {
-                return redirect()->route('admin.processes.show', $process)
-                    ->withErrors(['documents' => 'Seleccione al menos un archivo para subir.']);
+                return $this->respondDriveUpload($request, $process, false, 'Seleccione al menos un archivo para subir.');
             }
 
             $result = $this->uploadProcessDocumentsToDrive($process, $files);
             $uploadedCount = $result['uploaded'];
             $uploadErrors = $result['errors'];
         }
+
         if ($uploadedCount === 0) {
             $message = $uploadErrors !== []
                 ? implode('; ', $uploadErrors)
                 : 'No se pudo subir ningún documento.';
 
-            return redirect()->route('admin.processes.show', $process)
-                ->with('error', $this->formatProcessDriveUploadError($message));
+            $this->logDriveUploadFailure($process, $message, $uploadErrors);
+
+            return $this->respondDriveUpload(
+                $request,
+                $process,
+                false,
+                $this->formatProcessDriveUploadError($message)
+            );
         }
 
         $success = $uploadedCount === 1
@@ -1213,7 +1228,126 @@ class ProcessController extends Controller
             $success .= ' No se pudieron subir '.count($uploadErrors).' archivo(s): '.implode('; ', $uploadErrors);
         }
 
-        return redirect()->route('admin.processes.show', $process)->with('success', $success);
+        $this->logDriveUploadSuccess($process, $uploadedCount, $uploadErrors);
+
+        return $this->respondDriveUpload($request, $process, true, $success);
+    }
+
+    /**
+     * @return list<array{name?: mixed, mime?: mixed, content?: mixed}>
+     */
+    private function extractDocumentsPayload(Request $request): array
+    {
+        $payload = $request->input('documents_payload', []);
+        if (is_array($payload) && $payload !== []) {
+            return $payload;
+        }
+
+        if ($request->isJson()) {
+            $jsonPayload = $request->json('documents_payload', []);
+            if (is_array($jsonPayload)) {
+                return $jsonPayload;
+            }
+        }
+
+        return [];
+    }
+
+    private function isDriveUploadAjax(Request $request): bool
+    {
+        return $request->ajax() || $request->expectsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest';
+    }
+
+    private function respondDriveUpload(
+        Request $request,
+        Process $process,
+        bool $success,
+        string $message
+    ): RedirectResponse|JsonResponse {
+        Log::info('Subida documentos Drive: respuesta', [
+            'process_id' => $process->id,
+            'success' => $success,
+            'message' => $message,
+            'ajax' => $this->isDriveUploadAjax($request),
+        ]);
+
+        if ($this->isDriveUploadAjax($request)) {
+            return response()->json([
+                'ok' => $success,
+                'message' => $message,
+                'redirect' => route('admin.processes.show', $process),
+            ], $success ? 200 : 422);
+        }
+
+        if ($success) {
+            return redirect()->route('admin.processes.show', $process)->with('success', $message);
+        }
+
+        if (str_contains($message, 'Google Drive') || str_contains($message, 'OAuth') || str_contains($message, 'token')) {
+            return redirect()->route('admin.processes.show', $process)->with('error', $message);
+        }
+
+        return redirect()->route('admin.processes.show', $process)->withErrors(['documents' => $message]);
+    }
+
+    /**
+     * @param  list<array{name?: mixed, mime?: mixed, content?: mixed}>  $payload
+     */
+    private function logDriveUploadAttempt(Request $request, Process $process, array $payload): void
+    {
+        $names = [];
+        foreach ($payload as $item) {
+            if (is_array($item) && ! empty($item['name'])) {
+                $names[] = (string) $item['name'];
+            }
+        }
+
+        Log::info('Subida documentos Drive: inicio', [
+            'process_id' => $process->id,
+            'user_id' => auth()->id(),
+            'content_length' => (int) ($request->server('CONTENT_LENGTH') ?? 0),
+            'upload_via' => $request->input('upload_via'),
+            'payload_count' => count($payload),
+            'file_names' => $names,
+            'post_max_size' => ini_get('post_max_size'),
+        ]);
+    }
+
+    /**
+     * @param  list<string>  $uploadErrors
+     */
+    private function logDriveUploadFailure(Process $process, string $message, array $uploadErrors): void
+    {
+        Log::warning('Subida documentos Drive: falló', [
+            'process_id' => $process->id,
+            'user_id' => auth()->id(),
+            'message' => $message,
+            'errors' => $uploadErrors,
+        ]);
+
+        try {
+            app(ActivityLogService::class)->log(
+                'mutation_failed',
+                'Fallo al subir documento(s) a solicitud (Drive)',
+                $process,
+                ['message' => $message, 'errors' => $uploadErrors]
+            );
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo registrar actividad de fallo de subida', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * @param  list<string>  $uploadErrors
+     */
+    private function logDriveUploadSuccess(Process $process, int $uploadedCount, array $uploadErrors): void
+    {
+        Log::info('Subida documentos Drive: éxito', [
+            'process_id' => $process->id,
+            'user_id' => auth()->id(),
+            'uploaded_count' => $uploadedCount,
+            'partial_errors' => $uploadErrors,
+        ]);
     }
 
     /**
