@@ -10,6 +10,7 @@ use App\Observers\RegulatoryEventObserver;
 use App\Services\PermissionService;
 use App\Services\ProcessAccessService;
 use App\Settings\GeneralSettings;
+use App\Support\UploadHelper;
 use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Blade;
@@ -30,6 +31,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        try {
+            UploadHelper::ensureProcessUploadTempDir();
+        } catch (\Throwable $e) {
+            // No bloquear la app en migraciones o primer despliegue; la subida validará de nuevo.
+        }
+
         ResetPasswordNotification::toMailUsing(function (object $notifiable, string $token) {
             $url = url(route('password.reset', [
                 'token' => $token,

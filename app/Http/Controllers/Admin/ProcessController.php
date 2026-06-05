@@ -17,6 +17,7 @@ use App\Models\Submission;
 use App\Services\GoogleDriveService;
 use App\Services\ProcessAccessService;
 use App\Support\PdfDocumentHelper;
+use App\Support\UploadHelper;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -929,7 +930,8 @@ class ProcessController extends Controller
             }
             $label = $file->getClientOriginalName() ?: 'Archivo '.($i + 1);
             if (! $file->isValid()) {
-                $errors[] = $label.': '.PdfDocumentHelper::fileUploadErrorMessage($file->getError());
+                UploadHelper::logUploadFailure($label, $file->getError());
+                $errors[] = $label.': '.UploadHelper::fileUploadErrorMessage($file->getError());
 
                 continue;
             }
@@ -1018,25 +1020,37 @@ class ProcessController extends Controller
 
     private function uploadProcessFileToDrive(Process $process, UploadedFile $file, ?string $fileName = null): array
     {
-        $tempDir = storage_path('app/temp');
-        if (! is_dir($tempDir) && ! mkdir($tempDir, 0755, true)) {
-            throw new \Exception('No se pudo crear el directorio temporal para la subida.');
+        if (! $file->isValid()) {
+            UploadHelper::logUploadFailure($file->getClientOriginalName() ?: 'archivo', $file->getError());
+            throw new \Exception(UploadHelper::fileUploadErrorMessage($file->getError()));
         }
+
+        UploadHelper::ensureProcessUploadTempDir();
 
         $originalName = $fileName ?? $file->getClientOriginalName();
         $mimeType = $file->getMimeType() ?: 'application/octet-stream';
-        $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
-        $baseName = pathinfo($originalName, PATHINFO_FILENAME);
-        $safeName = preg_replace('/[^a-zA-Z0-9_\-\pL]/u', '_', $baseName) ?: 'file';
-        $uniqueName = Str::uuid().'_'.$safeName.($extension ? '.'.$extension : '');
-        $fullPath = $tempDir.'/'.$uniqueName;
+        $sourcePath = $file->getRealPath();
+        $fullPath = null;
+        $ownsCopy = false;
 
-        if (! $file->move($tempDir, $uniqueName)) {
-            throw new \Exception('No se pudo preparar el archivo: '.$originalName);
+        if ($sourcePath && is_readable($sourcePath) && filesize($sourcePath) > 0) {
+            $fullPath = $sourcePath;
+        } else {
+            $extension = $file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION);
+            $baseName = pathinfo($originalName, PATHINFO_FILENAME);
+            $safeName = preg_replace('/[^a-zA-Z0-9_\-\pL]/u', '_', $baseName) ?: 'file';
+            $uniqueName = Str::uuid().'_'.$safeName.($extension ? '.'.$extension : '');
+            $tempDir = UploadHelper::processUploadTempDir();
+            $fullPath = $tempDir.'/'.$uniqueName;
+
+            if (! $file->move($tempDir, $uniqueName)) {
+                throw new \Exception('No se pudo preparar el archivo: '.$originalName);
+            }
+            $ownsCopy = true;
         }
 
         if (! file_exists($fullPath) || filesize($fullPath) === 0) {
-            if (file_exists($fullPath)) {
+            if ($ownsCopy && file_exists($fullPath)) {
                 @unlink($fullPath);
             }
             throw new \Exception('El archivo está vacío o no se pudo leer: '.$originalName);
@@ -1064,7 +1078,7 @@ class ProcessController extends Controller
 
             return ['drive_id' => $driveFile['id']];
         } finally {
-            if (file_exists($fullPath)) {
+            if ($ownsCopy && $fullPath && file_exists($fullPath)) {
                 @unlink($fullPath);
             }
         }
@@ -1082,6 +1096,13 @@ class ProcessController extends Controller
         if ($tooLarge !== null) {
             return redirect()->route('admin.processes.show', $process)
                 ->withErrors(['documents' => $tooLarge]);
+        }
+
+        try {
+            UploadHelper::ensureProcessUploadTempDir();
+        } catch (\RuntimeException $e) {
+            return redirect()->route('admin.processes.show', $process)
+                ->withErrors(['documents' => $e->getMessage()]);
         }
 
         $uploadValidationErrors = $this->collectProcessUploadValidationErrors($request);
