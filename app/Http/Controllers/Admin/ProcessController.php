@@ -1134,8 +1134,22 @@ class ProcessController extends Controller
         $this->authorizeProcessView($process);
         $this->authorizeProcessDocumentUpload($process);
 
+        if ($request->hasFile('documents') || $request->hasFile('document')) {
+            return redirect()->route('admin.processes.show', $process)
+                ->withErrors(['documents' => 'La página usa el método de subida antiguo. Recargue con Ctrl+F5. En el servidor ejecute: git pull origin main && php artisan view:clear']);
+        }
+
         $payload = $request->input('documents_payload', []);
         $usesPayload = is_array($payload) && $payload !== [];
+
+        $contentLength = (int) ($request->server('CONTENT_LENGTH') ?? 0);
+        if (! $usesPayload && $contentLength > 0) {
+            $tooLargeOnEmptyBody = UploadHelper::postPayloadTooLargeMessage($request, true);
+            if ($tooLargeOnEmptyBody !== null) {
+                return redirect()->route('admin.processes.show', $process)
+                    ->withErrors(['documents' => $tooLargeOnEmptyBody]);
+            }
+        }
 
         $tooLarge = UploadHelper::postPayloadTooLargeMessage($request, $usesPayload)
             ?? PdfDocumentHelper::postPayloadTooLargeMessage($request);

@@ -2,6 +2,7 @@
 <form id="process-drive-upload-form"
       action="{{ route('admin.processes.documents.upload', $process) }}"
       method="POST"
+      data-upload-version="2"
       class="mb-4">
     @csrf
     <label class="block text-sm font-medium text-gray-700 mb-2">Subir documento(s)</label>
@@ -38,7 +39,6 @@
     @enderror
 </form>
 
-@push('scripts')
 <script>
 (function () {
     var input = document.getElementById('process-document-files');
@@ -52,9 +52,17 @@
         return;
     }
 
+    function csrfToken() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) {
+            return meta.getAttribute('content') || '';
+        }
+        var tokenInput = form.querySelector('input[name="_token"]');
+        return tokenInput ? tokenInput.value : '';
+    }
+
     function syncSubmitState() {
-        var hasFiles = input.files && input.files.length > 0;
-        submitBtn.disabled = !hasFiles;
+        submitBtn.disabled = !(input.files && input.files.length > 0);
     }
 
     function renderFileList() {
@@ -146,21 +154,26 @@
 
         Promise.all(files.map(readFileAsBase64))
             .then(function (contents) {
-                var formData = new FormData();
-                var tokenInput = form.querySelector('input[name="_token"]');
-                if (tokenInput) {
-                    formData.append('_token', tokenInput.value);
-                }
-
-                files.forEach(function (file, index) {
-                    formData.append('documents_payload[' + index + '][name]', file.name);
-                    formData.append('documents_payload[' + index + '][mime]', file.type || 'application/octet-stream');
-                    formData.append('documents_payload[' + index + '][content]', contents[index]);
+                var payload = files.map(function (file, index) {
+                    return {
+                        name: file.name,
+                        mime: file.type || 'application/octet-stream',
+                        content: contents[index],
+                    };
                 });
 
                 return fetch(form.action, {
                     method: 'POST',
-                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'text/html,application/json',
+                        'X-CSRF-TOKEN': csrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        upload_via: 'encoded',
+                        documents_payload: payload,
+                    }),
                     credentials: 'same-origin',
                     redirect: 'follow',
                 });
@@ -176,4 +189,3 @@
     });
 })();
 </script>
-@endpush
