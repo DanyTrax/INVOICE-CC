@@ -439,14 +439,19 @@ class PdfDocumentHelper
         return $redirect;
     }
 
-    public static function letterheadUploadErrorMessage(int $phpUploadError): string
+    public static function fileUploadErrorMessage(int $phpUploadError): string
     {
         return match ($phpUploadError) {
-            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'El membrete supera el tamaño máximo permitido por el servidor (upload_max_filesize / post_max_size en PHP). Reduzca la imagen o pida al administrador aumentar esos límites.',
-            UPLOAD_ERR_PARTIAL => 'La subida del membrete se interrumpió. Intente de nuevo.',
-            UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE, UPLOAD_ERR_EXTENSION => 'El servidor no pudo guardar el membrete temporalmente. Contacte al administrador.',
-            default => 'No se pudo subir el membrete. Si no cambió la imagen, guarde sin seleccionar archivo. Si subió una imagen nueva, use JPG/PNG de menos de 20 MB.',
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'El archivo supera el tamaño máximo permitido por el servidor (upload_max_filesize / post_max_size en PHP). Reduzca el archivo o pida al administrador aumentar esos límites.',
+            UPLOAD_ERR_PARTIAL => 'La subida del archivo se interrumpió. Intente de nuevo.',
+            UPLOAD_ERR_NO_TMP_DIR, UPLOAD_ERR_CANT_WRITE, UPLOAD_ERR_EXTENSION => 'El servidor no pudo guardar el archivo temporalmente. Contacte al administrador.',
+            default => 'No se pudo subir el archivo. Verifique que no supere 10 MB y que el formato sea válido.',
         };
+    }
+
+    public static function letterheadUploadErrorMessage(int $phpUploadError): string
+    {
+        return self::fileUploadErrorMessage($phpUploadError);
     }
 
     public static function templateValidationMessages(): array

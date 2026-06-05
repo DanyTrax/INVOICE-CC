@@ -30,13 +30,13 @@
     </div>
     <div id="process-drive-file-list" class="mt-3 space-y-2 hidden"></div>
     @error('documents')
-        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+        <p class="mt-2 text-sm text-red-600" role="alert">{{ $message }}</p>
     @enderror
     @error('documents.*')
-        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+        <p class="mt-2 text-sm text-red-600" role="alert">{{ $message }}</p>
     @enderror
     @error('document')
-        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+        <p class="mt-2 text-sm text-red-600" role="alert">{{ $message }}</p>
     @enderror
 </form>
 

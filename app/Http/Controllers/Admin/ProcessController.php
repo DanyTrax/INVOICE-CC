@@ -16,6 +16,7 @@ use App\Models\ServiceType;
 use App\Models\Submission;
 use App\Services\GoogleDriveService;
 use App\Services\ProcessAccessService;
+use App\Support\PdfDocumentHelper;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -915,6 +916,48 @@ class ProcessController extends Controller
      * Respeta la estructura de carpetas (proceso/cliente/país). Retorna ['drive_id' => id] o lanza.
      */
     /**
+     * @return list<string>
+     */
+    private function collectProcessUploadValidationErrors(Request $request): array
+    {
+        $errors = [];
+        $maxBytes = 10240 * 1024;
+
+        foreach ($this->iterateProcessUploadCandidates($request) as $i => $file) {
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+            $label = $file->getClientOriginalName() ?: 'Archivo '.($i + 1);
+            if (! $file->isValid()) {
+                $errors[] = $label.': '.PdfDocumentHelper::fileUploadErrorMessage($file->getError());
+
+                continue;
+            }
+            if ($file->getSize() > $maxBytes) {
+                $errors[] = $label.': supera el tamaño máximo de 10 MB.';
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @return list<UploadedFile|null>
+     */
+    private function iterateProcessUploadCandidates(Request $request): array
+    {
+        $candidates = [];
+        $documents = $request->file('documents');
+        if (is_array($documents)) {
+            $candidates = $documents;
+        } elseif ($request->file('document') instanceof UploadedFile) {
+            $candidates = [$request->file('document')];
+        }
+
+        return $candidates;
+    }
+
+    /**
      * @return list<UploadedFile>
      */
     private function collectProcessUploadFiles(Request $request): array
@@ -928,11 +971,9 @@ class ProcessController extends Controller
             }
         }
 
-        if ($request->hasFile('documents')) {
-            foreach ($request->file('documents') as $file) {
-                if ($file instanceof UploadedFile && $file->isValid()) {
-                    $files[] = $file;
-                }
+        foreach ($this->iterateProcessUploadCandidates($request) as $file) {
+            if ($file instanceof UploadedFile && $file->isValid()) {
+                $files[] = $file;
             }
         }
 
@@ -1037,11 +1078,17 @@ class ProcessController extends Controller
         $this->authorizeProcessView($process);
         $this->authorizeProcessDocumentUpload($process);
 
-        $request->validate([
-            'document' => 'nullable|file|max:10240',
-            'documents' => 'nullable|array',
-            'documents.*' => 'file|max:10240',
-        ]);
+        $tooLarge = PdfDocumentHelper::postPayloadTooLargeMessage($request);
+        if ($tooLarge !== null) {
+            return redirect()->route('admin.processes.show', $process)
+                ->withErrors(['documents' => $tooLarge]);
+        }
+
+        $uploadValidationErrors = $this->collectProcessUploadValidationErrors($request);
+        if ($uploadValidationErrors !== []) {
+            return redirect()->route('admin.processes.show', $process)
+                ->withErrors(['documents' => implode(' ', $uploadValidationErrors)]);
+        }
 
         $files = $this->collectProcessUploadFiles($request);
         if ($files === []) {
