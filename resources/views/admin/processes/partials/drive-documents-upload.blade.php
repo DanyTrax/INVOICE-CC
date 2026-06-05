@@ -2,7 +2,6 @@
 <form id="process-drive-upload-form"
       action="{{ route('admin.processes.documents.upload', $process) }}"
       method="POST"
-      enctype="multipart/form-data"
       class="mb-4">
     @csrf
     <label class="block text-sm font-medium text-gray-700 mb-2">Subir documento(s)</label>
@@ -16,7 +15,6 @@
             <p class="text-xs text-gray-500 text-center">Uno o varios archivos · PDF, Office, imágenes · Máx. 10 MB c/u</p>
             <input type="file"
                    id="process-document-files"
-                   name="documents[]"
                    multiple
                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/*"
                    class="sr-only">
@@ -47,6 +45,9 @@
     var list = document.getElementById('process-drive-file-list');
     var submitBtn = document.getElementById('process-drive-upload-submit');
     var form = document.getElementById('process-drive-upload-form');
+    var maxBytes = 10 * 1024 * 1024;
+    var defaultSubmitHtml = '<i class="fas fa-upload mr-2"></i> Subir';
+
     if (!input || !list || !submitBtn || !form) {
         return;
     }
@@ -93,6 +94,19 @@
         syncSubmitState();
     }
 
+    function readFileAsBase64(file) {
+        return new Promise(function (resolve, reject) {
+            var reader = new FileReader();
+            reader.onload = function () {
+                resolve(reader.result);
+            };
+            reader.onerror = function () {
+                reject(new Error('No se pudo leer el archivo.'));
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     input.addEventListener('change', renderFileList);
 
     ['dragenter', 'dragover'].forEach(function (ev) {
@@ -111,13 +125,54 @@
     });
 
     form.addEventListener('submit', function (e) {
-        if (!input.files || input.files.length === 0) {
-            e.preventDefault();
+        e.preventDefault();
+
+        var files = Array.from(input.files || []);
+        if (!files.length) {
             alert('Seleccione al menos un archivo para subir.');
             return;
         }
+
+        var oversized = files.filter(function (file) {
+            return file.size > maxBytes;
+        });
+        if (oversized.length) {
+            alert('Cada archivo debe pesar máximo 10 MB. Revise: ' + oversized.map(function (f) { return f.name; }).join(', '));
+            return;
+        }
+
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Subiendo…';
+
+        Promise.all(files.map(readFileAsBase64))
+            .then(function (contents) {
+                var formData = new FormData();
+                var tokenInput = form.querySelector('input[name="_token"]');
+                if (tokenInput) {
+                    formData.append('_token', tokenInput.value);
+                }
+
+                files.forEach(function (file, index) {
+                    formData.append('documents_payload[' + index + '][name]', file.name);
+                    formData.append('documents_payload[' + index + '][mime]', file.type || 'application/octet-stream');
+                    formData.append('documents_payload[' + index + '][content]', contents[index]);
+                });
+
+                return fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    redirect: 'follow',
+                });
+            })
+            .then(function (response) {
+                window.location.href = response.url;
+            })
+            .catch(function () {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = defaultSubmitHtml;
+                alert('No se pudo subir el archivo. Intente de nuevo.');
+            });
     });
 })();
 </script>

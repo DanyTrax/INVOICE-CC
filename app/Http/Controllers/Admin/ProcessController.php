@@ -1018,6 +1018,38 @@ class ProcessController extends Controller
         return ['uploaded' => $uploadedCount, 'errors' => $errors];
     }
 
+    /**
+     * @param  list<array{path: string, name: string, mime: string}>  $preparedFiles
+     * @return array{uploaded: int, errors: list<string>}
+     */
+    private function uploadPreparedProcessDocumentsToDrive(Process $process, array $preparedFiles): array
+    {
+        $uploadedCount = 0;
+        $errors = [];
+
+        foreach ($preparedFiles as $prepared) {
+            try {
+                $this->uploadProcessPathToDrive(
+                    $process,
+                    $prepared['path'],
+                    $prepared['name'],
+                    $prepared['mime'],
+                    true
+                );
+                $uploadedCount++;
+            } catch (\Exception $e) {
+                $errors[] = $prepared['name'].': '.$e->getMessage();
+                Log::error('Error al subir documento del proceso', [
+                    'process_id' => $process->id,
+                    'file_name' => $prepared['name'],
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return ['uploaded' => $uploadedCount, 'errors' => $errors];
+    }
+
     private function uploadProcessFileToDrive(Process $process, UploadedFile $file, ?string $fileName = null): array
     {
         if (! $file->isValid()) {
@@ -1049,8 +1081,18 @@ class ProcessController extends Controller
             $ownsCopy = true;
         }
 
+        return $this->uploadProcessPathToDrive($process, $fullPath, $originalName, $mimeType, $ownsCopy);
+    }
+
+    private function uploadProcessPathToDrive(
+        Process $process,
+        string $fullPath,
+        string $originalName,
+        string $mimeType,
+        bool $deleteAfterUpload = true
+    ): array {
         if (! file_exists($fullPath) || filesize($fullPath) === 0) {
-            if ($ownsCopy && file_exists($fullPath)) {
+            if ($deleteAfterUpload && file_exists($fullPath)) {
                 @unlink($fullPath);
             }
             throw new \Exception('El archivo está vacío o no se pudo leer: '.$originalName);
@@ -1078,7 +1120,7 @@ class ProcessController extends Controller
 
             return ['drive_id' => $driveFile['id']];
         } finally {
-            if ($ownsCopy && $fullPath && file_exists($fullPath)) {
+            if ($deleteAfterUpload && file_exists($fullPath)) {
                 @unlink($fullPath);
             }
         }
@@ -1092,7 +1134,11 @@ class ProcessController extends Controller
         $this->authorizeProcessView($process);
         $this->authorizeProcessDocumentUpload($process);
 
-        $tooLarge = PdfDocumentHelper::postPayloadTooLargeMessage($request);
+        $payload = $request->input('documents_payload', []);
+        $usesPayload = is_array($payload) && $payload !== [];
+
+        $tooLarge = UploadHelper::postPayloadTooLargeMessage($request, $usesPayload)
+            ?? PdfDocumentHelper::postPayloadTooLargeMessage($request);
         if ($tooLarge !== null) {
             return redirect()->route('admin.processes.show', $process)
                 ->withErrors(['documents' => $tooLarge]);
@@ -1105,22 +1151,37 @@ class ProcessController extends Controller
                 ->withErrors(['documents' => $e->getMessage()]);
         }
 
-        $uploadValidationErrors = $this->collectProcessUploadValidationErrors($request);
-        if ($uploadValidationErrors !== []) {
-            return redirect()->route('admin.processes.show', $process)
-                ->withErrors(['documents' => implode(' ', $uploadValidationErrors)]);
+        if ($usesPayload) {
+            $materialized = UploadHelper::materializeBase64PayloadUploads($payload);
+            if ($materialized['files'] === [] && $materialized['errors'] === []) {
+                return redirect()->route('admin.processes.show', $process)
+                    ->withErrors(['documents' => 'Seleccione al menos un archivo para subir.']);
+            }
+            if ($materialized['errors'] !== [] && $materialized['files'] === []) {
+                return redirect()->route('admin.processes.show', $process)
+                    ->withErrors(['documents' => implode(' ', $materialized['errors'])]);
+            }
+
+            $result = $this->uploadPreparedProcessDocumentsToDrive($process, $materialized['files']);
+            $uploadErrors = array_merge($materialized['errors'], $result['errors']);
+            $uploadedCount = $result['uploaded'];
+        } else {
+            $uploadValidationErrors = $this->collectProcessUploadValidationErrors($request);
+            if ($uploadValidationErrors !== []) {
+                return redirect()->route('admin.processes.show', $process)
+                    ->withErrors(['documents' => implode(' ', $uploadValidationErrors)]);
+            }
+
+            $files = $this->collectProcessUploadFiles($request);
+            if ($files === []) {
+                return redirect()->route('admin.processes.show', $process)
+                    ->withErrors(['documents' => 'Seleccione al menos un archivo para subir.']);
+            }
+
+            $result = $this->uploadProcessDocumentsToDrive($process, $files);
+            $uploadedCount = $result['uploaded'];
+            $uploadErrors = $result['errors'];
         }
-
-        $files = $this->collectProcessUploadFiles($request);
-        if ($files === []) {
-            return redirect()->route('admin.processes.show', $process)
-                ->withErrors(['documents' => 'Seleccione al menos un archivo para subir.']);
-        }
-
-        $result = $this->uploadProcessDocumentsToDrive($process, $files);
-        $uploadedCount = $result['uploaded'];
-        $uploadErrors = $result['errors'];
-
         if ($uploadedCount === 0) {
             $message = $uploadErrors !== []
                 ? implode('; ', $uploadErrors)

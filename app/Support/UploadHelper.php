@@ -2,10 +2,17 @@
 
 namespace App\Support;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class UploadHelper
 {
+    public static function maxProcessDocumentBytes(): int
+    {
+        return 10240 * 1024;
+    }
+
     public static function processUploadTempDir(): string
     {
         return storage_path('app/temp');
@@ -71,5 +78,121 @@ class UploadHelper
             'upload_max_filesize' => ini_get('upload_max_filesize'),
             'post_max_size' => ini_get('post_max_size'),
         ]);
+    }
+
+    public static function postPayloadTooLargeMessage(Request $request, bool $expectsPayload): ?string
+    {
+        $contentLength = (int) ($request->server('CONTENT_LENGTH') ?? 0);
+        if ($contentLength <= 0) {
+            return null;
+        }
+
+        $postMax = ini_get('post_max_size') ?: '8M';
+        $postMaxBytes = self::iniSizeToBytes($postMax);
+        if ($contentLength <= $postMaxBytes) {
+            return null;
+        }
+
+        if (! $expectsPayload) {
+            return null;
+        }
+
+        return 'El envío supera el límite del servidor (post_max_size='.$postMax.'). Suba menos archivos a la vez o pida al administrador aumentar post_max_size a al menos 32M.';
+    }
+
+    /**
+     * @param  list<array{name?: mixed, mime?: mixed, content?: mixed}>  $payload
+     * @return array{
+     *     files: list<array{path: string, name: string, mime: string}>,
+     *     errors: list<string>
+     * }
+     */
+    public static function materializeBase64PayloadUploads(array $payload): array
+    {
+        $files = [];
+        $errors = [];
+        $maxBytes = self::maxProcessDocumentBytes();
+
+        foreach ($payload as $i => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $name = trim((string) ($item['name'] ?? ''));
+            $mime = trim((string) ($item['mime'] ?? 'application/octet-stream')) ?: 'application/octet-stream';
+            $content = (string) ($item['content'] ?? '');
+            $label = $name !== '' ? $name : 'Archivo '.($i + 1);
+
+            if ($name === '' || $content === '') {
+                $errors[] = $label.': datos incompletos.';
+
+                continue;
+            }
+
+            if (preg_match('/^data:.*?;base64,(.*)$/s', $content, $matches)) {
+                $content = $matches[1];
+            }
+
+            $binary = base64_decode($content, true);
+            if ($binary === false) {
+                $errors[] = $label.': contenido no válido.';
+
+                continue;
+            }
+
+            if ($binary === '') {
+                $errors[] = $label.': archivo vacío.';
+
+                continue;
+            }
+
+            if (strlen($binary) > $maxBytes) {
+                $errors[] = $label.': supera el tamaño máximo de 10 MB.';
+
+                continue;
+            }
+
+            try {
+                self::ensureProcessUploadTempDir();
+            } catch (\RuntimeException $e) {
+                $errors[] = $e->getMessage();
+
+                continue;
+            }
+
+            $extension = pathinfo($name, PATHINFO_EXTENSION);
+            $baseName = pathinfo($name, PATHINFO_FILENAME);
+            $safeName = preg_replace('/[^a-zA-Z0-9_\-\pL]/u', '_', $baseName) ?: 'file';
+            $uniqueName = Str::uuid().'_'.$safeName.($extension ? '.'.$extension : '');
+            $fullPath = self::processUploadTempDir().'/'.$uniqueName;
+
+            if (@file_put_contents($fullPath, $binary) === false) {
+                $errors[] = $label.': no se pudo guardar en storage/app/temp.';
+
+                continue;
+            }
+
+            $files[] = [
+                'path' => $fullPath,
+                'name' => $name,
+                'mime' => $mime,
+            ];
+        }
+
+        return ['files' => $files, 'errors' => $errors];
+    }
+
+    protected static function iniSizeToBytes(string $value): int
+    {
+        $value = trim($value);
+        $unit = strtolower(substr($value, -1));
+        $number = (int) $value;
+
+        return match ($unit) {
+            'g' => $number * 1024 * 1024 * 1024,
+            'm' => $number * 1024 * 1024,
+            'k' => $number * 1024,
+            default => $number,
+        };
     }
 }
