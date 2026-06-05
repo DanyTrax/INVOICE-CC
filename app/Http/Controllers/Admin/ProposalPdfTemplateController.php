@@ -31,11 +31,14 @@ class ProposalPdfTemplateController extends Controller
 
         ProposalPdfTemplate::create(array_merge(PdfDocumentHelper::templatePayload($validated), [
             'letterhead_path' => $upload['path'],
+            'letterhead_drive_id' => $upload['drive_id'],
         ]));
 
-        return redirect()
-            ->route('admin.settings.section', 'proposal-pdf')
-            ->with('success', 'Plantilla de propuesta creada correctamente.');
+        return PdfDocumentHelper::appendLetterheadDriveFlashMessage(
+            redirect()->route('admin.settings.section', 'proposal-pdf'),
+            $upload,
+            'Plantilla de propuesta creada correctamente.'
+        );
     }
 
     public function edit(ProposalPdfTemplate $proposalPdfTemplate): View
@@ -48,7 +51,13 @@ class ProposalPdfTemplateController extends Controller
         $validated = $request->validate(PdfDocumentHelper::templateValidationRules());
 
         $current = $proposalPdfTemplate->letterhead_path ?: $proposalPdfTemplate->logo_path;
-        $upload = PdfDocumentHelper::processLetterheadUpload($request, $current, 'proposal-pdf-letterhead', 'proposal-pdf');
+        $upload = PdfDocumentHelper::processLetterheadUpload(
+            $request,
+            $current,
+            'proposal-pdf-letterhead',
+            'proposal-pdf',
+            $proposalPdfTemplate->letterhead_drive_id
+        );
         if ($upload['error']) {
             return redirect()->back()->withInput()->withErrors(['letterhead' => $upload['error']]);
         }
@@ -59,11 +68,14 @@ class ProposalPdfTemplateController extends Controller
 
         $proposalPdfTemplate->update(array_merge(PdfDocumentHelper::templatePayload($validated), [
             'letterhead_path' => $upload['path'],
+            'letterhead_drive_id' => $upload['drive_id'],
         ]));
 
-        return redirect()
-            ->route('admin.settings.section', 'proposal-pdf')
-            ->with('success', 'Plantilla actualizada.');
+        return PdfDocumentHelper::appendLetterheadDriveFlashMessage(
+            redirect()->route('admin.settings.section', 'proposal-pdf'),
+            $upload,
+            'Plantilla actualizada.'
+        );
     }
 
     public function destroy(ProposalPdfTemplate $proposalPdfTemplate): RedirectResponse
@@ -75,6 +87,9 @@ class ProposalPdfTemplateController extends Controller
                     @unlink($full);
                 }
             }
+        }
+        if ($proposalPdfTemplate->letterhead_drive_id) {
+            PdfDocumentHelper::deleteLetterheadFromDrive($proposalPdfTemplate->letterhead_drive_id);
         }
         $wasDefault = $proposalPdfTemplate->is_default;
         $proposalPdfTemplate->delete();

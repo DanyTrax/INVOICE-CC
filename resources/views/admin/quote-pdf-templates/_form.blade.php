@@ -20,11 +20,15 @@
     <div class="md:col-span-2">
         <label for="letterhead" class="block mb-2 text-sm font-medium text-gray-900">Membrete (imagen de fondo del PDF)</label>
         @php
-            $letterheadPath = $template->letterhead_path ?? $template->logo_path ?? null;
+            use App\Support\PdfDocumentHelper;
+            $letterheadPath = $template ? PdfDocumentHelper::resolveLetterheadRelativePath($template) : null;
         @endphp
-        @if($template && $letterheadPath && file_exists(public_path($letterheadPath)))
+        @if($template && $letterheadPath)
             <div class="mb-2">
                 <img src="{{ asset($letterheadPath) }}" alt="Membrete actual" class="max-h-40 w-full object-contain border border-gray-200 rounded-lg p-2 bg-white">
+                @if($template->letterhead_drive_id ?? null)
+                    <p class="mt-1 text-xs text-teal-700"><i class="fab fa-google-drive mr-1"></i> Respaldo en Google Drive (carpeta «RAMS Membretes PDF»).</p>
+                @endif
             </div>
             <label class="inline-flex items-center gap-2 text-sm text-gray-600">
                 <input type="checkbox" name="remove_letterhead" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
@@ -33,7 +37,7 @@
             <span class="mx-2">|</span>
         @endif
         <input type="file" name="letterhead" id="letterhead" accept="image/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 mt-2">
-        <p class="mt-1 text-xs text-gray-500">Imagen completa membreteada (cabecera y pie incluidos en el diseño). JPG, PNG, GIF, SVG o WEBP. Máx. 5MB. Se adapta al ancho de la hoja.</p>
+        <p class="mt-1 text-xs text-gray-500">Imagen completa membreteada (cabecera y pie incluidos en el diseño). JPG o PNG recomendado. Máx. 5MB. Se guarda en el servidor y se respalda en <strong>Google Drive</strong> para que no se pierda al actualizar el sistema.</p>
     </div>
 
     <div class="md:col-span-2">

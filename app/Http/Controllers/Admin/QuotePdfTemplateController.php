@@ -40,11 +40,14 @@ class QuotePdfTemplateController extends Controller
 
         QuotePdfTemplate::create(array_merge(PdfDocumentHelper::templatePayload($validated), [
             'letterhead_path' => $upload['path'],
+            'letterhead_drive_id' => $upload['drive_id'],
         ]));
 
-        return redirect()
-            ->route('admin.settings.section', 'quote-pdf')
-            ->with('success', 'Plantilla creada correctamente.');
+        return PdfDocumentHelper::appendLetterheadDriveFlashMessage(
+            redirect()->route('admin.settings.section', 'quote-pdf'),
+            $upload,
+            'Plantilla creada correctamente.'
+        );
     }
 
     public function edit(QuotePdfTemplate $quotePdfTemplate): View
@@ -57,7 +60,13 @@ class QuotePdfTemplateController extends Controller
         $validated = $request->validate(PdfDocumentHelper::templateValidationRules());
 
         $current = $quotePdfTemplate->letterhead_path ?: $quotePdfTemplate->logo_path;
-        $upload = PdfDocumentHelper::processLetterheadUpload($request, $current, 'quote-pdf-letterhead', 'quote-pdf');
+        $upload = PdfDocumentHelper::processLetterheadUpload(
+            $request,
+            $current,
+            'quote-pdf-letterhead',
+            'quote-pdf',
+            $quotePdfTemplate->letterhead_drive_id
+        );
         if ($upload['error']) {
             return redirect()->back()->withInput()->withErrors(['letterhead' => $upload['error']]);
         }
@@ -68,11 +77,14 @@ class QuotePdfTemplateController extends Controller
 
         $quotePdfTemplate->update(array_merge(PdfDocumentHelper::templatePayload($validated), [
             'letterhead_path' => $upload['path'],
+            'letterhead_drive_id' => $upload['drive_id'],
         ]));
 
-        return redirect()
-            ->route('admin.settings.section', 'quote-pdf')
-            ->with('success', 'Plantilla actualizada.');
+        return PdfDocumentHelper::appendLetterheadDriveFlashMessage(
+            redirect()->route('admin.settings.section', 'quote-pdf'),
+            $upload,
+            'Plantilla actualizada.'
+        );
     }
 
     public function destroy(QuotePdfTemplate $quotePdfTemplate): RedirectResponse
@@ -84,6 +96,9 @@ class QuotePdfTemplateController extends Controller
                     @unlink($full);
                 }
             }
+        }
+        if ($quotePdfTemplate->letterhead_drive_id) {
+            PdfDocumentHelper::deleteLetterheadFromDrive($quotePdfTemplate->letterhead_drive_id);
         }
         $wasDefault = $quotePdfTemplate->is_default;
         $quotePdfTemplate->delete();

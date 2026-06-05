@@ -10,6 +10,7 @@ class QuotePdfTemplate extends Model
         'name',
         'logo_path',
         'letterhead_path',
+        'letterhead_drive_id',
         'header_company_name',
         'header_nit',
         'header_subtitle',

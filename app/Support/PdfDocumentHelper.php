@@ -2,7 +2,10 @@
 
 namespace App\Support;
 
+use App\Services\GoogleDriveService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class PdfDocumentHelper
 {
@@ -49,7 +52,77 @@ class PdfDocumentHelper
             }
         }
 
+        $driveId = $template->letterhead_drive_id ?? null;
+        if ($driveId) {
+            try {
+                return self::restoreLetterheadFromDrive($template, $driveId);
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo restaurar membrete desde Google Drive', [
+                    'template_id' => $template->id ?? null,
+                    'drive_id' => $driveId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return null;
+    }
+
+    /**
+     * Ruta relativa (public/) del membrete, restaurando desde Drive si hace falta.
+     */
+    public static function resolveLetterheadRelativePath(?object $template): ?string
+    {
+        $absolute = self::resolveLetterheadPath($template);
+        if (! $absolute) {
+            return null;
+        }
+
+        $publicRoot = rtrim(public_path(), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+        if (str_starts_with($absolute, $publicRoot)) {
+            return ltrim(str_replace('\\', '/', substr($absolute, strlen($publicRoot))), '/');
+        }
+
+        return null;
+    }
+
+    protected static function restoreLetterheadFromDrive(object $template, string $driveId): string
+    {
+        $drive = app(GoogleDriveService::class);
+        $info = $drive->getFileInfo($driveId);
+        $content = $drive->downloadFile($driveId);
+
+        $uploadSubdir = self::letterheadUploadSubdirForTemplate($template);
+        $name = $info['name'] ?? 'letterhead.png';
+        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION) ?: 'png');
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            $ext = 'png';
+        }
+
+        $filename = 'letterhead-drive-'.time().'-'.uniqid().'.'.$ext;
+        $relativePath = 'uploads/'.$uploadSubdir.'/'.$filename;
+        $dir = public_path('uploads/'.$uploadSubdir);
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $fullPath = public_path($relativePath);
+        file_put_contents($fullPath, $content);
+
+        if ($template instanceof Model && $template->exists) {
+            $template->update(['letterhead_path' => $relativePath]);
+        }
+
+        return $fullPath;
+    }
+
+    protected static function letterheadUploadSubdirForTemplate(object $template): string
+    {
+        $path = (string) ($template->letterhead_path ?? $template->logo_path ?? '');
+        if (str_contains($path, 'proposal-pdf')) {
+            return 'proposal-pdf';
+        }
+
+        return 'quote-pdf';
     }
 
     /**
@@ -205,26 +278,56 @@ class PdfDocumentHelper
     }
 
     /**
-     * @return array{path: ?string, error: ?string}
+     * @return array{path: ?string, drive_id: ?string, error: ?string, drive_warning: ?string}
      */
-    public static function processLetterheadUpload(\Illuminate\Http\Request $request, ?string $currentPath, string $filenamePrefix, string $uploadSubdir): array
-    {
-        if ($request->boolean('remove_letterhead') && $currentPath) {
-            $full = public_path($currentPath);
-            if (file_exists($full)) {
-                @unlink($full);
+    public static function processLetterheadUpload(
+        \Illuminate\Http\Request $request,
+        ?string $currentPath,
+        string $filenamePrefix,
+        string $uploadSubdir,
+        ?string $currentDriveId = null
+    ): array {
+        if ($request->boolean('remove_letterhead')) {
+            if ($currentPath) {
+                $full = public_path($currentPath);
+                if (file_exists($full)) {
+                    @unlink($full);
+                }
             }
+            self::deleteLetterheadFromDrive($currentDriveId);
 
-            return ['path' => null, 'error' => null];
+            return ['path' => null, 'drive_id' => null, 'error' => null, 'drive_warning' => null];
         }
 
         if (! $request->hasFile('letterhead')) {
-            return ['path' => $currentPath, 'error' => null];
+            $driveId = $currentDriveId;
+            $driveWarning = null;
+            if (! $driveId && $currentPath && file_exists(public_path($currentPath))) {
+                $driveResult = self::uploadLetterheadToDrive(
+                    public_path($currentPath),
+                    basename($currentPath),
+                    $uploadSubdir
+                );
+                $driveId = $driveResult['drive_id'];
+                $driveWarning = $driveResult['warning'];
+            }
+
+            return [
+                'path' => $currentPath,
+                'drive_id' => $driveId,
+                'error' => null,
+                'drive_warning' => $driveWarning,
+            ];
         }
 
         $ext = strtolower($request->file('letterhead')->getClientOriginalExtension());
         if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'], true)) {
-            return ['path' => $currentPath, 'error' => 'Formato de imagen no válido.'];
+            return [
+                'path' => $currentPath,
+                'drive_id' => $currentDriveId,
+                'error' => 'Formato de imagen no válido.',
+                'drive_warning' => null,
+            ];
         }
 
         if ($currentPath) {
@@ -233,6 +336,7 @@ class PdfDocumentHelper
                 @unlink($old);
             }
         }
+        self::deleteLetterheadFromDrive($currentDriveId);
 
         $file = $request->file('letterhead');
         $filename = $filenamePrefix.'-'.time().'-'.uniqid().'.'.$ext;
@@ -241,8 +345,78 @@ class PdfDocumentHelper
             mkdir($dir, 0755, true);
         }
         $file->move($dir, $filename);
+        $relativePath = 'uploads/'.$uploadSubdir.'/'.$filename;
 
-        return ['path' => 'uploads/'.$uploadSubdir.'/'.$filename, 'error' => null];
+        $driveResult = self::uploadLetterheadToDrive(public_path($relativePath), $filename, $uploadSubdir);
+
+        return [
+            'path' => $relativePath,
+            'drive_id' => $driveResult['drive_id'],
+            'error' => null,
+            'drive_warning' => $driveResult['warning'],
+        ];
+    }
+
+    /**
+     * @return array{drive_id: ?string, warning: ?string}
+     */
+    protected static function uploadLetterheadToDrive(string $fullPath, string $originalName, string $uploadSubdir): array
+    {
+        try {
+            $drive = app(GoogleDriveService::class);
+            $folderId = $drive->getOrCreatePdfLetterheadsFolder($uploadSubdir);
+            $mime = mime_content_type($fullPath) ?: 'image/png';
+            $driveFile = $drive->uploadFile($fullPath, $originalName, $folderId, $mime);
+
+            return ['drive_id' => $driveFile['id'] ?? null, 'warning' => null];
+        } catch (\Throwable $e) {
+            Log::warning('Membrete guardado en servidor pero no en Google Drive', [
+                'file' => $originalName,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'drive_id' => null,
+                'warning' => 'El membrete se guardó en el servidor, pero no en Google Drive: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    public static function deleteLetterheadFromDrive(?string $driveId): void
+    {
+        if (! $driveId) {
+            return;
+        }
+
+        try {
+            app(GoogleDriveService::class)->deleteFileOrFolder($driveId);
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo eliminar membrete anterior en Drive', [
+                'drive_id' => $driveId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * @param  array{drive_id?: ?string, drive_warning?: ?string}  $upload
+     */
+    public static function appendLetterheadDriveFlashMessage(
+        \Illuminate\Http\RedirectResponse $redirect,
+        array $upload,
+        string $successMessage
+    ): \Illuminate\Http\RedirectResponse {
+        if (! empty($upload['drive_id']) && empty($upload['drive_warning'])) {
+            $successMessage .= ' Membrete respaldado en Google Drive.';
+        }
+
+        $redirect->with('success', $successMessage);
+
+        if (! empty($upload['drive_warning'])) {
+            $redirect->with('error', $upload['drive_warning']);
+        }
+
+        return $redirect;
     }
 
     public static function templateValidationRules(): array

@@ -492,6 +492,54 @@ class GoogleDriveService
     /**
      * Obtener o crear carpeta de backups en Google Drive.
      */
+    /**
+     * Carpeta persistente para imágenes de membrete de plantillas PDF (cotizaciones / propuestas).
+     */
+    public function getOrCreatePdfLetterheadsFolder(string $category = 'quote-pdf'): string
+    {
+        $rootName = 'RAMS Membretes PDF';
+        $parentFolderId = $this->settings->drive_folder_id ?? null;
+        $rootId = $this->findOrCreateNamedFolder($rootName, $parentFolderId);
+
+        $subName = $category === 'proposal-pdf' ? 'Propuestas' : 'Cotizaciones';
+
+        return $this->findOrCreateNamedFolder($subName, $rootId);
+    }
+
+    /**
+     * Busca una carpeta por nombre bajo un padre; la crea si no existe.
+     */
+    public function findOrCreateNamedFolder(string $folderName, ?string $parentFolderId = null): string
+    {
+        $token = $this->getAccessToken();
+        $escapedName = str_replace("'", "\\'", $folderName);
+        $query = "name='{$escapedName}' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+        if ($parentFolderId) {
+            $query .= " and '{$parentFolderId}' in parents";
+        }
+
+        $queryParams = [
+            'q' => $query,
+            'fields' => 'files(id, name)',
+            'supportsAllDrives' => 'true',
+            'includeItemsFromAllDrives' => 'true',
+        ];
+
+        $response = Http::withToken($token)
+            ->get($this->baseUrl.'/files?'.http_build_query($queryParams));
+
+        if ($response->successful()) {
+            $files = $response->json();
+            if (! empty($files['files'][0]['id'])) {
+                return $files['files'][0]['id'];
+            }
+        }
+
+        $result = $this->createFolder($folderName, $parentFolderId);
+
+        return $result['id'];
+    }
+
     public function getOrCreateBackupsFolder(): string
     {
         $folderName = 'Backups RAMS';
