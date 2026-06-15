@@ -15,7 +15,7 @@
     }
 @endphp
 <!DOCTYPE html>
-<html lang="es" class="h-full overflow-hidden bg-gray-50" data-theme="{{ $ramsAdminTheme }}">
+<html lang="es" class="h-full bg-gray-50" data-theme="{{ $ramsAdminTheme }}">
 <head>
     <meta charset="UTF-8">
     <script>
@@ -42,6 +42,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Deshabilitar Cloudflare Insights beacon -->
     <style>
+        html { scrollbar-gutter: stable; }
+        .rams-admin-scroll { scrollbar-gutter: stable; }
         html.dark { background-color: #0f172a; color: #e2e8f0; }
         html.dark body { background-color: #0f172a; color: #e2e8f0; }
         html.dark .bg-gray-50 { background-color: #0f172a !important; }
@@ -446,7 +448,7 @@
     
     @stack('styles')
 </head>
-<body class="h-full overflow-hidden" x-data="{
+<body class="h-full" x-data="{
     sidebarExpanded: @json($adminSidebarExpandedDefault),
     mobileOpen: false,
     winLg: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
@@ -485,7 +487,7 @@
         return this.sidebarExpanded ? 'margin-left: 16rem' : 'margin-left: 4rem';
     },
 }">
-    <div class="flex h-screen min-h-0 bg-gray-50">
+    <div class="flex h-screen min-h-0 overflow-hidden bg-gray-50">
         <!-- Overlay para móvil -->
         <div x-show="!winLg && mobileOpen" 
              x-cloak
@@ -889,7 +891,7 @@
         </aside>
 
         <!-- Main Content -->
-        <div class="flex-1 flex min-h-0 flex-col overflow-hidden transition-all duration-300" 
+        <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-all duration-300" 
              :style="mainMarginStyle()">
             <!-- Top Navbar -->
             <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
@@ -997,7 +999,7 @@
             </header>
 
             <!-- Page Content -->
-            <main class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-50 p-6">
+            <main class="rams-admin-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-50 p-6">
 
                 <!-- Alerts -->
                 @if(session('success'))
