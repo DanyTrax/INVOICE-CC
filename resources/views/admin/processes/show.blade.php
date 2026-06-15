@@ -29,7 +29,17 @@
                 <dl class="space-y-3 text-sm">
                     <div>
                         <dt class="text-gray-500">Cliente</dt>
-                        <dd class="font-medium text-gray-900">{{ $process->client->name ?? '-' }}</dd>
+                        <dd class="font-medium text-gray-900">
+                            @if($process->client)
+                                <a href="{{ route('admin.processes.monitor', ['client_id' => $process->client_id]) }}" class="text-teal-600 hover:text-teal-800 hover:underline" title="Ver todas las solicitudes de este cliente">{{ $process->client->name }}</a>
+                            @else
+                                —
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500">País</dt>
+                        <dd class="font-medium text-gray-900">{{ $process->client->country ?? '—' }}</dd>
                     </div>
                     <div>
                         <dt class="text-gray-500">Tipo de trámite</dt>
