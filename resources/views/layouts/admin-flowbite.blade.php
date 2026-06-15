@@ -15,7 +15,7 @@
     }
 @endphp
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-gray-50" data-theme="{{ $ramsAdminTheme }}">
+<html lang="es" class="h-full overflow-hidden bg-gray-50" data-theme="{{ $ramsAdminTheme }}">
 <head>
     <meta charset="UTF-8">
     <script>
@@ -42,8 +42,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Deshabilitar Cloudflare Insights beacon -->
     <style>
-        html { scrollbar-gutter: stable; }
-        .rams-admin-scroll { scrollbar-gutter: stable; }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        .rams-admin-scroll {
+            scrollbar-gutter: stable;
+        }
         html.dark { background-color: #0f172a; color: #e2e8f0; }
         html.dark body { background-color: #0f172a; color: #e2e8f0; }
         html.dark .bg-gray-50 { background-color: #0f172a !important; }
@@ -448,7 +453,7 @@
     
     @stack('styles')
 </head>
-<body class="h-full" x-data="{
+<body class="h-full overflow-hidden" x-data="{
     sidebarExpanded: @json($adminSidebarExpandedDefault),
     mobileOpen: false,
     winLg: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
@@ -487,7 +492,7 @@
         return this.sidebarExpanded ? 'margin-left: 16rem' : 'margin-left: 4rem';
     },
 }">
-    <div class="flex h-screen min-h-0 overflow-hidden bg-gray-50">
+    <div id="rams-admin-app" class="flex h-full min-h-0 overflow-hidden bg-gray-50">
         <!-- Overlay para móvil -->
         <div x-show="!winLg && mobileOpen" 
              x-cloak
@@ -894,7 +899,7 @@
         <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-all duration-300" 
              :style="mainMarginStyle()">
             <!-- Top Navbar -->
-            <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+            <header class="shrink-0 bg-white shadow-sm border-b border-gray-200 z-30">
                 <div class="flex items-center justify-between px-4 py-3">
                     <!-- Botón Hamburguesa (móvil: drawer; escritorio: expandir/contraer menú) -->
                     <button type="button"
@@ -1047,7 +1052,7 @@
             </main>
 
             <!-- Footer -->
-            <footer class="bg-white border-t border-gray-200 py-4 px-6">
+            <footer class="shrink-0 bg-white border-t border-gray-200 py-4 px-6">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-gray-600">
                         {!! nl2br(e(app(\App\Settings\GeneralSettings::class)->footer_text ?? 'RAMS - Regulatory Affairs Management System')) !!}
