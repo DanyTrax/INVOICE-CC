@@ -22,7 +22,9 @@
         }
     @endphp
     <tr class="bg-white border-b border-gray-200 hover:bg-gray-50">
-        <td class="px-4 py-3 text-sm text-gray-900 font-mono" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID interno: {{ $process->id }}">{{ $process->displayReference() }}</td>
+        <td class="px-4 py-3 text-sm font-mono" title="{{ $process->expediente_invima ? 'INVIMA: '.$process->expediente_invima.' · ' : '' }}ID interno: {{ $process->id }}">
+            <a href="{{ route('admin.processes.show', $process) }}" class="text-teal-600 hover:text-teal-800 hover:underline font-medium">{{ $process->displayReference() }}</a>
+        </td>
         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $process->client->name ?? '—' }}</td>
         <td class="px-4 py-3 text-sm text-gray-700">{{ $tipoTramite }}</td>
         <td class="px-4 py-3 text-sm text-gray-700">{{ $process->product_reference ?? '—' }}</td>
