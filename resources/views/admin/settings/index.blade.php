@@ -1812,8 +1812,16 @@
                     @endphp
                     <div class="settings-git-version-card mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">
                         <p class="settings-git-version-heading mb-2 font-semibold text-slate-900">
+                            <i class="fas fa-code-branch mr-1.5 text-slate-600"></i>
+                            Versión de la aplicación
+                        </p>
+                        <p class="mb-4 font-mono text-sm">
+                            <span class="font-semibold text-teal-800">RAMS {{ config('app.version') }}</span>
+                            <span class="text-slate-500 font-sans text-xs"> — release de producto</span>
+                        </p>
+                        <p class="settings-git-version-heading mb-2 font-semibold text-slate-900">
                             <i class="fas fa-code-commit mr-1.5 text-slate-600"></i>
-                            Versión de código en este servidor
+                            Código desplegado en este servidor
                         </p>
                         @if(!empty($gitInfo['available']))
                             <dl class="space-y-1 font-mono text-xs sm:text-sm">

@@ -1057,7 +1057,7 @@
                     <span class="text-sm text-gray-600">
                         {!! nl2br(e(app(\App\Settings\GeneralSettings::class)->footer_text ?? 'RAMS - Regulatory Affairs Management System')) !!}
                     </span>
-                    <span class="text-sm text-gray-600">Versión 1.0</span>
+                    <span class="text-sm text-gray-600">Versión {{ config('app.version') }}</span>
                 </div>
             </footer>
         </div>

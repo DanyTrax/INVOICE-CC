@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Version (RAMS product release)
+    |--------------------------------------------------------------------------
+    |
+    | Versión semántica del producto (mayor.menor.parche). Actualizar en cada
+    | release; el commit desplegado se consulta en Configuración → Sistema → Git.
+    |
+    */
+
+    'version' => env('APP_VERSION', '1.3.0'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

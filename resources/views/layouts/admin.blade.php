@@ -220,7 +220,7 @@
     <footer class="main-footer">
         <strong>RAMS</strong> - Regulatory Affairs Management System
         <div class="float-right d-none d-sm-inline-block">
-            <b>Versión</b> 1.0
+            <b>Versión</b> {{ config('app.version') }}
         </div>
     </footer>
 </div>
