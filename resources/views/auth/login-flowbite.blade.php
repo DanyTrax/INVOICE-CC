@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-gray-50">
+<html lang="es" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -96,12 +96,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body {
+        html {
+            min-height: 100%;
+            min-height: 100dvh;
             background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+            background-attachment: fixed;
+        }
+        body {
+            min-height: 100%;
+            min-height: 100dvh;
+            margin: 0;
+            background: transparent;
         }
     </style>
 </head>
-<body class="h-full min-h-screen flex flex-col">
+<body class="min-h-dvh flex flex-col">
     @php
         try {
             $loginSettings = app(\App\Settings\GeneralSettings::class);
@@ -120,7 +129,7 @@
             $loginTermsTitle = 'Términos y Condiciones del Servicio';
         }
     @endphp
-    <div class="flex-1 flex items-center justify-center px-4 py-10">
+    <div class="flex-1 flex items-center justify-center px-4 py-6 sm:py-8">
     <div class="w-full max-w-md">
         <div class="bg-white rounded-lg shadow-xl p-8">
             <!-- Logo -->
@@ -242,7 +251,7 @@
     </div>
     </div>
 
-    <footer class="w-full max-w-xl mx-auto px-6 pb-8 pt-2 text-center text-sm text-white/95">
+    <footer class="shrink-0 w-full max-w-xl mx-auto px-6 pb-6 pt-2 text-center text-sm text-white/95">
         <div class="mb-3 leading-relaxed">{!! nl2br(e($loginFooterHtml)) !!}</div>
         @if($loginShowPrivacy || $loginShowTerms)
             <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
