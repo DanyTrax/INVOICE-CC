@@ -50,7 +50,7 @@ class ProcessController extends Controller
                 continue;
             }
             try {
-                Process::createWithSolicitudCode([
+                $process = Process::createWithSolicitudCode([
                     'quote_item_id' => $item->id,
                     'quote_id' => $quote->id,
                     'client_id' => $quote->client_id,
@@ -58,6 +58,14 @@ class ProcessController extends Controller
                     'status' => Process::STATUS_RECOLECCION,
                     'expediente_invima' => null,
                 ]);
+                try {
+                    app(GoogleDriveService::class)->syncProcessDriveFolder($process);
+                } catch (\Exception $driveException) {
+                    Log::warning('No se creó carpeta Drive al aprobar cotización', [
+                        'process_id' => $process->id,
+                        'error' => $driveException->getMessage(),
+                    ]);
+                }
                 $created++;
             } catch (\RuntimeException $e) {
                 Log::warning('No se creó solicitud al aprobar cotización: '.$e->getMessage(), [
@@ -124,6 +132,15 @@ class ProcessController extends Controller
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['client_id' => $e->getMessage()]);
+        }
+
+        try {
+            app(GoogleDriveService::class)->syncProcessDriveFolder($process);
+        } catch (\Exception $e) {
+            Log::warning('No se creó carpeta Drive al crear solicitud', [
+                'process_id' => $process->id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return redirect()
@@ -415,12 +432,12 @@ class ProcessController extends Controller
             'assignedUsers',
         ]);
 
-        // Asegurar carpeta en Drive para este expediente (se crea al visitar la página si está configurado Drive)
+        // Sincronizar carpeta Drive (crear, renombrar con siglas o mover si cambió empresa/país)
         try {
-            app(GoogleDriveService::class)->getOrCreateProcessFolder($process);
+            app(GoogleDriveService::class)->syncProcessDriveFolder($process);
             $process->refresh();
         } catch (\Exception $e) {
-            Log::debug('No se pudo crear/obtener carpeta Drive del proceso', ['process_id' => $process->id, 'error' => $e->getMessage()]);
+            Log::debug('No se pudo sincronizar carpeta Drive del proceso', ['process_id' => $process->id, 'error' => $e->getMessage()]);
         }
 
         // Cotizaciones del mismo cliente para poder vincular ciclos a una cotización/ítem

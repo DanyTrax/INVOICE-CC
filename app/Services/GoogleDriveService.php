@@ -584,20 +584,8 @@ class GoogleDriveService
         $parentFolderId = null;
         if ($registration->company_id) {
             $company = $registration->company;
-            if ($company && $company->drive_folder_id) {
-                $parentFolderId = $company->drive_folder_id;
-            } else {
-                // Crear carpeta empresa: con país → Base → País → Empresa; sin país → Base → Clientes → Empresa
-                $country = $company && !empty(trim($company->country ?? '')) ? trim($company->country) : null;
-                $parentId = $country
-                    ? $this->getOrCreateCountryFolder($country)
-                    : $this->getOrCreateClientsFolder(null);
-                $companyFolder = $this->createFolder(
-                    $company->name . ' - ' . ($company->nit_rut ?? 'Sin NIT'),
-                    $parentId
-                );
-                $company->update(['drive_folder_id' => $companyFolder['id']]);
-                $parentFolderId = $companyFolder['id'];
+            if ($company) {
+                $parentFolderId = $this->getOrCreateCompanyFolder($company);
             }
         } else {
             $parentFolderId = $this->getOrCreateNoClientFolder();
@@ -615,38 +603,69 @@ class GoogleDriveService
     }
 
     /**
-     * Obtener o crear carpeta del proceso (solicitud) en Drive.
-     * Con cliente: Base → País → Empresa → Solicitud. Sin cliente: Base → Solicitudes sin cliente → Solicitud.
+     * Obtener o crear carpeta de empresa en Drive (Base → País → Empresa).
      */
-    public function getOrCreateProcessFolder(Process $process): string
+    public function getOrCreateCompanyFolder(\App\Models\Company $company): string
     {
-        if ($process->drive_folder_id) {
-            return $process->drive_folder_id;
+        if ($company->drive_folder_id) {
+            return $company->drive_folder_id;
         }
 
-        $process->load(['client', 'serviceType']);
-        $folderName = 'Solicitud #' . $process->id . ' - ' . ($process->serviceType?->name ?? $process->product_reference ?? 'Sin nombre');
+        $country = ! empty(trim($company->country ?? '')) ? trim($company->country) : null;
+        $parentId = $country
+            ? $this->getOrCreateCountryFolder($country)
+            : $this->getOrCreateClientsFolder(null);
+        $folder = $this->createFolder(
+            $company->name.' - '.($company->nit_rut ?? 'Sin NIT'),
+            $parentId,
+            null,
+            $company->id
+        );
+        $company->update(['drive_folder_id' => $folder['id']]);
 
-        $parentFolderId = null;
+        return $folder['id'];
+    }
+
+    /**
+     * Carpeta padre de una solicitud (proceso): empresa o «sin cliente».
+     */
+    public function resolveProcessParentFolderId(Process $process): string
+    {
         if ($process->client_id) {
-            $company = $process->client;
-            if ($company && $company->drive_folder_id) {
-                $parentFolderId = $company->drive_folder_id;
-            } elseif ($company) {
-                $country = !empty(trim($company->country ?? '')) ? trim($company->country) : null;
-                $parentId = $country
-                    ? $this->getOrCreateCountryFolder($country)
-                    : $this->getOrCreateClientsFolder(null);
-                $companyFolder = $this->createFolder(
-                    $company->name . ' - ' . ($company->nit_rut ?? 'Sin NIT'),
-                    $parentId
-                );
-                $company->update(['drive_folder_id' => $companyFolder['id']]);
-                $parentFolderId = $companyFolder['id'];
+            $company = $process->relationLoaded('client')
+                ? $process->client
+                : \App\Models\Company::find($process->client_id);
+            if ($company) {
+                return $this->getOrCreateCompanyFolder($company);
             }
         }
-        if ($parentFolderId === null) {
-            $parentFolderId = $this->getOrCreateNoClientFolder();
+
+        return $this->getOrCreateNoClientFolder();
+    }
+
+    /**
+     * Crear, renombrar o mover la carpeta Drive de una solicitud según país, empresa y código (siglas).
+     */
+    public function syncProcessDriveFolder(Process $process): string
+    {
+        $process->loadMissing(['client', 'serviceType', 'quoteItem.serviceType']);
+
+        $folderName = $process->driveFolderName();
+        $parentFolderId = $this->resolveProcessParentFolderId($process);
+
+        if ($process->drive_folder_id) {
+            $this->renameFileOrFolder($process->drive_folder_id, $folderName);
+            try {
+                $this->moveFile($process->drive_folder_id, $parentFolderId);
+            } catch (\Exception $e) {
+                Log::warning('No se pudo mover carpeta de solicitud en Drive', [
+                    'process_id' => $process->id,
+                    'drive_folder_id' => $process->drive_folder_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return $process->drive_folder_id;
         }
 
         $folder = $this->createFolder($folderName, $parentFolderId);
@@ -656,6 +675,15 @@ class GoogleDriveService
         ]);
 
         return $folder['id'];
+    }
+
+    /**
+     * Obtener o crear carpeta del proceso (solicitud) en Drive.
+     * Con cliente: Base → País → Empresa → Solicitud. Sin cliente: Base → Solicitudes sin cliente → Solicitud.
+     */
+    public function getOrCreateProcessFolder(Process $process): string
+    {
+        return $this->syncProcessDriveFolder($process);
     }
 
     /**

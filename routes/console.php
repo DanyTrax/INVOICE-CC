@@ -1,6 +1,8 @@
 <?php
 
 use App\Support\UploadHelper;
+use App\Models\Process;
+use App\Services\GoogleDriveService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -38,3 +40,47 @@ Artisan::command('rams:setup-upload', function () {
 
     return 0;
 })->purpose('Prepara storage/app/temp y .user.ini para subidas en hosting compartido');
+
+Artisan::command('rams:sync-process-drive-folders {--id= : ID de una solicitud específica}', function () {
+    $drive = app(GoogleDriveService::class);
+    $query = Process::query()->with(['client', 'serviceType', 'quoteItem.serviceType']);
+
+    if ($this->option('id')) {
+        $query->whereKey((int) $this->option('id'));
+    }
+
+    $processes = $query->orderBy('id')->get();
+    if ($processes->isEmpty()) {
+        $this->warn('No hay solicitudes para sincronizar.');
+
+        return 0;
+    }
+
+    $created = 0;
+    $synced = 0;
+    $failed = 0;
+
+    foreach ($processes as $process) {
+        $hadFolder = ! empty($process->drive_folder_id);
+        $targetName = $process->driveFolderName();
+
+        try {
+            $drive->syncProcessDriveFolder($process);
+            if ($hadFolder) {
+                $synced++;
+                $this->line("✓ {$process->displayReference()} → {$targetName}");
+            } else {
+                $created++;
+                $this->line("+ {$process->displayReference()} → carpeta creada ({$targetName})");
+            }
+        } catch (\Throwable $e) {
+            $failed++;
+            $this->error("✗ {$process->displayReference()}: ".$e->getMessage());
+        }
+    }
+
+    $this->newLine();
+    $this->info("Listo: {$created} creadas, {$synced} actualizadas, {$failed} con error.");
+
+    return $failed > 0 ? 1 : 0;
+})->purpose('Crea o renombra carpetas Drive de solicitudes con código (siglas) y estructura País → Empresa → Solicitud');

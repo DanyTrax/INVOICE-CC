@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Process extends Model
 {
@@ -279,6 +280,19 @@ class Process extends Model
         }
 
         return (string) $this->id;
+    }
+
+    /**
+     * Nombre de carpeta en Google Drive: código con siglas + descripción (ej. JJMED-001 – MODIFICACION LEGAL).
+     */
+    public function driveFolderName(): string
+    {
+        $descriptor = $this->quoteItem?->serviceType?->name
+            ?? $this->serviceType?->name
+            ?? ($this->product_reference ? Str::limit(trim($this->product_reference), 80) : null)
+            ?? 'Sin nombre';
+
+        return $this->displayReference().' – '.$descriptor;
     }
 
     /**
