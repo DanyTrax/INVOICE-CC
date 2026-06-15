@@ -85,9 +85,19 @@ Artisan::command('rams:sync-process-drive-folders {--id= : ID de una solicitud e
     return $failed > 0 ? 1 : 0;
 })->purpose('Crea o renombra carpetas Drive de solicitudes con código (siglas) y estructura País → Empresa → Solicitud');
 
-Artisan::command('rams:sync-drive-prune {--execute : Eliminar carpetas huérfanas (sin esto solo muestra vista previa)}', function () {
+Artisan::command('rams:sync-drive-prune {--execute : Eliminar carpetas huérfanas (sin esto solo muestra vista previa)} {--sync-first : Sincronizar carpetas de solicitudes antes de revisar}', function () {
     $execute = (bool) $this->option('execute');
     $service = app(\App\Services\DriveStructureCleanupService::class);
+
+    if ($this->option('sync-first')) {
+        $this->info('Sincronizando carpetas de solicitudes…');
+        $exit = Artisan::call('rams:sync-process-drive-folders');
+        $this->line(trim(Artisan::output()));
+        if ($exit !== 0) {
+            $this->warn('La sincronización de solicitudes reportó errores; continúo con la revisión.');
+        }
+        $this->newLine();
+    }
 
     $this->info($execute
         ? 'Eliminando carpetas huérfanas en Google Drive…'
@@ -101,10 +111,19 @@ Artisan::command('rams:sync-drive-prune {--execute : Eliminar carpetas huérfana
         return 1;
     }
 
+    $kept = $result['kept'];
     $this->line('Carpeta base: '.$result['base_folder_id']);
-    $this->line('Carpetas protegidas: '.$result['protected_count']);
+    $this->line('Carpetas protegidas en árbol: '.$result['protected_count']);
     $this->newLine();
-    $this->comment('Se conservan: empresas, solicitudes (procesos), registros y capacitaciones activas en la BD, más «Backups RAMS» y «RAMS Membretes PDF» completos.');
+    $this->comment('Se conserva lo registrado en la app:');
+    $this->line('  · Empresas: '.$kept['companies']);
+    $this->line('  · Solicitudes (procesos): '.$kept['processes']);
+    $this->line('  · Registros antiguos: '.$kept['registrations']);
+    $this->line('  · Archivos de documentos: '.$kept['document_files']);
+    $this->line('  · Capacitaciones: '.$kept['capacitaciones']);
+    $this->line('  · Backups RAMS y RAMS Membretes PDF (completos)');
+    $this->newLine();
+    $this->comment('Se eliminará cualquier otra carpeta bajo la base (países sin empresa, pruebas, solicitudes borradas del sistema), aunque tenga archivos.');
 
     if ($result['orphan_folders'] === []) {
         $this->info('No hay carpetas huérfanas bajo la carpeta base.');
@@ -114,13 +133,13 @@ Artisan::command('rams:sync-drive-prune {--execute : Eliminar carpetas huérfana
 
     $this->warn('Carpetas huérfanas encontradas: '.count($result['orphan_folders']));
     foreach ($result['orphan_folders'] as $orphan) {
-        $prefix = $execute ? ($result['deleted'] !== [] && in_array($orphan['path'], $result['deleted'], true) ? '✓' : '✗') : '·';
-        $this->line("  {$prefix} {$orphan['path']} [{$orphan['id']}]");
+        $this->line('  · '.$orphan['path']);
     }
 
     if (! $execute) {
         $this->newLine();
         $this->comment('Ejecute con --execute para enviar estas carpetas a la papelera de Drive.');
+        $this->comment('Recomendado antes: php artisan rams:sync-drive-prune --sync-first');
 
         return 0;
     }
@@ -137,4 +156,4 @@ Artisan::command('rams:sync-drive-prune {--execute : Eliminar carpetas huérfana
     $this->info('Eliminadas: '.count($result['deleted']).' · Errores: '.count($result['errors']));
 
     return $result['errors'] !== [] ? 1 : 0;
-})->purpose('Elimina carpetas de prueba en Drive que ya no existen en empresas/solicitudes (conserva backups y membretes)');
+})->purpose('Limpia Drive: conserva empresas, solicitudes y documentos de la app; elimina el resto (pruebas, países huérfanos)');

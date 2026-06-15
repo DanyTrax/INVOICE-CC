@@ -4,7 +4,11 @@ namespace App\Services;
 
 use App\Models\CapacitacionVideo;
 use App\Models\Company;
+use App\Models\Document;
 use App\Models\Process;
+use App\Models\ProcessDocument;
+use App\Models\ProposalPdfTemplate;
+use App\Models\QuotePdfTemplate;
 use App\Models\Registration;
 use App\Settings\GeneralSettings;
 use Illuminate\Support\Facades\Log;
@@ -26,6 +30,7 @@ class DriveStructureCleanupService
      * @return array{
      *     base_folder_id: string,
      *     protected_count: int,
+     *     kept: array{companies: int, processes: int, registrations: int, document_files: int, capacitaciones: int},
      *     orphan_folders: list<array{id: string, name: string, path: string}>,
      *     deleted: list<string>,
      *     errors: list<string>
@@ -38,7 +43,15 @@ class DriveStructureCleanupService
             throw new \RuntimeException('Configure el ID de carpeta base de Google Drive en Configuración.');
         }
 
-        $protected = $this->buildProtectedFolderMap($baseId);
+        $kept = [
+            'companies' => 0,
+            'processes' => 0,
+            'registrations' => 0,
+            'document_files' => 0,
+            'capacitaciones' => 0,
+        ];
+
+        $protected = $this->buildProtectedFolderMap($baseId, $kept);
         $allFolders = $this->drive->listDescendantFolders($baseId);
         $pathMap = $this->buildFolderPathMap($baseId, $allFolders);
 
@@ -80,6 +93,7 @@ class DriveStructureCleanupService
         return [
             'base_folder_id' => $baseId,
             'protected_count' => count($protected),
+            'kept' => $kept,
             'orphan_folders' => $orphans,
             'deleted' => $deleted,
             'errors' => $errors,
@@ -87,9 +101,10 @@ class DriveStructureCleanupService
     }
 
     /**
+     * @param  array{companies: int, processes: int, registrations: int, document_files: int, capacitaciones: int}  $kept
      * @return array<string, true>
      */
-    protected function buildProtectedFolderMap(string $baseId): array
+    protected function buildProtectedFolderMap(string $baseId, array &$kept): array
     {
         $protected = [$baseId => true];
 
@@ -100,57 +115,161 @@ class DriveStructureCleanupService
             }
         }
 
-        $capRoot = $this->drive->findFolderByNameUnder($baseId, 'Capacitaciones');
-        if ($capRoot) {
-            $protected[$capRoot] = true;
+        $companies = Company::query()->orderBy('id')->get();
+        foreach ($companies as $company) {
+            $companyFolderId = $this->resolveCompanyFolderId($company, $baseId);
+            if ($companyFolderId) {
+                $kept['companies']++;
+                $this->protectFolderAndAncestors($companyFolderId, $baseId, $protected);
+            }
+        }
+
+        $processes = Process::query()->with(['client', 'serviceType', 'quoteItem.serviceType'])->orderBy('id')->get();
+        foreach ($processes as $process) {
+            $processFolderId = $this->resolveProcessFolderId($process, $baseId);
+            if ($processFolderId) {
+                $kept['processes']++;
+                $this->markFolderTreeProtected($processFolderId, $protected);
+                $this->protectFolderAndAncestors($processFolderId, $baseId, $protected);
+            }
+        }
+
+        $registrations = Registration::query()->with('company')->orderBy('id')->get();
+        foreach ($registrations as $registration) {
+            $folderId = $registration->drive_folder_id
+                ?: $this->resolveRegistrationFolderId($registration, $baseId);
+            if ($folderId) {
+                $kept['registrations']++;
+                $this->markFolderTreeProtected($folderId, $protected);
+                $this->protectFolderAndAncestors($folderId, $baseId, $protected);
+            }
+        }
+
+        foreach (ProcessDocument::query()->whereNotNull('drive_id')->pluck('drive_id') as $driveId) {
+            $kept['document_files']++;
+            $this->protectItemAncestors((string) $driveId, $baseId, $protected);
+        }
+
+        foreach (Document::query()->whereNotNull('drive_id')->pluck('drive_id') as $driveId) {
+            $kept['document_files']++;
+            $this->protectItemAncestors((string) $driveId, $baseId, $protected);
         }
 
         foreach (CapacitacionVideo::query()->whereNotNull('drive_folder_id')->pluck('drive_folder_id') as $folderId) {
+            $kept['capacitaciones']++;
+            $this->markFolderTreeProtected((string) $folderId, $protected);
             $this->protectFolderAndAncestors((string) $folderId, $baseId, $protected);
         }
 
-        foreach (Company::query()->whereNotNull('drive_folder_id')->pluck('drive_folder_id') as $folderId) {
-            $this->protectFolderAndAncestors((string) $folderId, $baseId, $protected);
+        foreach (CapacitacionVideo::query()->whereNotNull('drive_file_id')->pluck('drive_file_id') as $fileId) {
+            $this->protectItemAncestors((string) $fileId, $baseId, $protected);
         }
 
-        foreach (Process::query()->whereNotNull('drive_folder_id')->pluck('drive_folder_id') as $folderId) {
-            $this->protectFolderAndAncestors((string) $folderId, $baseId, $protected);
+        foreach (QuotePdfTemplate::query()->whereNotNull('letterhead_drive_id')->pluck('letterhead_drive_id') as $fileId) {
+            $this->protectItemAncestors((string) $fileId, $baseId, $protected);
         }
 
-        foreach (Registration::query()->whereNotNull('drive_folder_id')->pluck('drive_folder_id') as $folderId) {
-            $this->protectFolderAndAncestors((string) $folderId, $baseId, $protected);
+        foreach (ProposalPdfTemplate::query()->whereNotNull('letterhead_drive_id')->pluck('letterhead_drive_id') as $fileId) {
+            $this->protectItemAncestors((string) $fileId, $baseId, $protected);
         }
 
-        $countries = Company::query()
-            ->whereNotNull('country')
-            ->where('country', '!=', '')
-            ->distinct()
-            ->pluck('country')
-            ->map(fn ($c) => trim((string) $c))
-            ->filter();
+        return $protected;
+    }
 
-        foreach ($countries as $country) {
+    protected function resolveCompanyFolderId(Company $company, string $baseId): ?string
+    {
+        if ($company->drive_folder_id) {
+            return $company->drive_folder_id;
+        }
+
+        $folderName = $this->companyFolderName($company);
+        $country = trim((string) ($company->country ?? ''));
+
+        if ($country !== '') {
             $countryId = $this->drive->findFolderByNameUnder($baseId, $country);
-            if ($countryId) {
-                $protected[$countryId] = true;
+            if (! $countryId) {
+                return null;
+            }
+
+            return $this->drive->findFolderByNameUnder($countryId, $folderName);
+        }
+
+        $clientsName = $this->settings->drive_folder_name_with_client ?: 'Clientes';
+        $clientsId = $this->drive->findFolderByNameUnder($baseId, $clientsName);
+        if (! $clientsId) {
+            return null;
+        }
+
+        return $this->drive->findFolderByNameUnder($clientsId, $folderName);
+    }
+
+    protected function resolveProcessFolderId(Process $process, string $baseId): ?string
+    {
+        if ($process->drive_folder_id) {
+            return $process->drive_folder_id;
+        }
+
+        $company = $process->client;
+        if (! $company) {
+            return null;
+        }
+
+        $companyFolderId = $this->resolveCompanyFolderId($company, $baseId);
+        if (! $companyFolderId) {
+            return null;
+        }
+
+        $expectedName = $process->driveFolderName();
+        $found = $this->drive->findFolderByNameUnder($companyFolderId, $expectedName);
+        if ($found) {
+            return $found;
+        }
+
+        $code = $process->displayReference();
+        foreach ($this->drive->listImmediateChildren($companyFolderId) as $item) {
+            if ($item['mimeType'] !== 'application/vnd.google-apps.folder') {
+                continue;
+            }
+            $name = $item['name'];
+            if (
+                str_starts_with($name, $code.' –')
+                || str_starts_with($name, $code.' -')
+                || str_contains($name, 'Solicitud #'.$process->id)
+            ) {
+                return $item['id'];
+            }
+        }
+
+        return null;
+    }
+
+    protected function resolveRegistrationFolderId(Registration $registration, string $baseId): ?string
+    {
+        if ($registration->drive_folder_id) {
+            return $registration->drive_folder_id;
+        }
+
+        $folderName = $registration->product_name.' - '.($registration->registration_number ?? 'Sin Número');
+
+        if ($registration->company_id && $registration->company) {
+            $companyFolderId = $this->resolveCompanyFolderId($registration->company, $baseId);
+            if ($companyFolderId) {
+                return $this->drive->findFolderByNameUnder($companyFolderId, $folderName);
             }
         }
 
         $noClientName = $this->settings->drive_folder_name_no_client ?: 'Solicitudes sin cliente';
         $noClientId = $this->drive->findFolderByNameUnder($baseId, $noClientName);
         if ($noClientId) {
-            $protected[$noClientId] = true;
+            return $this->drive->findFolderByNameUnder($noClientId, $folderName);
         }
 
-        if (Company::query()->where(fn ($q) => $q->whereNull('country')->orWhere('country', ''))->exists()) {
-            $clientsName = $this->settings->drive_folder_name_with_client ?: 'Clientes';
-            $clientsId = $this->drive->findFolderByNameUnder($baseId, $clientsName);
-            if ($clientsId) {
-                $protected[$clientsId] = true;
-            }
-        }
+        return null;
+    }
 
-        return $protected;
+    protected function companyFolderName(Company $company): string
+    {
+        return $company->name.' - '.($company->nit_rut ?? 'Sin NIT');
     }
 
     /**
@@ -175,6 +294,22 @@ class DriveStructureCleanupService
 
         $protected[$folderId] = true;
         foreach ($this->drive->getFolderAncestorIds($folderId, $baseId) as $ancestorId) {
+            $protected[$ancestorId] = true;
+        }
+    }
+
+    /**
+     * Protege las carpetas contenedoras de un archivo (documento suelto en Drive).
+     *
+     * @param  array<string, true>  $protected
+     */
+    protected function protectItemAncestors(string $driveId, string $baseId, array &$protected): void
+    {
+        if ($driveId === '') {
+            return;
+        }
+
+        foreach ($this->drive->getFolderAncestorIds($driveId, $baseId) as $ancestorId) {
             $protected[$ancestorId] = true;
         }
     }
