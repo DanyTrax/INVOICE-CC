@@ -465,129 +465,39 @@
         if (!isset($canCreateNewAttempt)) {
             $canCreateNewAttempt = $rejectedSubmissions->isNotEmpty() && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_RECHAZADO;
         }
+        if (! isset($normalItems)) {
+            $normalItems = $process->checklistItems->where('is_for_auto', false);
+        }
+        if (! isset($autoItems)) {
+            $autoItems = $process->checklistItems->where('is_for_auto', true);
+        }
     @endphp
 
     {{-- 2. Gestión Documental --}}
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">
-                <i class="fas fa-folder-open text-teal-600 mr-2"></i> Gestión Documental
-            </h3>
-            @processCanFor($process, 'feed')
-            <button type="button"
-                    onclick="openAddDocumentModal(0)"
-                    class="inline-flex items-center px-3 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
-                <i class="fas fa-plus mr-2"></i> Agregar Documento
-            </button>
-            @endprocessCanFor
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                    <tr>
-                        <th class="px-3 py-2">Documento</th>
-                        <th class="px-3 py-2 w-32">Estado</th>
-                        <th class="px-3 py-2">Observación</th>
-                        <th class="px-3 py-2 w-40">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($normalItems as $item)
-                        @php
-                            $badgeClass = match($item->status) {
-                                'Aprobado' => 'bg-green-100 text-green-800',
-                                'Recibido' => 'bg-blue-100 text-blue-800',
-                                'Traducción' => 'bg-yellow-100 text-yellow-800',
-                                default => 'bg-gray-100 text-gray-800',
-                            };
-                        @endphp
-                        <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            @include('admin.processes.partials.checklist-item-table-document', ['item' => $item])
-                            <td class="px-3 py-2">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badgeClass }}">{{ $item->status }}</span>
-                            </td>
-                            <td class="px-3 py-2 text-gray-600">{{ Str::limit($item->observation_agent ?? '-', 50) }}</td>
-                            <td class="px-3 py-2">
-                                @processCanFor($process, 'edit')
-                                <button type="button" onclick="openChecklistModal({{ $item->id }}, '{{ addslashes($item->document_name) }}', '{{ $item->status }}', '{{ addslashes($item->observation_agent ?? '') }}')"
-                                        class="text-teal-600 hover:text-teal-800 text-sm font-medium">
-                                    <i class="fas fa-edit mr-1"></i> Cambiar estado
-                                </button>
-                                @endprocessCanFor
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="px-3 py-6 text-center text-gray-500">No hay documentos en la checklist. Use &quot;+ Agregar Documento&quot; para agregar requisitos.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+    @include('admin.processes.partials.checklist-management-panel', [
+        'process' => $process,
+        'items' => $normalItems,
+        'title' => 'Gestión Documental',
+        'accent' => 'teal',
+        'addModalFlag' => 0,
+        'addButtonLabel' => 'Agregar Documento',
+        'emptyMessage' => 'No hay documentos en la checklist. Use "+ Agregar Documento" para agregar requisitos.',
+    ])
 
     {{-- 2.b Gestión Documental AUTO
          - Visible mientras haya documentos AUTO en la solicitud
          - O cuando el último sometimiento está En Requerimiento (AUTO)
     --}}
     @if(($autoItems ?? collect())->isNotEmpty() || (isset($lastSubmission) && $lastSubmission && $lastSubmission->status === \App\Models\Submission::STATUS_EN_REQUERIMIENTO))
-    <div class="bg-white rounded-lg shadow-sm border border-amber-200 p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">
-                <i class="fas fa-folder-open text-amber-600 mr-2"></i> Gestión Documental AUTO
-            </h3>
-            @processCanFor($process, 'feed')
-            <button type="button"
-                    onclick="openAddDocumentModal(1)"
-                    class="inline-flex items-center px-3 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700">
-                <i class="fas fa-plus mr-2"></i> Agregar Documento AUTO
-            </button>
-            @endprocessCanFor
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-700">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                    <tr>
-                        <th class="px-3 py-2">Documento</th>
-                        <th class="px-3 py-2 w-32">Estado</th>
-                        <th class="px-3 py-2">Observación</th>
-                        <th class="px-3 py-2 w-40">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($autoItems as $item)
-                        @php
-                            $badgeClass = match($item->status) {
-                                'Aprobado' => 'bg-green-100 text-green-800',
-                                'Recibido' => 'bg-blue-100 text-blue-800',
-                                'Traducción' => 'bg-yellow-100 text-yellow-800',
-                                default => 'bg-gray-100 text-gray-800',
-                            };
-                        @endphp
-                        <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            @include('admin.processes.partials.checklist-item-table-document', ['item' => $item])
-                            <td class="px-3 py-2">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $badgeClass }}">{{ $item->status }}</span>
-                            </td>
-                            <td class="px-3 py-2 text-gray-600">{{ Str::limit($item->observation_agent ?? '-', 50) }}</td>
-                            <td class="px-3 py-2">
-                                @processCanFor($process, 'edit')
-                                <button type="button" onclick="openChecklistModal({{ $item->id }}, '{{ addslashes($item->document_name) }}', '{{ $item->status }}', '{{ addslashes($item->observation_agent ?? '') }}')"
-                                        class="text-teal-600 hover:text-teal-800 text-sm font-medium">
-                                    <i class="fas fa-edit mr-1"></i> Cambiar estado
-                                </button>
-                                @endprocessCanFor
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="px-3 py-6 text-center text-gray-500">No hay documentos AUTO. Use &quot;Agregar Documento AUTO&quot; para registrar requisitos de un requerimiento AUTO.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+    @include('admin.processes.partials.checklist-management-panel', [
+        'process' => $process,
+        'items' => $autoItems,
+        'title' => 'Gestión Documental AUTO',
+        'accent' => 'amber',
+        'addModalFlag' => 1,
+        'addButtonLabel' => 'Agregar Documento AUTO',
+        'emptyMessage' => 'No hay documentos AUTO. Use "Agregar Documento AUTO" para registrar requisitos de un requerimiento AUTO.',
+    ])
     @endif
 
     {{-- 3. Documentos en Drive --}}
