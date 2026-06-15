@@ -511,28 +511,9 @@ class GoogleDriveService
      */
     public function findOrCreateNamedFolder(string $folderName, ?string $parentFolderId = null): string
     {
-        $token = $this->getAccessToken();
-        $escapedName = str_replace("'", "\\'", $folderName);
-        $query = "name='{$escapedName}' and mimeType='application/vnd.google-apps.folder' and trashed=false";
-        if ($parentFolderId) {
-            $query .= " and '{$parentFolderId}' in parents";
-        }
-
-        $queryParams = [
-            'q' => $query,
-            'fields' => 'files(id, name)',
-            'supportsAllDrives' => 'true',
-            'includeItemsFromAllDrives' => 'true',
-        ];
-
-        $response = Http::withToken($token)
-            ->get($this->baseUrl.'/files?'.http_build_query($queryParams));
-
-        if ($response->successful()) {
-            $files = $response->json();
-            if (! empty($files['files'][0]['id'])) {
-                return $files['files'][0]['id'];
-            }
+        $existing = $this->findFolderByNameUnder($parentFolderId, $folderName);
+        if ($existing) {
+            return $existing;
         }
 
         $result = $this->createFolder($folderName, $parentFolderId);
@@ -1165,25 +1146,158 @@ class GoogleDriveService
     }
 
     /**
+     * Buscar carpeta por nombre bajo un padre (sin crear).
+     */
+    public function findFolderByNameUnder(?string $parentFolderId, string $folderName): ?string
+    {
+        $token = $this->getAccessToken();
+        $safeName = str_replace("'", "\\'", $folderName);
+        $query = "name='{$safeName}' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+        if ($parentFolderId) {
+            $query .= " and '{$parentFolderId}' in parents";
+        }
+
+        $response = Http::withToken($token)
+            ->get($this->baseUrl.'/files', [
+                'q' => $query,
+                'fields' => 'files(id, name)',
+                'supportsAllDrives' => 'true',
+                'includeItemsFromAllDrives' => 'true',
+            ]);
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $files = $response->json()['files'] ?? [];
+
+        return $files[0]['id'] ?? null;
+    }
+
+    /**
+     * @return list<array{id: string, name: string, mimeType: string}>
+     */
+    public function listImmediateChildren(string $folderId): array
+    {
+        $token = $this->getAccessToken();
+        $items = [];
+        $pageToken = null;
+
+        do {
+            $params = [
+                'q' => "'{$folderId}' in parents and trashed=false",
+                'fields' => 'nextPageToken,files(id,name,mimeType)',
+                'pageSize' => 200,
+                'supportsAllDrives' => 'true',
+                'includeItemsFromAllDrives' => 'true',
+            ];
+            if ($pageToken) {
+                $params['pageToken'] = $pageToken;
+            }
+
+            $response = Http::withToken($token)->get($this->baseUrl.'/files', $params);
+            if (! $response->successful()) {
+                throw new \Exception('No se pudo listar contenido de carpeta Drive: '.$response->body());
+            }
+
+            $data = $response->json();
+            foreach ($data['files'] ?? [] as $file) {
+                $items[] = [
+                    'id' => $file['id'],
+                    'name' => $file['name'],
+                    'mimeType' => $file['mimeType'],
+                ];
+            }
+            $pageToken = $data['nextPageToken'] ?? null;
+        } while ($pageToken);
+
+        return $items;
+    }
+
+    /**
+     * @return array<string, array{id: string, name: string, parent_id: string}>
+     */
+    public function listDescendantFolders(string $rootFolderId): array
+    {
+        $folders = [];
+        $queue = [$rootFolderId];
+
+        while ($queue !== []) {
+            $parentId = array_shift($queue);
+            foreach ($this->listImmediateChildren($parentId) as $item) {
+                if ($item['mimeType'] !== 'application/vnd.google-apps.folder') {
+                    continue;
+                }
+                $folders[$item['id']] = [
+                    'id' => $item['id'],
+                    'name' => $item['name'],
+                    'parent_id' => $parentId,
+                ];
+                $queue[] = $item['id'];
+            }
+        }
+
+        return $folders;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getFolderAncestorIds(string $folderId, ?string $stopAtFolderId = null): array
+    {
+        $token = $this->getAccessToken();
+        $ancestors = [];
+        $currentId = $folderId;
+
+        while ($currentId && $currentId !== $stopAtFolderId) {
+            $response = Http::withToken($token)
+                ->get($this->baseUrl.'/files/'.$currentId, [
+                    'fields' => 'id,parents',
+                    'supportsAllDrives' => 'true',
+                ]);
+
+            if (! $response->successful()) {
+                break;
+            }
+
+            $parents = $response->json()['parents'] ?? [];
+            $parentId = $parents[0] ?? null;
+            if (! $parentId || $parentId === $stopAtFolderId) {
+                break;
+            }
+
+            $ancestors[] = $parentId;
+            $currentId = $parentId;
+        }
+
+        return $ancestors;
+    }
+
+    public function deleteFileOrFolderStrict(string $driveId): void
+    {
+        $token = $this->getAccessToken();
+        $response = Http::withToken($token)
+            ->delete($this->baseUrl.'/files/'.$driveId, [
+                'supportsAllDrives' => 'true',
+            ]);
+
+        if (! $response->successful() && $response->status() !== 404) {
+            throw new \Exception('No se pudo eliminar en Drive ('.$response->status().'): '.$response->body());
+        }
+    }
+
+    /**
      * Buscar carpeta por nombre bajo un padre; crearla si no existe.
      */
     protected function findOrCreateFolderUnder(string $parentId, string $folderName): string
     {
-        $token = $this->getAccessToken();
-        $safeName = str_replace("'", "\\'", $folderName);
-        $query = "name='{$safeName}' and mimeType='application/vnd.google-apps.folder' and trashed=false and '{$parentId}' in parents";
-        $response = Http::withToken($token)
-            ->get($this->baseUrl . '/files', [
-                'q' => $query,
-                'fields' => 'files(id, name)',
-            ]);
-        if ($response->successful()) {
-            $files = $response->json()['files'] ?? [];
-            if (!empty($files)) {
-                return $files[0]['id'];
-            }
+        $existing = $this->findFolderByNameUnder($parentId, $folderName);
+        if ($existing) {
+            return $existing;
         }
+
         $folder = $this->createFolder($folderName, $parentId);
+
         return $folder['id'];
     }
 

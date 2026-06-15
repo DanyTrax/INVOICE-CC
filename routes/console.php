@@ -84,3 +84,57 @@ Artisan::command('rams:sync-process-drive-folders {--id= : ID de una solicitud e
 
     return $failed > 0 ? 1 : 0;
 })->purpose('Crea o renombra carpetas Drive de solicitudes con código (siglas) y estructura País → Empresa → Solicitud');
+
+Artisan::command('rams:sync-drive-prune {--execute : Eliminar carpetas huérfanas (sin esto solo muestra vista previa)}', function () {
+    $execute = (bool) $this->option('execute');
+    $service = app(\App\Services\DriveStructureCleanupService::class);
+
+    $this->info($execute
+        ? 'Eliminando carpetas huérfanas en Google Drive…'
+        : 'Vista previa: carpetas huérfanas en Google Drive (use --execute para eliminar)');
+
+    try {
+        $result = $service->pruneOrphanFolders($execute);
+    } catch (\Throwable $e) {
+        $this->error($e->getMessage());
+
+        return 1;
+    }
+
+    $this->line('Carpeta base: '.$result['base_folder_id']);
+    $this->line('Carpetas protegidas: '.$result['protected_count']);
+    $this->newLine();
+    $this->comment('Se conservan: empresas, solicitudes (procesos), registros y capacitaciones activas en la BD, más «Backups RAMS» y «RAMS Membretes PDF» completos.');
+
+    if ($result['orphan_folders'] === []) {
+        $this->info('No hay carpetas huérfanas bajo la carpeta base.');
+
+        return 0;
+    }
+
+    $this->warn('Carpetas huérfanas encontradas: '.count($result['orphan_folders']));
+    foreach ($result['orphan_folders'] as $orphan) {
+        $prefix = $execute ? ($result['deleted'] !== [] && in_array($orphan['path'], $result['deleted'], true) ? '✓' : '✗') : '·';
+        $this->line("  {$prefix} {$orphan['path']} [{$orphan['id']}]");
+    }
+
+    if (! $execute) {
+        $this->newLine();
+        $this->comment('Ejecute con --execute para enviar estas carpetas a la papelera de Drive.');
+
+        return 0;
+    }
+
+    if ($result['errors'] !== []) {
+        $this->newLine();
+        $this->error('Errores ('.count($result['errors']).'):');
+        foreach ($result['errors'] as $error) {
+            $this->line('  '.$error);
+        }
+    }
+
+    $this->newLine();
+    $this->info('Eliminadas: '.count($result['deleted']).' · Errores: '.count($result['errors']));
+
+    return $result['errors'] !== [] ? 1 : 0;
+})->purpose('Elimina carpetas de prueba en Drive que ya no existen en empresas/solicitudes (conserva backups y membretes)');
