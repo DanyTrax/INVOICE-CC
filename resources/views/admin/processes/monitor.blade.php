@@ -8,12 +8,6 @@
     <li>
         <div class="flex items-center">
             <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.processes.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Solicitudes</a>
-        </div>
-    </li>
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
             <span class="text-sm font-medium text-gray-500">Solicitudes</span>
         </div>
     </li>
