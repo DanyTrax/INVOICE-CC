@@ -46,6 +46,18 @@ class ProposalPdfTemplateController extends Controller
         return view('admin.proposal-pdf-templates.edit', ['template' => $proposalPdfTemplate]);
     }
 
+    /**
+     * Duplicar una plantilla con todos sus datos para editar solo lo básico.
+     */
+    public function duplicate(ProposalPdfTemplate $proposalPdfTemplate): RedirectResponse
+    {
+        $copy = PdfDocumentHelper::duplicateTemplate($proposalPdfTemplate, ProposalPdfTemplate::class, 'proposal-pdf');
+
+        return redirect()
+            ->route('admin.settings.proposal-pdf-templates.edit', $copy)
+            ->with('success', 'Plantilla duplicada. Edita lo que necesites y guarda.');
+    }
+
     public function update(Request $request, ProposalPdfTemplate $proposalPdfTemplate): RedirectResponse
     {
         $validated = PdfDocumentHelper::validateTemplateRequest($request);

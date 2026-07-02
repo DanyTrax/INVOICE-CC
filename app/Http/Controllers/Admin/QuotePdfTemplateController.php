@@ -55,6 +55,18 @@ class QuotePdfTemplateController extends Controller
         return view('admin.quote-pdf-templates.edit', ['template' => $quotePdfTemplate]);
     }
 
+    /**
+     * Duplicar una plantilla con todos sus datos para editar solo lo básico.
+     */
+    public function duplicate(QuotePdfTemplate $quotePdfTemplate): RedirectResponse
+    {
+        $copy = PdfDocumentHelper::duplicateTemplate($quotePdfTemplate, QuotePdfTemplate::class, 'quote-pdf');
+
+        return redirect()
+            ->route('admin.settings.quote-pdf-templates.edit', $copy)
+            ->with('success', 'Plantilla duplicada. Edita lo que necesites y guarda.');
+    }
+
     public function update(Request $request, QuotePdfTemplate $quotePdfTemplate): RedirectResponse
     {
         $validated = PdfDocumentHelper::validateTemplateRequest($request);

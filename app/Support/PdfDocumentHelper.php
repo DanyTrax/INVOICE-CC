@@ -542,6 +542,44 @@ class PdfDocumentHelper
         );
     }
 
+    /**
+     * Duplica una plantilla PDF (cotización o propuesta) copiando todos sus campos y,
+     * si existe, el archivo de membrete a un nuevo fichero (no comparte el original).
+     * La copia nunca queda como "por defecto".
+     *
+     * @template T of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  class-string<T>  $modelClass
+     * @return T
+     */
+    public static function duplicateTemplate(Model $source, string $modelClass, string $uploadSubdir): Model
+    {
+        $copy = $source->replicate(['is_default', 'letterhead_drive_id']);
+
+        $baseName = (string) ($source->name ?? 'Plantilla');
+        $copy->name = mb_substr($baseName.' (copia)', 0, 128);
+        $copy->is_default = false;
+        $copy->letterhead_drive_id = null;
+
+        // Copiar el archivo de membrete a un nuevo nombre para que borrar una no afecte a la otra.
+        $sourcePath = $source->letterhead_path ?: $source->logo_path;
+        if ($sourcePath && file_exists(public_path($sourcePath))) {
+            $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION) ?: 'png');
+            $newRelative = 'uploads/'.$uploadSubdir.'/letterhead-copy-'.time().'-'.uniqid().'.'.$ext;
+            $dir = public_path('uploads/'.$uploadSubdir);
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            @copy(public_path($sourcePath), public_path($newRelative));
+            $copy->letterhead_path = $newRelative;
+            $copy->logo_path = null;
+        }
+
+        $copy->save();
+
+        return $copy;
+    }
+
     public static function templatePayload(array $validated): array
     {
         return [

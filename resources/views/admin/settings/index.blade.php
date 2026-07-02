@@ -286,6 +286,10 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <a href="{{ route('admin.settings.quote-pdf-templates.edit', $t) }}" class="text-teal-600 hover:underline mr-3">Editar</a>
+                                        <form action="{{ route('admin.settings.quote-pdf-templates.duplicate', $t) }}" method="POST" class="inline mr-3">
+                                            @csrf
+                                            <button type="submit" class="text-indigo-600 hover:underline">Duplicar</button>
+                                        </form>
                                         <form action="{{ route('admin.settings.quote-pdf-templates.destroy', $t) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta plantilla?');">
                                             @csrf
                                             @method('DELETE')
@@ -343,6 +347,10 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <a href="{{ route('admin.settings.proposal-pdf-templates.edit', $t) }}" class="text-teal-600 hover:underline mr-3">Editar</a>
+                                        <form action="{{ route('admin.settings.proposal-pdf-templates.duplicate', $t) }}" method="POST" class="inline mr-3">
+                                            @csrf
+                                            <button type="submit" class="text-indigo-600 hover:underline">Duplicar</button>
+                                        </form>
                                         <form action="{{ route('admin.settings.proposal-pdf-templates.destroy', $t) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar esta plantilla?');">
                                             @csrf
                                             @method('DELETE')

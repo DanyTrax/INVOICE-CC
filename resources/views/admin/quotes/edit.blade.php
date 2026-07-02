@@ -54,7 +54,7 @@
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Datos de la cotización</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                    <label for="client_id" class="block mb-2 text-sm font-medium text-gray-900">Cliente <span class="text-red-500">*</span></label>
+                    <label for="client_id" class="block mb-2 text-sm font-medium text-gray-900">Empresa <span class="text-red-500">*</span></label>
                     <select name="client_id" id="client_id" required
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         <option value="">Seleccione...</option>
