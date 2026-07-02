@@ -10,6 +10,7 @@ class Quote extends Model
 {
     protected $fillable = [
         'client_id',
+        'contact_user_id',
         'consecutive',
         'date',
         'currency',
@@ -104,6 +105,15 @@ class Quote extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'client_id');
+    }
+
+    /**
+     * Persona de contacto (usuario cliente) opcional para esta cotización.
+     * Si está definida, se usa como {{cliente}} en el PDF; si no, se usa la empresa.
+     */
+    public function contactUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'contact_user_id');
     }
 
     public function quoteItems(): HasMany

@@ -28,9 +28,18 @@ class PdfDocumentHelper
             ? Carbon::parse($document->date)->locale('es')->translatedFormat('d \d\e F \d\e Y')
             : '';
         $ciudad = 'Bogotá D. C.';
-        $cliente = $document->client->name ?? '';
+        $companyName = $document->client->name ?? '';
+
+        // Si la cotización tiene una persona de contacto (usuario cliente), {{cliente}}
+        // usa su nombre; si no, repite el nombre de la empresa (comportamiento anterior).
+        $contactName = null;
+        if (method_exists($document, 'contactUser')) {
+            $contactName = optional($document->contactUser)->name;
+        }
+        $cliente = ! empty($contactName) ? $contactName : $companyName;
+
         $consecutivo = $document->consecutive ?? '';
-        $destinatario = $document->client->name ?? '';
+        $destinatario = $companyName;
 
         return str_replace(
             ['{{fecha}}', '{{ciudad}}', '{{cliente}}', '{{consecutivo}}', '{{destinatario}}'],

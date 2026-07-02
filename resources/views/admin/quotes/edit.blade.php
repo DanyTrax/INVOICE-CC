@@ -74,6 +74,14 @@
                     </p>
                 </div>
                 <div>
+                    <label for="contact_user_id" class="block mb-2 text-sm font-medium text-gray-900">Cliente / persona de contacto <span class="text-gray-400 font-normal">(opcional)</span></label>
+                    <select name="contact_user_id" id="contact_user_id"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                        <option value="">Usar la empresa (por defecto)</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Si eliges un contacto, se usará su nombre en <code>&#123;&#123;cliente&#125;&#125;</code> del PDF. Si no, se repite la empresa.</p>
+                </div>
+                <div>
                     <label for="date" class="block mb-2 text-sm font-medium text-gray-900">Fecha <span class="text-red-500">*</span></label>
                     <input type="date" name="date" id="date" value="{{ old('date', $quote->date?->format('Y-m-d')) }}" required
                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
@@ -725,5 +733,10 @@
     @include('admin.partials.client-consecutive-suggest-script', [
         'suggestUrl' => route('admin.quotes.suggest-consecutive'),
         'consecutiveTouched' => true,
+    ])
+
+    @include('admin.partials.quote-contact-client-script', [
+        'companyClients' => $companyClients ?? [],
+        'selectedContactId' => old('contact_user_id', $quote->contact_user_id ?? ''),
     ])
 @endsection

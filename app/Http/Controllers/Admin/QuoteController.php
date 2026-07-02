@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\Process;
 use App\Models\Quote;
+use App\Models\QuoteItem;
 use App\Models\QuotePdfTemplate;
 use App\Models\Service;
 use App\Models\ServiceType;
@@ -41,12 +42,54 @@ class QuoteController extends Controller
     }
 
     /**
+     * Mapa empresa_id => lista de usuarios cliente asignados a esa empresa, para poblar
+     * el selector opcional de "persona de contacto" según la empresa elegida.
+     *
+     * @return array<int, array<int, array{id: int, name: string, email: ?string}>>
+     */
+    private function companyClientsMap(): array
+    {
+        return Company::with(['users' => function ($q) {
+            $q->whereHas('roles', fn ($r) => $r->where('name', 'client'))
+                ->orderBy('users.name');
+        }])
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(fn (Company $c) => [
+                $c->id => $c->users->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                ])->values()->all(),
+            ])
+            ->all();
+    }
+
+    /**
+     * Valida que la persona de contacto (si se envía) pertenezca a la empresa elegida.
+     * Devuelve el id válido o null.
+     */
+    private function resolveContactUserId(?int $contactUserId, int $companyId): ?int
+    {
+        if (! $contactUserId) {
+            return null;
+        }
+
+        $belongs = Company::whereKey($companyId)
+            ->whereHas('users', fn ($q) => $q->whereKey($contactUserId))
+            ->exists();
+
+        return $belongs ? $contactUserId : null;
+    }
+
+    /**
      * Ver detalle de una cotización.
      */
     public function show(Quote $quote): View
     {
         $quote->load([
             'client',
+            'contactUser',
             'quoteItems.service',
             'quoteItems.serviceType',
             // Solicitud (process) creada desde el ítem (HasOne) y ciclos vinculados al ítem
@@ -80,13 +123,15 @@ class QuoteController extends Controller
             'quoteItems.process',
             'quoteItems.submissions.process',
         ]);
+        $quote->load('contactUser');
         $companies = Company::orderBy('name')->get();
+        $companyClients = $this->companyClientsMap();
         $serviceTypes = ServiceType::orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
 
         $defaultPdfTemplate = QuotePdfTemplate::getDefault();
 
-        return view('admin.quotes.edit', compact('quote', 'companies', 'serviceTypes', 'services', 'defaultPdfTemplate'));
+        return view('admin.quotes.edit', compact('quote', 'companies', 'companyClients', 'serviceTypes', 'services', 'defaultPdfTemplate'));
     }
 
     /**
@@ -101,6 +146,7 @@ class QuoteController extends Controller
 
         $validated = $request->validate([
             'client_id' => 'required|exists:companies,id',
+            'contact_user_id' => 'nullable|exists:users,id',
             'date' => 'required|date',
             'currency' => 'required|string|in:COP,USD',
             'exchange_rate' => 'nullable|numeric|min:0',
@@ -156,6 +202,10 @@ class QuoteController extends Controller
 
         $quote->update([
             'client_id' => $validated['client_id'],
+            'contact_user_id' => $this->resolveContactUserId(
+                isset($validated['contact_user_id']) ? (int) $validated['contact_user_id'] : null,
+                (int) $validated['client_id']
+            ),
             'consecutive' => $validated['consecutive'],
             'date' => $validated['date'],
             'currency' => $validated['currency'],
@@ -243,7 +293,7 @@ class QuoteController extends Controller
      */
     public function pdf(Quote $quote, Request $request)
     {
-        $quote->load(['client', 'quoteItems.service', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
+        $quote->load(['client', 'contactUser', 'quoteItems.service', 'quoteItems.serviceType', 'quoteItems.process.serviceType']);
         $template = null;
         if ($request->filled('template_id')) {
             $template = QuotePdfTemplate::find($request->template_id);
@@ -359,12 +409,14 @@ class QuoteController extends Controller
     public function create()
     {
         $companies = Company::orderBy('name')->get();
+        $companyClients = $this->companyClientsMap();
         $serviceTypes = ServiceType::orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
         $defaultPdfTemplate = QuotePdfTemplate::getDefault();
 
         return view('admin.quotes.create', [
             'companies' => $companies,
+            'companyClients' => $companyClients,
             'serviceTypes' => $serviceTypes,
             'services' => $services,
             'suggestedConsecutive' => '',
@@ -401,6 +453,7 @@ class QuoteController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|exists:companies,id',
+            'contact_user_id' => 'nullable|exists:users,id',
             'date' => 'required|date',
             'currency' => 'required|string|in:COP,USD',
             'exchange_rate' => 'nullable|numeric|min:0',
@@ -455,6 +508,10 @@ class QuoteController extends Controller
 
         $quote = Quote::create([
             'client_id' => $validated['client_id'],
+            'contact_user_id' => $this->resolveContactUserId(
+                isset($validated['contact_user_id']) ? (int) $validated['contact_user_id'] : null,
+                (int) $validated['client_id']
+            ),
             'consecutive' => $validated['consecutive'],
             'date' => $validated['date'],
             'currency' => $validated['currency'],
