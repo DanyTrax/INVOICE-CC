@@ -303,4 +303,9 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
 
     // Eliminar usuario por correo (Configuración → Sistema)
     Route::post('/settings/delete-user-by-email', [SettingsController::class, 'deleteUserByEmail'])->name('settings.delete-user-by-email');
+
+    // Registro de errores de la aplicación (Configuración → Sistema → Errores)
+    Route::patch('/settings/error-logs/{errorLog}/resolve', [SettingsController::class, 'resolveErrorLog'])->name('settings.error-logs.resolve');
+    Route::delete('/settings/error-logs/{errorLog}', [SettingsController::class, 'deleteErrorLog'])->name('settings.error-logs.destroy');
+    Route::delete('/settings/error-logs', [SettingsController::class, 'clearErrorLogs'])->name('settings.error-logs.clear');
 });

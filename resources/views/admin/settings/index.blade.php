@@ -1796,6 +1796,13 @@
                        class="px-4 py-2 text-sm font-medium {{ $systemSub === 'customization' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
                         Personalización del Sistema
                     </a>
+                    <a href="{{ route('admin.settings.section', 'system') }}?system_sub=errors"
+                       class="px-4 py-2 text-sm font-medium inline-flex items-center gap-2 {{ $systemSub === 'errors' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700' }}">
+                        Errores de la aplicación
+                        @if(($errorLogsUnresolvedCount ?? 0) > 0)
+                            <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-100 text-red-700 text-[11px] font-semibold">{{ $errorLogsUnresolvedCount }}</span>
+                        @endif
+                    </a>
                 </div>
 
                 @if($systemSub === 'git')
@@ -2129,6 +2136,10 @@
                         </div>
                     </form>
                 </div>
+                @endif
+
+                @if($systemSub === 'errors')
+                @include('admin.settings.partials.system-error-logs')
                 @endif
             </div>
         </div>

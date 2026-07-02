@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Controller;
+use App\Models\AppErrorLog;
 use App\Models\DriveOperationLog;
 use App\Models\EmailLog;
 use App\Models\EmailTemplate;
@@ -158,7 +159,7 @@ class SettingsController extends Controller
             $timezoneIdentifiers = \DateTimeZone::listIdentifiers(\DateTimeZone::ALL);
         }
 
-        $allowedSystemSubs = ['git', 'delete-user', 'customization'];
+        $allowedSystemSubs = ['git', 'delete-user', 'customization', 'errors'];
         $systemSub = 'git';
         if ($section === 'system') {
             if (! $request->has('system_sub') && session('user_to_delete_id')) {
@@ -166,6 +167,20 @@ class SettingsController extends Controller
             } else {
                 $q = (string) $request->query('system_sub', 'git');
                 $systemSub = in_array($q, $allowedSystemSubs, true) ? $q : 'git';
+            }
+        }
+
+        $errorLogs = null;
+        $errorLogsUnresolvedCount = 0;
+        if ($section === 'system') {
+            try {
+                $errorLogs = AppErrorLog::with('user')
+                    ->orderByDesc('created_at')
+                    ->paginate(20, ['*'], 'errors_page')
+                    ->withQueryString();
+                $errorLogsUnresolvedCount = AppErrorLog::whereNull('resolved_at')->count();
+            } catch (QueryException $e) {
+                $errorLogs = new LengthAwarePaginator(collect([]), 0, 20, 1);
             }
         }
 
@@ -200,6 +215,8 @@ class SettingsController extends Controller
             'timezoneIdentifiers' => $timezoneIdentifiers,
             'legalDefaults' => $legalDefaults,
             'loginIpLockouts' => $loginIpLockouts,
+            'errorLogs' => $errorLogs,
+            'errorLogsUnresolvedCount' => $errorLogsUnresolvedCount,
         ]);
     }
 
@@ -1359,6 +1376,62 @@ class SettingsController extends Controller
                 'message' => 'Error al eliminar el correo: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Eliminar un registro de error de la aplicación (marcar como solucionado y borrar).
+     */
+    public function deleteErrorLog(AppErrorLog $errorLog): RedirectResponse
+    {
+        if (! app(PermissionService::class)->userHasPermission('settings_system', 'view')) {
+            abort(403);
+        }
+
+        $errorLog->delete();
+
+        return redirect()
+            ->to(route('admin.settings.section', 'system').'?system_sub=errors')
+            ->with('success', 'Registro de error eliminado.');
+    }
+
+    /**
+     * Vaciar el historial de errores de la aplicación.
+     */
+    public function clearErrorLogs(Request $request): RedirectResponse
+    {
+        if (! app(PermissionService::class)->userHasPermission('settings_system', 'view')) {
+            abort(403);
+        }
+
+        if ($request->boolean('only_resolved')) {
+            $deleted = AppErrorLog::whereNotNull('resolved_at')->delete();
+            $msg = "Se eliminaron {$deleted} error(es) marcados como solucionados.";
+        } else {
+            $deleted = AppErrorLog::query()->delete();
+            $msg = "Se eliminó todo el historial de errores ({$deleted}).";
+        }
+
+        return redirect()
+            ->to(route('admin.settings.section', 'system').'?system_sub=errors')
+            ->with('success', $msg);
+    }
+
+    /**
+     * Marcar un error como solucionado (sin borrarlo).
+     */
+    public function resolveErrorLog(AppErrorLog $errorLog): RedirectResponse
+    {
+        if (! app(PermissionService::class)->userHasPermission('settings_system', 'view')) {
+            abort(403);
+        }
+
+        $errorLog->update([
+            'resolved_at' => $errorLog->resolved_at ? null : now(),
+        ]);
+
+        return redirect()
+            ->to(route('admin.settings.section', 'system').'?system_sub=errors')
+            ->with('success', $errorLog->resolved_at ? 'Error marcado como solucionado.' : 'Error reabierto.');
     }
 
     /**
