@@ -102,8 +102,19 @@
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Datos de la cotización</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-                <p class="text-xs text-gray-500 uppercase">Cliente</p>
+                <p class="text-xs text-gray-500 uppercase">Empresa</p>
                 <p class="font-medium text-gray-900">{{ $quote->client->name ?? '-' }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase">Cliente / contacto</p>
+                @if($quote->contactUser)
+                    <p class="font-medium text-gray-900">{{ $quote->contactUser->name }}</p>
+                    @if($quote->contactUser->email)
+                        <p class="text-xs text-gray-500">{{ $quote->contactUser->email }}</p>
+                    @endif
+                @else
+                    <p class="font-medium text-gray-400">Sin contacto (usa la empresa)</p>
+                @endif
             </div>
             <div>
                 <p class="text-xs text-gray-500 uppercase">Fecha</p>
@@ -287,6 +298,7 @@
             'defaultPdfTemplate' => $defaultPdfTemplate,
             'pdfDocument' => $quote,
             'pdfVisibilityToggles' => true,
+            'signatureToggle' => true,
         ])
         @error('pdf_footer')
             <p class="text-sm text-red-600 -mt-4 mb-4 px-6">{{ $message }}</p>

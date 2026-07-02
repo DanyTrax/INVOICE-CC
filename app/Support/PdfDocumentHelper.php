@@ -97,18 +97,31 @@ class PdfDocumentHelper
 
     protected static function restoreLetterheadFromDrive(object $template, string $driveId): string
     {
+        return self::restoreImageFromDrive(
+            $template,
+            $driveId,
+            self::letterheadUploadSubdirForTemplate($template),
+            'letterhead',
+            'letterhead_path'
+        );
+    }
+
+    /**
+     * Restaura una imagen (membrete o firma) desde Drive al almacenamiento público.
+     */
+    protected static function restoreImageFromDrive(object $template, string $driveId, string $uploadSubdir, string $filenamePrefix, string $pathField): string
+    {
         $drive = app(GoogleDriveService::class);
         $info = $drive->getFileInfo($driveId);
         $content = $drive->downloadFile($driveId);
 
-        $uploadSubdir = self::letterheadUploadSubdirForTemplate($template);
-        $name = $info['name'] ?? 'letterhead.png';
+        $name = $info['name'] ?? $filenamePrefix.'.png';
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION) ?: 'png');
         if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
             $ext = 'png';
         }
 
-        $filename = 'letterhead-drive-'.time().'-'.uniqid().'.'.$ext;
+        $filename = $filenamePrefix.'-drive-'.time().'-'.uniqid().'.'.$ext;
         $relativePath = 'uploads/'.$uploadSubdir.'/'.$filename;
         $dir = public_path('uploads/'.$uploadSubdir);
         if (! is_dir($dir)) {
@@ -120,14 +133,50 @@ class PdfDocumentHelper
         $mime = mime_content_type($fullPath) ?: '';
         if (! str_starts_with($mime, 'image/') || $mime === 'image/svg+xml') {
             @unlink($fullPath);
-            throw new \RuntimeException('El archivo en Drive no es una imagen válida para membrete (use JPG o PNG).');
+            throw new \RuntimeException('El archivo en Drive no es una imagen válida (use JPG o PNG).');
         }
 
         if ($template instanceof Model && $template->exists) {
-            $template->update(['letterhead_path' => $relativePath]);
+            $template->update([$pathField => $relativePath]);
         }
 
         return $fullPath;
+    }
+
+    /**
+     * Ruta absoluta de la imagen de firma (restaurando desde Drive si hace falta).
+     */
+    public static function resolveSignatureImagePath(?object $template): ?string
+    {
+        if (! $template) {
+            return null;
+        }
+
+        $path = $template->signature_image_path ?? null;
+        if ($path && file_exists(public_path($path))) {
+            return public_path($path);
+        }
+
+        $driveId = $template->signature_image_drive_id ?? null;
+        if ($driveId) {
+            try {
+                return self::restoreImageFromDrive(
+                    $template,
+                    $driveId,
+                    self::letterheadUploadSubdirForTemplate($template),
+                    'signature',
+                    'signature_image_path'
+                );
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo restaurar firma desde Google Drive', [
+                    'template_id' => $template->id ?? null,
+                    'drive_id' => $driveId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return null;
     }
 
     protected static function letterheadUploadSubdirForTemplate(object $template): string
@@ -307,7 +356,52 @@ class PdfDocumentHelper
         string $uploadSubdir,
         ?string $currentDriveId = null
     ): array {
-        if ($request->boolean('remove_letterhead')) {
+        return self::processImageUpload(
+            $request,
+            $currentPath,
+            $filenamePrefix,
+            $uploadSubdir,
+            $currentDriveId,
+            'letterhead',
+            'remove_letterhead'
+        );
+    }
+
+    /**
+     * Sube/actualiza/elimina la imagen de firma (mismo comportamiento que el membrete).
+     *
+     * @return array{path: ?string, drive_id: ?string, error: ?string, drive_warning: ?string}
+     */
+    public static function processSignatureUpload(
+        \Illuminate\Http\Request $request,
+        ?string $currentPath,
+        string $uploadSubdir,
+        ?string $currentDriveId = null
+    ): array {
+        return self::processImageUpload(
+            $request,
+            $currentPath,
+            'signature',
+            $uploadSubdir,
+            $currentDriveId,
+            'signature_image',
+            'remove_signature_image'
+        );
+    }
+
+    /**
+     * @return array{path: ?string, drive_id: ?string, error: ?string, drive_warning: ?string}
+     */
+    protected static function processImageUpload(
+        \Illuminate\Http\Request $request,
+        ?string $currentPath,
+        string $filenamePrefix,
+        string $uploadSubdir,
+        ?string $currentDriveId,
+        string $fileField,
+        string $removeField
+    ): array {
+        if ($request->boolean($removeField)) {
             if ($currentPath) {
                 $full = public_path($currentPath);
                 if (file_exists($full)) {
@@ -319,7 +413,7 @@ class PdfDocumentHelper
             return ['path' => null, 'drive_id' => null, 'error' => null, 'drive_warning' => null];
         }
 
-        if (! $request->hasFile('letterhead')) {
+        if (! $request->hasFile($fileField)) {
             $driveId = $currentDriveId;
             $driveWarning = null;
             if (! $driveId && $currentPath && file_exists(public_path($currentPath))) {
@@ -340,7 +434,7 @@ class PdfDocumentHelper
             ];
         }
 
-        $file = $request->file('letterhead');
+        $file = $request->file($fileField);
         if (! $file->isValid()) {
             return [
                 'path' => $currentPath,
@@ -476,16 +570,25 @@ class PdfDocumentHelper
             'closing_footer_html' => 'nullable|string',
             'signature_name' => 'nullable|string|max:128',
             'signature_position' => 'nullable|string|max:128',
+            'signature_image_height_px' => 'nullable|integer|min:10|max:250',
             'signature_name_font_size' => 'nullable|integer|min:4|max:24',
             'signature_position_font_size' => 'nullable|integer|min:4|max:24',
             'signature_margin_top_px' => 'nullable|integer|min:0|max:400',
             'letterhead_footer_reserve_mm' => 'nullable|integer|min:20|max:80',
+            'doc_title_text' => 'nullable|string|max:128',
+            'doc_title_font_size' => 'nullable|integer|min:4|max:40',
+            'doc_title_bold' => 'nullable|boolean',
             'is_default' => 'nullable|boolean',
             'remove_letterhead' => 'nullable|boolean',
+            'remove_signature_image' => 'nullable|boolean',
         ];
 
         if ($request && $request->hasFile('letterhead')) {
             $rules['letterhead'] = ['file', 'max:20480'];
+        }
+
+        if ($request && $request->hasFile('signature_image')) {
+            $rules['signature_image'] = ['file', 'image', 'max:10240'];
         }
 
         return $rules;
@@ -554,12 +657,13 @@ class PdfDocumentHelper
      */
     public static function duplicateTemplate(Model $source, string $modelClass, string $uploadSubdir): Model
     {
-        $copy = $source->replicate(['is_default', 'letterhead_drive_id']);
+        $copy = $source->replicate(['is_default', 'letterhead_drive_id', 'signature_image_drive_id']);
 
         $baseName = (string) ($source->name ?? 'Plantilla');
         $copy->name = mb_substr($baseName.' (copia)', 0, 128);
         $copy->is_default = false;
         $copy->letterhead_drive_id = null;
+        $copy->signature_image_drive_id = null;
 
         // Copiar el archivo de membrete a un nuevo nombre para que borrar una no afecte a la otra.
         $sourcePath = $source->letterhead_path ?: $source->logo_path;
@@ -573,6 +677,19 @@ class PdfDocumentHelper
             @copy(public_path($sourcePath), public_path($newRelative));
             $copy->letterhead_path = $newRelative;
             $copy->logo_path = null;
+        }
+
+        // Copiar la imagen de firma a un nuevo fichero independiente.
+        $sourceSignature = $source->signature_image_path ?? null;
+        if ($sourceSignature && file_exists(public_path($sourceSignature))) {
+            $ext = strtolower(pathinfo($sourceSignature, PATHINFO_EXTENSION) ?: 'png');
+            $newRelative = 'uploads/'.$uploadSubdir.'/signature-copy-'.time().'-'.uniqid().'.'.$ext;
+            $dir = public_path('uploads/'.$uploadSubdir);
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            @copy(public_path($sourceSignature), public_path($newRelative));
+            $copy->signature_image_path = $newRelative;
         }
 
         $copy->save();
@@ -589,10 +706,16 @@ class PdfDocumentHelper
             'closing_footer_html' => $validated['closing_footer_html'] ?? null,
             'signature_name' => $validated['signature_name'] ?? null,
             'signature_position' => $validated['signature_position'] ?? null,
+            'signature_image_height_px' => (int) ($validated['signature_image_height_px'] ?? 55),
             'signature_name_font_size' => (int) ($validated['signature_name_font_size'] ?? 11),
             'signature_position_font_size' => (int) ($validated['signature_position_font_size'] ?? 9),
             'signature_margin_top_px' => (int) ($validated['signature_margin_top_px'] ?? 130),
             'letterhead_footer_reserve_mm' => (int) ($validated['letterhead_footer_reserve_mm'] ?? 42),
+            'doc_title_text' => ($validated['doc_title_text'] ?? null) !== null && trim((string) $validated['doc_title_text']) !== ''
+                ? trim((string) $validated['doc_title_text'])
+                : null,
+            'doc_title_font_size' => (int) ($validated['doc_title_font_size'] ?? 9),
+            'doc_title_bold' => ! empty($validated['doc_title_bold']),
             'is_default' => ! empty($validated['is_default']),
         ];
     }

@@ -62,6 +62,18 @@
             </div>
             <p class="mt-1 text-xs text-gray-500">Aparece después del total y antes de la firma.</p>
         </div>
+        @if($signatureToggle ?? false)
+            <div class="pt-2 border-t border-gray-100">
+                <input type="hidden" name="show_pdf_signature" value="0">
+                <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input type="checkbox" name="show_pdf_signature" id="show_pdf_signature" value="1"
+                           class="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                           {{ old('show_pdf_signature', $doc->show_pdf_signature ?? true) ? 'checked' : '' }}>
+                    <span class="font-medium text-gray-900">Mostrar la firma en el PDF</span>
+                </label>
+                <p class="mt-1 text-xs text-gray-500">Incluye la línea, el nombre/cargo y la imagen de firma de la plantilla. Activado por defecto.</p>
+            </div>
+        @endif
     </div>
 </div>
 

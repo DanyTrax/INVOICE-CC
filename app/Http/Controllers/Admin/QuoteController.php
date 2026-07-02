@@ -320,6 +320,7 @@ class QuoteController extends Controller
             'pdf_footer' => 'nullable|string|max:10000',
             'show_pdf_side_note' => 'nullable|boolean',
             'show_pdf_footer' => 'nullable|boolean',
+            'show_pdf_signature' => 'nullable|boolean',
         ]);
         $defaultTemplate = QuotePdfTemplate::getDefault();
         $quote->update(array_merge(
@@ -333,6 +334,7 @@ class QuoteController extends Controller
             [
                 'show_pdf_side_note' => ! empty($validated['show_pdf_side_note']),
                 'show_pdf_footer' => ! empty($validated['show_pdf_footer']),
+                'show_pdf_signature' => ! empty($validated['show_pdf_signature']),
             ]
         ));
 

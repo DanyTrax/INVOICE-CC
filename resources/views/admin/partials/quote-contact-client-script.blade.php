@@ -8,9 +8,9 @@
     var companyClients = @json($companyClients ?? []);
     var preselected = String(@json((string) ($selectedContactId ?? '')));
 
-    function populate(keepValue) {
+    function populate(desiredValue) {
         var companyId = clientSelect.value;
-        var current = keepValue ? contactSelect.value : preselected;
+        var current = String(desiredValue == null ? '' : desiredValue);
         var list = companyClients[companyId] || [];
 
         while (contactSelect.options.length > 0) contactSelect.remove(0);
@@ -24,7 +24,7 @@
             var opt = document.createElement('option');
             opt.value = String(u.id);
             opt.textContent = u.email ? (u.name + ' — ' + u.email) : u.name;
-            if (String(u.id) === String(current)) opt.selected = true;
+            if (String(u.id) === current) opt.selected = true;
             contactSelect.appendChild(opt);
         });
 
@@ -34,8 +34,9 @@
         }
     }
 
-    clientSelect.addEventListener('change', function() { populate(false); });
-    populate(true);
+    // Al cambiar de empresa se limpia la selección; en la carga inicial se respeta el contacto guardado.
+    clientSelect.addEventListener('change', function() { populate(''); });
+    populate(preselected);
 })();
 </script>
 @endpush

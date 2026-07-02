@@ -34,6 +34,11 @@ class QuotePdfTemplateController extends Controller
             return redirect()->back()->withInput()->withErrors(['letterhead' => $upload['error']]);
         }
 
+        $signature = PdfDocumentHelper::processSignatureUpload($request, null, 'quote-pdf');
+        if ($signature['error']) {
+            return redirect()->back()->withInput()->withErrors(['signature_image' => $signature['error']]);
+        }
+
         if (! empty($validated['is_default'])) {
             QuotePdfTemplate::where('id', '>', 0)->update(['is_default' => false]);
         }
@@ -41,6 +46,8 @@ class QuotePdfTemplateController extends Controller
         QuotePdfTemplate::create(array_merge(PdfDocumentHelper::templatePayload($validated), [
             'letterhead_path' => $upload['path'],
             'letterhead_drive_id' => $upload['drive_id'],
+            'signature_image_path' => $signature['path'],
+            'signature_image_drive_id' => $signature['drive_id'],
         ]));
 
         return PdfDocumentHelper::appendLetterheadDriveFlashMessage(
@@ -83,6 +90,16 @@ class QuotePdfTemplateController extends Controller
             return redirect()->back()->withInput()->withErrors(['letterhead' => $upload['error']]);
         }
 
+        $signature = PdfDocumentHelper::processSignatureUpload(
+            $request,
+            $quotePdfTemplate->signature_image_path,
+            'quote-pdf',
+            $quotePdfTemplate->signature_image_drive_id
+        );
+        if ($signature['error']) {
+            return redirect()->back()->withInput()->withErrors(['signature_image' => $signature['error']]);
+        }
+
         if (! empty($validated['is_default'])) {
             QuotePdfTemplate::where('id', '!=', $quotePdfTemplate->id)->update(['is_default' => false]);
         }
@@ -90,6 +107,8 @@ class QuotePdfTemplateController extends Controller
         $quotePdfTemplate->update(array_merge(PdfDocumentHelper::templatePayload($validated), [
             'letterhead_path' => $upload['path'],
             'letterhead_drive_id' => $upload['drive_id'],
+            'signature_image_path' => $signature['path'],
+            'signature_image_drive_id' => $signature['drive_id'],
         ]));
 
         return PdfDocumentHelper::appendLetterheadDriveFlashMessage(
@@ -101,7 +120,7 @@ class QuotePdfTemplateController extends Controller
 
     public function destroy(QuotePdfTemplate $quotePdfTemplate): RedirectResponse
     {
-        foreach ([$quotePdfTemplate->letterhead_path, $quotePdfTemplate->logo_path] as $path) {
+        foreach ([$quotePdfTemplate->letterhead_path, $quotePdfTemplate->logo_path, $quotePdfTemplate->signature_image_path] as $path) {
             if ($path) {
                 $full = public_path($path);
                 if (file_exists($full)) {
@@ -111,6 +130,9 @@ class QuotePdfTemplateController extends Controller
         }
         if ($quotePdfTemplate->letterhead_drive_id) {
             PdfDocumentHelper::deleteLetterheadFromDrive($quotePdfTemplate->letterhead_drive_id);
+        }
+        if ($quotePdfTemplate->signature_image_drive_id) {
+            PdfDocumentHelper::deleteLetterheadFromDrive($quotePdfTemplate->signature_image_drive_id);
         }
         $wasDefault = $quotePdfTemplate->is_default;
         $quotePdfTemplate->delete();

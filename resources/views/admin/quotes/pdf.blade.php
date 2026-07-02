@@ -21,6 +21,14 @@
         : '';
     $sigNameSize = (int) ($useTemplate ? ($template->signature_name_font_size ?? 11) : 11);
     $sigPosSize = (int) ($useTemplate ? ($template->signature_position_font_size ?? 9) : 9);
+    $showSignature = $quote->show_pdf_signature ?? true;
+    $signatureImageSrc = ($useTemplate && $showSignature)
+        ? PdfDocumentHelper::resolveLetterheadSrcForPdf(PdfDocumentHelper::resolveSignatureImagePath($template))
+        : null;
+    $sigImgHeight = (int) ($useTemplate ? ($template->signature_image_height_px ?? 55) : 55);
+    $docTitleText = trim((string) ($useTemplate ? ($template->doc_title_text ?? '') : '')) ?: 'COTIZACIÓN No.';
+    $docTitleSize = (int) ($useTemplate ? ($template->doc_title_font_size ?? 9) : 9);
+    $docTitleBold = $useTemplate ? (bool) ($template->doc_title_bold ?? true) : true;
     $pdfSignatureSpacerPx = $useTemplate ? (int) ($template->signature_margin_top_px ?? 130) : 130;
     $pdfFooterReserveMm = $letterheadSrc
         ? ($useTemplate ? (int) ($template->letterhead_footer_reserve_mm ?? 42) : 42)
@@ -45,7 +53,7 @@
     @include('admin.partials.pdf-letterhead-img', ['letterheadSrc' => $letterheadSrc])
 
     <div class="pdf-body-content">
-        <h1 class="doc-title">COTIZACIÓN No. {{ $quote->consecutive }}</h1>
+        <h1 class="doc-title" style="font-size: {{ max(4, min(40, $docTitleSize)) }}px; font-weight: {{ $docTitleBold ? 'bold' : 'normal' }};">{{ $docTitleText }} {{ $quote->consecutive }}</h1>
 
         @if($bodyHtml !== '')
             <div class="context-body">{!! $bodyHtml !!}</div>
@@ -138,14 +146,18 @@
             <div class="closing-footer">{!! $closingFooterHtml !!}</div>
         @endif
 
-        @include('admin.partials.pdf-signature-section', [
-            'template' => $template,
-            'useTemplate' => $useTemplate,
-            'sigNameSize' => $sigNameSize,
-            'sigPosSize' => $sigPosSize,
-            'signatureSpacerPx' => $pdfSignatureSpacerPx,
-            'defaultSigLabel' => 'Firma del Gerente',
-        ])
+        @if($showSignature)
+            @include('admin.partials.pdf-signature-section', [
+                'template' => $template,
+                'useTemplate' => $useTemplate,
+                'sigNameSize' => $sigNameSize,
+                'sigPosSize' => $sigPosSize,
+                'signatureImageSrc' => $signatureImageSrc,
+                'sigImgHeight' => $sigImgHeight,
+                'signatureSpacerPx' => $pdfSignatureSpacerPx,
+                'defaultSigLabel' => 'Firma del Gerente',
+            ])
+        @endif
     </div>
 </body>
 </html>

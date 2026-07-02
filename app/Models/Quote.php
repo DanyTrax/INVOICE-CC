@@ -30,6 +30,7 @@ class Quote extends Model
         'pdf_side_note_html',
         'show_pdf_side_note',
         'show_pdf_footer',
+        'show_pdf_signature',
         'total_professional_fees',
         'total_invima_fees',
         'apply_tax',
@@ -59,6 +60,7 @@ class Quote extends Model
             'bank_fee_value' => 'decimal:2',
             'show_pdf_side_note' => 'boolean',
             'show_pdf_footer' => 'boolean',
+            'show_pdf_signature' => 'boolean',
         ];
     }
 

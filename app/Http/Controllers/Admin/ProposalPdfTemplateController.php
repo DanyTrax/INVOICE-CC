@@ -25,6 +25,11 @@ class ProposalPdfTemplateController extends Controller
             return redirect()->back()->withInput()->withErrors(['letterhead' => $upload['error']]);
         }
 
+        $signature = PdfDocumentHelper::processSignatureUpload($request, null, 'proposal-pdf');
+        if ($signature['error']) {
+            return redirect()->back()->withInput()->withErrors(['signature_image' => $signature['error']]);
+        }
+
         if (! empty($validated['is_default'])) {
             ProposalPdfTemplate::query()->update(['is_default' => false]);
         }
@@ -32,6 +37,8 @@ class ProposalPdfTemplateController extends Controller
         ProposalPdfTemplate::create(array_merge(PdfDocumentHelper::templatePayload($validated), [
             'letterhead_path' => $upload['path'],
             'letterhead_drive_id' => $upload['drive_id'],
+            'signature_image_path' => $signature['path'],
+            'signature_image_drive_id' => $signature['drive_id'],
         ]));
 
         return PdfDocumentHelper::appendLetterheadDriveFlashMessage(
@@ -74,6 +81,16 @@ class ProposalPdfTemplateController extends Controller
             return redirect()->back()->withInput()->withErrors(['letterhead' => $upload['error']]);
         }
 
+        $signature = PdfDocumentHelper::processSignatureUpload(
+            $request,
+            $proposalPdfTemplate->signature_image_path,
+            'proposal-pdf',
+            $proposalPdfTemplate->signature_image_drive_id
+        );
+        if ($signature['error']) {
+            return redirect()->back()->withInput()->withErrors(['signature_image' => $signature['error']]);
+        }
+
         if (! empty($validated['is_default'])) {
             ProposalPdfTemplate::where('id', '!=', $proposalPdfTemplate->id)->update(['is_default' => false]);
         }
@@ -81,6 +98,8 @@ class ProposalPdfTemplateController extends Controller
         $proposalPdfTemplate->update(array_merge(PdfDocumentHelper::templatePayload($validated), [
             'letterhead_path' => $upload['path'],
             'letterhead_drive_id' => $upload['drive_id'],
+            'signature_image_path' => $signature['path'],
+            'signature_image_drive_id' => $signature['drive_id'],
         ]));
 
         return PdfDocumentHelper::appendLetterheadDriveFlashMessage(
@@ -92,7 +111,7 @@ class ProposalPdfTemplateController extends Controller
 
     public function destroy(ProposalPdfTemplate $proposalPdfTemplate): RedirectResponse
     {
-        foreach ([$proposalPdfTemplate->letterhead_path, $proposalPdfTemplate->logo_path] as $path) {
+        foreach ([$proposalPdfTemplate->letterhead_path, $proposalPdfTemplate->logo_path, $proposalPdfTemplate->signature_image_path] as $path) {
             if ($path) {
                 $full = public_path($path);
                 if (file_exists($full)) {
@@ -102,6 +121,9 @@ class ProposalPdfTemplateController extends Controller
         }
         if ($proposalPdfTemplate->letterhead_drive_id) {
             PdfDocumentHelper::deleteLetterheadFromDrive($proposalPdfTemplate->letterhead_drive_id);
+        }
+        if ($proposalPdfTemplate->signature_image_drive_id) {
+            PdfDocumentHelper::deleteLetterheadFromDrive($proposalPdfTemplate->signature_image_drive_id);
         }
         $wasDefault = $proposalPdfTemplate->is_default;
         $proposalPdfTemplate->delete();

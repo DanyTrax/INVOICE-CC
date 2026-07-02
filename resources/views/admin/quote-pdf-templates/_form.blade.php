@@ -51,6 +51,32 @@
         <p class="mt-1 text-xs text-gray-500">Imagen completa membreteada (cabecera y pie incluidos en el diseño). JPG o PNG recomendado. Máx. 20 MB. Para <strong>guardar sin cambiar el membrete</strong>, no seleccione archivo. Se respalda en <strong>Google Drive</strong>.</p>
     </div>
 
+    <div class="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
+        <p class="text-sm font-medium text-gray-900 mb-3">Título del documento ({{ $docTitleExample ?? 'COTIZACIÓN No.' }})</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+                <label for="doc_title_text" class="block mb-2 text-sm font-medium text-gray-900">Texto del título</label>
+                <input type="text" name="doc_title_text" id="doc_title_text" maxlength="128"
+                       value="{{ old('doc_title_text', $template->doc_title_text ?? '') }}"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5"
+                       placeholder="{{ $docTitleExample ?? 'COTIZACIÓN No.' }}">
+                <p class="mt-1 text-xs text-gray-500">Se muestra antes del número consecutivo. Si lo deja vacío se usa «{{ $docTitleExample ?? 'COTIZACIÓN No.' }}».</p>
+            </div>
+            <div>
+                <label for="doc_title_font_size" class="block mb-2 text-sm font-medium text-gray-900">Tamaño del título (px)</label>
+                <input type="number" name="doc_title_font_size" id="doc_title_font_size" min="4" max="40" step="1"
+                       value="{{ old('doc_title_font_size', $template->doc_title_font_size ?? 9) }}"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+            </div>
+            <div class="flex items-end">
+                <label class="inline-flex items-center gap-2 mb-1">
+                    <input type="checkbox" name="doc_title_bold" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" {{ old('doc_title_bold', $template->doc_title_bold ?? true) ? 'checked' : '' }}>
+                    <span class="text-sm font-medium text-gray-900">Título en negrita</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
     <div class="md:col-span-2">
         <label for="body_html" class="block mb-2 text-sm font-medium text-gray-900">Contexto / Cuerpo (texto introductorio del PDF)</label>
         <textarea name="body_html" id="body_html" rows="12" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">{{ old('body_html', $template->body_html ?? '') }}</textarea>
@@ -82,6 +108,39 @@
     <div class="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
         <p class="text-sm font-medium text-gray-900 mb-3">Firma (aparece al final del PDF)</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+                <label for="signature_image" class="block mb-2 text-sm font-medium text-gray-900">Imagen de la firma (se ubica sobre la línea)</label>
+                @php
+                    $signaturePath = ($template && ($template->signature_image_path ?? null) && file_exists(public_path($template->signature_image_path)))
+                        ? $template->signature_image_path
+                        : null;
+                @endphp
+                @if($signaturePath)
+                    <div class="mb-2">
+                        <img src="{{ asset($signaturePath) }}" alt="Firma actual" class="max-h-24 object-contain border border-gray-200 rounded-lg p-2 bg-white">
+                        @if($template->signature_image_drive_id ?? null)
+                            <p class="mt-1 text-xs text-teal-700"><i class="fab fa-google-drive mr-1"></i> Respaldo en Google Drive.</p>
+                        @endif
+                    </div>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-600">
+                        <input type="checkbox" name="remove_signature_image" value="1" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                        <span>Eliminar firma actual</span>
+                    </label>
+                    <span class="mx-2">|</span>
+                @endif
+                <input type="file" name="signature_image" id="signature_image" accept="image/png,image/jpeg,image/gif,image/webp" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 mt-2">
+                @error('signature_image')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                <p class="mt-1 text-xs text-gray-500">Recomendado <strong>PNG con fondo transparente</strong>. Se coloca centrada justo encima de la línea de firma. Máx. 10 MB.</p>
+            </div>
+            <div>
+                <label for="signature_image_height_px" class="block mb-2 text-sm font-medium text-gray-900">Alto de la firma (px)</label>
+                <input type="number" name="signature_image_height_px" id="signature_image_height_px" min="10" max="250" step="1"
+                       value="{{ old('signature_image_height_px', $template->signature_image_height_px ?? 55) }}"
+                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                <p class="mt-1 text-xs text-gray-500">Ajuste el tamaño de la imagen; el ancho se adapta proporcionalmente.</p>
+            </div>
             <div>
                 <label for="signature_name" class="block mb-2 text-sm font-medium text-gray-900">Nombre (debajo de la línea)</label>
                 <input type="text" name="signature_name" id="signature_name" value="{{ old('signature_name', $template->signature_name ?? '') }}"
