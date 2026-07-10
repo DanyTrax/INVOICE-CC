@@ -4,21 +4,6 @@
 
 @section('page-title', 'Nuevo Cliente')
 
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.clients.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Clientes</a>
-        </div>
-    </li>
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Nuevo</span>
-        </div>
-    </li>
-@endsection
-
 @section('content')
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <form action="{{ route('admin.clients.store') }}" method="POST">

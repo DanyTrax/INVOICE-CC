@@ -109,6 +109,15 @@ class TwoFactorService
         return true;
     }
 
+    public function isSystemEnabled(): bool
+    {
+        try {
+            return (bool) app(\App\Settings\GeneralSettings::class)->two_factor_system_enabled;
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+
     public function userHasConfirmedTwoFactor(User $user): bool
     {
         return $user->two_factor_confirmed_at !== null

@@ -30,6 +30,13 @@
                 @if($invoice->isEditable())
                     <a href="{{ route('admin.invoices.edit', $invoice) }}" class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm">Editar</a>
                 @endif
+                @if($canDelete ?? false)
+                    <form action="{{ route('admin.invoices.destroy', $invoice) }}" method="POST" onsubmit="return confirm('¿Eliminar esta cuenta de cobro? El número podrá reutilizarse.')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Eliminar</button>
+                    </form>
+                @endif
             </div>
         </div>
 

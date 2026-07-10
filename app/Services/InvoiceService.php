@@ -7,18 +7,32 @@ use App\Models\Associate;
 use App\Models\Concept;
 use App\Models\Invoice;
 use App\Models\Setting;
-use App\Settings\GeneralSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 
 class InvoiceService
 {
     public function nextConsecutive(): int
     {
-        $max = (int) Invoice::query()->max('consecutive');
+        $used = Invoice::query()
+            ->orderBy('consecutive')
+            ->pluck('consecutive')
+            ->map(fn ($n) => (int) $n)
+            ->all();
 
-        return $max + 1;
+        if ($used === []) {
+            return 1;
+        }
+
+        $next = 1;
+        foreach ($used as $n) {
+            if ($n !== $next) {
+                return $next;
+            }
+            $next++;
+        }
+
+        return $next;
     }
 
     public function formatNumber(int $consecutive): string
@@ -122,9 +136,10 @@ class InvoiceService
         $pdfContent = $this->pdfBinary($invoice);
         $brand = Setting::current();
 
-        $this->configureMailTransport();
-
-        Mail::to($associate->email)->send(new InvoiceMail($invoice, $brand, $pdfContent));
+        app(MailService::class)->sendMailable(
+            $associate->email,
+            new InvoiceMail($invoice, $brand, $pdfContent)
+        );
 
         if ($invoice->status === Invoice::STATUS_DRAFT) {
             $invoice->update([
@@ -149,37 +164,5 @@ class InvoiceService
         ];
 
         return str_replace(array_keys($replacements), array_values($replacements), $text);
-    }
-
-    private function configureMailTransport(): void
-    {
-        $settings = app(GeneralSettings::class);
-        $provider = $settings->mail_provider ?? 'smtp';
-
-        if ($provider === 'zoho') {
-            config([
-                'mail.default' => 'smtp',
-                'mail.mailers.smtp.host' => 'smtp.zoho.com',
-                'mail.mailers.smtp.port' => 587,
-                'mail.mailers.smtp.encryption' => 'tls',
-                'mail.mailers.smtp.username' => $settings->zoho_from_email,
-                'mail.mailers.smtp.password' => $settings->zoho_access_token,
-                'mail.from.address' => $settings->zoho_from_email,
-                'mail.from.name' => $settings->mail_from_name,
-            ]);
-
-            return;
-        }
-
-        config([
-            'mail.default' => $settings->mail_mailer ?: 'smtp',
-            'mail.mailers.smtp.host' => $settings->mail_host,
-            'mail.mailers.smtp.port' => $settings->mail_port,
-            'mail.mailers.smtp.encryption' => $settings->mail_encryption,
-            'mail.mailers.smtp.username' => $settings->mail_username,
-            'mail.mailers.smtp.password' => $settings->mail_password,
-            'mail.from.address' => $settings->mail_from_address,
-            'mail.from.name' => $settings->mail_from_name,
-        ]);
     }
 }

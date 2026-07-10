@@ -59,6 +59,8 @@ class PermissionController extends Controller
         }
         if (RolePermission::count() === 0) {
             $this->seedDefaultPermissions($roles);
+        } else {
+            $this->syncMissingModulePermissions($roles);
         }
 
         $permissions = RolePermission::with('role')->get()->groupBy('role_id');
@@ -267,6 +269,34 @@ class PermissionController extends Controller
 
         if ($roleByName->has('agent')) {
             $grantAllExcept($roleByName->get('agent'), ['backups', 'permissions']);
+        }
+    }
+
+    /**
+     * Añade filas de permisos para módulos nuevos sin tocar los ya configurados.
+     */
+    protected function syncMissingModulePermissions($roles): void
+    {
+        $modules = PermissionService::getModules();
+
+        foreach ($roles as $role) {
+            if ($role->name === 'super_admin') {
+                continue;
+            }
+
+            foreach ($modules as $moduleKey => $_label) {
+                foreach (PermissionService::getActionsForModule($moduleKey) as $actionKey => $_a) {
+                    RolePermission::firstOrCreate(
+                        [
+                            'role_id' => $role->id,
+                            'module' => $moduleKey,
+                            'action' => $actionKey,
+                        ],
+                        ['enabled' => in_array($role->name, ['admin', 'agent'], true)
+                            && ! in_array($moduleKey, ['backups', 'permissions'], true)]
+                    );
+                }
+            }
         }
     }
 }

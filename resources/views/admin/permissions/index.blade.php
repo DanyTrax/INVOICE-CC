@@ -4,20 +4,10 @@
 
 @section('page-title', 'Gestión de Permisos')
 
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Permisos</span>
-        </div>
-    </li>
-@endsection
-
 @section('content')
     @php
         $actionColumns = [
             'view' => 'Ver',
-            \App\Services\PermissionService::ACTION_TIMELINE_FEED => 'Alimentar línea de tiempo',
             'edit' => 'Editar',
             'delete' => 'Eliminar',
         ];
@@ -79,7 +69,7 @@
                     Permisos por módulo
                 </h2>
                 <p class="text-sm text-gray-600 mb-4">
-                    <strong>super_admin</strong> tiene acceso total (no se lista). En <strong>Solicitudes</strong>, «Alimentar línea de tiempo» permite registrar sometimientos, radicado y eventos nuevos sin editar ni borrar lo ya guardado; «Editar» / «Eliminar» aplican a cambios y borrados sobre datos existentes.
+                    <strong>super_admin</strong> tiene acceso total (no se lista). Los módulos reflejan el panel de recaudos: asociados, conceptos, cuentas de cobro, directorio y configuración del sistema.
                 </p>
 
             <form id="permissionsForm" method="POST" action="{{ route('admin.permissions.update') }}">

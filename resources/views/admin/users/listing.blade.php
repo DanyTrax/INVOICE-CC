@@ -1,17 +1,8 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', $listingType === 'clients' ? 'Clientes - RAMS' : 'Especialistas - RAMS')
+@section('title', $listingType === 'clients' ? 'Clientes' : 'Usuarios')
 
-@section('page-title', $listingType === 'clients' ? 'Clientes' : 'Especialistas')
-
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">{{ $listingType === 'clients' ? 'Clientes' : 'Especialistas' }}</span>
-        </div>
-    </li>
-@endsection
+@section('page-title', $listingType === 'clients' ? 'Clientes' : 'Usuarios')
 
 @section('content')
     @php
@@ -68,7 +59,7 @@
             @endphp
             @if($canCreateAgents)
                 <a href="{{ route('admin.users.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
-                    <i class="fas fa-plus mr-2"></i> Nuevo Especialista
+                    <i class="fas fa-plus mr-2"></i> Nuevo usuario
                 </a>
             @endif
         @endif
@@ -162,7 +153,7 @@
                         <th scope="col" class="px-6 py-3">Teléfono</th>
                         <th scope="col" class="px-6 py-3">Roles</th>
                         <th scope="col" class="px-6 py-3">Estado</th>
-                        <th scope="col" class="px-6 py-3">Empresas</th>
+                        <th scope="col" class="px-6 py-3">2FA</th>
                         <th scope="col" class="px-6 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
@@ -228,9 +219,11 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                                    {{ $user->companies_count }}
-                                </span>
+                                @if($user->hasTwoFactorEnabled())
+                                    <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Activo</span>
+                                @else
+                                    <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">No</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-right">
                                 @php $canEditThis = in_array($user->id, $editableUserIds ?? []); @endphp
@@ -278,7 +271,7 @@
                         <tr>
                             <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                                 <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
-                                <p>{{ $listingType === 'clients' ? 'No se encontraron clientes.' : 'No se encontraron especialistas.' }}</p>
+                                <p>{{ $listingType === 'clients' ? 'No se encontraron clientes.' : 'No se encontraron usuarios.' }}</p>
                                 @if(request('search') || request('role'))
                                     <a href="{{ route($indexRoute) }}" class="text-teal-600 hover:text-teal-700 mt-2 inline-block">
                                         Ver todos

@@ -5,7 +5,10 @@
 @section('page-title', 'Dashboard de Recaudos')
 
 @section('content')
-    @if(! auth()->user()->hasTwoFactorEnabled())
+    @php
+        $twoFactorSystemEnabled = app(\App\Services\TwoFactorService::class)->isSystemEnabled();
+    @endphp
+    @if($twoFactorSystemEnabled && ! auth()->user()->hasTwoFactorEnabled())
         @include('profile.partials.two-factor-setup-wizard', ['routePrefix' => 'admin', 'variant' => 'banner'])
     @endif
 

@@ -60,7 +60,8 @@ class LoginController extends Controller
 
         $lockoutService->clearForSuccessfulLogin($request);
 
-        if ($user->hasTwoFactorEnabled()) {
+        $twoFactor = app(\App\Services\TwoFactorService::class);
+        if ($twoFactor->isSystemEnabled() && $user->hasTwoFactorEnabled()) {
             $request->session()->put('two_factor_login.id', $user->id);
             $request->session()->put('two_factor_login.remember', $remember);
 

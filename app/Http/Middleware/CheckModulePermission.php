@@ -57,6 +57,12 @@ class CheckModulePermission
             return $this->crudModule($routeName, $method, 'settings_brand');
         }
 
+        if (str_starts_with($routeName, 'admin.two-factor-settings')) {
+            return $method === 'GET'
+                ? ['settings_system', 'view']
+                : ['settings_system', 'edit'];
+        }
+
         if (str_starts_with($routeName, 'admin.associates')) {
             return $this->crudModule($routeName, $method, 'associates');
         }

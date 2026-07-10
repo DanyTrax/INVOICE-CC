@@ -4,15 +4,6 @@
 
 @section('page-title', 'Resumen General')
 
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Dashboard</span>
-        </div>
-    </li>
-@endsection
-
 @section('content')
     <!-- Estadísticas Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">

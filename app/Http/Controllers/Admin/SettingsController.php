@@ -929,8 +929,8 @@ class SettingsController extends Controller
         if (isset($validated['mail_username'])) {
             $settings->mail_username = $validated['mail_username'] ?? '';
         }
-        if (isset($validated['mail_password'])) {
-            $settings->mail_password = $validated['mail_password'] ?? '';
+        if ($request->filled('mail_password')) {
+            $settings->mail_password = $request->input('mail_password');
         }
         if (isset($validated['mail_encryption'])) {
             $settings->mail_encryption = $validated['mail_encryption'] ?? '';

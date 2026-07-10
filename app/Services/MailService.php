@@ -20,6 +20,240 @@ class MailService
     }
 
     /**
+     * Aplica la configuración de correo desde settings y reinicia el transporte SMTP.
+     */
+    public function applyMailConfiguration(?string $fromEmail = null, ?string $fromName = null): void
+    {
+        $provider = $this->settings->mail_provider ?? 'smtp';
+        $fromEmail = $fromEmail ?? ($provider === 'zoho'
+            ? $this->settings->zoho_from_email
+            : $this->settings->mail_from_address);
+        $fromName = $fromName ?? $this->settings->mail_from_name;
+
+        if ($provider === 'zoho') {
+            config([
+                'mail.default' => 'smtp',
+                'mail.mailers.smtp.scheme' => 'smtp',
+                'mail.mailers.smtp.host' => 'smtp.zoho.com',
+                'mail.mailers.smtp.port' => 587,
+                'mail.mailers.smtp.username' => $this->settings->zoho_from_email,
+                'mail.mailers.smtp.password' => $this->settings->mail_password ?: $this->settings->zoho_access_token,
+                'mail.from.address' => $fromEmail,
+                'mail.from.name' => $fromName,
+            ]);
+        } else {
+            $port = (int) ($this->settings->mail_port ?: 587);
+            $encryption = strtolower((string) ($this->settings->mail_encryption ?? 'tls'));
+            $scheme = ($encryption === 'ssl' || $port === 465) ? 'smtps' : 'smtp';
+
+            config([
+                'mail.default' => $this->settings->mail_mailer ?: 'smtp',
+                'mail.mailers.smtp.scheme' => $scheme,
+                'mail.mailers.smtp.host' => $this->settings->mail_host,
+                'mail.mailers.smtp.port' => $port,
+                'mail.mailers.smtp.username' => $this->settings->mail_username,
+                'mail.mailers.smtp.password' => $this->settings->mail_password,
+                'mail.from.address' => $fromEmail,
+                'mail.from.name' => $fromName,
+            ]);
+        }
+
+        Mail::purge('smtp');
+    }
+
+    /**
+     * Valida que la configuración de correo esté completa.
+     *
+     * @throws \RuntimeException
+     */
+    public function assertMailConfiguration(): void
+    {
+        if (($this->settings->mail_provider ?? 'smtp') === 'zoho') {
+            if (empty($this->settings->zoho_from_email)) {
+                throw new \RuntimeException('Configure el email remitente de Zoho en Sistema → Configuración → Correo.');
+            }
+            if (empty($this->settings->zoho_refresh_token)) {
+                throw new \RuntimeException('Autorice la aplicación con Zoho en Sistema → Configuración → Correo.');
+            }
+
+            return;
+        }
+
+        $missing = [];
+        if (empty($this->settings->mail_host)) {
+            $missing[] = 'servidor SMTP';
+        }
+        if (empty($this->settings->mail_username)) {
+            $missing[] = 'usuario SMTP';
+        }
+        if (empty($this->settings->mail_password)) {
+            $missing[] = 'contraseña SMTP';
+        }
+        if (empty($this->settings->mail_from_address)) {
+            $missing[] = 'email remitente';
+        }
+
+        if ($missing !== []) {
+            throw new \RuntimeException(
+                'Configuración de correo incompleta ('.implode(', ', $missing).'). Revise Sistema → Configuración → Correo.'
+            );
+        }
+    }
+
+    /**
+     * Envía un Mailable usando el proveedor configurado (SMTP o Zoho API).
+     */
+    public function sendMailable(string $to, \Illuminate\Mail\Mailable $mailable): void
+    {
+        $this->assertMailConfiguration();
+
+        if (($this->settings->mail_provider ?? 'smtp') === 'zoho') {
+            $this->sendMailableViaZoho($to, $mailable);
+
+            return;
+        }
+
+        $this->applyMailConfiguration();
+        Mail::to($to)->send($mailable);
+    }
+
+    /**
+     * @throws \RuntimeException
+     */
+    protected function sendMailableViaZoho(string $to, \Illuminate\Mail\Mailable $mailable): void
+    {
+        $subject = 'Notificación';
+        if (method_exists($mailable, 'envelope')) {
+            $subject = $mailable->envelope()->subject ?? $subject;
+        }
+
+        $html = $mailable->render();
+        [$pdfBinary, $pdfName] = $this->extractFirstAttachmentBinary($mailable);
+
+        $accessToken = $this->getZohoAccessToken();
+        if (! $accessToken) {
+            throw new \RuntimeException('No se pudo obtener el token de Zoho. Verifique la autorización en Configuración → Correo.');
+        }
+
+        $fromEmail = $this->settings->zoho_from_email;
+        $accountId = $this->getZohoAccountId($accessToken, $fromEmail);
+        if (! $accountId) {
+            throw new \RuntimeException('No se encontró la cuenta de Zoho para '.$fromEmail.'.');
+        }
+
+        $zohoAttachments = [];
+        if ($pdfBinary !== null && $pdfBinary !== '') {
+            $uploaded = $this->uploadZohoAttachment($accessToken, $accountId, $pdfName, $pdfBinary);
+            if ($uploaded) {
+                $zohoAttachments[] = $uploaded;
+            }
+        }
+
+        $emailData = [
+            'fromAddress' => $fromEmail,
+            'toAddress' => $to,
+            'subject' => $subject,
+            'content' => $html,
+            'mailFormat' => 'html',
+        ];
+
+        if ($zohoAttachments !== []) {
+            $emailData['attachments'] = $zohoAttachments;
+        }
+
+        $apiUrl = 'https://mail.zoho.com/api/accounts/'.urlencode($accountId).'/messages';
+        $response = Http::withHeaders([
+            'Authorization' => 'Zoho-oauthtoken '.$accessToken,
+            'Content-Type' => 'application/json',
+        ])->post($apiUrl, $emailData);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException($this->formatZohoError($response, $fromEmail));
+        }
+    }
+
+    /**
+     * @return array{0: string|null, 1: string}
+     */
+    protected function extractFirstAttachmentBinary(\Illuminate\Mail\Mailable $mailable): array
+    {
+        $name = 'adjunto.pdf';
+        $binary = null;
+
+        if (! method_exists($mailable, 'attachments')) {
+            return [$binary, $name];
+        }
+
+        foreach ($mailable->attachments() as $attachment) {
+            $attachment->attachWith(
+                fn () => null,
+                function ($data) use (&$binary, &$name, $attachment) {
+                    $name = $attachment->as ?? $name;
+                    $binary = $data();
+                }
+            );
+
+            if ($binary !== null) {
+                break;
+            }
+        }
+
+        return [$binary, $name];
+    }
+
+    /**
+     * @return array{storeName: string, attachmentPath: string, attachmentName: string}|null
+     */
+    protected function uploadZohoAttachment(string $accessToken, string $accountId, string $fileName, string $binary): ?array
+    {
+        $url = 'https://mail.zoho.com/api/accounts/'.urlencode($accountId).'/messages/attachments'
+            .'?fileName='.urlencode($fileName).'&isInline=false';
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Zoho-oauthtoken '.$accessToken,
+            'Content-Type' => 'application/octet-stream',
+        ])->withBody($binary, 'application/octet-stream')->post($url);
+
+        if (! $response->successful()) {
+            Log::warning('No se pudo subir adjunto a Zoho', ['body' => $response->body()]);
+
+            return null;
+        }
+
+        $data = $response->json('data.0') ?? $response->json('data') ?? $response->json();
+
+        if (! is_array($data)) {
+            return null;
+        }
+
+        $storeName = $data['storeName'] ?? null;
+        $attachmentPath = $data['attachmentPath'] ?? $data['attachmentpath'] ?? null;
+        $attachmentName = $data['attachmentName'] ?? $data['attachmentname'] ?? $fileName;
+
+        if (! $storeName || ! $attachmentPath) {
+            return null;
+        }
+
+        return [
+            'storeName' => $storeName,
+            'attachmentPath' => $attachmentPath,
+            'attachmentName' => $attachmentName,
+        ];
+    }
+
+    protected function formatZohoError(\Illuminate\Http\Client\Response $response, string $fromEmail): string
+    {
+        $errorData = $response->json();
+        if (isset($errorData['data']['errorCode']) && $errorData['data']['errorCode'] === 'URL_RULE_NOT_CONFIGURED') {
+            return 'El token de Zoho no corresponde al email remitente ('.$fromEmail.'). Vuelva a autorizar Zoho con esa misma cuenta.';
+        }
+
+        $message = $errorData['message'] ?? $errorData['error'] ?? $response->body();
+
+        return 'Error al enviar vía Zoho: '.$message;
+    }
+
+    /**
      * Enviar correo usando el proveedor configurado
      */
     public function send($to, $subject, $body, $fromName = null, $fromEmail = null, $isTest = false)
@@ -74,17 +308,7 @@ class MailService
     protected function sendViaSmtp($to, $subject, $body, $fromName = null, $fromEmail = null)
     {
         try {
-            // Configurar mail dinámicamente desde settings
-            config([
-                'mail.default' => $this->settings->mail_mailer,
-                'mail.mailers.smtp.host' => $this->settings->mail_host,
-                'mail.mailers.smtp.port' => $this->settings->mail_port,
-                'mail.mailers.smtp.username' => $this->settings->mail_username,
-                'mail.mailers.smtp.password' => $this->settings->mail_password,
-                'mail.mailers.smtp.encryption' => $this->settings->mail_encryption,
-                'mail.from.address' => $fromEmail ?? $this->settings->mail_from_address,
-                'mail.from.name' => $fromName ?? $this->settings->mail_from_name,
-            ]);
+            $this->applyMailConfiguration($fromEmail, $fromName);
 
             Mail::html($body, function ($message) use ($to, $subject, $fromName, $fromEmail) {
                 $message->to($to)

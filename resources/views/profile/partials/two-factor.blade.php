@@ -1,10 +1,18 @@
 @php
     $rp = $routePrefix ?? 'admin';
+    $twoFactorSystemEnabled = app(\App\Services\TwoFactorService::class)->isSystemEnabled();
 @endphp
 
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6" id="two-factor">
 
     <h2 class="text-xl font-bold text-gray-900 mb-2">Verificación en dos pasos (2FA)</h2>
+
+    @if (! $twoFactorSystemEnabled)
+        <p class="text-sm text-gray-600">
+            La verificación en dos pasos está desactivada a nivel del sistema. Un administrador puede habilitarla en
+            <strong>Sistema → Verificación 2FA</strong>.
+        </p>
+    @else
     <p class="text-sm text-gray-600 mb-4">
         Añade una capa extra de seguridad con una app de autenticación (Google Authenticator, Microsoft Authenticator, etc.).
     </p>
@@ -58,5 +66,6 @@
         </form>
     @else
         @include('profile.partials.two-factor-setup-wizard', ['routePrefix' => $rp, 'variant' => 'full'])
+    @endif
     @endif
 </div>

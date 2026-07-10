@@ -1,17 +1,8 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Especialistas / Usuarios - RAMS')
+@section('title', 'Usuarios')
 
-@section('page-title', 'Especialistas / Usuarios')
-
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Usuarios</span>
-        </div>
-    </li>
-@endsection
+@section('page-title', 'Usuarios')
 
 @section('content')
     <!-- Barra de búsqueda y acciones -->
@@ -62,7 +53,7 @@
                         <th scope="col" class="px-6 py-3">Teléfono</th>
                         <th scope="col" class="px-6 py-3">Roles</th>
                         <th scope="col" class="px-6 py-3">Estado</th>
-                        <th scope="col" class="px-6 py-3">Clientes</th>
+                        <th scope="col" class="px-6 py-3">2FA</th>
                         <th scope="col" class="px-6 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
@@ -111,9 +102,11 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                                    {{ $user->companies_count }}
-                                </span>
+                                @if($user->hasTwoFactorEnabled())
+                                    <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Activo</span>
+                                @else
+                                    <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">No</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">

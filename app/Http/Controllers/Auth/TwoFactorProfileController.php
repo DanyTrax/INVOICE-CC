@@ -22,6 +22,10 @@ class TwoFactorProfileController extends Controller
      */
     public function start(Request $request)
     {
+        if (! $this->twoFactor->isSystemEnabled()) {
+            return back()->with('error', 'La verificación en dos pasos está desactivada por el administrador del sistema.');
+        }
+
         $user = Auth::user();
         if (! $user instanceof User) {
             abort(403);
@@ -69,6 +73,10 @@ class TwoFactorProfileController extends Controller
      */
     public function confirm(Request $request)
     {
+        if (! $this->twoFactor->isSystemEnabled()) {
+            return back()->with('error', 'La verificación en dos pasos está desactivada por el administrador del sistema.');
+        }
+
         $clean = preg_replace('/\D/', '', (string) $request->input('code'));
         $request->merge(['code' => $clean]);
         $request->validate([

@@ -101,6 +101,9 @@ class GeneralSettings extends Settings
 
     public bool $legal_show_terms_on_login = true;
 
+    /** Si es false, el sistema no exige ni ofrece 2FA en login ni perfil. */
+    public bool $two_factor_system_enabled = true;
+
     /** HTML público (política y términos). Vacío = usar texto por defecto del sistema. */
     public string $legal_privacy_html = '';
 

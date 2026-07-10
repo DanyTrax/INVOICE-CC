@@ -4,15 +4,6 @@
 
 @section('page-title', 'Mi Perfil')
 
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Mi Perfil</span>
-        </div>
-    </li>
-@endsection
-
 @section('content')
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Información Principal -->
@@ -139,17 +130,19 @@
                 </div>
             </div>
 
-            <!-- Estadísticas -->
+            <!-- Cuenta -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Estadísticas</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Cuenta</h3>
                 <dl class="space-y-3">
                     <div class="flex justify-between items-center">
-                        <dt class="text-sm text-gray-600">Empresas Asignadas</dt>
-                        <dd class="text-sm font-semibold text-gray-900">{{ $user->companies_count }}</dd>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <dt class="text-sm text-gray-600">Solicitudes asignadas</dt>
-                        <dd class="text-sm font-semibold text-gray-900">{{ $user->assigned_registrations_count }}</dd>
+                        <dt class="text-sm text-gray-600">Verificación 2FA</dt>
+                        <dd class="text-sm font-semibold text-gray-900">
+                            @if($user->hasTwoFactorEnabled())
+                                <span class="text-green-700">Activa</span>
+                            @else
+                                <span class="text-gray-500">No activa</span>
+                            @endif
+                        </dd>
                     </div>
                     <div class="flex justify-between items-center">
                         <dt class="text-sm text-gray-600">Estado</dt>

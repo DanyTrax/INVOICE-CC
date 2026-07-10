@@ -14,6 +14,7 @@
     $directorioActive = request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*');
 
     $sistemaActive = request()->routeIs('admin.brand-settings.*')
+        || request()->routeIs('admin.two-factor-settings.*')
         || request()->routeIs('admin.settings.*')
         || request()->routeIs('admin.backups.*')
         || request()->routeIs('admin.permissions.*')
@@ -103,7 +104,7 @@
                     <div x-show="open" x-cloak x-transition
                          class="absolute left-0 top-full mt-1 w-48 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg py-1 z-50">
                         <a href="{{ route('admin.agents.index') }}" class="admin-topnav-dropdown-item {{ $directorioActive ? 'admin-topnav-dropdown-item--active' : '' }}">
-                            <i class="fas fa-user-tie w-4"></i> Especialistas
+                            <i class="fas fa-users w-4"></i> Usuarios
                         </a>
                     </div>
                 </div>
@@ -127,6 +128,11 @@
                         @if($canSettings)
                             <a href="{{ route('admin.settings.section', 'mail') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.settings.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
                                 <i class="fas fa-sliders-h w-4"></i> Configuración
+                            </a>
+                        @endif
+                        @if($permService->userHasPermission('settings_system', 'view'))
+                            <a href="{{ route('admin.two-factor-settings.edit') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.two-factor-settings.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
+                                <i class="fas fa-shield-halved w-4"></i> Verificación 2FA
                             </a>
                         @endif
                         @if($permService->userHasPermission('backups', 'view'))
@@ -251,7 +257,7 @@
         @endif
         @if($permService->userHasPermission('users', 'view'))
             <a href="{{ route('admin.agents.index') }}" class="admin-topnav-mobile-item {{ $directorioActive ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-user-tie w-5"></i> Especialistas
+                <i class="fas fa-users w-5"></i> Usuarios
             </a>
         @endif
         @if($permService->userHasPermission('settings_brand', 'view'))
@@ -262,6 +268,11 @@
         @if($canSettings)
             <a href="{{ route('admin.settings.section', 'mail') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.settings.*') ? 'admin-topnav-mobile-item--active' : '' }}">
                 <i class="fas fa-cog w-5"></i> Configuración
+            </a>
+        @endif
+        @if($permService->userHasPermission('settings_system', 'view'))
+            <a href="{{ route('admin.two-factor-settings.edit') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.two-factor-settings.*') ? 'admin-topnav-mobile-item--active' : '' }}">
+                <i class="fas fa-shield-halved w-5"></i> Verificación 2FA
             </a>
         @endif
         @if($permService->userHasPermission('backups', 'view'))
@@ -289,7 +300,11 @@
                         <i class="fas fa-home mr-1.5 text-xs"></i> Inicio
                     </a>
                 </li>
-                @yield('breadcrumb')
+                @hasSection('breadcrumb')
+                    @yield('breadcrumb')
+                @else
+                    @include('layouts.partials.admin-breadcrumb')
+                @endif
             </ol>
         </nav>
     </div>

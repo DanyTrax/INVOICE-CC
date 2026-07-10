@@ -15,6 +15,14 @@
                     <option value="{{ $key }}" @selected(request('status') === $key)>{{ $label }}</option>
                 @endforeach
             </select>
+            <label class="text-xs text-gray-500">
+                Vence desde
+                <input type="date" name="due_from" value="{{ request('due_from') }}" class="border border-gray-300 rounded-lg p-2 text-sm block mt-0.5">
+            </label>
+            <label class="text-xs text-gray-500">
+                Vence hasta
+                <input type="date" name="due_to" value="{{ request('due_to') }}" class="border border-gray-300 rounded-lg p-2 text-sm block mt-0.5">
+            </label>
             <button class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Filtrar</button>
         </form>
         <a href="{{ route('admin.invoices.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Nueva cuenta de cobro</a>
@@ -42,8 +50,15 @@
                         <td class="px-4 py-3">{{ $invoice->due_date->format('d/m/Y') }}</td>
                         <td class="px-4 py-3">${{ number_format($invoice->total_amount, 0, ',', '.') }}</td>
                         <td class="px-4 py-3">{{ $invoice->statusLabel() }}</td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                             <a href="{{ route('admin.invoices.show', $invoice) }}" class="text-teal-700">Ver</a>
+                            @if($canDelete ?? false)
+                                <form action="{{ route('admin.invoices.destroy', $invoice) }}" method="POST" class="inline" onsubmit="return confirm('¿Eliminar la cuenta de cobro {{ $invoice->number }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600">Eliminar</button>
+                                </form>
+                            @endif
                         </td>
                     </tr>
                 @empty

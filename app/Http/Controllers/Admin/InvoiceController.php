@@ -38,9 +38,20 @@ class InvoiceController extends Controller
             });
         }
 
+        if ($dueFrom = $request->input('due_from')) {
+            $query->whereDate('due_date', '>=', $dueFrom);
+        }
+
+        if ($dueTo = $request->input('due_to')) {
+            $query->whereDate('due_date', '<=', $dueTo);
+        }
+
+        $permService = app(PermissionService::class);
+
         return view('admin.invoices.index', [
             'invoices' => $query->paginate(20)->withQueryString(),
             'statuses' => Invoice::STATUSES,
+            'canDelete' => $permService->userHasPermission('invoices', 'delete'),
         ]);
     }
 
@@ -78,6 +89,7 @@ class InvoiceController extends Controller
         return view('admin.invoices.show', [
             'invoice' => $invoice,
             'statuses' => Invoice::STATUSES,
+            'canDelete' => app(PermissionService::class)->userHasPermission('invoices', 'delete'),
         ]);
     }
 

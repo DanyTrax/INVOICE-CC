@@ -4,15 +4,6 @@
 
 @section('page-title', 'Registros de Actividad')
 
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Registros de Actividad</span>
-        </div>
-    </li>
-@endsection
-
 @section('content')
     @if(session('success'))
         <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">

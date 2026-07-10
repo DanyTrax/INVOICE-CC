@@ -4,21 +4,6 @@
 
 @section('page-title', 'Editar Cliente')
 
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.clients.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Clientes</a>
-        </div>
-    </li>
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Editar</span>
-        </div>
-    </li>
-@endsection
-
 @section('content')
     <div class="space-y-6">
     @include('admin.users.partials.two-factor-admin-card', [

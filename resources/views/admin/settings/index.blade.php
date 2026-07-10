@@ -4,15 +4,6 @@
 
 @section('page-title', 'Configuración del Sistema')
 
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Configuración</span>
-        </div>
-    </li>
-@endsection
-
 @section('content')
     @php
         $permService = app(\App\Services\PermissionService::class);
@@ -256,9 +247,11 @@
                             <input type="password" 
                                    id="mail_password" 
                                    name="mail_password" 
-                                   value="{{ old('mail_password', $settings->mail_password ?? '') }}"
-                                   placeholder="••••••••"
+                                   value="{{ old('mail_password') }}"
+                                   placeholder="{{ !empty($settings->mail_password) ? '•••••••• (dejar vacío para no cambiar)' : 'Contraseña SMTP o de aplicación' }}"
+                                   autocomplete="new-password"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                            <p class="mt-1 text-xs text-gray-500">En Zoho Mail use una <strong>contraseña de aplicación</strong>, no la de su cuenta. El usuario SMTP debe coincidir con el email remitente.</p>
                         </div>
 
                         <!-- Encryption -->

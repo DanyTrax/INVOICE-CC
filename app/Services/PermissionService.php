@@ -32,7 +32,7 @@ class PermissionService
             'associates' => 'Asociados',
             'concepts' => 'Conceptos de cobro',
             'invoices' => 'Cuentas de cobro',
-            'users' => 'Usuarios y especialistas',
+            'users' => 'Usuarios',
             'settings_brand' => 'Config: marca blanca',
             'settings_mail' => 'Config: correo',
             'settings_templates' => 'Config: plantillas',

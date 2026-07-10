@@ -4,15 +4,6 @@
 
 @section('page-title', 'Backups del Sistema')
 
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Backups</span>
-        </div>
-    </li>
-@endsection
-
 @section('content')
     @php
         $backupRestoreScopes = $backupRestoreScopes ?? [];

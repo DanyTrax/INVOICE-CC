@@ -1,23 +1,8 @@
 @extends('layouts.admin-flowbite')
 
-@section('title', 'Nuevo Usuario - RAMS')
+@section('title', 'Nuevo usuario')
 
-@section('page-title', 'Nuevo Usuario')
-
-@section('breadcrumb')
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <a href="{{ route('admin.users.index') }}" class="text-sm font-medium text-gray-700 hover:text-teal-700">Usuarios</a>
-        </div>
-    </li>
-    <li>
-        <div class="flex items-center">
-            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-            <span class="text-sm font-medium text-gray-500">Nuevo</span>
-        </div>
-    </li>
-@endsection
+@section('page-title', 'Nuevo usuario')
 
 @section('content')
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -148,53 +133,6 @@
                         @endforeach
                     </div>
                     @error('role')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Empresas Asignadas -->
-                <div class="md:col-span-2">
-                    <label class="block mb-2 text-sm font-medium text-gray-900">
-                        Empresas Asignadas
-                    </label>
-                    <div class="bg-gray-50 border border-gray-300 rounded-lg p-4 max-h-64 overflow-y-auto">
-                        @if($companies->count() > 0)
-                            <div class="space-y-3">
-                                @foreach($companies as $company)
-                                    <div class="flex flex-wrap items-center justify-between gap-2 py-1 border-b border-gray-100 last:border-0">
-                                        <div class="flex items-center min-w-0 flex-1">
-                                            <input type="checkbox"
-                                                   id="company_{{ $company->id }}"
-                                                   name="companies[]"
-                                                   value="{{ $company->id }}"
-                                                   {{ in_array($company->id, old('companies', [])) ? 'checked' : '' }}
-                                                   class="company-check w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500 shrink-0"
-                                                   data-company-id="{{ $company->id }}">
-                                            <label for="company_{{ $company->id }}" class="ml-2 text-sm text-gray-900 flex-1 min-w-0">
-                                                <span class="font-medium">{{ $company->name }}</span>
-                                                @if($company->nit_rut)
-                                                    <span class="text-gray-500 ml-2">({{ $company->nit_rut }})</span>
-                                                @endif
-                                            </label>
-                                        </div>
-                                        <label class="flex items-center gap-2 shrink-0 text-sm text-gray-700 whitespace-nowrap">
-                                            <input type="checkbox"
-                                                   name="company_sees_all[{{ $company->id }}]"
-                                                   value="1"
-                                                   {{ old('company_sees_all.'.$company->id) ? 'checked' : '' }}
-                                                   class="company-sees-all w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500"
-                                                   data-company-id="{{ $company->id }}">
-                                            <span>Ver todas las solicitudes</span>
-                                        </label>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <p class="text-sm text-gray-500 text-center py-4">No hay empresas registradas</p>
-                        @endif
-                    </div>
-                    <p class="mt-2 text-xs text-gray-500">Selecciona las empresas que estarán asignadas a este usuario</p>
-                    @error('companies')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>

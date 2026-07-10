@@ -62,7 +62,7 @@
         </div>
     </dl>
 
-    @if($canManage)
+    @if($canManage && app(\App\Services\TwoFactorService::class)->isSystemEnabled())
         <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4">
             @if($twoFaOn)
                 <form action="{{ route('admin.users.disable-two-factor', $user) }}" method="POST" class="inline"
@@ -84,6 +84,10 @@
                 </p>
             @endif
         </div>
+    @elseif($canManage && ! app(\App\Services\TwoFactorService::class)->isSystemEnabled())
+        <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-3">
+            La verificación en dos pasos está desactivada a nivel del sistema (Sistema → Verificación 2FA).
+        </p>
     @elseif(auth()->id() === $user->id)
         <p class="mt-3 text-xs text-gray-400 border-t border-gray-100 pt-3">Estás viendo tu propio usuario.</p>
     @endif

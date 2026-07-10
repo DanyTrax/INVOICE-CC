@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\TwoFactorSettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserPreferenceController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -69,6 +70,9 @@ Route::middleware(['auth', 'not.client', 'module.permission', 'admin.no-cache', 
 
     Route::get('/brand-settings', [BrandSettingController::class, 'edit'])->name('brand-settings.edit');
     Route::put('/brand-settings', [BrandSettingController::class, 'update'])->name('brand-settings.update');
+
+    Route::get('/two-factor-settings', [TwoFactorSettingsController::class, 'edit'])->name('two-factor-settings.edit');
+    Route::put('/two-factor-settings', [TwoFactorSettingsController::class, 'update'])->name('two-factor-settings.update');
 
     Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
     Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
