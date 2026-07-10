@@ -624,13 +624,8 @@
                             <span class="text-gray-400 text-xs font-semibold uppercase px-2">SISTEMA</span>
                         </li>
                     @endif
-                    @if($permService->userHasPermission('users', 'view')
-                        || $permService->userHasPermission('settings_mail', 'view')
-                        || $permService->userHasPermission('settings_templates', 'view')
-                        || $permService->userHasPermission('settings_history', 'view')
-                        || $permService->userHasPermission('settings_system', 'view'))
-                        @if($permService->userHasPermission('users', 'view'))
-                            <li x-data="{ directorioOpen: {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
+                    @if($permService->userHasPermission('users', 'view'))
+                        <li x-data="{ directorioOpen: {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
                                 <button @click="(winLg && !sidebarExpanded) ? (sidebarExpanded = true) : (directorioOpen = !directorioOpen)"
                                         type="button"
                                         class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}"
@@ -657,24 +652,23 @@
                                     </li>
                                 </ul>
                             </li>
-                        @endif
-                        @if($permService->userHasPermission('settings_agency', 'view') 
-                            || $permService->userHasPermission('settings_drive', 'view')
-                            || $permService->userHasPermission('settings_drive_operations_log', 'view')
-                            || $permService->userHasPermission('settings_mail', 'view')
+                    @endif
+                    @php
+                        $canSettings = $permService->userHasPermission('settings_mail', 'view')
                             || $permService->userHasPermission('settings_templates', 'view')
                             || $permService->userHasPermission('settings_history', 'view')
-                            || $permService->userHasPermission('settings_system', 'view'))
-                            <li>
-                                <a href="{{ route('admin.settings.index') }}" 
-                                   class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.settings.*') ? 'bg-teal-700' : '' }}"
-                                   :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                                   title="Configuración">
-                                    <i class="fas fa-cog w-5 h-5 shrink-0"></i>
-                                    <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Configuración</span>
-                                </a>
-                            </li>
-                        @endif
+                            || $permService->userHasPermission('settings_system', 'view');
+                    @endphp
+                    @if($canSettings)
+                        <li>
+                            <a href="{{ route('admin.settings.section', 'mail') }}"
+                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.settings.*') ? 'bg-teal-700' : '' }}"
+                               :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                               title="Configuración">
+                                <i class="fas fa-cog w-5 h-5 shrink-0"></i>
+                                <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Configuración</span>
+                            </a>
+                        </li>
                     @endif
                     @if($permService->userHasPermission('backups', 'view'))
                     <li>

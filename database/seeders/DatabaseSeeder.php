@@ -39,6 +39,8 @@ class DatabaseSeeder extends Seeder
             $admin->assignRole('super_admin');
         }
 
+        $this->call(RolePermissionSeeder::class);
+
         // Crear plantillas de correo
         $this->call(EmailTemplateSeeder::class);
     }
