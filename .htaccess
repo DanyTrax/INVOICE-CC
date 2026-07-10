@@ -1,0 +1,11 @@
+# Despliegue Laravel en cPanel (document root en public_html)
+#
+# Opción A (recomendada): apuntar el dominio a la carpeta `public` del proyecto.
+#   En cPanel → Dominios → Document Root → .../INVOICE-CC-ACCIONCOL/public
+#
+# Opción B: si el document root debe quedar en la raíz del proyecto, este archivo
+# reenvía todas las peticiones a `public/index.php`.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

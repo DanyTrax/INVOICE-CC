@@ -18,11 +18,9 @@ class BackupService
 {
     public const SCOPE_EMAIL_TEMPLATES = 'email_templates';
 
-    public const SCOPE_EMPRESA = 'empresa';
+    public const SCOPE_BRAND = 'brand_settings';
 
     public const SCOPE_MAIL = 'mail_connection';
-
-    public const SCOPE_DRIVE = 'drive_connection';
 
     /**
      * Bloques disponibles para restauración selectiva (sin tocar el resto de tablas).
@@ -38,29 +36,11 @@ class BackupService
                 'tables' => ['email_templates'],
                 'settings_keys' => [],
             ],
-            self::SCOPE_EMPRESA => [
-                'label' => 'Empresa, legales y plantillas PDF',
-                'description' => 'Marca blanca (nombre, NIT, contacto, logo), pie y nombre del sistema, textos legales públicos, ajustes de PDF en configuración y registros de plantillas PDF de cotización y propuesta.',
-                'tables' => ['quote_pdf_templates', 'proposal_pdf_templates'],
-                'settings_keys' => [
-                    'agency_name',
-                    'agency_nit',
-                    'agency_address',
-                    'agency_phone',
-                    'agency_email',
-                    'agency_website',
-                    'agency_logo',
-                    'footer_text',
-                    'system_name',
-                    'quote_pdf_header_subtitle',
-                    'quote_pdf_footer_text',
-                    'legal_privacy_title',
-                    'legal_terms_title',
-                    'legal_show_privacy_on_login',
-                    'legal_show_terms_on_login',
-                    'legal_privacy_html',
-                    'legal_terms_html',
-                ],
+            self::SCOPE_BRAND => [
+                'label' => 'Marca blanca y correo de cuentas de cobro',
+                'description' => 'Logo, datos de la organización, bancarios, firma del tesorero y plantilla del correo de cuentas de cobro.',
+                'tables' => ['brand_settings'],
+                'settings_keys' => [],
             ],
             self::SCOPE_MAIL => [
                 'label' => 'Conexión de correo (SMTP y Zoho)',
@@ -83,23 +63,6 @@ class BackupService
                     'zoho_from_email',
                 ],
             ],
-            self::SCOPE_DRIVE => [
-                'label' => 'Conexión Google Drive',
-                'description' => 'Modo (Service Account / OAuth), JSON de cuenta de servicio, carpeta raíz, nombres de carpetas y credenciales OAuth según el backup.',
-                'tables' => [],
-                'settings_keys' => [
-                    'drive_mode',
-                    'drive_service_account_json',
-                    'drive_folder_id',
-                    'drive_folder_name_no_client',
-                    'drive_folder_name_with_client',
-                    'drive_default_country_no_client',
-                    'drive_oauth_client_id',
-                    'drive_oauth_client_secret',
-                    'drive_oauth_refresh_token',
-                    'drive_oauth_access_token',
-                ],
-            ],
         ];
     }
 
@@ -109,7 +72,7 @@ class BackupService
         $user = Auth::user();
 
         $now = now();
-        $fileName = 'backup-rams-'.$now->format('Ymd-His').'.json';
+        $fileName = 'backup-recaudos-'.$now->format('Ymd-His').'.json';
         $localPath = storage_path('app/tmp/'.$fileName);
 
         if (! is_dir(dirname($localPath))) {
@@ -134,33 +97,16 @@ class BackupService
             'role_permissions',
             'role_hierarchy',
             'model_has_roles',
-            'companies',
-            'company_user',
-            'registrations',
-            'services',
-            'service_types',
-            'concept_catalogs',
-            'quotes',
-            'quote_items',
-            'proposals',
-            'proposal_items',
-            'quote_pdf_templates',
-            'proposal_pdf_templates',
-            'processes',
-            'process_documents',
-            'process_user',
-            'submissions',
-            'regulatory_events',
-            'documents',
-            'checklist_items',
-            'capacitacion_videos',
-            'capacitacion_completions',
+            'associates',
+            'concepts',
+            'concept_prices',
+            'invoices',
+            'brand_settings',
             'email_templates',
             'settings',
             'email_logs',
-            'drive_operations_log',
-            'company_invites',
             'activity_logs',
+            'system_backups',
         ];
 
         foreach ($tables as $table) {
@@ -188,20 +134,13 @@ class BackupService
         file_put_contents($localPath, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
         $size = filesize($localPath) ?: null;
-
-        /** @var GoogleDriveService $drive */
-        $drive = app(GoogleDriveService::class);
-
-        // Crear/cargar carpeta "Backups RAMS" en el Drive raíz configurado
-        $folderId = $drive->getOrCreateBackupsFolder();
-        $uploadResult = $drive->uploadFile($localPath, $fileName, $folderId, 'application/json');
-        $driveFileId = $uploadResult['id'];
-
+        $storagePath = 'backups/'.$fileName;
+        \Illuminate\Support\Facades\Storage::disk('local')->put($storagePath, file_get_contents($localPath));
         @unlink($localPath);
 
         return SystemBackup::create([
             'name' => $fileName,
-            'drive_file_id' => $driveFileId,
+            'drive_file_id' => $storagePath,
             'size_bytes' => $size,
             'type' => 'manual',
             'created_by_id' => $user->id,
@@ -329,32 +268,14 @@ class BackupService
             'role_permissions',
             'role_hierarchy',
             'model_has_roles',
-            'companies',
-            'company_user',
-            'services',
-            'service_types',
-            'concept_catalogs',
-            'quotes',
-            'quote_items',
-            'proposals',
-            'proposal_items',
-            'quote_pdf_templates',
-            'proposal_pdf_templates',
-            'registrations',
-            'processes',
-            'process_documents',
-            'process_user',
-            'submissions',
-            'regulatory_events',
-            'documents',
-            'checklist_items',
-            'capacitacion_videos',
-            'capacitacion_completions',
+            'associates',
+            'concepts',
+            'concept_prices',
+            'invoices',
+            'brand_settings',
             'email_templates',
             'settings',
             'email_logs',
-            'drive_operations_log',
-            'company_invites',
             'activity_logs',
         ];
     }
@@ -484,35 +405,15 @@ class BackupService
                 }
             }
 
-            // Orden: hijos de expediente → processes → empresas/cotizaciones (FK relajadas; orden legible).
             $truncateTables = [
-                'company_user',
-                'documents',
-                'registrations',
-                'process_documents',
-                'process_user',
-                'regulatory_events',
-                'submissions',
-                'checklist_items',
-                'processes',
-                'quote_items',
-                'quotes',
-                'proposal_items',
-                'proposals',
-                'quote_pdf_templates',
-                'proposal_pdf_templates',
-                'companies',
-                'services',
-                'service_types',
-                'concept_catalogs',
+                'invoices',
+                'concept_prices',
+                'concepts',
+                'associates',
                 'email_templates',
                 'settings',
                 'email_logs',
-                'drive_operations_log',
-                'company_invites',
                 'activity_logs',
-                'capacitacion_videos',
-                'capacitacion_completions',
             ];
 
             foreach ($truncateTables as $table) {

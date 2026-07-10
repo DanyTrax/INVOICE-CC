@@ -3,20 +3,6 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
-use App\Models\CapacitacionVideo;
-use App\Models\ChecklistItem;
-use App\Models\Company;
-use App\Models\ConceptCatalog;
-use App\Models\Process;
-use App\Models\ProcessDocument;
-use App\Models\Proposal;
-use App\Models\ProposalPdfTemplate;
-use App\Models\Quote;
-use App\Models\QuotePdfTemplate;
-use App\Models\RegulatoryEvent;
-use App\Models\Service;
-use App\Models\ServiceType;
-use App\Models\Submission;
 use App\Models\SystemBackup;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -226,23 +212,8 @@ class ActivityLogService
     protected function summarizeModel(Model $model): string
     {
         return match (true) {
-            $model instanceof Company => $model->name,
             $model instanceof User => trim($model->name.' <'.$model->email.'>'),
-            $model instanceof Quote => 'Cotización '.($model->consecutive ?? '#'.$model->getKey()),
-            $model instanceof Proposal => 'Propuesta '.($model->consecutive ?? '#'.$model->getKey()),
-            $model instanceof Process => 'Solicitud '.$model->displayReference().($model->expediente_invima ? ' (INVIMA '.$model->expediente_invima.')' : ''),
-            $model instanceof Submission => 'Sometimiento #'.$model->getKey(),
-            $model instanceof RegulatoryEvent => 'Evento regulatorio #'.$model->getKey(),
-            $model instanceof ChecklistItem => 'Checklist: '.Str::limit($model->document_name ?? '#'.$model->getKey(), 80),
-            $model instanceof ProcessDocument => 'Documento: '.($model->file_name ?? '#'.$model->getKey()),
-            $model instanceof ServiceType => $model->name ?? '#'.$model->getKey(),
-            $model instanceof Service => $model->name ?? '#'.$model->getKey(),
-            $model instanceof ConceptCatalog => $model->name ?? '#'.$model->getKey(),
-            $model instanceof CapacitacionVideo => $model->titulo ?? '#'.$model->getKey(),
-            $model instanceof Role => 'Rol: '.($model->name ?? '#'.$model->getKey()),
             $model instanceof SystemBackup => $model->name ?? 'Backup #'.$model->getKey(),
-            $model instanceof QuotePdfTemplate => 'Plantilla cotización: '.($model->name ?? '#'.$model->getKey()),
-            $model instanceof ProposalPdfTemplate => 'Plantilla propuesta: '.($model->name ?? '#'.$model->getKey()),
             default => class_basename($model).' #'.$model->getKey(),
         };
     }

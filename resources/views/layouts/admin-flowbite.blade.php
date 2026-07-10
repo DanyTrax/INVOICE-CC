@@ -522,34 +522,15 @@
                 </div>
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center ps-2.5 mb-5" x-show="!winLg || sidebarExpanded" x-cloak>
                     @php
-                        try {
-                            $settings = app(\App\Settings\GeneralSettings::class);
-                            $logoPath = $settings->agency_logo ?? null;
-                            $agencyName = $settings->agency_name ?? null;
-                            $hasLogo = $logoPath && file_exists(public_path($logoPath));
-                            $hasName = !empty($agencyName) && $agencyName !== 'RAMS';
-                        } catch (\Exception $e) {
-                            $logoPath = null;
-                            $agencyName = null;
-                            $hasLogo = false;
-                            $hasName = false;
-                        }
+                        $logoUrl = isset($brandSetting) && $brandSetting->logo_path ? $brandSetting->logoUrl() : null;
+                        $companyName = $brandSetting->company_name ?? config('app.name', 'Recaudos');
                     @endphp
                     
-                    @if($hasLogo)
-                        {{-- Solo mostrar logo si existe --}}
-                        <img src="{{ asset($logoPath) }}" 
-                             alt="{{ $agencyName ?? 'Logo' }}" 
-                             class="h-10 w-auto object-contain">
-                    @elseif($hasName)
-                        {{-- Solo mostrar nombre de agencia si no hay logo --}}
-                        <span class="self-center text-xl font-semibold whitespace-nowrap text-white">
-                            <span class="text-teal-400">{{ $agencyName }}</span>
-                        </span>
+                    @if($logoUrl)
+                        <img src="{{ $logoUrl }}" alt="{{ $companyName }}" class="h-10 w-auto object-contain">
                     @else
-                        {{-- Por defecto: R REGULATORY APP --}}
                         <span class="self-center text-xl font-semibold whitespace-nowrap text-white">
-                            <span class="text-teal-400">R</span> REGULATORY APP
+                            <span class="text-teal-400">{{ \Illuminate\Support\Str::limit($companyName, 24) }}</span>
                         </span>
                     @endif
                 </a>
@@ -571,206 +552,64 @@
                         </li>
                     @endif
 
-                    <!-- OPERACIÓN -->
-                    @if($permService->userHasPermission('processes', 'view') || $permService->userHasPermission('service_types', 'view'))
+                    @if($permService->userHasPermission('associates', 'view') || $permService->userHasPermission('concepts', 'view') || $permService->userHasPermission('invoices', 'view'))
                     <li class="pt-4" x-show="!winLg || sidebarExpanded" x-cloak>
-                        <span class="text-gray-400 text-xs font-semibold uppercase px-2">OPERACIÓN</span>
+                        <span class="text-gray-400 text-xs font-semibold uppercase px-2">RECAUDOS</span>
                     </li>
-                    @php
-                        $solicitudesLinkActive = (request()->routeIs('admin.processes.*') && ! request()->routeIs('admin.processes.history'))
-                            || request()->routeIs('admin.submissions.*');
-                        $tramiteActive = request()->routeIs('admin.service-types.*');
-                        $solicitudesRowActive = $solicitudesLinkActive || $tramiteActive;
-                        $solicitudesSubOpen = $tramiteActive;
-                    @endphp
-                    @if($permService->userHasPermission('processes', 'view'))
-                    <li x-data="{ solicitudesOpen: {{ $solicitudesSubOpen ? 'true' : 'false' }} }">
-                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $solicitudesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}"
-                             :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''">
-                            <a href="{{ route('admin.processes.monitor') }}"
-                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium"
-                               :class="(winLg && !sidebarExpanded) ? 'justify-center flex-none' : ''"
-                               title="Solicitudes">
-                                <i class="fas fa-folder w-5 h-5 shrink-0"></i>
-                                <span class="truncate" x-show="!winLg || sidebarExpanded" x-cloak>Solicitudes</span>
-                            </a>
-                            @if($permService->userHasPermission('service_types', 'view'))
-                            <button type="button"
-                                    x-show="!winLg || sidebarExpanded"
-                                    x-cloak
-                                    @click.stop="solicitudesOpen = !solicitudesOpen"
-                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30"
-                                    title="Mostrar Trámite">
-                                <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': solicitudesOpen }"></i>
-                            </button>
-                            @endif
-                        </div>
-                        @if($permService->userHasPermission('service_types', 'view'))
-                        <ul x-show="solicitudesOpen && (!winLg || sidebarExpanded)" x-cloak
-                            x-transition:enter="transition ease-out duration-150"
-                            x-transition:enter-start="opacity-0 -translate-y-1"
-                            x-transition:enter-end="opacity-100 translate-y-0"
-                            x-transition:leave="transition ease-in duration-100"
-                            x-transition:leave-start="opacity-100"
-                            x-transition:leave-end="opacity-0"
-                            class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
-                            <li>
-                                <a href="{{ route('admin.service-types.index') }}"
-                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ $tramiteActive ? 'bg-teal-700/50 text-white' : '' }}">
-                                    <i class="fas fa-list-alt w-4 h-4"></i>
-                                    <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Trámite</span>
-                                </a>
-                            </li>
-                        </ul>
-                        @endif
-                    </li>
+                    @if($permService->userHasPermission('associates', 'view'))
                     <li>
-                        <a href="{{ route('admin.processes.history') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.processes.history') ? 'bg-teal-700' : '' }}"
+                        <a href="{{ route('admin.associates.index') }}"
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.associates.*') ? 'bg-teal-700' : '' }}"
                            :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Historial de solicitudes">
-                            <i class="fas fa-clock-rotate-left w-5 h-5"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Historial de solicitudes</span>
+                           title="Asociados">
+                            <i class="fas fa-users w-5 h-5 shrink-0"></i>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Asociados</span>
                         </a>
                     </li>
-                    @elseif($permService->userHasPermission('service_types', 'view'))
+                    @endif
+                    @if($permService->userHasPermission('concepts', 'view'))
                     <li>
-                        <a href="{{ route('admin.service-types.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.service-types.*') ? 'bg-teal-700' : '' }}"
+                        <a href="{{ route('admin.concepts.index') }}"
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.concepts.*') ? 'bg-teal-700' : '' }}"
                            :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Trámite">
-                            <i class="fas fa-list-alt w-5 h-5 shrink-0"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Trámite</span>
+                           title="Conceptos">
+                            <i class="fas fa-tags w-5 h-5 shrink-0"></i>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Conceptos</span>
+                        </a>
+                    </li>
+                    @endif
+                    @if($permService->userHasPermission('invoices', 'view'))
+                    <li>
+                        <a href="{{ route('admin.invoices.index') }}"
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.invoices.*') ? 'bg-teal-700' : '' }}"
+                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
+                           title="Cuentas de cobro">
+                            <i class="fas fa-file-invoice-dollar w-5 h-5 shrink-0"></i>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Cuentas de cobro</span>
                         </a>
                     </li>
                     @endif
                     @endif
 
-                    <!-- CONTABILIDAD -->
-                    @if($permService->userHasPermission('proposals', 'view') || $permService->userHasPermission('concept_catalogs', 'view') || $permService->userHasPermission('quotes', 'view') || $permService->userHasPermission('services', 'view'))
-                    @php
-                        $propuestasLinkActive = request()->routeIs('admin.proposals.*');
-                        $conceptosActive = request()->routeIs('admin.concept-catalogs.*');
-                        $propuestasRowActive = $propuestasLinkActive || $conceptosActive;
-                        $propuestasSubOpen = $conceptosActive;
-
-                        $cotizacionesLinkActive = request()->routeIs('admin.quotes.*');
-                        $serviciosActive = request()->routeIs('admin.services.*');
-                        $cotizacionesRowActive = $cotizacionesLinkActive || $serviciosActive;
-                        $cotizacionesSubOpen = $serviciosActive;
-                    @endphp
+                    @if($permService->userHasPermission('settings_brand', 'view'))
                     <li class="pt-4" x-show="!winLg || sidebarExpanded" x-cloak>
-                        <span class="text-gray-400 text-xs font-semibold uppercase px-2">CONTABILIDAD</span>
+                        <span class="text-gray-400 text-xs font-semibold uppercase px-2">CONFIGURACIÓN</span>
                     </li>
-                    @if($permService->userHasPermission('proposals', 'view') || $permService->userHasPermission('concept_catalogs', 'view'))
-                    <li x-data="{ propuestasOpen: {{ $propuestasSubOpen ? 'true' : 'false' }} }">
-                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $propuestasRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}"
-                             :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''">
-                            @if($permService->userHasPermission('proposals', 'view'))
-                            <a href="{{ route('admin.proposals.index') }}"
-                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium"
-                               :class="(winLg && !sidebarExpanded) ? 'justify-center flex-none' : ''"
-                               title="Propuestas">
-                                <i class="fas fa-file-signature w-5 h-5 shrink-0"></i>
-                                <span class="truncate" x-show="!winLg || sidebarExpanded" x-cloak>Propuestas</span>
-                            </a>
-                            @endif
-                            @if($permService->userHasPermission('concept_catalogs', 'view'))
-                            <button type="button"
-                                    x-show="!winLg || sidebarExpanded"
-                                    x-cloak
-                                    @click.stop="propuestasOpen = !propuestasOpen"
-                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30 {{ $permService->userHasPermission('proposals', 'view') ? '' : 'flex-1 justify-start pl-3' }}"
-                                    title="Mostrar Conceptos">
-                                <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': propuestasOpen }"></i>
-                            </button>
-                            @endif
-                        </div>
-                        @if($permService->userHasPermission('concept_catalogs', 'view'))
-                        <ul x-show="propuestasOpen && (!winLg || sidebarExpanded)" x-cloak
-                            x-transition:enter="transition ease-out duration-150"
-                            x-transition:enter-start="opacity-0 -translate-y-1"
-                            x-transition:enter-end="opacity-100 translate-y-0"
-                            x-transition:leave="transition ease-in duration-100"
-                            x-transition:leave-start="opacity-100"
-                            x-transition:leave-end="opacity-0"
-                            class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
-                            <li>
-                                <a href="{{ route('admin.concept-catalogs.index') }}"
-                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ $conceptosActive ? 'bg-teal-700/50 text-white' : '' }}">
-                                    <i class="fas fa-list-ul w-4 h-4"></i>
-                                    <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Conceptos</span>
-                                </a>
-                            </li>
-                        </ul>
-                        @endif
-                    </li>
-                    @endif
-                    @if($permService->userHasPermission('quotes', 'view') || $permService->userHasPermission('services', 'view'))
-                    <li x-data="{ contabilidadOpen: {{ $cotizacionesSubOpen ? 'true' : 'false' }} }">
-                        <div class="flex items-stretch rounded-lg overflow-hidden {{ $cotizacionesRowActive ? 'bg-teal-700' : 'hover:bg-teal-700/40' }}"
-                             :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''">
-                            @if($permService->userHasPermission('quotes', 'view'))
-                            <a href="{{ route('admin.quotes.index') }}"
-                               class="flex flex-1 items-center gap-3 min-w-0 p-2 text-white text-sm font-medium"
-                               :class="(winLg && !sidebarExpanded) ? 'justify-center flex-none' : ''"
-                               title="Cotizaciones">
-                                <i class="fas fa-file-invoice-dollar w-5 h-5 shrink-0"></i>
-                                <span class="truncate" x-show="!winLg || sidebarExpanded" x-cloak>Cotizaciones</span>
-                            </a>
-                            @endif
-                            @if($permService->userHasPermission('services', 'view'))
-                            <button type="button"
-                                    x-show="!winLg || sidebarExpanded"
-                                    x-cloak
-                                    @click.stop="contabilidadOpen = !contabilidadOpen"
-                                    class="shrink-0 px-2 flex items-center justify-center text-white/90 hover:text-white hover:bg-teal-600/50 border-l border-teal-600/30 {{ $permService->userHasPermission('quotes', 'view') ? '' : 'flex-1 justify-start pl-3' }}"
-                                    title="Mostrar Servicios">
-                                <i class="fas fa-chevron-down w-4 h-4 transition-transform" :class="{ 'rotate-180': contabilidadOpen }"></i>
-                            </button>
-                            @endif
-                        </div>
-                        @if($permService->userHasPermission('services', 'view'))
-                        <ul x-show="contabilidadOpen && (!winLg || sidebarExpanded)" x-cloak
-                            x-transition:enter="transition ease-out duration-150"
-                            x-transition:enter-start="opacity-0 -translate-y-1"
-                            x-transition:enter-end="opacity-100 translate-y-0"
-                            x-transition:leave="transition ease-in duration-100"
-                            x-transition:leave-start="opacity-100"
-                            x-transition:leave-end="opacity-0"
-                            class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
-                            <li>
-                                <a href="{{ route('admin.services.index') }}"
-                                   class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ $serviciosActive ? 'bg-teal-700/50 text-white' : '' }}">
-                                    <i class="fas fa-concierge-bell w-4 h-4"></i>
-                                    <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Servicios</span>
-                                </a>
-                            </li>
-                        </ul>
-                        @endif
-                    </li>
-                    @endif
-                    @endif
-
-                    @if($permService->userHasPermission('capacitaciones', 'view'))
-                    <li class="pt-4">
-                        <a href="{{ route('admin.capacitaciones.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.capacitaciones.*') ? 'bg-teal-700' : '' }}"
+                    <li>
+                        <a href="{{ route('admin.brand-settings.edit') }}"
+                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.brand-settings.*') ? 'bg-teal-700' : '' }}"
                            :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Capacitaciones">
-                            <i class="fas fa-video w-5 h-5 shrink-0"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Capacitaciones</span>
+                           title="Marca blanca">
+                            <i class="fas fa-palette w-5 h-5 shrink-0"></i>
+                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Marca blanca</span>
                         </a>
                     </li>
                     @endif
 
                     <!-- SISTEMA -->
                     @php
-                        $sistemaSectionVisible = $permService->userHasPermission('companies', 'view')
-                            || $permService->userHasPermission('users', 'view')
-                            || $permService->userHasPermission('settings_agency', 'view')
-                            || $permService->userHasPermission('settings_drive', 'view')
-                            || $permService->userHasPermission('settings_drive_operations_log', 'view')
+                        $sistemaSectionVisible = $permService->userHasPermission('users', 'view')
+                            || $permService->userHasPermission('settings_brand', 'view')
                             || $permService->userHasPermission('settings_mail', 'view')
                             || $permService->userHasPermission('settings_templates', 'view')
                             || $permService->userHasPermission('settings_history', 'view')
@@ -785,30 +624,16 @@
                             <span class="text-gray-400 text-xs font-semibold uppercase px-2">SISTEMA</span>
                         </li>
                     @endif
-                    @if($permService->userHasPermission('companies', 'view'))
-                        <li>
-                            <a href="{{ route('admin.companies.index') }}"
-                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.companies.*') ? 'bg-teal-700' : '' }}"
-                               :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                               title="Empresas">
-                                <i class="fas fa-building w-5 h-5 shrink-0"></i>
-                                <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Empresas</span>
-                            </a>
-                        </li>
-                    @endif
                     @if($permService->userHasPermission('users', 'view')
-                        || $permService->userHasPermission('settings_agency', 'view') 
-                        || $permService->userHasPermission('settings_drive', 'view')
-                        || $permService->userHasPermission('settings_drive_operations_log', 'view')
                         || $permService->userHasPermission('settings_mail', 'view')
                         || $permService->userHasPermission('settings_templates', 'view')
                         || $permService->userHasPermission('settings_history', 'view')
                         || $permService->userHasPermission('settings_system', 'view'))
                         @if($permService->userHasPermission('users', 'view'))
-                            <li x-data="{ directorioOpen: {{ request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
+                            <li x-data="{ directorioOpen: {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
                                 <button @click="(winLg && !sidebarExpanded) ? (sidebarExpanded = true) : (directorioOpen = !directorioOpen)"
                                         type="button"
-                                        class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.clients.*') || request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}"
+                                        class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}"
                                         :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
                                         title="Directorio">
                                     <i class="fas fa-address-book w-5 h-5 shrink-0"></i>
@@ -823,13 +648,6 @@
                                     x-transition:leave-start="opacity-100"
                                     x-transition:leave-end="opacity-0"
                                     class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
-                                    <li>
-                                        <a href="{{ route('admin.clients.index') }}"
-                                           class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.clients.*') ? 'bg-teal-700/50 text-white' : '' }}">
-                                            <i class="fas fa-user-friends w-4 h-4"></i>
-                                            <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Clientes</span>
-                                        </a>
-                                    </li>
                                     <li>
                                         <a href="{{ route('admin.agents.index') }}"
                                            class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700/50 text-white' : '' }}">

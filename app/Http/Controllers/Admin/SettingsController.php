@@ -5,15 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Controller;
 use App\Models\AppErrorLog;
-use App\Models\DriveOperationLog;
 use App\Models\EmailLog;
 use App\Models\EmailTemplate;
 use App\Models\LoginIpLockout;
-use App\Models\ProposalPdfTemplate;
-use App\Models\QuotePdfTemplate;
 use App\Models\User;
 use App\Services\GitWorkingCopyService;
-use App\Services\GoogleDriveService;
 use App\Services\LoginLockoutService;
 use App\Services\MailService;
 use App\Services\PermissionService;
@@ -30,27 +26,22 @@ use Spatie\LaravelSettings\Exceptions\MissingSettings;
 
 class SettingsController extends Controller
 {
-    public function index(Request $request, $section = 'agency')
+    public function index(Request $request, $section = 'mail')
     {
         // Validar que la sección sea válida
-        $validSections = ['agency', 'drive', 'mail', 'templates', 'history', 'system', 'quote-pdf', 'proposal-pdf', 'legal-policies', 'login-lockouts'];
+        $validSections = ['mail', 'templates', 'history', 'system', 'legal-policies', 'login-lockouts'];
         if (! in_array($section, $validSections)) {
-            $section = 'agency';
+            $section = 'mail';
         }
 
         $permissionService = app(PermissionService::class);
 
-        // Mapear secciones a módulos de permisos (drive: acceso si tiene configuración O historial)
         $sectionModuleMap = [
-            'agency' => ['settings_agency'],
-            'drive' => ['settings_drive', 'settings_drive_operations_log'],
             'mail' => ['settings_mail'],
             'templates' => ['settings_templates'],
             'history' => ['settings_history'],
             'system' => ['settings_system'],
-            'quote-pdf' => ['settings_agency'],
-            'proposal-pdf' => ['settings_agency'],
-            'legal-policies' => ['settings_agency'],
+            'legal-policies' => ['settings_system'],
             'login-lockouts' => ['settings_system'],
         ];
 
@@ -82,24 +73,6 @@ class SettingsController extends Controller
         }
 
         $emailTemplates = EmailTemplate::all();
-
-        $quotePdfTemplates = [];
-        if ($section === 'quote-pdf') {
-            try {
-                $quotePdfTemplates = QuotePdfTemplate::orderByRaw('is_default DESC')->orderBy('name')->get();
-            } catch (\Throwable $e) {
-                $quotePdfTemplates = [];
-            }
-        }
-
-        $proposalPdfTemplates = [];
-        if ($section === 'proposal-pdf') {
-            try {
-                $proposalPdfTemplates = ProposalPdfTemplate::orderByRaw('is_default DESC')->orderBy('name')->get();
-            } catch (\Throwable $e) {
-                $proposalPdfTemplates = [];
-            }
-        }
 
         // Verificar si la tabla email_logs existe antes de consultarla
         try {
@@ -206,8 +179,6 @@ class SettingsController extends Controller
             'settings' => $settings,
             'emailTemplates' => $emailTemplates,
             'emailLogs' => $emailLogs,
-            'quotePdfTemplates' => $quotePdfTemplates,
-            'proposalPdfTemplates' => $proposalPdfTemplates ?? [],
             'activeSection' => $section,
             'userToDelete' => $userToDelete,
             'gitInfo' => $gitInfo,
@@ -249,7 +220,7 @@ class SettingsController extends Controller
 
         // Confirmar eliminación (segundo paso)
         if ($request->filled('user_id')) {
-            $user = User::with('roles', 'companies')->find($request->user_id);
+            $user = User::with('roles')->find($request->user_id);
             if (! $user) {
                 session()->forget('user_to_delete_id');
 
@@ -259,11 +230,6 @@ class SettingsController extends Controller
                 session()->forget('user_to_delete_id');
 
                 return $redirectSettings->with('error', 'No puedes eliminar tu propio usuario.');
-            }
-            if ($user->assignedRegistrations()->count() > 0) {
-                session()->forget('user_to_delete_id');
-
-                return $redirectSettings->with('error', 'No se puede eliminar: tiene solicitudes asignadas.');
             }
             $userController = app(AdminUserController::class);
             if (! $userController->canEditUserPublic($user)) {
@@ -280,17 +246,16 @@ class SettingsController extends Controller
             $name = $user->name;
             $email = $user->email;
             $rolesText = $user->roles->pluck('name')->join(', ') ?: 'Sin rol';
-            $companiesText = $user->companies->pluck('name')->join(', ') ?: 'Ninguna';
             $userController->performUserDeletion($user);
             session()->forget('user_to_delete_id');
 
-            return $redirectSettings->with('success', 'Usuario eliminado: '.$name.' ('.$email.'). Rol: '.$rolesText.'. Empresas: '.$companiesText.'.');
+            return $redirectSettings->with('success', 'Usuario eliminado: '.$name.' ('.$email.'). Rol: '.$rolesText.'.');
         }
 
         // Buscar por correo (primer paso)
         $request->validate(['email' => 'required|email']);
         $email = $request->input('email');
-        $user = User::with('roles', 'companies')->where('email', $email)->first();
+        $user = User::with('roles')->where('email', $email)->first();
 
         if (! $user) {
             return $redirectSettings->with('error', 'No hay ningún usuario con ese correo en el sistema. No está en la lista.');
@@ -317,19 +282,15 @@ class SettingsController extends Controller
     protected function getFirstAllowedSection(PermissionService $permissionService): string
     {
         if (auth()->user()->hasRole('super_admin')) {
-            return 'agency';
+            return 'mail';
         }
         $order = [
-            'agency' => ['settings_agency'],
-            'drive' => ['settings_drive', 'settings_drive_operations_log'],
             'mail' => ['settings_mail'],
             'templates' => ['settings_templates'],
             'history' => ['settings_history'],
             'login-lockouts' => ['settings_system'],
             'system' => ['settings_system'],
-            'quote-pdf' => ['settings_agency'],
-            'proposal-pdf' => ['settings_agency'],
-            'legal-policies' => ['settings_agency'],
+            'legal-policies' => ['settings_system'],
         ];
         foreach ($order as $section => $modules) {
             if ($section === 'system') {
@@ -346,7 +307,7 @@ class SettingsController extends Controller
             }
         }
 
-        return 'agency';
+        return 'mail';
     }
 
     /**
@@ -378,19 +339,13 @@ class SettingsController extends Controller
         }
 
         switch ($section) {
-            case 'agency':
-                $this->updateAgencySettings($request, $settings);
-                break;
-            case 'drive':
-                $this->updateDriveSettings($request, $settings);
-                break;
             case 'mail':
                 $this->updateMailSettings($request, $settings);
                 break;
             case 'system':
                 // Solo super_admin puede actualizar configuración del sistema
                 if (! auth()->user()->hasRole('super_admin')) {
-                    return redirect()->route('admin.settings.section', 'agency')
+                    return redirect()->route('admin.settings.section', 'mail')
                         ->with('error', 'No tienes permisos para realizar esta acción.');
                 }
                 $this->updateSystemSettings($request, $settings);
@@ -419,7 +374,7 @@ class SettingsController extends Controller
         // Para casos especiales, mantener la sección actual
         if ($section === 'email_template' || $section === 'test_email') {
             // Estos casos ya manejan su propia redirección
-            $redirectSection = $request->input('current_section', 'agency');
+            $redirectSection = $request->input('current_section', 'mail');
         }
 
         if ($redirectSection === 'system') {

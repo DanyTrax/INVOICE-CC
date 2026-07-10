@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SystemBackup;
 use App\Services\BackupService;
-use App\Services\GoogleDriveService;
 use App\Services\PermissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -43,32 +43,27 @@ class BackupController extends Controller
 
         return redirect()
             ->route('admin.backups.index')
-            ->with('success', 'Backup creado y enviado a Google Drive correctamente.');
+            ->with('success', 'Backup creado correctamente.');
     }
 
-    public function download(SystemBackup $backup, GoogleDriveService $drive): StreamedResponse
+    public function download(SystemBackup $backup): StreamedResponse
     {
         $this->ensureCanAccessBackups();
 
-        $content = $drive->downloadFile($backup->drive_file_id);
+        $path = $backup->drive_file_id;
+        if (! $path || ! Storage::disk('local')->exists($path)) {
+            abort(404, 'Archivo de backup no encontrado.');
+        }
 
-        return response()->streamDownload(function () use ($content) {
-            echo $content;
-        }, $backup->name, [
-            'Content-Type' => 'application/json',
-        ]);
+        return Storage::disk('local')->download($path, $backup->name);
     }
 
-    public function destroy(SystemBackup $backup, GoogleDriveService $drive): RedirectResponse
+    public function destroy(SystemBackup $backup): RedirectResponse
     {
         $this->ensureCanAccessBackups();
 
-        if ($backup->drive_file_id) {
-            try {
-                $drive->deleteFile($backup->drive_file_id);
-            } catch (\Throwable $e) {
-                // Ignorar errores al borrar en Drive
-            }
+        if ($backup->drive_file_id && Storage::disk('local')->exists($backup->drive_file_id)) {
+            Storage::disk('local')->delete($backup->drive_file_id);
         }
 
         $backup->delete();
@@ -117,7 +112,7 @@ class BackupController extends Controller
             ->with('success', $msg);
     }
 
-    public function restore(Request $request, SystemBackup $backup, BackupService $service, GoogleDriveService $drive): RedirectResponse
+    public function restore(Request $request, SystemBackup $backup, BackupService $service): RedirectResponse
     {
         $this->ensureCanAccessBackups();
 
@@ -137,23 +132,21 @@ class BackupController extends Controller
             : null;
 
         try {
-            $content = $drive->downloadFile($backup->drive_file_id);
+            $path = $backup->drive_file_id;
+            if (! $path || ! Storage::disk('local')->exists($path)) {
+                throw new \RuntimeException('Archivo de backup no encontrado en el servidor.');
+            }
+            $content = Storage::disk('local')->get($path);
             $service->restoreBackupFromJson($content, $selective);
         } catch (\Throwable $e) {
-            $msg = $e->getMessage();
-            $hint = '';
-            if (str_contains($msg, 'Google Drive') || str_contains($msg, 'OAuth') || str_contains($msg, 'Drive')) {
-                $hint = ' Puedes descargar este backup (icono azul) e importar el archivo JSON abajo en «Importar backup»: la importación no requiere que Drive esté configurado en el servidor.';
-            }
-
             return redirect()
                 ->route('admin.backups.index')
-                ->with('error', 'Error al restaurar backup desde Drive: '.$msg.$hint);
+                ->with('error', 'Error al restaurar backup: '.$e->getMessage());
         }
 
         $msg = $selective === null
-            ? 'Backup restaurado desde Drive (restauración completa).'
-            : 'Backup restaurado desde Drive solo en los bloques seleccionados.';
+            ? 'Backup restaurado (restauración completa).'
+            : 'Backup restaurado solo en los bloques seleccionados.';
 
         return redirect()
             ->route('admin.backups.index')

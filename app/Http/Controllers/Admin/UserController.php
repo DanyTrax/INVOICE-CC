@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
-use App\Models\Company;
-use App\Models\CompanyInvite;
 use App\Models\User;
 use App\Services\ActivityLogService;
 use App\Services\EmailTemplateService;
@@ -44,15 +42,15 @@ class UserController extends Controller
 
         // Lógica hardcodeada como fallback
         if ($user->hasRole('super_admin')) {
-            return ['super_admin', 'admin', 'agent', 'client'];
+            return ['super_admin', 'admin', 'agent'];
         }
 
         if ($user->hasRole('admin')) {
-            return ['admin', 'agent', 'client'];
+            return ['admin', 'agent'];
         }
 
         if ($user->hasRole('agent')) {
-            return ['client'];
+            return ['agent'];
         }
 
         return [];
@@ -86,13 +84,13 @@ class UserController extends Controller
         }
 
         if ($user->hasRole('super_admin')) {
-            return ['super_admin', 'admin', 'agent', 'client', PermissionService::NO_ROLE];
+            return ['super_admin', 'admin', 'agent', PermissionService::NO_ROLE];
         }
         if ($user->hasRole('admin')) {
-            return ['admin', 'agent', 'client'];
+            return ['admin', 'agent'];
         }
         if ($user->hasRole('agent')) {
-            return ['agent', 'client'];
+            return ['agent'];
         }
 
         return [];
@@ -196,186 +194,7 @@ class UserController extends Controller
     }
 
     /**
-     * Lista solo usuarios con rol client (usuarios que consultan desde el portal).
-     */
-    public function clients(Request $request)
-    {
-        $query = User::role('client');
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
-            });
-        }
-
-        $users = $query->with('roles')
-            ->withCount('companies')
-            ->orderBy('name')
-            ->paginate(15)
-            ->withQueryString();
-
-        $roles = collect();
-        $canCreateClients = in_array('client', $this->getAllowedRolesToCreate(), true);
-        $editableUserIds = collect($users->items())->filter(fn ($u) => $this->canEditUser($u))->pluck('id')->all();
-
-        $pendingInvitesQuery = CompanyInvite::query()
-            ->whereNull('used_at')
-            ->with('company');
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $pendingInvitesQuery->where(function ($q) use ($search) {
-                $q->where('email', 'like', "%{$search}%")
-                    ->orWhereHas('company', function ($cq) use ($search) {
-                        $cq->where('name', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        $pendingInvites = $pendingInvitesQuery
-            ->orderByDesc('created_at')
-            ->paginate(10, ['*'], 'invites_page')
-            ->withQueryString();
-
-        return view('admin.users.listing', [
-            'users' => $users,
-            'roles' => $roles,
-            'listingType' => 'clients',
-            'canCreateClients' => $canCreateClients,
-            'canFilterNoRole' => false,
-            'editableUserIds' => $editableUserIds,
-            'pendingInvites' => $pendingInvites,
-        ]);
-    }
-
-    /**
-     * Formulario para crear un nuevo cliente (rol client). Solo si el rol tiene permiso para crear clientes.
-     */
-    public function createClient()
-    {
-        if (! in_array('client', $this->getAllowedRolesToCreate(), true)) {
-            abort(403, 'No tienes permiso para crear clientes.');
-        }
-        $companies = Company::orderBy('name')->get();
-
-        return view('admin.users.create-client', compact('companies'));
-    }
-
-    /**
-     * Guardar nuevo cliente (rol client). Solo si el rol tiene permiso para crear clientes.
-     */
-    public function storeClient(Request $request): RedirectResponse
-    {
-        if (! in_array('client', $this->getAllowedRolesToCreate(), true)) {
-            abort(403, 'No tienes permiso para crear clientes.');
-        }
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:50',
-            'is_active' => 'boolean',
-            'companies' => 'array',
-            'companies.*' => 'exists:companies,id',
-        ]);
-        $validated['password'] = Hash::make($validated['password']);
-        // Sin "Cliente activo": pendiente de activación (no deshabilitado). Puede iniciar sesión y ver aviso en portal.
-        if ($request->has('is_active')) {
-            $validated['client_status'] = User::CLIENT_STATUS_ACTIVO;
-            $validated['is_active'] = true;
-        } else {
-            $validated['client_status'] = User::CLIENT_STATUS_PENDIENTE;
-            $validated['is_active'] = true;
-        }
-        $user = User::create($validated);
-        $user->assignRole('client');
-        $this->syncClientCompaniesFromRequest($request, $user);
-
-        return redirect()
-            ->route('admin.clients.index')
-            ->with('success', 'Cliente creado exitosamente.');
-    }
-
-    /**
-     * Actualizar estado del cliente (activo, pendiente, deshabilitado).
-     */
-    public function updateClientStatus(Request $request, User $user): RedirectResponse
-    {
-        if (! $user->hasRole('client')) {
-            abort(404, 'El usuario no es un cliente.');
-        }
-        if (! $this->canEditUser($user)) {
-            abort(403, 'No tienes permiso para editar este cliente.');
-        }
-        $validated = $request->validate([
-            'client_status' => 'required|in:activo,pendiente,deshabilitado',
-        ]);
-        $user->client_status = $validated['client_status'];
-        $user->is_active = ($validated['client_status'] !== User::CLIENT_STATUS_DESHABILITADO);
-        $user->save();
-
-        return back()->with('success', 'Estado del cliente actualizado.');
-    }
-
-    /**
-     * Formulario para editar un cliente (solo datos de cliente, sin roles de admin/agente).
-     */
-    public function editClient(User $user)
-    {
-        if (! $user->hasRole('client')) {
-            abort(404, 'El usuario no es un cliente.');
-        }
-        if (! $this->canEditUser($user)) {
-            abort(403, 'No tienes permiso para editar este cliente.');
-        }
-        $user->load('companies');
-        $companies = Company::orderBy('name')->get();
-
-        return view('admin.users.edit-client', array_merge(
-            compact('user', 'companies'),
-            $this->adminTwoFactorContext($user)
-        ));
-    }
-
-    /**
-     * Actualizar un cliente (solo campos de cliente; no se modifica el rol).
-     */
-    public function updateClient(Request $request, User $user): RedirectResponse
-    {
-        if (! $user->hasRole('client')) {
-            abort(404, 'El usuario no es un cliente.');
-        }
-        if (! $this->canEditUser($user)) {
-            abort(403, 'No tienes permiso para editar este cliente.');
-        }
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
-            'password' => 'nullable|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:50',
-            'client_status' => 'required|in:activo,pendiente,deshabilitado',
-            'companies' => 'array',
-            'companies.*' => 'exists:companies,id',
-        ]);
-        if (empty($validated['password'])) {
-            unset($validated['password']);
-        } else {
-            $validated['password'] = Hash::make($validated['password']);
-        }
-        $validated['is_active'] = ($validated['client_status'] !== User::CLIENT_STATUS_DESHABILITADO);
-        $user->update($validated);
-        $this->syncClientCompaniesFromRequest($request, $user);
-
-        return redirect()
-            ->route('admin.clients.index')
-            ->with('success', 'Cliente actualizado correctamente.');
-    }
-
-    /**
-     * Lista solo usuarios que no son clientes (especialistas, admin, super_admin).
+     * Lista usuarios administrativos (especialistas, admin, super_admin).
      */
     public function agents(Request $request)
     {
@@ -406,7 +225,6 @@ class UserController extends Controller
         }
 
         $users = $query->with('roles')
-            ->withCount('companies')
             ->orderBy('name')
             ->paginate(15)
             ->withQueryString();
@@ -431,9 +249,8 @@ class UserController extends Controller
         $noRole = PermissionService::NO_ROLE;
         $canAssignNoRole = in_array($noRole, $allowedRoles, true);
         $roles = Role::whereIn('name', array_filter($allowedRoles, fn ($n) => $n !== $noRole))->get();
-        $companies = Company::orderBy('name')->get();
 
-        return view('admin.users.create', compact('roles', 'companies', 'canAssignNoRole'));
+        return view('admin.users.create', compact('roles', 'canAssignNoRole'));
     }
 
     public function store(Request $request)
@@ -445,8 +262,6 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
             'role' => 'nullable|string|max:255',
-            'companies' => 'array',
-            'companies.*' => 'exists:companies,id',
         ]);
 
         $roleInput = $request->input('role');
@@ -459,8 +274,6 @@ class UserController extends Controller
 
         $user->syncRoles($this->roleToSync($roleInput));
 
-        $this->syncAgentCompaniesFromRequest($request, $user);
-
         return redirect()
             ->route('admin.agents.index')
             ->with('success', 'Usuario creado exitosamente.');
@@ -468,8 +281,7 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        $user->load('roles', 'companies');
-        $user->loadCount('companies', 'assignedRegistrations');
+        $user->load('roles');
         $canEdit = $this->canEditUser($user);
 
         return view('admin.users.show', array_merge(
@@ -489,11 +301,10 @@ class UserController extends Controller
         $noRole = PermissionService::NO_ROLE;
         $canAssignNoRole = in_array($noRole, $allowedRoles, true);
         $roles = Role::whereIn('name', array_filter($allowedRoles, fn ($n) => $n !== $noRole))->get();
-        $companies = Company::orderBy('name')->get();
-        $user->load('roles', 'companies');
+        $user->load('roles');
 
         return view('admin.users.edit', array_merge(
-            compact('user', 'roles', 'companies', 'canAssignNoRole'),
+            compact('user', 'roles', 'canAssignNoRole'),
             $this->adminTwoFactorContext($user)
         ));
     }
@@ -511,8 +322,6 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:50',
             'is_active' => 'boolean',
             'role' => 'nullable|string|max:255',
-            'companies' => 'array',
-            'companies.*' => 'exists:companies,id',
         ]);
 
         $roleInput = $request->input('role');
@@ -530,8 +339,6 @@ class UserController extends Controller
         $user->update($validated);
 
         $user->syncRoles($this->roleToSync($roleInput));
-
-        $this->syncAgentCompaniesFromRequest($request, $user);
 
         return redirect()
             ->route('admin.agents.index')
@@ -551,20 +358,9 @@ class UserController extends Controller
                 ->with('error', 'No puedes eliminar tu propio usuario.');
         }
 
-        // Verificar si tiene registros asignados (solo aplica a especialistas, no a clientes)
-        if ($user->assignedRegistrations()->count() > 0) {
-            $redirectTo = $user->hasRole('client') ? route('admin.clients.index') : route('admin.agents.index');
-
-            return redirect()->to($redirectTo)
-                ->with('error', 'No se puede eliminar el usuario porque tiene solicitudes asignadas.');
-        }
-
-        $isClient = $user->hasRole('client');
         $this->performUserDeletion($user);
 
-        $redirectTo = $isClient ? route('admin.clients.index') : route('admin.agents.index');
-
-        return redirect()->to($redirectTo)
+        return redirect()->route('admin.agents.index')
             ->with('success', 'Usuario eliminado exitosamente.');
     }
 
@@ -574,7 +370,6 @@ class UserController extends Controller
     public function performUserDeletion(User $user): void
     {
         $user->syncRoles([]);
-        $user->companies()->sync([]);
         $user->delete();
     }
 
@@ -594,7 +389,7 @@ class UserController extends Controller
         if (! $this->canEditUser($user)) {
             abort(403, 'No tienes permiso para enviar correo a este usuario.');
         }
-        $redirectRoute = $user->hasRole('client') ? 'admin.clients.index' : 'admin.agents.index';
+        $redirectRoute = 'admin.agents.index';
         if ($user->id === auth()->id()) {
             return redirect()->route($redirectRoute)
                 ->with('error', 'No puedes enviarte el correo a ti mismo.');
@@ -637,8 +432,7 @@ class UserController extends Controller
     public function profile()
     {
         $user = auth()->user();
-        $user->load('roles', 'companies');
-        $user->loadCount('companies', 'assignedRegistrations');
+        $user->load('roles');
 
         return view('admin.users.profile', compact('user'));
     }
@@ -704,54 +498,5 @@ class UserController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Se desactivó la verificación en dos pasos para '.$user->name.'. Podrá configurarla de nuevo desde su perfil.');
-    }
-
-    /**
-     * Empresas para agentes/especialistas: pivote con "ver todas las solicitudes" por empresa.
-     */
-    protected function syncAgentCompaniesFromRequest(Request $request, User $user): void
-    {
-        $ids = $request->input('companies', []);
-        if (! is_array($ids)) {
-            $ids = [];
-        }
-        $pivot = [];
-        foreach ($ids as $companyId) {
-            $companyId = (int) $companyId;
-            if ($companyId <= 0) {
-                continue;
-            }
-            $existing = $user->exists ? $user->companies()->where('companies.id', $companyId)->first() : null;
-            $pivot[$companyId] = [
-                'description' => $existing?->pivot?->description,
-                'sees_all_processes' => $request->boolean("company_sees_all.{$companyId}"),
-            ];
-        }
-        $user->companies()->sync($pivot);
-    }
-
-    /**
-     * Empresas para clientes del portal: sin visión global de solicitudes por empresa.
-     */
-    protected function syncClientCompaniesFromRequest(Request $request, User $user): void
-    {
-        if (! $request->filled('companies')) {
-            $user->companies()->sync([]);
-
-            return;
-        }
-        $pivot = [];
-        foreach ($request->input('companies', []) as $companyId) {
-            $companyId = (int) $companyId;
-            if ($companyId <= 0) {
-                continue;
-            }
-            $existing = $user->companies()->where('companies.id', $companyId)->first();
-            $pivot[$companyId] = [
-                'description' => $existing?->pivot?->description,
-                'sees_all_processes' => false,
-            ];
-        }
-        $user->companies()->sync($pivot);
     }
 }

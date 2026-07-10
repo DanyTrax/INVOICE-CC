@@ -29,18 +29,11 @@ class PermissionService
     {
         return [
             'dashboard' => 'Dashboard',
-            'companies' => 'Empresas',
-            'quotes' => 'Cotizaciones',
-            'proposals' => 'Propuestas',
-            'concept_catalogs' => 'Conceptos (catálogo)',
-            'service_types' => 'Trámite (tipos de servicio)',
-            'services' => 'Servicios (catálogo)',
-            'processes' => 'Solicitudes INVIMA',
-            'capacitaciones' => 'Capacitaciones',
-            'users' => 'Directorio (clientes, agentes, usuarios)',
-            'settings_agency' => 'Config: datos empresa',
-            'settings_drive' => 'Config: conexión Drive',
-            'settings_drive_operations_log' => 'Config: historial operaciones Drive',
+            'associates' => 'Asociados',
+            'concepts' => 'Conceptos de cobro',
+            'invoices' => 'Cuentas de cobro',
+            'users' => 'Usuarios y especialistas',
+            'settings_brand' => 'Config: marca blanca',
             'settings_mail' => 'Config: correo',
             'settings_templates' => 'Config: plantillas',
             'settings_history' => 'Config: históricos',
@@ -72,15 +65,6 @@ class PermissionService
      */
     public static function getActionsForModule(string $moduleKey): array
     {
-        if ($moduleKey === 'processes') {
-            return [
-                'view' => 'Ver',
-                self::ACTION_TIMELINE_FEED => 'Alimentar línea de tiempo (sin editar/borrar)',
-                'edit' => 'Editar',
-                'delete' => 'Eliminar',
-            ];
-        }
-
         return self::getStandardActions();
     }
 

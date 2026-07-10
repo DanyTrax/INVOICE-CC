@@ -16,9 +16,7 @@ class LoginController extends Controller
     public function showLoginForm()
     {
         if (Auth::check()) {
-            return Auth::user()->hasRole('client')
-                ? redirect()->route('portal.dashboard')
-                : redirect()->route('admin.dashboard');
+            return redirect()->route('admin.dashboard');
         }
 
         return view('auth.login-flowbite');
@@ -53,11 +51,10 @@ class LoginController extends Controller
             ]);
         }
 
-        // Cliente explícitamente deshabilitado: no puede entrar. "Pendiente" sí inicia sesión y ve aviso en el portal.
-        if ($user->hasRole('client') && $user->client_status === User::CLIENT_STATUS_DESHABILITADO) {
+        if ($user->hasRole('client')) {
             $lockoutService->recordFailedAttempt($request, $email);
             throw ValidationException::withMessages([
-                'email' => ['No tienes acceso al portal con esta cuenta.'],
+                'email' => ['Esta cuenta no tiene acceso al panel administrativo.'],
             ]);
         }
 
@@ -73,9 +70,7 @@ class LoginController extends Controller
         Auth::login($user, $remember);
         $request->session()->regenerate();
         app(ActivityLogService::class)->log('login', 'Inicio de sesión en el sistema');
-        $default = $user->hasRole('client')
-            ? route('portal.dashboard')
-            : route('admin.dashboard');
+        $default = route('admin.dashboard');
 
         return redirect()->intended($default);
     }
