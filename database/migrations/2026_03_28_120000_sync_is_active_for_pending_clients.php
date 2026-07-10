@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +17,7 @@ return new class extends Migration
         }
 
         DB::table('users')
-            ->where('client_status', User::CLIENT_STATUS_PENDIENTE)
+            ->where('client_status', 'pendiente')
             ->where('is_active', false)
             ->update(['is_active' => true]);
     }

@@ -1,73 +1,77 @@
 <?php
 
-use App\Models\Company;
-use App\Models\Process;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('companies', function (Blueprint $table) {
-            $table->string('code_abbreviation', 10)->nullable()->after('name');
-        });
-
-        Schema::table('processes', function (Blueprint $table) {
-            $table->unsignedInteger('request_sequence')->nullable()->after('client_id');
-            $table->string('solicitud_code', 24)->nullable()->after('request_sequence');
-        });
-
-        foreach (Company::orderBy('id')->cursor() as $company) {
-            if (blank($company->code_abbreviation)) {
-                $s = Company::suggestCodeAbbreviationFromName((string) $company->name);
-                if (mb_strlen($s) < 2) {
-                    $s = 'C'.$company->id;
-                }
-                $company->forceFill([
-                    'code_abbreviation' => Str::upper(Str::limit($s, 10, '')),
-                ])->saveQuietly();
-            }
+        if (Schema::hasTable('companies') && ! Schema::hasColumn('companies', 'code_abbreviation')) {
+            Schema::table('companies', function (Blueprint $table) {
+                $table->string('code_abbreviation', 10)->nullable()->after('name');
+            });
         }
 
-        $byClient = Process::orderBy('id')->get()->groupBy('client_id');
-        foreach ($byClient as $clientId => $rows) {
-            $company = Company::find($clientId);
-            $prefix = $company ? Str::upper(trim((string) $company->code_abbreviation)) : 'C'.$clientId;
-            if ($prefix === '') {
-                $prefix = 'C'.$clientId;
-            }
-            $n = 0;
-            foreach ($rows as $process) {
-                $n++;
-                $width = max(3, strlen((string) $n));
-                $code = $prefix.'-'.str_pad((string) $n, $width, '0', STR_PAD_LEFT);
-                $process->forceFill([
-                    'request_sequence' => $n,
-                    'solicitud_code' => $code,
-                ])->saveQuietly();
-            }
+        if (! Schema::hasTable('processes')) {
+            return;
         }
 
-        Schema::table('processes', function (Blueprint $table) {
-            $table->unique(['client_id', 'solicitud_code'], 'processes_client_solicitud_code_unique');
-        });
+        if (! Schema::hasColumn('processes', 'request_sequence')) {
+            Schema::table('processes', function (Blueprint $table) {
+                $table->unsignedInteger('request_sequence')->nullable()->after('client_id');
+                $table->string('solicitud_code', 24)->nullable()->after('request_sequence');
+            });
+        }
+
+        if (! $this->indexExists('processes', 'processes_client_solicitud_code_unique')) {
+            Schema::table('processes', function (Blueprint $table) {
+                $table->unique(['client_id', 'solicitud_code'], 'processes_client_solicitud_code_unique');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('processes', function (Blueprint $table) {
-            $table->dropUnique('processes_client_solicitud_code_unique');
-        });
+        if (Schema::hasTable('processes')) {
+            if ($this->indexExists('processes', 'processes_client_solicitud_code_unique')) {
+                Schema::table('processes', function (Blueprint $table) {
+                    $table->dropUnique('processes_client_solicitud_code_unique');
+                });
+            }
 
-        Schema::table('processes', function (Blueprint $table) {
-            $table->dropColumn(['request_sequence', 'solicitud_code']);
-        });
+            if (Schema::hasColumn('processes', 'request_sequence')) {
+                Schema::table('processes', function (Blueprint $table) {
+                    $table->dropColumn(['request_sequence', 'solicitud_code']);
+                });
+            }
+        }
 
-        Schema::table('companies', function (Blueprint $table) {
-            $table->dropColumn('code_abbreviation');
-        });
+        if (Schema::hasTable('companies') && Schema::hasColumn('companies', 'code_abbreviation')) {
+            Schema::table('companies', function (Blueprint $table) {
+                $table->dropColumn('code_abbreviation');
+            });
+        }
+    }
+
+    private function indexExists(string $table, string $index): bool
+    {
+        $connection = Schema::getConnection();
+        $driver = $connection->getDriverName();
+
+        if ($driver === 'sqlite') {
+            $rows = $connection->select("PRAGMA index_list('{$table}')");
+
+            return collect($rows)->contains(fn ($row) => ($row->name ?? null) === $index);
+        }
+
+        $database = $connection->getDatabaseName();
+        $result = $connection->select(
+            'SELECT COUNT(*) AS c FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ?',
+            [$database, $table, $index]
+        );
+
+        return (int) ($result[0]->c ?? 0) > 0;
     }
 };
