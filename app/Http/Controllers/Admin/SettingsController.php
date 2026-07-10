@@ -107,7 +107,7 @@ class SettingsController extends Controller
             if ($request->query('cancel_delete_user')) {
                 session()->forget('user_to_delete_id');
             } elseif (session('user_to_delete_id')) {
-                $userToDelete = User::with('roles', 'companies')->find(session('user_to_delete_id'));
+                $userToDelete = User::with('roles')->find(session('user_to_delete_id'));
                 if (! $userToDelete) {
                     session()->forget('user_to_delete_id');
                 }
