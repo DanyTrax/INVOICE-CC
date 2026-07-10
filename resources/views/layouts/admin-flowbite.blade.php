@@ -216,6 +216,78 @@
         html.dark .theme-segment-btn:not(.theme-segment-btn--active) i {
             color: #64748b;
         }
+
+        /* Top navigation */
+        .admin-topnav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.875rem;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4b5563;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        html.dark .admin-topnav-link { color: #cbd5e1; }
+        .admin-topnav-link:hover {
+            background-color: #f3f4f6;
+            color: #0d9488;
+        }
+        html.dark .admin-topnav-link:hover {
+            background-color: #334155;
+            color: #2dd4bf;
+        }
+        .admin-topnav-link--active {
+            background-color: #ecfdf5;
+            color: #0f766e;
+        }
+        html.dark .admin-topnav-link--active {
+            background-color: rgba(13, 148, 136, 0.2);
+            color: #5eead4;
+        }
+        .admin-topnav-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        html.dark .admin-topnav-dropdown-item { color: #e2e8f0; }
+        .admin-topnav-dropdown-item:hover {
+            background-color: #f9fafb;
+            color: #0d9488;
+        }
+        html.dark .admin-topnav-dropdown-item:hover { background-color: #334155; }
+        .admin-topnav-dropdown-item--active {
+            background-color: #ecfdf5;
+            color: #0f766e;
+            font-weight: 600;
+        }
+        html.dark .admin-topnav-dropdown-item--active {
+            background-color: rgba(13, 148, 136, 0.15);
+            color: #5eead4;
+        }
+        .admin-topnav-mobile-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.625rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        html.dark .admin-topnav-mobile-item { color: #e2e8f0; }
+        .admin-topnav-mobile-item--active {
+            background-color: #ecfdf5;
+            color: #0f766e;
+        }
+        html.dark .admin-topnav-mobile-item--active {
+            background-color: rgba(13, 148, 136, 0.2);
+            color: #5eead4;
+        }
     </style>
     <script>
         function resolvePrefersDark(pref) {
@@ -453,370 +525,11 @@
     
     @stack('styles')
 </head>
-<body class="h-full overflow-hidden" x-data="{
-    sidebarExpanded: @json($adminSidebarExpandedDefault),
-    mobileOpen: false,
-    winLg: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
-    init() {
-        this.winLg = window.innerWidth >= 1024;
-        window.addEventListener('resize', () => {
-            this.winLg = window.innerWidth >= 1024;
-            if (this.winLg) {
-                this.mobileOpen = false;
-            }
-        });
-    },
-    toggleSidebar() {
-        if (this.winLg) {
-            this.sidebarExpanded = !this.sidebarExpanded;
-        } else {
-            this.mobileOpen = !this.mobileOpen;
-        }
-    },
-    asideWidthClass() {
-        if (!this.winLg) {
-            return 'w-64';
-        }
-        return this.sidebarExpanded ? 'w-64' : 'w-16 min-w-[4rem]';
-    },
-    asideXClass() {
-        if (this.winLg) {
-            return 'translate-x-0';
-        }
-        return this.mobileOpen ? 'translate-x-0' : '-translate-x-full';
-    },
-    mainMarginStyle() {
-        if (!this.winLg) {
-            return '';
-        }
-        return this.sidebarExpanded ? 'margin-left: 16rem' : 'margin-left: 4rem';
-    },
-}">
-    <div id="rams-admin-app" class="flex h-full min-h-0 overflow-hidden bg-gray-50">
-        <!-- Overlay para móvil -->
-        <div x-show="!winLg && mobileOpen" 
-             x-cloak
-             @click="mobileOpen = false"
-             x-transition:enter="transition-opacity ease-linear duration-300"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition-opacity ease-linear duration-300"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             class="fixed inset-0 bg-gray-600 bg-opacity-75 z-30 lg:hidden"
-             style="display: none;">
-        </div>
+<body class="h-full overflow-hidden" x-data="{ mobileNavOpen: false }">
+    <div id="rams-admin-app" class="flex h-full min-h-0 flex-col overflow-hidden bg-gray-50">
+        @include('layouts.partials.admin-topnav')
 
-        <!-- Sidebar -->
-        <aside id="sidebar" 
-               class="fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out shadow-lg" 
-               :class="[asideWidthClass(), asideXClass()]"
-               style="background-color: #1e293b;">
-            <div class="h-full py-4 overflow-y-auto overflow-x-hidden"
-                 :class="winLg && !sidebarExpanded ? 'px-1.5' : 'px-3'">
-                <!-- Logo (compacto cuando el menú está solo iconos en escritorio) -->
-                <div class="mb-5" x-show="winLg && !sidebarExpanded" x-cloak>
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center justify-center rounded-lg py-2 text-white hover:bg-teal-700/50" title="Inicio">
-                        <span class="text-2xl font-bold text-teal-400">R</span>
-                    </a>
-                </div>
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center ps-2.5 mb-5" x-show="!winLg || sidebarExpanded" x-cloak>
-                    @php
-                        $logoUrl = isset($brandSetting) && $brandSetting->logo_path ? $brandSetting->logoUrl() : null;
-                        $companyName = $brandSetting->company_name ?? config('app.name', 'Recaudos');
-                    @endphp
-                    
-                    @if($logoUrl)
-                        <img src="{{ $logoUrl }}" alt="{{ $companyName }}" class="h-10 w-auto object-contain">
-                    @else
-                        <span class="self-center text-xl font-semibold whitespace-nowrap text-white">
-                            <span class="text-teal-400">{{ \Illuminate\Support\Str::limit($companyName, 24) }}</span>
-                        </span>
-                    @endif
-                </a>
-                
-                @php
-                    $permService = app(\App\Services\PermissionService::class);
-                @endphp
-                <!-- Menu -->
-                <ul class="space-y-2 font-medium">
-                    @if($permService->userHasPermission('dashboard', 'view'))
-                        <li>
-                            <a href="{{ route('admin.dashboard') }}" 
-                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.dashboard') ? 'bg-teal-700' : '' }}"
-                               :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                               title="Inicio">
-                                <i class="fas fa-home w-5 h-5 shrink-0"></i>
-                                <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Inicio</span>
-                            </a>
-                        </li>
-                    @endif
-
-                    @if($permService->userHasPermission('associates', 'view') || $permService->userHasPermission('concepts', 'view') || $permService->userHasPermission('invoices', 'view'))
-                    <li class="pt-4" x-show="!winLg || sidebarExpanded" x-cloak>
-                        <span class="text-gray-400 text-xs font-semibold uppercase px-2">RECAUDOS</span>
-                    </li>
-                    @if($permService->userHasPermission('associates', 'view'))
-                    <li>
-                        <a href="{{ route('admin.associates.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.associates.*') ? 'bg-teal-700' : '' }}"
-                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Asociados">
-                            <i class="fas fa-users w-5 h-5 shrink-0"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Asociados</span>
-                        </a>
-                    </li>
-                    @endif
-                    @if($permService->userHasPermission('concepts', 'view'))
-                    <li>
-                        <a href="{{ route('admin.concepts.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.concepts.*') ? 'bg-teal-700' : '' }}"
-                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Conceptos">
-                            <i class="fas fa-tags w-5 h-5 shrink-0"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Conceptos</span>
-                        </a>
-                    </li>
-                    @endif
-                    @if($permService->userHasPermission('invoices', 'view'))
-                    <li>
-                        <a href="{{ route('admin.invoices.index') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.invoices.*') ? 'bg-teal-700' : '' }}"
-                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Cuentas de cobro">
-                            <i class="fas fa-file-invoice-dollar w-5 h-5 shrink-0"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Cuentas de cobro</span>
-                        </a>
-                    </li>
-                    @endif
-                    @endif
-
-                    @if($permService->userHasPermission('settings_brand', 'view'))
-                    <li class="pt-4" x-show="!winLg || sidebarExpanded" x-cloak>
-                        <span class="text-gray-400 text-xs font-semibold uppercase px-2">CONFIGURACIÓN</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.brand-settings.edit') }}"
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.brand-settings.*') ? 'bg-teal-700' : '' }}"
-                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Marca blanca">
-                            <i class="fas fa-palette w-5 h-5 shrink-0"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Marca blanca</span>
-                        </a>
-                    </li>
-                    @endif
-
-                    <!-- SISTEMA -->
-                    @php
-                        $sistemaSectionVisible = $permService->userHasPermission('users', 'view')
-                            || $permService->userHasPermission('settings_brand', 'view')
-                            || $permService->userHasPermission('settings_mail', 'view')
-                            || $permService->userHasPermission('settings_templates', 'view')
-                            || $permService->userHasPermission('settings_history', 'view')
-                            || $permService->userHasPermission('settings_system', 'view')
-                            || $permService->userHasPermission('backups', 'view')
-                            || $permService->userHasPermission('permissions', 'view')
-                            || $permService->userHasPermission('permissions', 'edit')
-                            || $permService->userHasPermission('activity_logs', 'view');
-                    @endphp
-                    @if($sistemaSectionVisible)
-                        <li class="pt-4" x-show="!winLg || sidebarExpanded" x-cloak>
-                            <span class="text-gray-400 text-xs font-semibold uppercase px-2">SISTEMA</span>
-                        </li>
-                    @endif
-                    @if($permService->userHasPermission('users', 'view'))
-                        <li x-data="{ directorioOpen: {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }} }">
-                                <button @click="(winLg && !sidebarExpanded) ? (sidebarExpanded = true) : (directorioOpen = !directorioOpen)"
-                                        type="button"
-                                        class="flex items-center w-full p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700' : '' }}"
-                                        :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                                        title="Directorio">
-                                    <i class="fas fa-address-book w-5 h-5 shrink-0"></i>
-                                    <span class="ms-3 text-left flex-1" x-show="!winLg || sidebarExpanded" x-cloak>Directorio</span>
-                                    <i class="fas fa-chevron-down w-4 h-4 transition-transform shrink-0" x-show="!winLg || sidebarExpanded" x-cloak :class="{ 'rotate-180': directorioOpen }"></i>
-                                </button>
-                                <ul x-show="directorioOpen && (!winLg || sidebarExpanded)" x-cloak
-                                    x-transition:enter="transition ease-out duration-150"
-                                    x-transition:enter-start="opacity-0 -translate-y-1"
-                                    x-transition:enter-end="opacity-100 translate-y-0"
-                                    x-transition:leave="transition ease-in duration-100"
-                                    x-transition:leave-start="opacity-100"
-                                    x-transition:leave-end="opacity-0"
-                                    class="ms-4 mt-1 space-y-1 border-l border-gray-600 pl-2">
-                                    <li>
-                                        <a href="{{ route('admin.agents.index') }}"
-                                           class="flex items-center p-2 rounded-lg text-gray-300 hover:bg-teal-700/50 hover:text-white {{ request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*') ? 'bg-teal-700/50 text-white' : '' }}">
-                                            <i class="fas fa-user-tie w-4 h-4"></i>
-                                            <span class="ms-2 text-sm" x-show="!winLg || sidebarExpanded" x-cloak>Especialistas</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                    @endif
-                    @php
-                        $canSettings = $permService->userHasPermission('settings_mail', 'view')
-                            || $permService->userHasPermission('settings_templates', 'view')
-                            || $permService->userHasPermission('settings_history', 'view')
-                            || $permService->userHasPermission('settings_system', 'view');
-                    @endphp
-                    @if($canSettings)
-                        <li>
-                            <a href="{{ route('admin.settings.section', 'mail') }}"
-                               class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.settings.*') ? 'bg-teal-700' : '' }}"
-                               :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                               title="Configuración">
-                                <i class="fas fa-cog w-5 h-5 shrink-0"></i>
-                                <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Configuración</span>
-                            </a>
-                        </li>
-                    @endif
-                    @if($permService->userHasPermission('backups', 'view'))
-                    <li>
-                        <a href="{{ route('admin.backups.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.backups.*') ? 'bg-teal-700' : '' }}"
-                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Backups">
-                            <i class="fas fa-database w-5 h-5 shrink-0"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Backups</span>
-                        </a>
-                    </li>
-                    @endif
-                    @if($permService->userHasPermission('permissions', 'view') || $permService->userHasPermission('permissions', 'edit'))
-                    <li>
-                        <a href="{{ route('admin.permissions.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.permissions.*') ? 'bg-teal-700' : '' }}"
-                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Permisos">
-                            <i class="fas fa-shield-alt w-5 h-5 shrink-0"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Permisos</span>
-                        </a>
-                    </li>
-                    @endif
-                    @if($permService->userHasPermission('activity_logs', 'view'))
-                    <li>
-                        <a href="{{ route('admin.activity-logs.index') }}" 
-                           class="flex items-center p-2 rounded-lg text-white hover:bg-teal-700 {{ request()->routeIs('admin.activity-logs.*') ? 'bg-teal-700' : '' }}"
-                           :class="(winLg && !sidebarExpanded) ? 'justify-center' : ''"
-                           title="Registros de Actividad">
-                            <i class="fas fa-history w-5 h-5 shrink-0"></i>
-                            <span class="ms-3" x-show="!winLg || sidebarExpanded" x-cloak>Registros de Actividad</span>
-                        </a>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-all duration-300" 
-             :style="mainMarginStyle()">
-            <!-- Top Navbar -->
-            <header class="shrink-0 bg-white shadow-sm border-b border-gray-200 z-30">
-                <div class="flex items-center justify-between px-4 py-3">
-                    <!-- Botón Hamburguesa (móvil: drawer; escritorio: expandir/contraer menú) -->
-                    <button type="button"
-                            @click="toggleSidebar()" 
-                            class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
-                            :title="winLg ? (sidebarExpanded ? 'Contraer menú lateral' : 'Expandir menú lateral') : 'Abrir o cerrar menú'">
-                        <i class="fas w-5 h-5" :class="winLg && sidebarExpanded ? 'fa-chevron-left' : 'fa-bars'"></i>
-                    </button>
-                    
-                    <!-- Breadcrumb y título (centro) -->
-                    <div class="flex-1 mx-4">
-                        <nav class="text-sm" aria-label="Breadcrumb">
-                            <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                                <li class="inline-flex items-center">
-                                    <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center text-gray-700 hover:text-teal-700">
-                                        <i class="fas fa-home mr-2"></i> Inicio
-                                    </a>
-                                </li>
-                                @yield('breadcrumb')
-                            </ol>
-                        </nav>
-                    </div>
-                    
-                    <!-- Usuario (derecha) -->
-                    <div class="relative" x-data="{ userMenuOpen: false }" @click.outside="userMenuOpen = false">
-                        <button @click="userMenuOpen = !userMenuOpen" 
-                                type="button" 
-                                class="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none transition-colors">
-                            <div class="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white font-semibold text-xs shadow-sm">
-                                {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-                            </div>
-                            <div class="hidden md:block text-left">
-                                <div class="text-sm font-medium text-gray-900">{{ Auth::user()->name }}</div>
-                                <div class="text-xs text-gray-500">{{ Auth::user()->email }}</div>
-                            </div>
-                            <i class="fas fa-chevron-down w-3 h-3 text-gray-400 transition-transform" 
-                               :class="{ 'rotate-180': userMenuOpen }"></i>
-                        </button>
-                        
-                        <!-- Dropdown Menu -->
-                        <div x-show="userMenuOpen" 
-                             x-transition:enter="transition ease-out duration-100"
-                             x-transition:enter-start="transform opacity-0 scale-95"
-                             x-transition:enter-end="transform opacity-100 scale-100"
-                             x-transition:leave="transition ease-in duration-75"
-                             x-transition:leave-start="transform opacity-100 scale-100"
-                             x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 z-50 border border-gray-200 dark:border-slate-600"
-                             style="display: none;">
-                            <div class="px-4 py-3 border-b border-gray-200 dark:border-slate-600">
-                                <p class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ Auth::user()->name }}</p>
-                                <p class="text-xs text-gray-500 dark:text-slate-400 truncate">{{ Auth::user()->email }}</p>
-                            </div>
-                            <div class="py-1">
-                                <a href="{{ route('admin.profile') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-                                    <i class="fas fa-user mr-2"></i> Mi Perfil
-                                </a>
-                                <div class="px-4 py-2 border-y border-gray-200 dark:border-slate-600">
-                                    <span class="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider">Tema</span>
-                                    <div class="theme-segment-bar mt-2 flex rounded-lg p-0.5 gap-0.5" role="group" aria-label="Tema del panel">
-                                        <button type="button" id="theme-light-btn" title="Claro" aria-label="Tema claro" aria-pressed="{{ $ramsAdminTheme === 'light' ? 'true' : 'false' }}"
-                                                class="theme-segment-btn flex flex-1 items-center justify-center py-2 rounded-md {{ $ramsAdminTheme === 'light' ? 'theme-segment-btn--active' : '' }}">
-                                            <i class="fas fa-sun text-base"></i>
-                                        </button>
-                                        <button type="button" id="theme-dark-btn" title="Oscuro" aria-label="Tema oscuro" aria-pressed="{{ $ramsAdminTheme === 'dark' ? 'true' : 'false' }}"
-                                                class="theme-segment-btn flex flex-1 items-center justify-center py-2 rounded-md {{ $ramsAdminTheme === 'dark' ? 'theme-segment-btn--active' : '' }}">
-                                            <i class="fas fa-moon text-base"></i>
-                                        </button>
-                                        <button type="button" id="theme-system-btn" title="Sistema" aria-label="Según el sistema" aria-pressed="{{ $ramsAdminTheme === 'system' ? 'true' : 'false' }}"
-                                                class="theme-segment-btn flex flex-1 items-center justify-center py-2 rounded-md {{ $ramsAdminTheme === 'system' ? 'theme-segment-btn--active' : '' }}">
-                                            <i class="fas fa-desktop text-base"></i>
-                                        </button>
-                                    </div>
-                                    <span class="mt-3 block text-xs text-gray-500 dark:text-slate-400 uppercase tracking-wider">Tamaño de texto</span>
-                                    @php
-                                        $uiFontScaleGlyphs = [90 => 'A−', 100 => 'A', 110 => 'A+', 125 => 'A++'];
-                                        $uiFontScaleTitles = [90 => 'Reducir texto', 100 => 'Tamaño normal', 110 => 'Aumentar texto', 125 => 'Texto muy grande'];
-                                    @endphp
-                                    <div class="theme-segment-bar mt-2 flex rounded-lg p-0.5 gap-0.5" role="group" aria-label="Tamaño de texto del panel">
-                                        @foreach ($uiFontScaleGlyphs as $scale => $scaleGlyph)
-                                            <button type="button"
-                                                    id="font-scale-{{ $scale }}-btn"
-                                                    title="{{ $uiFontScaleTitles[$scale] }} ({{ $scale }}%)"
-                                                    aria-label="{{ $uiFontScaleTitles[$scale] }}"
-                                                    aria-pressed="{{ $ramsUiFontScale === $scale ? 'true' : 'false' }}"
-                                                    class="theme-segment-btn flex flex-1 items-center justify-center py-2 rounded-md text-xs font-semibold leading-none tabular-nums {{ $ramsUiFontScale === $scale ? 'theme-segment-btn--active' : '' }}">
-                                                {{ $scaleGlyph }}
-                                            </button>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-                                        <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Page Content -->
-            <main class="rams-admin-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-50 p-6">
+        <main class="rams-admin-scroll flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-50 p-4 sm:p-6">
 
                 <!-- Alerts -->
                 @if(session('success'))
@@ -857,22 +570,21 @@
                 @endif
 
                 <!-- Page Title -->
-                <h1 class="text-2xl font-bold text-gray-900 mb-6">@yield('page-title', 'Dashboard')</h1>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6">@yield('page-title', 'Dashboard')</h1>
 
                 <!-- Content -->
                 @yield('content')
             </main>
 
             <!-- Footer -->
-            <footer class="shrink-0 bg-white border-t border-gray-200 py-4 px-6">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">
-                        {!! nl2br(e(app(\App\Settings\GeneralSettings::class)->footer_text ?? 'RAMS - Regulatory Affairs Management System')) !!}
+            <footer class="shrink-0 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 py-4 px-4 sm:px-6">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+                    <span class="text-sm text-gray-600 dark:text-slate-400 text-center sm:text-left">
+                        {!! nl2br(e(app(\App\Settings\GeneralSettings::class)->footer_text ?? 'Dashboard de Recaudos')) !!}
                     </span>
-                    <span class="text-sm text-gray-600">Versión {{ config('app.version') }}</span>
+                    <span class="text-sm text-gray-600 dark:text-slate-400">Versión {{ config('app.version') }}</span>
                 </div>
             </footer>
-        </div>
     </div>
 
     <!-- Flowbite JS -->
