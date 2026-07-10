@@ -133,7 +133,6 @@
                         <p class="text-3xl tracking-tight mb-1">
                             <span class="accioncol-wordmark-accion">ACCION</span><span class="accioncol-wordmark-col">COL</span>
                         </p>
-                        <p class="text-xs text-gray-500 uppercase tracking-wide">Asociación Colombiana de Riesgos y Cobranzas</p>
                     @endif
 
                     <h1 class="accioncol-login-title mt-5">INICIAR SESIÓN</h1>
