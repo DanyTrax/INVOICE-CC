@@ -40,7 +40,7 @@ final class PublicHtmlSanitizer
             return '';
         }
 
-        return self::footerInstance()->sanitize($html);
+        return self::normalizeFooterHtml(self::footerInstance()->sanitize($html));
     }
 
     /**
@@ -58,6 +58,28 @@ final class PublicHtmlSanitizer
         }
 
         return self::footer($html);
+    }
+
+    public static function footerShowsCopyright(?string $html): bool
+    {
+        $text = strtolower(strip_tags($html ?? ''));
+
+        return str_contains($text, 'copyright')
+            || str_contains($text, 'derechos reservados');
+    }
+
+    private static function normalizeFooterHtml(string $html): string
+    {
+        $html = preg_replace(
+            '/\b(pull-left|pull-right|float-left|float-right)\b/',
+            '',
+            $html
+        ) ?? $html;
+
+        $html = preg_replace('/\sclass="\s*"/', '', $html) ?? $html;
+        $html = preg_replace("/\sclass='\s*'/", '', $html) ?? $html;
+
+        return trim($html);
     }
 
     private static function instance(): HtmlSanitizer

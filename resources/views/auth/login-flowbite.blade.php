@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="accioncol-login-html">
+<html lang="es" class="accioncol-login-html h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +32,54 @@
     @include('partials.tailwind-brand-config')
     <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ asset('css/accioncol-brand.css') }}">
+    @php
+        $brandCssPath = public_path('css/accioncol-brand.css');
+        $brandCssVersion = is_file($brandCssPath) ? (string) filemtime($brandCssPath) : config('app.version', '1');
+    @endphp
+    <link rel="stylesheet" href="{{ asset('css/accioncol-brand.css') }}?v={{ $brandCssVersion }}">
+    <style>
+        html.accioncol-login-html,
+        html.accioncol-login-html body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+        .accioncol-login-page {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: #f0f2f5;
+        }
+        .accioncol-login-main {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 2rem 1rem;
+            box-sizing: border-box;
+        }
+        .accioncol-login-footer {
+            flex: 0 0 auto;
+            width: 100%;
+            background: transparent !important;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+        }
+        .accioncol-login-footer-html,
+        .accioncol-login-footer-html * {
+            float: none !important;
+        }
+        .accioncol-login-footer-html {
+            display: block;
+            width: 100%;
+            max-width: 42rem;
+            margin: 0 auto;
+            text-align: center;
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body class="accioncol-login-page">
     @php
@@ -52,17 +99,11 @@
             $loginPrivacyTitle = 'Política de Privacidad';
             $loginTermsTitle = 'Términos y Condiciones del Servicio';
         }
+        $loginFooterShowsCopyright = \App\Support\PublicHtmlSanitizer::footerShowsCopyright($loginFooterHtml);
     @endphp
 
-    <div class="accioncol-login-bg" aria-hidden="true">
-        <svg class="accioncol-login-waves" viewBox="0 0 1440 140" preserveAspectRatio="none">
-            <path fill="currentColor" fill-opacity="0.35" d="M0,80 C240,120 480,20 720,60 C960,100 1200,40 1440,70 L1440,140 L0,140 Z"/>
-            <path fill="currentColor" d="M0,100 C320,60 480,130 720,95 C960,60 1200,120 1440,90 L1440,140 L0,140 Z"/>
-        </svg>
-    </div>
-
     <main class="accioncol-login-main">
-        <div class="w-full max-w-md">
+        <div class="w-full max-w-md mx-auto">
             <div class="accioncol-login-card p-8 sm:p-10">
                 <div class="text-center mb-8">
                     @php
@@ -167,22 +208,28 @@
         </div>
     </main>
 
-    <footer class="accioncol-login-footer px-6 py-5 text-center text-sm">
-        <div class="accioncol-login-footer-html mb-2 leading-relaxed">{!! \App\Support\PublicHtmlSanitizer::footerForDisplay($loginFooterHtml) !!}</div>
+    <footer class="accioncol-login-footer px-6 py-4 text-center text-sm">
+        @if(trim($loginFooterHtml) !== '')
+            <div class="accioncol-login-footer-html mb-2 leading-relaxed">
+                {!! \App\Support\PublicHtmlSanitizer::footerForDisplay($loginFooterHtml) !!}
+            </div>
+        @endif
         @if($loginShowPrivacy || $loginShowTerms)
             <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                 @if($loginShowPrivacy)
-                    <a href="{{ route('legal.privacy') }}">{{ $loginPrivacyTitle }}</a>
+                    <a href="{{ route('legal.privacy') }}" class="accioncol-link hover:underline">{{ $loginPrivacyTitle }}</a>
                 @endif
                 @if($loginShowPrivacy && $loginShowTerms)
-                    <span class="opacity-40" aria-hidden="true">|</span>
+                    <span class="text-gray-400" aria-hidden="true">|</span>
                 @endif
                 @if($loginShowTerms)
-                    <a href="{{ route('legal.terms') }}">{{ $loginTermsTitle }}</a>
+                    <a href="{{ route('legal.terms') }}" class="accioncol-link hover:underline">{{ $loginTermsTitle }}</a>
                 @endif
             </div>
         @endif
-        <p class="mt-3 text-xs text-gray-500">© {{ date('Y') }} {{ $loginAgencyName }}. Todos los derechos reservados.</p>
+        @unless($loginFooterShowsCopyright)
+            <p class="mt-3 text-xs text-gray-500">© {{ date('Y') }} {{ $loginAgencyName }}. Todos los derechos reservados.</p>
+        @endunless
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>

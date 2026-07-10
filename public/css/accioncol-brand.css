@@ -103,22 +103,8 @@ html.accioncol-login-html body {
     display: flex;
     flex-direction: column;
     position: relative;
-    background: transparent;
-    overflow-x: hidden;
-}
-.accioncol-login-bg {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
     background: #f0f2f5;
-    overflow: hidden;
-}
-.accioncol-login-bg::after {
-    display: none;
-}
-.accioncol-login-waves {
-    display: none;
+    overflow-x: hidden;
 }
 .accioncol-login-main {
     position: relative;
@@ -143,10 +129,15 @@ html.accioncol-login-html body {
 }
 .accioncol-login-footer-html,
 .accioncol-footer-html {
-    display: flow-root;
+    display: block;
     width: 100%;
     text-align: inherit;
     color: inherit;
+    overflow: hidden;
+}
+.accioncol-login-footer-html *,
+.accioncol-footer-html * {
+    float: none !important;
 }
 .accioncol-login-footer-html {
     max-width: 42rem;
