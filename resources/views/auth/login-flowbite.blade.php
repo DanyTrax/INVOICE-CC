@@ -168,7 +168,7 @@
     </main>
 
     <footer class="accioncol-login-footer px-6 py-5 text-center text-sm">
-        <div class="mb-2 leading-relaxed opacity-90">{!! nl2br(e($loginFooterHtml)) !!}</div>
+        <div class="accioncol-login-footer-html mb-2 leading-relaxed">{!! \App\Support\PublicHtmlSanitizer::footerForDisplay($loginFooterHtml) !!}</div>
         @if($loginShowPrivacy || $loginShowTerms)
             <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                 @if($loginShowPrivacy)
@@ -182,7 +182,7 @@
                 @endif
             </div>
         @endif
-        <p class="mt-3 text-xs opacity-70">© {{ date('Y') }} {{ $loginAgencyName }}. Todos los derechos reservados.</p>
+        <p class="mt-3 text-xs text-gray-500">© {{ date('Y') }} {{ $loginAgencyName }}. Todos los derechos reservados.</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>

@@ -15,6 +15,7 @@ use App\Services\MailService;
 use App\Services\PermissionService;
 use App\Settings\GeneralSettings;
 use App\Support\LegalPageDefaults;
+use App\Support\PublicHtmlSanitizer;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -1395,13 +1396,15 @@ class SettingsController extends Controller
     private function updateSystemSettings(Request $request, GeneralSettings $settings)
     {
         $request->validate([
-            'footer_text' => 'nullable|string|max:255',
+            'footer_text' => 'nullable|string|max:5000',
             'system_name' => 'nullable|string|max:255',
             'timezone' => ['nullable', 'string', 'timezone:all'],
         ]);
 
         if ($request->has('footer_text')) {
-            $settings->footer_text = $request->input('footer_text');
+            $settings->footer_text = PublicHtmlSanitizer::footer(
+                $request->input('footer_text') ?? ''
+            );
         }
 
         if ($request->has('system_name')) {

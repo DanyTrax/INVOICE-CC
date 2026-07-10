@@ -1237,15 +1237,14 @@
                                 <label for="footer_text" class="block mb-2 text-sm font-medium text-gray-900">
                                     Texto del Footer <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" 
-                                       id="footer_text" 
-                                       name="footer_text" 
-                                       value="{{ old('footer_text', $settings->footer_text ?? 'Invoices - Dashboard de Recaudos') }}"
-                                       required
-                                       placeholder="Invoices - Dashboard de Recaudos"
-                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
+                                <textarea id="footer_text"
+                                          name="footer_text"
+                                          rows="4"
+                                          required
+                                          placeholder="Invoices - Dashboard de Recaudos"
+                                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono">{{ old('footer_text', $settings->footer_text ?? 'Invoices - Dashboard de Recaudos') }}</textarea>
                                 <p class="mt-1 text-xs text-gray-500">
-                                    Este texto aparecerá en el footer de todas las páginas del sistema.
+                                    Este texto aparecerá en el footer de todas las páginas del sistema. Puede usar texto plano o HTML básico (enlaces, negritas, divs con class).
                                 </p>
                             </div>
 

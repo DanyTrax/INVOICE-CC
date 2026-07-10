@@ -508,8 +508,8 @@
             <!-- Footer -->
             <footer class="shrink-0 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 py-4 px-4 sm:px-6">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
-                    <span class="text-sm text-gray-600 dark:text-slate-400 text-center sm:text-left">
-                        {!! nl2br(e(app(\App\Settings\GeneralSettings::class)->footer_text ?? 'Dashboard de Recaudos')) !!}
+                    <span class="accioncol-footer-html text-sm text-gray-600 dark:text-slate-400 text-center sm:text-left">
+                        {!! \App\Support\PublicHtmlSanitizer::footerForDisplay(app(\App\Settings\GeneralSettings::class)->footer_text ?? '', 'Dashboard de Recaudos') !!}
                     </span>
                     <span class="text-sm text-gray-600 dark:text-slate-400">Versión {{ config('app.version') }}</span>
                 </div>
