@@ -18,7 +18,7 @@ class UpdateBrandSettingRequest extends FormRequest
      */
     public function rules(): array
     {
-        $imageRule = 'nullable|file|max:2048|mimes:jpg,jpeg,png,gif,webp,svg';
+        $imageRules = ['nullable', 'file', 'max:2048', 'mimes:jpg,jpeg,png,gif,webp,svg'];
 
         return [
             'company_name' => ['required', 'string', 'max:255'],
@@ -34,8 +34,8 @@ class UpdateBrandSettingRequest extends FormRequest
             'treasurer_signature_title' => ['nullable', 'string', 'max:200'],
             'invoice_email_subject' => ['nullable', 'string', 'max:255'],
             'invoice_email_body' => ['nullable', 'string', 'max:50000'],
-            'logo' => [$imageRule],
-            'treasurer_signature' => [$imageRule],
+            'logo' => $imageRules,
+            'treasurer_signature' => $imageRules,
             'remove_logo' => ['nullable', 'boolean'],
             'remove_treasurer_signature' => ['nullable', 'boolean'],
         ];

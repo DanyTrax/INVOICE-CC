@@ -51,7 +51,8 @@
                             <img src="{{ $setting->logoUrl() }}" alt="Logo" class="h-16 mb-2 object-contain">
                             <label class="text-sm"><input type="checkbox" name="remove_logo" value="1"> Quitar logo</label>
                         @endif
-                        <input type="file" name="logo" accept="image/*" class="mt-2 block w-full text-sm">
+                        <input type="file" name="logo" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,.jpg,.jpeg,.png,.gif,.webp,.svg" class="mt-2 block w-full text-sm">
+                        <p class="mt-1 text-xs text-gray-500">JPG, PNG, GIF, WebP o SVG. Máximo 2 MB.</p>
                     </div>
                 </div>
             </section>
@@ -75,7 +76,7 @@
                             <img src="{{ asset('storage/'.$setting->treasurer_signature_path) }}" alt="Firma" class="h-16 mb-2 object-contain">
                             <label class="text-sm"><input type="checkbox" name="remove_treasurer_signature" value="1"> Quitar firma</label>
                         @endif
-                        <input type="file" name="treasurer_signature" accept="image/*" class="mt-2 block w-full text-sm">
+                        <input type="file" name="treasurer_signature" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,.jpg,.jpeg,.png,.gif,.webp,.svg" class="mt-2 block w-full text-sm">
                     </div>
                 </div>
             </section>
