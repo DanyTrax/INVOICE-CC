@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full">
+<html lang="es" class="accioncol-login-html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -54,12 +54,14 @@
         }
     @endphp
 
-    <svg class="accioncol-login-waves" viewBox="0 0 1440 140" preserveAspectRatio="none" aria-hidden="true">
-        <path fill="currentColor" fill-opacity="0.35" d="M0,80 C240,120 480,20 720,60 C960,100 1200,40 1440,70 L1440,140 L0,140 Z"/>
-        <path fill="currentColor" d="M0,100 C320,60 480,130 720,95 C960,60 1200,120 1440,90 L1440,140 L0,140 Z"/>
-    </svg>
+    <div class="accioncol-login-bg" aria-hidden="true">
+        <svg class="accioncol-login-waves" viewBox="0 0 1440 140" preserveAspectRatio="none">
+            <path fill="currentColor" fill-opacity="0.35" d="M0,80 C240,120 480,20 720,60 C960,100 1200,40 1440,70 L1440,140 L0,140 Z"/>
+            <path fill="currentColor" d="M0,100 C320,60 480,130 720,95 C960,60 1200,120 1440,90 L1440,140 L0,140 Z"/>
+        </svg>
+    </div>
 
-    <div class="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
+    <main class="accioncol-login-main">
         <div class="w-full max-w-md">
             <div class="accioncol-login-card p-8 sm:p-10">
                 <div class="text-center mb-8">
@@ -163,9 +165,9 @@
                 </form>
             </div>
         </div>
-    </div>
+    </main>
 
-    <footer class="accioncol-login-footer relative z-10 shrink-0 w-full px-6 py-5 text-center text-sm">
+    <footer class="accioncol-login-footer px-6 py-5 text-center text-sm">
         <div class="mb-2 leading-relaxed opacity-90">{!! nl2br(e($loginFooterHtml)) !!}</div>
         @if($loginShowPrivacy || $loginShowTerms)
             <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
