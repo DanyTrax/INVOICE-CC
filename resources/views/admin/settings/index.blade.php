@@ -297,8 +297,8 @@
                             <input type="text" 
                                    id="mail_from_name" 
                                    name="mail_from_name" 
-                                   value="{{ old('mail_from_name', $settings->mail_from_name ?? 'RAMS Sistema') }}"
-                                   placeholder="RAMS Sistema"
+                                   value="{{ old('mail_from_name', $settings->mail_from_name ?? 'Invoices') }}"
+                                   placeholder="Invoices"
                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                         </div>
                         </div>
@@ -737,8 +737,8 @@
                                     <input type="text" 
                                            id="test_email_subject" 
                                            name="test_email_subject" 
-                                           value="{{ old('test_email_subject', 'Correo de Prueba - RAMS') }}"
-                                           placeholder="Correo de Prueba - RAMS"
+                                           value="{{ old('test_email_subject', 'Correo de Prueba - Invoices') }}"
+                                           placeholder="Correo de Prueba - Invoices"
                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                                 </div>
 
@@ -751,7 +751,7 @@
                                               name="test_email_body" 
                                               rows="6"
                                               placeholder="<h1>Correo de Prueba</h1><p>Este es un correo de prueba...</p>"
-                                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('test_email_body', '<h1>Correo de Prueba</h1><p>Este es un correo de prueba enviado desde el sistema RAMS.</p><p>Si recibes este correo, la configuración de correo está funcionando correctamente.</p>') }}</textarea>
+                                              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5 font-mono text-xs">{{ old('test_email_body', '<h1>Correo de Prueba</h1><p>Este es un correo de prueba enviado desde el sistema Invoices.</p><p>Si recibes este correo, la configuración de correo está funcionando correctamente.</p>') }}</textarea>
                                     <p class="mt-1 text-xs text-gray-500">
                                         Puedes usar HTML para formatear el correo
                                     </p>
@@ -1247,9 +1247,9 @@
                                 <input type="text" 
                                        id="footer_text" 
                                        name="footer_text" 
-                                       value="{{ old('footer_text', $settings->footer_text ?? 'RAMS - Regulatory Affairs Management System') }}"
+                                       value="{{ old('footer_text', $settings->footer_text ?? 'Invoices - Dashboard de Recaudos') }}"
                                        required
-                                       placeholder="RAMS - Regulatory Affairs Management System"
+                                       placeholder="Invoices - Dashboard de Recaudos"
                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                                 <p class="mt-1 text-xs text-gray-500">
                                     Este texto aparecerá en el footer de todas las páginas del sistema.
@@ -1264,9 +1264,9 @@
                                 <input type="text" 
                                        id="system_name" 
                                        name="system_name" 
-                                       value="{{ old('system_name', $settings->system_name ?? 'Sistema de Gestión Regulatoria') }}"
+                                       value="{{ old('system_name', $settings->system_name ?? 'Invoices') }}"
                                        required
-                                       placeholder="Sistema de Gestión Regulatoria"
+                                       placeholder="Invoices"
                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block w-full p-2.5">
                                 <p class="mt-1 text-xs text-gray-500">
                                     Este nombre aparecerá en las plantillas de correo electrónico donde se mencione "Sistema de Gestión Regulatoria".

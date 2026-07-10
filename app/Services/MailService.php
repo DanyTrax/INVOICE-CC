@@ -182,13 +182,13 @@ class MailService
                     $errorMessage .= "\n• Zoho solo permite enviar desde la cuenta que autorizó la aplicación";
                     $errorMessage .= "\n\n";
                     $errorMessage .= '✅ SOLUCIÓN (Pasos EXACTOS):';
-                    $errorMessage .= "\n\n1️⃣  Ve a Configuración → Correo & SMTP en RAMS";
+                    $errorMessage .= "\n\n1️⃣  Ve a Configuración → Correo & SMTP en Invoices";
                     $errorMessage .= "\n2️⃣  Verifica que Email Remitente sea: " . $fromEmail;
                     $errorMessage .= "\n3️⃣  Haz clic en \"Limpiar\" en el campo Refresh Token";
                     $errorMessage .= "\n4️⃣  Guarda los cambios";
                     $errorMessage .= "\n5️⃣  🔴 CRÍTICO: Cierra sesión en Zoho o abre ventana privada/incógnito";
                     $errorMessage .= "\n6️⃣  Inicia sesión en Zoho SOLO con: " . $fromEmail;
-                    $errorMessage .= "\n7️⃣  Vuelve a RAMS y haz clic en \"Autorizar con Zoho\"";
+                    $errorMessage .= "\n7️⃣  Vuelve a Invoices y haz clic en \"Autorizar con Zoho\"";
                     $errorMessage .= "\n8️⃣  En Zoho, VERIFICA que la cuenta que autoriza sea: " . $fromEmail;
                     $errorMessage .= "\n9️⃣  Acepta los permisos";
                     $errorMessage .= "\n🔟 Intenta enviar el correo de nuevo";

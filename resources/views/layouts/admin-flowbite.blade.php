@@ -408,7 +408,7 @@
         });
     </script>
     <meta name="cf-2fa-verify" content="">
-    <title>@yield('title', 'RAMS - Regulatory Affairs Management System')</title>
+    <title>@yield('title', 'Invoices')</title>
     
     <!-- Tailwind CSS (CDN) - Suprimir advertencia de producción -->
     <script>

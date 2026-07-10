@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Deshabilitar Cloudflare Insights beacon -->
     <meta name="cf-2fa-verify" content="">
-    <title>Iniciar Sesión - RAMS</title>
+    <title>Iniciar Sesión - Invoices</title>
     
     <!-- Suprimir errores de Cloudflare beacon ANTES de que se carguen otros scripts -->
     <script>
@@ -114,15 +114,15 @@
     @php
         try {
             $loginSettings = app(\App\Settings\GeneralSettings::class);
-            $loginFooterHtml = $loginSettings->footer_text ?? 'RAMS - Regulatory Affairs Management System';
-            $loginAgencyName = trim($loginSettings->agency_name ?? '') ?: 'RAMS';
+            $loginFooterHtml = $loginSettings->footer_text ?? 'Invoices - Dashboard de Recaudos';
+            $loginAgencyName = trim($loginSettings->agency_name ?? '') ?: 'Invoices';
             $loginShowPrivacy = $loginSettings->legal_show_privacy_on_login ?? true;
             $loginShowTerms = $loginSettings->legal_show_terms_on_login ?? true;
             $loginPrivacyTitle = $loginSettings->legal_privacy_title ?? 'Política de Privacidad';
             $loginTermsTitle = $loginSettings->legal_terms_title ?? 'Términos y Condiciones del Servicio';
         } catch (\Throwable $e) {
-            $loginFooterHtml = 'RAMS - Regulatory Affairs Management System';
-            $loginAgencyName = 'RAMS';
+            $loginFooterHtml = 'Invoices - Dashboard de Recaudos';
+            $loginAgencyName = 'Invoices';
             $loginShowPrivacy = true;
             $loginShowTerms = true;
             $loginPrivacyTitle = 'Política de Privacidad';
@@ -140,7 +140,7 @@
                         $logoPath = $settings->agency_logo ?? null;
                         $agencyName = $settings->agency_name ?? null;
                         $hasLogo = $logoPath && file_exists(public_path($logoPath));
-                        $hasName = !empty($agencyName) && $agencyName !== 'RAMS';
+                        $hasName = !empty($agencyName) && ! in_array($agencyName, ['RAMS', 'Invoices'], true);
                     } catch (\Exception $e) {
                         $logoPath = null;
                         $agencyName = null;

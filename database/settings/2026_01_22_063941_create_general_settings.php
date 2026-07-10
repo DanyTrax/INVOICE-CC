@@ -25,14 +25,14 @@ return new class extends SettingsMigration
         $this->addIfNotExists('general.mail_password', '');
         $this->addIfNotExists('general.mail_encryption', 'tls');
         $this->addIfNotExists('general.mail_from_address', 'noreply@rams.com');
-        $this->addIfNotExists('general.mail_from_name', 'RAMS Sistema');
+        $this->addIfNotExists('general.mail_from_name', 'Invoices');
         $this->addIfNotExists('general.zoho_client_id', '');
         $this->addIfNotExists('general.zoho_client_secret', '');
         $this->addIfNotExists('general.zoho_refresh_token', '');
         $this->addIfNotExists('general.zoho_access_token', '');
         $this->addIfNotExists('general.zoho_from_email', '');
-        $this->addIfNotExists('general.footer_text', 'RAMS - Regulatory Affairs Management System');
-        $this->addIfNotExists('general.system_name', 'Sistema de Gestión Regulatoria');
+        $this->addIfNotExists('general.footer_text', 'Invoices - Dashboard de Recaudos');
+        $this->addIfNotExists('general.system_name', 'Invoices');
         $this->addIfNotExists('general.timezone', 'America/Bogota');
         $this->addIfNotExists('general.drive_folder_name_no_client', 'Solicitudes sin cliente');
         $this->addIfNotExists('general.drive_folder_name_with_client', 'Clientes');

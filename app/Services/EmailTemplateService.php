@@ -54,7 +54,7 @@ class EmailTemplateService
     protected function getGlobalVariables(): array
     {
         return [
-            'agency_name' => $this->settings->agency_name ?? 'RAMS',
+            'agency_name' => $this->settings->agency_name ?? 'Invoices',
             'agency_email' => $this->settings->agency_email ?? '',
             'agency_phone' => $this->settings->agency_phone ?? '',
             'agency_address' => $this->settings->agency_address ?? '',

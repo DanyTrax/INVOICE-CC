@@ -559,14 +559,14 @@ class SettingsController extends Controller
             'mail_password' => '',
             'mail_encryption' => 'tls',
             'mail_from_address' => 'noreply@rams.com',
-            'mail_from_name' => 'RAMS Sistema',
+            'mail_from_name' => 'Invoices',
             'zoho_client_id' => '',
             'zoho_client_secret' => '',
             'zoho_refresh_token' => '',
             'zoho_access_token' => '',
             'zoho_from_email' => '',
-            'footer_text' => 'RAMS - Regulatory Affairs Management System',
-            'system_name' => 'Sistema de Gestión Regulatoria',
+            'footer_text' => 'Invoices - Dashboard de Recaudos',
+            'system_name' => 'Invoices',
             'timezone' => 'America/Bogota',
             'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
             'quote_pdf_footer_text' => '',
@@ -633,14 +633,14 @@ class SettingsController extends Controller
             'mail_password' => '',
             'mail_encryption' => 'tls',
             'mail_from_address' => 'noreply@rams.com',
-            'mail_from_name' => 'RAMS Sistema',
+            'mail_from_name' => 'Invoices',
             'zoho_client_id' => '',
             'zoho_client_secret' => '',
             'zoho_refresh_token' => '',
             'zoho_access_token' => '',
             'zoho_from_email' => '',
-            'footer_text' => 'RAMS - Regulatory Affairs Management System',
-            'system_name' => 'Sistema de Gestión Regulatoria',
+            'footer_text' => 'Invoices - Dashboard de Recaudos',
+            'system_name' => 'Invoices',
             'timezone' => 'America/Bogota',
             'quote_pdf_header_subtitle' => 'RAMS - Regulatory Affairs Management System',
             'quote_pdf_footer_text' => '',
@@ -1269,8 +1269,8 @@ class SettingsController extends Controller
             $mailService = app(MailService::class);
 
             $to = $validated['test_email_to'];
-            $subject = $validated['test_email_subject'] ?? 'Correo de Prueba - RAMS';
-            $body = $validated['test_email_body'] ?? '<h1>Correo de Prueba</h1><p>Este es un correo de prueba enviado desde el sistema RAMS.</p><p>Si recibes este correo, la configuración de correo está funcionando correctamente.</p>';
+            $subject = $validated['test_email_subject'] ?? 'Correo de Prueba - Invoices';
+            $body = $validated['test_email_body'] ?? '<h1>Correo de Prueba</h1><p>Este es un correo de prueba enviado desde el sistema Invoices.</p><p>Si recibes este correo, la configuración de correo está funcionando correctamente.</p>';
 
             $result = $mailService->send($to, $subject, $body, null, null, true);
 

@@ -61,7 +61,7 @@ class GeneralSettings extends Settings
 
     public string $mail_from_address = 'noreply@rams.com';
 
-    public string $mail_from_name = 'RAMS Sistema';
+    public string $mail_from_name = 'Invoices';
 
     // Zoho Mail API
     public string $zoho_client_id = '';
@@ -75,9 +75,9 @@ class GeneralSettings extends Settings
     public string $zoho_from_email = '';
 
     // Sistema y Personalización
-    public string $footer_text = 'RAMS - Regulatory Affairs Management System';
+    public string $footer_text = 'Invoices - Dashboard de Recaudos';
 
-    public string $system_name = 'Sistema de Gestión Regulatoria';
+    public string $system_name = 'Invoices';
 
     public string $timezone = 'America/Bogota';
 

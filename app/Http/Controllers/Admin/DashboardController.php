@@ -54,22 +54,20 @@ class DashboardController extends Controller
     {
         $start = now()->startOfMonth()->subMonths($months - 1);
 
-        $rows = Invoice::query()
+        $grouped = Invoice::query()
             ->where('issue_date', '>=', $start->toDateString())
-            ->selectRaw('YEAR(issue_date) as y, MONTH(issue_date) as m, COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as amt')
-            ->groupByRaw('YEAR(issue_date), MONTH(issue_date)')
-            ->get()
-            ->keyBy(fn ($row) => sprintf('%04d-%02d', $row->y, $row->m));
+            ->get(['issue_date', 'total_amount'])
+            ->groupBy(fn (Invoice $invoice) => $invoice->issue_date->format('Y-m'));
 
         $series = collect();
         for ($i = 0; $i < $months; $i++) {
             $date = $start->copy()->addMonths($i);
             $key = $date->format('Y-m');
-            $row = $rows->get($key);
+            $bucket = $grouped->get($key, collect());
             $series->push([
                 'label' => $date->locale('es')->translatedFormat('M Y'),
-                'count' => (int) ($row->cnt ?? 0),
-                'amount' => (float) ($row->amt ?? 0),
+                'count' => $bucket->count(),
+                'amount' => (float) $bucket->sum('total_amount'),
             ]);
         }
 
