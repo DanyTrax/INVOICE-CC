@@ -69,6 +69,159 @@ class PermissionService
     }
 
     /**
+     * Primera sección de configuración visible para el usuario actual.
+     */
+    public function firstAllowedSettingsSection(): ?string
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return null;
+        }
+
+        if ($user->hasRole('super_admin')) {
+            return 'mail';
+        }
+
+        $order = [
+            'mail' => 'settings_mail',
+            'templates' => 'settings_templates',
+            'history' => 'settings_history',
+            'login-lockouts' => 'settings_system',
+            'system' => 'settings_system',
+            'legal-policies' => 'settings_system',
+        ];
+
+        foreach ($order as $section => $module) {
+            if ($this->userHasPermission($module, 'view')) {
+                return $section;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Ítems de navegación del panel según permisos del usuario actual.
+     *
+     * @return array{
+     *     dashboard: bool,
+     *     recaudos: list<array{key: string, label: string, route: string, icon: string, active: bool}>,
+     *     directorio: list<array{key: string, label: string, route: string, icon: string, active: bool}>,
+     *     sistema: list<array{key: string, label: string, route: string, icon: string, active: bool, params?: array<int, string>}>,
+     *     settings_section: string|null
+     * }
+     */
+    public function adminNavigation(): array
+    {
+        $recaudos = [];
+        if ($this->userHasPermission('associates', 'view')) {
+            $recaudos[] = [
+                'key' => 'associates',
+                'label' => 'Asociados',
+                'route' => 'admin.associates.index',
+                'icon' => 'fa-users',
+                'active' => request()->routeIs('admin.associates.*'),
+            ];
+        }
+        if ($this->userHasPermission('concepts', 'view')) {
+            $recaudos[] = [
+                'key' => 'concepts',
+                'label' => 'Conceptos',
+                'route' => 'admin.concepts.index',
+                'icon' => 'fa-tags',
+                'active' => request()->routeIs('admin.concepts.*'),
+            ];
+        }
+        if ($this->userHasPermission('invoices', 'view')) {
+            $recaudos[] = [
+                'key' => 'invoices',
+                'label' => 'Cuentas de cobro',
+                'route' => 'admin.invoices.index',
+                'icon' => 'fa-receipt',
+                'active' => request()->routeIs('admin.invoices.*'),
+            ];
+        }
+
+        $directorio = [];
+        if ($this->userHasPermission('users', 'view')) {
+            $directorio[] = [
+                'key' => 'users',
+                'label' => 'Usuarios',
+                'route' => 'admin.agents.index',
+                'icon' => 'fa-users',
+                'active' => request()->routeIs('admin.agents.*', 'admin.users.*'),
+            ];
+        }
+
+        $settingsSection = $this->firstAllowedSettingsSection();
+        $sistema = [];
+
+        if ($this->userHasPermission('settings_brand', 'view')) {
+            $sistema[] = [
+                'key' => 'brand',
+                'label' => 'Marca blanca',
+                'route' => 'admin.brand-settings.edit',
+                'icon' => 'fa-palette',
+                'active' => request()->routeIs('admin.brand-settings.*'),
+            ];
+        }
+        if ($settingsSection !== null) {
+            $sistema[] = [
+                'key' => 'settings',
+                'label' => 'Configuración',
+                'route' => 'admin.settings.section',
+                'params' => [$settingsSection],
+                'icon' => 'fa-sliders-h',
+                'active' => request()->routeIs('admin.settings.*'),
+            ];
+        }
+        if ($this->userHasPermission('settings_system', 'view')) {
+            $sistema[] = [
+                'key' => 'twofa',
+                'label' => 'Verificación 2FA',
+                'route' => 'admin.two-factor-settings.edit',
+                'icon' => 'fa-shield-halved',
+                'active' => request()->routeIs('admin.two-factor-settings.*'),
+            ];
+        }
+        if ($this->userHasPermission('backups', 'view')) {
+            $sistema[] = [
+                'key' => 'backups',
+                'label' => 'Backups',
+                'route' => 'admin.backups.index',
+                'icon' => 'fa-database',
+                'active' => request()->routeIs('admin.backups.*'),
+            ];
+        }
+        if ($this->userHasPermission('permissions', 'view') || $this->userHasPermission('permissions', 'edit')) {
+            $sistema[] = [
+                'key' => 'permissions',
+                'label' => 'Permisos',
+                'route' => 'admin.permissions.index',
+                'icon' => 'fa-shield-alt',
+                'active' => request()->routeIs('admin.permissions.*'),
+            ];
+        }
+        if ($this->userHasPermission('activity_logs', 'view')) {
+            $sistema[] = [
+                'key' => 'activity_logs',
+                'label' => 'Actividad',
+                'route' => 'admin.activity-logs.index',
+                'icon' => 'fa-history',
+                'active' => request()->routeIs('admin.activity-logs.*'),
+            ];
+        }
+
+        return [
+            'dashboard' => $this->userHasPermission('dashboard', 'view'),
+            'recaudos' => $recaudos,
+            'directorio' => $directorio,
+            'sistema' => $sistema,
+            'settings_section' => $settingsSection,
+        ];
+    }
+
+    /**
      * @deprecated Usar getStandardActions / getActionsForModule
      */
     public static function getActions(): array

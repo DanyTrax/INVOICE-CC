@@ -25,7 +25,9 @@
             </label>
             <button class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Filtrar</button>
         </form>
-        <a href="{{ route('admin.invoices.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Nueva cuenta de cobro</a>
+        @if(app(\App\Services\PermissionService::class)->userHasPermission('invoices', 'edit'))
+            <a href="{{ route('admin.invoices.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Nueva cuenta de cobro</a>
+        @endif
     </div>
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">

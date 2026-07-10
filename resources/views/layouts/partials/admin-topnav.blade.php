@@ -1,36 +1,11 @@
 @php
-    $permService = app(\App\Services\PermissionService::class);
     $logoUrl = isset($brandSetting) && $brandSetting->logo_path ? $brandSetting->logoUrl() : null;
     $companyName = $brandSetting->company_name ?? config('app.name', 'Recaudos');
+    $nav = app(\App\Services\PermissionService::class)->adminNavigation();
 
-    $hasRecaudos = $permService->userHasPermission('associates', 'view')
-        || $permService->userHasPermission('concepts', 'view')
-        || $permService->userHasPermission('invoices', 'view');
-
-    $recaudosActive = request()->routeIs('admin.associates.*')
-        || request()->routeIs('admin.concepts.*')
-        || request()->routeIs('admin.invoices.*');
-
-    $directorioActive = request()->routeIs('admin.agents.*') || request()->routeIs('admin.users.*');
-
-    $sistemaActive = request()->routeIs('admin.brand-settings.*')
-        || request()->routeIs('admin.two-factor-settings.*')
-        || request()->routeIs('admin.settings.*')
-        || request()->routeIs('admin.backups.*')
-        || request()->routeIs('admin.permissions.*')
-        || request()->routeIs('admin.activity-logs.*');
-
-    $canSettings = $permService->userHasPermission('settings_mail', 'view')
-        || $permService->userHasPermission('settings_templates', 'view')
-        || $permService->userHasPermission('settings_history', 'view')
-        || $permService->userHasPermission('settings_system', 'view');
-
-    $hasSistema = $permService->userHasPermission('settings_brand', 'view')
-        || $canSettings
-        || $permService->userHasPermission('backups', 'view')
-        || $permService->userHasPermission('permissions', 'view')
-        || $permService->userHasPermission('permissions', 'edit')
-        || $permService->userHasPermission('activity_logs', 'view');
+    $recaudosActive = collect($nav['recaudos'])->contains(fn ($item) => $item['active']);
+    $directorioActive = collect($nav['directorio'])->contains(fn ($item) => $item['active']);
+    $sistemaActive = collect($nav['sistema'])->contains(fn ($item) => $item['active']);
 @endphp
 
 <header class="shrink-0 bg-white dark:bg-slate-800 shadow-sm border-b border-gray-200 dark:border-slate-700 z-40">
@@ -56,7 +31,7 @@
         </div>
 
         <nav class="hidden lg:flex items-center justify-center gap-1 flex-1" aria-label="Navegación principal">
-            @if($permService->userHasPermission('dashboard', 'view'))
+            @if($nav['dashboard'])
                 <a href="{{ route('admin.dashboard') }}"
                    class="admin-topnav-link {{ request()->routeIs('admin.dashboard') ? 'admin-topnav-link--active' : '' }}">
                     <i class="fas fa-home text-sm"></i>
@@ -64,7 +39,7 @@
                 </a>
             @endif
 
-            @if($hasRecaudos)
+            @if(count($nav['recaudos']) > 0)
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false">
                     <button type="button" @click="open = !open"
                             class="admin-topnav-link {{ $recaudosActive ? 'admin-topnav-link--active' : '' }}">
@@ -74,26 +49,16 @@
                     </button>
                     <div x-show="open" x-cloak x-transition
                          class="absolute left-0 top-full mt-1 w-52 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg py-1 z-50">
-                        @if($permService->userHasPermission('associates', 'view'))
-                            <a href="{{ route('admin.associates.index') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.associates.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
-                                <i class="fas fa-users w-4"></i> Asociados
+                        @foreach($nav['recaudos'] as $item)
+                            <a href="{{ route($item['route']) }}" class="admin-topnav-dropdown-item {{ $item['active'] ? 'admin-topnav-dropdown-item--active' : '' }}">
+                                <i class="fas {{ $item['icon'] }} w-4"></i> {{ $item['label'] }}
                             </a>
-                        @endif
-                        @if($permService->userHasPermission('concepts', 'view'))
-                            <a href="{{ route('admin.concepts.index') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.concepts.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
-                                <i class="fas fa-tags w-4"></i> Conceptos
-                            </a>
-                        @endif
-                        @if($permService->userHasPermission('invoices', 'view'))
-                            <a href="{{ route('admin.invoices.index') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.invoices.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
-                                <i class="fas fa-receipt w-4"></i> Cuentas de cobro
-                            </a>
-                        @endif
+                        @endforeach
                     </div>
                 </div>
             @endif
 
-            @if($permService->userHasPermission('users', 'view'))
+            @if(count($nav['directorio']) > 0)
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false">
                     <button type="button" @click="open = !open"
                             class="admin-topnav-link {{ $directorioActive ? 'admin-topnav-link--active' : '' }}">
@@ -103,14 +68,16 @@
                     </button>
                     <div x-show="open" x-cloak x-transition
                          class="absolute left-0 top-full mt-1 w-48 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg py-1 z-50">
-                        <a href="{{ route('admin.agents.index') }}" class="admin-topnav-dropdown-item {{ $directorioActive ? 'admin-topnav-dropdown-item--active' : '' }}">
-                            <i class="fas fa-users w-4"></i> Usuarios
-                        </a>
+                        @foreach($nav['directorio'] as $item)
+                            <a href="{{ route($item['route']) }}" class="admin-topnav-dropdown-item {{ $item['active'] ? 'admin-topnav-dropdown-item--active' : '' }}">
+                                <i class="fas {{ $item['icon'] }} w-4"></i> {{ $item['label'] }}
+                            </a>
+                        @endforeach
                     </div>
                 </div>
             @endif
 
-            @if($hasSistema)
+            @if(count($nav['sistema']) > 0)
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false">
                     <button type="button" @click="open = !open"
                             class="admin-topnav-link {{ $sistemaActive ? 'admin-topnav-link--active' : '' }}">
@@ -120,44 +87,19 @@
                     </button>
                     <div x-show="open" x-cloak x-transition
                          class="absolute left-0 top-full mt-1 w-52 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg py-1 z-50">
-                        @if($permService->userHasPermission('settings_brand', 'view'))
-                            <a href="{{ route('admin.brand-settings.edit') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.brand-settings.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
-                                <i class="fas fa-palette w-4"></i> Marca blanca
+                        @foreach($nav['sistema'] as $item)
+                            <a href="{{ route($item['route'], $item['params'] ?? []) }}" class="admin-topnav-dropdown-item {{ $item['active'] ? 'admin-topnav-dropdown-item--active' : '' }}">
+                                <i class="fas {{ $item['icon'] }} w-4"></i> {{ $item['label'] }}
                             </a>
-                        @endif
-                        @if($canSettings)
-                            <a href="{{ route('admin.settings.section', 'mail') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.settings.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
-                                <i class="fas fa-sliders-h w-4"></i> Configuración
-                            </a>
-                        @endif
-                        @if($permService->userHasPermission('settings_system', 'view'))
-                            <a href="{{ route('admin.two-factor-settings.edit') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.two-factor-settings.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
-                                <i class="fas fa-shield-halved w-4"></i> Verificación 2FA
-                            </a>
-                        @endif
-                        @if($permService->userHasPermission('backups', 'view'))
-                            <a href="{{ route('admin.backups.index') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.backups.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
-                                <i class="fas fa-database w-4"></i> Backups
-                            </a>
-                        @endif
-                        @if($permService->userHasPermission('permissions', 'view') || $permService->userHasPermission('permissions', 'edit'))
-                            <a href="{{ route('admin.permissions.index') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.permissions.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
-                                <i class="fas fa-shield-alt w-4"></i> Permisos
-                            </a>
-                        @endif
-                        @if($permService->userHasPermission('activity_logs', 'view'))
-                            <a href="{{ route('admin.activity-logs.index') }}" class="admin-topnav-dropdown-item {{ request()->routeIs('admin.activity-logs.*') ? 'admin-topnav-dropdown-item--active' : '' }}">
-                                <i class="fas fa-history w-4"></i> Actividad
-                            </a>
-                        @endif
+                        @endforeach
                     </div>
                 </div>
             @endif
         </nav>
 
         <div class="flex items-center gap-2 shrink-0">
-            @if($canSettings)
-                <a href="{{ route('admin.settings.section', 'mail') }}"
+            @if($nav['settings_section'])
+                <a href="{{ route('admin.settings.section', $nav['settings_section']) }}"
                    class="hidden md:inline-flex p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-teal-600"
                    title="Configuración">
                     <i class="fas fa-cog w-5 h-5"></i>
@@ -235,61 +177,26 @@
 
     <div x-show="mobileNavOpen" x-cloak @click.outside="mobileNavOpen = false"
          class="lg:hidden border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 space-y-1 max-h-[70vh] overflow-y-auto">
-        @if($permService->userHasPermission('dashboard', 'view'))
+        @if($nav['dashboard'])
             <a href="{{ route('admin.dashboard') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.dashboard') ? 'admin-topnav-mobile-item--active' : '' }}">
                 <i class="fas fa-home w-5"></i> Inicio
             </a>
         @endif
-        @if($permService->userHasPermission('associates', 'view'))
-            <a href="{{ route('admin.associates.index') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.associates.*') ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-users w-5"></i> Asociados
+        @foreach($nav['recaudos'] as $item)
+            <a href="{{ route($item['route']) }}" class="admin-topnav-mobile-item {{ $item['active'] ? 'admin-topnav-mobile-item--active' : '' }}">
+                <i class="fas {{ $item['icon'] }} w-5"></i> {{ $item['label'] }}
             </a>
-        @endif
-        @if($permService->userHasPermission('concepts', 'view'))
-            <a href="{{ route('admin.concepts.index') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.concepts.*') ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-tags w-5"></i> Conceptos
+        @endforeach
+        @foreach($nav['directorio'] as $item)
+            <a href="{{ route($item['route']) }}" class="admin-topnav-mobile-item {{ $item['active'] ? 'admin-topnav-mobile-item--active' : '' }}">
+                <i class="fas {{ $item['icon'] }} w-5"></i> {{ $item['label'] }}
             </a>
-        @endif
-        @if($permService->userHasPermission('invoices', 'view'))
-            <a href="{{ route('admin.invoices.index') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.invoices.*') ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-file-invoice-dollar w-5"></i> Cuentas de cobro
+        @endforeach
+        @foreach($nav['sistema'] as $item)
+            <a href="{{ route($item['route'], $item['params'] ?? []) }}" class="admin-topnav-mobile-item {{ $item['active'] ? 'admin-topnav-mobile-item--active' : '' }}">
+                <i class="fas {{ $item['icon'] }} w-5"></i> {{ $item['label'] }}
             </a>
-        @endif
-        @if($permService->userHasPermission('users', 'view'))
-            <a href="{{ route('admin.agents.index') }}" class="admin-topnav-mobile-item {{ $directorioActive ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-users w-5"></i> Usuarios
-            </a>
-        @endif
-        @if($permService->userHasPermission('settings_brand', 'view'))
-            <a href="{{ route('admin.brand-settings.edit') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.brand-settings.*') ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-palette w-5"></i> Marca blanca
-            </a>
-        @endif
-        @if($canSettings)
-            <a href="{{ route('admin.settings.section', 'mail') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.settings.*') ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-cog w-5"></i> Configuración
-            </a>
-        @endif
-        @if($permService->userHasPermission('settings_system', 'view'))
-            <a href="{{ route('admin.two-factor-settings.edit') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.two-factor-settings.*') ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-shield-halved w-5"></i> Verificación 2FA
-            </a>
-        @endif
-        @if($permService->userHasPermission('backups', 'view'))
-            <a href="{{ route('admin.backups.index') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.backups.*') ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-database w-5"></i> Backups
-            </a>
-        @endif
-        @if($permService->userHasPermission('permissions', 'view') || $permService->userHasPermission('permissions', 'edit'))
-            <a href="{{ route('admin.permissions.index') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.permissions.*') ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-shield-alt w-5"></i> Permisos
-            </a>
-        @endif
-        @if($permService->userHasPermission('activity_logs', 'view'))
-            <a href="{{ route('admin.activity-logs.index') }}" class="admin-topnav-mobile-item {{ request()->routeIs('admin.activity-logs.*') ? 'admin-topnav-mobile-item--active' : '' }}">
-                <i class="fas fa-history w-5"></i> Actividad
-            </a>
-        @endif
+        @endforeach
     </div>
 
     <div class="hidden sm:block border-t border-gray-100 dark:border-slate-700 px-4 lg:px-6 py-2 bg-gray-50/80 dark:bg-slate-900/40">

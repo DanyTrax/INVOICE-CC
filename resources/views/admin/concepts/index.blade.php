@@ -11,7 +11,9 @@
             <input type="text" name="q" value="{{ request('q') }}" class="border border-gray-300 rounded-lg p-2 text-sm" placeholder="Buscar concepto">
             <button class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Filtrar</button>
         </form>
-        <a href="{{ route('admin.concepts.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Nuevo concepto</a>
+        @if(app(\App\Services\PermissionService::class)->userHasPermission('concepts', 'edit'))
+            <a href="{{ route('admin.concepts.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Nuevo concepto</a>
+        @endif
     </div>
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">

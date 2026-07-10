@@ -24,7 +24,9 @@
             </div>
             <button class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Filtrar</button>
         </form>
-        <a href="{{ route('admin.associates.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Nuevo asociado</a>
+        @if(app(\App\Services\PermissionService::class)->userHasPermission('associates', 'edit'))
+            <a href="{{ route('admin.associates.create') }}" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm">Nuevo asociado</a>
+        @endif
     </div>
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
