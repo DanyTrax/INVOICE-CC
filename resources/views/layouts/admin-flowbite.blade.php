@@ -217,77 +217,7 @@
             color: #64748b;
         }
 
-        /* Top navigation */
-        .admin-topnav-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.875rem;
-            border-radius: 0.75rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #4b5563;
-            transition: background-color 0.15s ease, color 0.15s ease;
-        }
-        html.dark .admin-topnav-link { color: #cbd5e1; }
-        .admin-topnav-link:hover {
-            background-color: #f3f4f6;
-            color: #0d9488;
-        }
-        html.dark .admin-topnav-link:hover {
-            background-color: #334155;
-            color: #2dd4bf;
-        }
-        .admin-topnav-link--active {
-            background-color: #ecfdf5;
-            color: #0f766e;
-        }
-        html.dark .admin-topnav-link--active {
-            background-color: rgba(13, 148, 136, 0.2);
-            color: #5eead4;
-        }
-        .admin-topnav-dropdown-item {
-            display: flex;
-            align-items: center;
-            gap: 0.625rem;
-            padding: 0.625rem 1rem;
-            font-size: 0.875rem;
-            color: #374151;
-        }
-        html.dark .admin-topnav-dropdown-item { color: #e2e8f0; }
-        .admin-topnav-dropdown-item:hover {
-            background-color: #f9fafb;
-            color: #0d9488;
-        }
-        html.dark .admin-topnav-dropdown-item:hover { background-color: #334155; }
-        .admin-topnav-dropdown-item--active {
-            background-color: #ecfdf5;
-            color: #0f766e;
-            font-weight: 600;
-        }
-        html.dark .admin-topnav-dropdown-item--active {
-            background-color: rgba(13, 148, 136, 0.15);
-            color: #5eead4;
-        }
-        .admin-topnav-mobile-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.625rem 0.75rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #374151;
-        }
-        html.dark .admin-topnav-mobile-item { color: #e2e8f0; }
-        .admin-topnav-mobile-item--active {
-            background-color: #ecfdf5;
-            color: #0f766e;
-        }
-        html.dark .admin-topnav-mobile-item--active {
-            background-color: rgba(13, 148, 136, 0.2);
-            color: #5eead4;
-        }
+        /* Top navigation — ver public/css/accioncol-brand.css */
     </style>
     <script>
         function resolvePrefersDark(pref) {
@@ -424,9 +354,8 @@
         }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' };
-    </script>
+    @include('partials.tailwind-brand-config')
+    <link rel="stylesheet" href="{{ asset('css/accioncol-brand.css') }}">
 
     <!-- Flowbite CSS (CDN) -->
     <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />

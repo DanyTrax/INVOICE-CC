@@ -45,7 +45,8 @@
                 @if($logoUrl)
                     <img src="{{ $logoUrl }}" alt="{{ $companyName }}" class="h-9 w-auto object-contain">
                 @else
-                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-blue-600 text-white font-bold text-sm shadow-sm">
+                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white font-bold text-sm shadow-sm"
+                          style="background: linear-gradient(135deg, #319795 0%, #4895ef 100%);">
                         {{ strtoupper(substr($companyName, 0, 1)) }}
                     </span>
                     <span class="hidden sm:block font-semibold text-gray-900 dark:text-slate-100 truncate max-w-[10rem]">{{ $companyName }}</span>

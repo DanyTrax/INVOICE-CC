@@ -1,0 +1,179 @@
+/**
+ * ACCIONCOL — paleta corporativa
+ * Teal logo: #319795 · Navy: #1a3e51 · Acento azul: #4895ef
+ */
+:root {
+    --brand-primary: #319795;
+    --brand-primary-light: #38a3a5;
+    --brand-primary-dark: #2a7f7d;
+    --brand-navy: #1a3e51;
+    --brand-navy-deep: #004d4d;
+    --brand-accent: #4895ef;
+    --brand-accent-dark: #3b7fd6;
+    --brand-gradient: linear-gradient(135deg, #319795 0%, #38a3a5 40%, #4895ef 100%);
+    --brand-gradient-soft: linear-gradient(160deg, #38a3a5 0%, #5eb8ba 45%, #7ec8e8 100%);
+}
+
+/* Top navigation (admin) */
+.admin-topnav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+html.dark .admin-topnav-link { color: #cbd5e1; }
+.admin-topnav-link:hover { background-color: #f3f4f6; }
+html.dark .admin-topnav-link:hover { background-color: #334155; }
+.admin-topnav-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    color: #374151;
+}
+html.dark .admin-topnav-dropdown-item { color: #e2e8f0; }
+.admin-topnav-dropdown-item:hover { background-color: #f9fafb; }
+html.dark .admin-topnav-dropdown-item:hover { background-color: #334155; }
+.admin-topnav-mobile-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+}
+html.dark .admin-topnav-mobile-item { color: #e2e8f0; }
+.admin-topnav-link:hover {
+    color: var(--brand-primary) !important;
+}
+html.dark .admin-topnav-link:hover {
+    color: #5eead4 !important;
+}
+.admin-topnav-link--active {
+    background-color: #e8f5f4 !important;
+    color: var(--brand-primary-dark) !important;
+}
+html.dark .admin-topnav-link--active {
+    background-color: rgba(49, 151, 149, 0.22) !important;
+    color: #7dd3cf !important;
+}
+.admin-topnav-dropdown-item:hover {
+    color: var(--brand-primary) !important;
+}
+.admin-topnav-dropdown-item--active {
+    background-color: #e8f5f4 !important;
+    color: var(--brand-primary-dark) !important;
+}
+html.dark .admin-topnav-dropdown-item--active {
+    background-color: rgba(49, 151, 149, 0.18) !important;
+    color: #7dd3cf !important;
+}
+.admin-topnav-mobile-item--active {
+    background-color: #e8f5f4 !important;
+    color: var(--brand-primary-dark) !important;
+}
+html.dark .admin-topnav-mobile-item--active {
+    background-color: rgba(49, 151, 149, 0.22) !important;
+    color: #7dd3cf !important;
+}
+
+/* Login */
+.accioncol-login-page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--brand-gradient-soft);
+    position: relative;
+    overflow: hidden;
+}
+.accioncol-login-page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 10% 0%, rgba(255, 255, 255, 0.12), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(72, 149, 239, 0.2), transparent 50%);
+    pointer-events: none;
+}
+.accioncol-login-waves {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 140px;
+    pointer-events: none;
+    color: var(--brand-navy);
+    opacity: 0.92;
+}
+.accioncol-login-card {
+    background: #fff;
+    border-radius: 1.25rem;
+    box-shadow: 0 25px 50px -12px rgba(26, 62, 81, 0.28);
+}
+.accioncol-login-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--brand-navy-deep);
+}
+.accioncol-wordmark-accion {
+    color: var(--brand-navy-deep);
+    font-weight: 800;
+}
+.accioncol-wordmark-col {
+    color: var(--brand-primary);
+    font-weight: 800;
+}
+.accioncol-login-input {
+    background: #f3f4f6;
+    border: 1px solid transparent;
+    border-radius: 0.625rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.accioncol-login-input:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(49, 151, 149, 0.22);
+    outline: none;
+}
+.accioncol-btn-primary {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    border-radius: 0.625rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.accioncol-btn-primary:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 10px 25px -8px rgba(49, 151, 149, 0.55);
+}
+.accioncol-login-footer {
+    background: var(--brand-navy);
+    color: rgba(255, 255, 255, 0.9);
+}
+.accioncol-login-footer a {
+    color: #a8e0de;
+}
+.accioncol-login-footer a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+.accioncol-link {
+    color: var(--brand-primary-dark);
+}
+.accioncol-link:hover {
+    color: var(--brand-accent);
+}
+
+/* Dark mode tweaks for settings git card etc. */
+html.dark .text-teal-800 {
+    color: #5eead4 !important;
+}
